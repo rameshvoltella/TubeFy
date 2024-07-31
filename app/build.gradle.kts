@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
+    id("com.google.devtools.ksp")
 }
 
 android {
@@ -50,4 +51,14 @@ dependencies {
     implementation  ("org.mozilla:rhino:1.7.13")
     implementation ("com.squareup.okhttp3:okhttp:4.9.3")
     implementation ("com.squareup.okhttp3:logging-interceptor:4.9.3")
+
+   ksp("com.squareup.moshi:moshi-kotlin-codegen:1.15.1")
+   implementation("com.squareup.moshi:moshi-kotlin:1.15.1")
+    // Hilts
+    implementation("com.google.dagger:hilt-android:2.44")
+    implementation("androidx.navigation:navigation-runtime-ktx:2.7.7")
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+    implementation("androidx.hilt:hilt-common:1.2.0")
+    implementation("androidx.hilt:hilt-work:1.2.0")
+    ksp("com.google.dagger:hilt-android-compiler:2.44")
 }
