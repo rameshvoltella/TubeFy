@@ -5,6 +5,7 @@ import android.webkit.WebView
 import com.ramzmania.tubefy.data.ContextModule
 import dagger.Binds
 import dagger.Module
+import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
@@ -14,16 +15,16 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 class AppModule {
 
-    @Binds
+    @Provides
     @Singleton
     fun provideContext(@ApplicationContext context: Context):ContextModule{
        return ContextModule(context)
     }
 
-    @Binds
-    @Singleton
-    fun provideWebView(@ApplicationContext context: Context):WebView{
-        return WebView(context)
-    }
+//    @Binds
+//    @Singleton
+//    fun provideWebView(@ApplicationContext context: Context):WebView{
+//        return WebView(context)
+//    }
 
 }
