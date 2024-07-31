@@ -1,6 +1,6 @@
-package com.ramzmania.tubefy.extractor.Interfaces;
+package com.ramzmania.tubefy.core.extractor.Interfaces;
 
-import com.ramzmania.tubefy.extractor.Models.VideoStream;
+import com.ramzmania.tubefy.core.extractor.Models.VideoStream;
 
 import java.util.List;
 

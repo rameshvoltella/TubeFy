@@ -1,4 +1,4 @@
-package com.ramzmania.tubefy.extractor.StreamExtractor;
+package com.ramzmania.tubefy.core.extractor.StreamExtractor;
 
 public class ExtractorException extends Exception
 {

@@ -1,10 +1,10 @@
-package com.ramzmania.tubefy.extractor.utils;
+package com.ramzmania.tubefy.core.extractor.utils;
 
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 
-import com.ramzmania.tubefy.extractor.StreamExtractor.model.YTMedia;
+import com.ramzmania.tubefy.core.extractor.StreamExtractor.model.YTMedia;
 
 import java.util.ArrayList;
 import java.util.List;

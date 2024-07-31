@@ -1,4 +1,4 @@
-package com.ramzmania.tubefy.extractor
+package com.ramzmania.tubefy.core.extractor
 
 import okhttp3.OkHttpClient
 import okhttp3.RequestBody

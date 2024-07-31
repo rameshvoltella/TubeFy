@@ -1,4 +1,4 @@
-package com.ramzmania.tubefy.extractor.utils;
+package com.ramzmania.tubefy.core.extractor.utils;
 
 import java.io.BufferedReader;
 import java.io.IOException;

@@ -1,4 +1,4 @@
-package com.ramzmania.tubefy.extractor.utils;
+package com.ramzmania.tubefy.core.extractor.utils;
 
 import java.util.ArrayList;
 import java.util.List;

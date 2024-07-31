@@ -1,20 +1,20 @@
-package com.ramzmania.tubefy.extractor.StreamExtractor;
+package com.ramzmania.tubefy.core.extractor.StreamExtractor;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
 
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParser;
-import com.ramzmania.tubefy.extractor.StreamExtractor.model.PlayerResponse;
-import com.ramzmania.tubefy.extractor.StreamExtractor.model.Response;
-import com.ramzmania.tubefy.extractor.StreamExtractor.model.StreamingData;
-import com.ramzmania.tubefy.extractor.StreamExtractor.model.YTMedia;
-import com.ramzmania.tubefy.extractor.StreamExtractor.model.YTSubtitles;
-import com.ramzmania.tubefy.extractor.StreamExtractor.model.YoutubeMeta;
-import com.ramzmania.tubefy.extractor.utils.HTTPUtility;
-import com.ramzmania.tubefy.extractor.utils.LogUtils;
-import com.ramzmania.tubefy.extractor.utils.RegexUtils;
-import com.ramzmania.tubefy.extractor.utils.Utils;
+import com.ramzmania.tubefy.core.extractor.utils.Utils;
+import com.ramzmania.tubefy.core.extractor.StreamExtractor.model.PlayerResponse;
+import com.ramzmania.tubefy.core.extractor.StreamExtractor.model.Response;
+import com.ramzmania.tubefy.core.extractor.StreamExtractor.model.StreamingData;
+import com.ramzmania.tubefy.core.extractor.StreamExtractor.model.YTMedia;
+import com.ramzmania.tubefy.core.extractor.StreamExtractor.model.YTSubtitles;
+import com.ramzmania.tubefy.core.extractor.StreamExtractor.model.YoutubeMeta;
+import com.ramzmania.tubefy.core.extractor.utils.HTTPUtility;
+import com.ramzmania.tubefy.core.extractor.utils.LogUtils;
+import com.ramzmania.tubefy.core.extractor.utils.RegexUtils;
 
 import java.net.URLDecoder;
 import java.util.ArrayList;

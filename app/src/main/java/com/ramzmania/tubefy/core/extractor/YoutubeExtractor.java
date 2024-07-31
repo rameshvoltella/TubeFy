@@ -1,4 +1,4 @@
-package com.ramzmania.tubefy.extractor;
+package com.ramzmania.tubefy.core.extractor;
 
 import static org.schabi.newpipe.extractor.ServiceList.YouTube;
 
@@ -13,12 +13,12 @@ import com.github.kotvertolet.youtubejextractor.models.AdaptiveAudioStream;
 import com.github.kotvertolet.youtubejextractor.models.AdaptiveVideoStream;
 import com.github.kotvertolet.youtubejextractor.models.newModels.VideoPlayerConfig;
 import com.github.kotvertolet.youtubejextractor.models.youtube.playerResponse.MuxedStream;
-import com.ramzmania.tubefy.extractor.Models.VideoStream;
-import com.ramzmania.tubefy.extractor.StreamExtractor.ExtractorException;
-import com.ramzmania.tubefy.extractor.StreamExtractor.model.YTMedia;
-import com.ramzmania.tubefy.extractor.StreamExtractor.model.YTSubtitles;
-import com.ramzmania.tubefy.extractor.StreamExtractor.model.YoutubeMeta;
-import com.ramzmania.tubefy.extractor.Interfaces.YoutubeExtractorCallback;
+import com.ramzmania.tubefy.core.extractor.StreamExtractor.ExtractorException;
+import com.ramzmania.tubefy.core.extractor.StreamExtractor.model.YTSubtitles;
+import com.ramzmania.tubefy.core.extractor.Models.VideoStream;
+import com.ramzmania.tubefy.core.extractor.StreamExtractor.model.YTMedia;
+import com.ramzmania.tubefy.core.extractor.StreamExtractor.model.YoutubeMeta;
+import com.ramzmania.tubefy.core.extractor.Interfaces.YoutubeExtractorCallback;
 
 import org.schabi.newpipe.extractor.NewPipe;
 import org.schabi.newpipe.extractor.exceptions.ExtractionException;
@@ -46,7 +46,7 @@ public class YoutubeExtractor  {
 
       if (ExtractorType.equalsIgnoreCase("StreamExtractor")) {
           try {
-              new com.ramzmania.tubefy.extractor.StreamExtractor.YoutubeStreamExtractor(new com.ramzmania.tubefy.extractor.StreamExtractor.YoutubeStreamExtractor.ExtractorListner() {
+              new com.ramzmania.tubefy.core.extractor.StreamExtractor.YoutubeStreamExtractor(new com.ramzmania.tubefy.core.extractor.StreamExtractor.YoutubeStreamExtractor.ExtractorListner() {
                   @Override
                   public void onExtractionGoesWrong(ExtractorException e) {
                       YoutubeExtractorTask youtubeExtractorTask = new YoutubeExtractorTask();

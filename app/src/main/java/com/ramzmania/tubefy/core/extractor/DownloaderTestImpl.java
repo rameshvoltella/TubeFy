@@ -1,4 +1,4 @@
-package com.ramzmania.tubefy.extractor;
+package com.ramzmania.tubefy.core.extractor;
 
 
 import androidx.annotation.NonNull;

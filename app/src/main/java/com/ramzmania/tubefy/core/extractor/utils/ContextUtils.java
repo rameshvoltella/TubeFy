@@ -1,4 +1,4 @@
-package com.ramzmania.tubefy.extractor.utils;
+package com.ramzmania.tubefy.core.extractor.utils;
 
 import android.content.ClipData;
 import android.content.ClipboardManager;

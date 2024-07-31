@@ -1,8 +1,8 @@
-package com.ramzmania.tubefy.extractor.StreamExtractor;
+package com.ramzmania.tubefy.core.extractor.StreamExtractor;
 
-import com.ramzmania.tubefy.extractor.utils.HTTPUtility;
-import com.ramzmania.tubefy.extractor.utils.LogUtils;
-import com.ramzmania.tubefy.extractor.utils.RegexUtils;
+import com.ramzmania.tubefy.core.extractor.utils.HTTPUtility;
+import com.ramzmania.tubefy.core.extractor.utils.LogUtils;
+import com.ramzmania.tubefy.core.extractor.utils.RegexUtils;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;

@@ -1,4 +1,4 @@
-package com.ramzmania.tubefy.extractor.StreamExtractor.model;
+package com.ramzmania.tubefy.core.extractor.StreamExtractor.model;
 
 public class YTSubtitles{
 	String baseUrl;

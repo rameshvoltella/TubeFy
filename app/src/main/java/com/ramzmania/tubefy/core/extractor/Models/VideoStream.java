@@ -1,4 +1,4 @@
-package com.ramzmania.tubefy.extractor.Models;
+package com.ramzmania.tubefy.core.extractor.Models;
 
 public class VideoStream {
 
