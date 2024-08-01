@@ -39,6 +39,20 @@ android {
     kotlinOptions {
         jvmTarget = "1.8"
     }
+    buildFeatures {
+        viewBinding = true
+        dataBinding = true
+        compose = true
+
+    }
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.1"
+    }
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+    }
 }
 
 dependencies {
@@ -48,7 +62,7 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.lifecycle.runtime.ktx)
 
-    //testImplementation(libs.junit)
+    testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     implementation("com.github.TeamNewPipe:NewPipeExtractor:0.24.2")
@@ -60,10 +74,15 @@ dependencies {
     implementation ("com.squareup.okhttp3:logging-interceptor:4.9.3")
     implementation(libs.hilt.android)
     kapt(libs.hilt.android.compiler)
-    implementation("androidx.navigation:navigation-runtime-ktx:2.7.7")
-    implementation("androidx.work:work-runtime-ktx:2.9.0")
-    kapt("com.squareup.moshi:moshi-kotlin-codegen:1.15.1")
-   implementation("com.squareup.moshi:moshi-kotlin:1.15.1")
+    implementation(libs.androidx.navigation.runtime.ktx)
+    implementation(libs.androidx.work.runtime.ktx)
+    kapt(libs.moshi.kotlin.codegen)
+    implementation(libs.moshi.kotlin)
+    implementation(libs.androidx.activity.compose)
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.ui)
+    implementation(libs.androidx.ui.graphics)
+    implementation(libs.androidx.ui.tooling.preview)
     // Hiltsa
   /*  implementation("com.google.dagger:hilt-android:2.50")
     implementation("androidx.navigation:navigation-runtime-ktx:2.7.7")

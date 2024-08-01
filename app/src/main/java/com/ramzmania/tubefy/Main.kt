@@ -1,21 +1,16 @@
 package com.ramzmania.tubefy
 
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
+
 import android.os.Bundle
-import android.webkit.WebView
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.viewModels
 import androidx.lifecycle.Observer
-import com.ramzmania.tubefy.core.yotubesearch.scrapping.YoutubeJsonScrapping
-import com.ramzmania.tubefy.data.youtubestripper.ApiResponse
+import com.ramzmania.tubefy.data.dto.youtubestripper.ApiResponse
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class Main: ComponentActivity()
@@ -33,29 +28,9 @@ class Main: ComponentActivity()
         // Observe the HTML content
         webViewModel.htmlContent.observe(this, Observer { htmlContent ->
             // Do something with the htmlContent
-            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
 
-            println(htmlContent)
-            val clip = ClipData.newPlainText("label", htmlContent)
-
-            // Set the ClipData to the ClipboardManager
-            clipboard.setPrimaryClip(clip)
-
-           val response= parseJson("{\n" +
-                   "    \"contents\": {\n" +
-                   "        \"sectionListRenderer\": {\n" +
-                   "            \"contents\": [\n" +
-                   "                {\n" +
-                   "                    \"itemSectionRenderer\": {\n" +
-                   "                        \"contents\": [{},{}]\n" +
-                   "                    }\n" +
-                   "                }\n" +
-                   "            ]\n" +
-                   "        }\n" +
-                   "    }\n" +
-                   "}")
             val response2= parseJson(htmlContent)
-            Toast.makeText(applicationContext,"YOOOO"+            response2!!.contents.sectionListRenderer.contents.size
+            Toast.makeText(applicationContext,"YOOOO"+            response2!!.contents.sectionListRenderer.contents.get(0).itemSectionRenderer!!.contentsBaseRenderer.size
                 ,1).show()
         })
         webViewModel.startScrapping()
