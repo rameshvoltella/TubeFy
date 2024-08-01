@@ -21,6 +21,12 @@ class AppModule {
        return ContextModule(context)
     }
 
+    @Provides
+    @Singleton
+    fun provideWebView(@ApplicationContext context: Context):WebView{
+        return WebView(context)
+    }
+
 //    @Binds
 //    @Singleton
 //    fun provideWebView(@ApplicationContext context: Context):WebView{

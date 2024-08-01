@@ -9,16 +9,20 @@ import androidx.lifecycle.Observer
 import com.ramzmania.tubefy.core.yotubesearch.scrapping.YoutubeJsonScrapping
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class Main: ComponentActivity()
 {
+    @Inject
+    lateinit var scrapping:YoutubeJsonScrapping
+
     private val webViewModel: TubeFyViewModel by viewModels()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.kk)
 
-        val scrapping = YoutubeJsonScrapping(webViewModel)
+//        val scrapping = YoutubeJsonScrapping(webViewModel)
 
         // Observe the HTML content
         webViewModel.htmlContent.observe(this, Observer { htmlContent ->
@@ -28,6 +32,6 @@ class Main: ComponentActivity()
         })
 
         // Start fetching the page source
-        scrapping.fetchPageSource("https://www.youtube.com/results?search_query=wwe", this)
+        scrapping.fetchPageSource("https://www.youtube.com/results?search_query=wwe", webViewModel)
     }
 }

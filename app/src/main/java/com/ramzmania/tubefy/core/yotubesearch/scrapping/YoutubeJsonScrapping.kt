@@ -7,14 +7,18 @@ import com.ramzmania.tubefy.core.yotubesearch.YoutubeStripConstant
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
-class YoutubeJsonScrapping(private val webViewModel: TubeFyViewModel) {
+class YoutubeJsonScrapping @Inject constructor(val webView: WebView) {
+ private val sharedJsonContentPrivate= MutableSharedFlow<String>()
+    val sharedJsonContent:SharedFlow<String>  = sharedJsonContentPrivate
 
-
-    fun fetchPageSource(url: String, context: Context) {
-        val webView=WebView(context)
+    fun fetchPageSource(url: String, webViewModel: TubeFyViewModel) {
+//        val webView=WebView(context)
         CoroutineScope(Dispatchers.IO).launch {
             try {
 
@@ -25,7 +29,7 @@ class YoutubeJsonScrapping(private val webViewModel: TubeFyViewModel) {
                         override fun onPageFinished(view: WebView?, url: String?) {
                             super.onPageFinished(view, url)
 //                            CoroutineScope(Dispatchers.IO).launch {
-                                getHtmlContent(webView)
+                                getHtmlContent(webView,webViewModel)
 //                            }
                         }
                     }
@@ -37,7 +41,7 @@ class YoutubeJsonScrapping(private val webViewModel: TubeFyViewModel) {
         }
     }
 
-    private  fun getHtmlContent(webView: WebView) {
+    private  fun getHtmlContent(webView: WebView,webViewModel: TubeFyViewModel) {
 
             webView.evaluateJavascript("(function() { return document.documentElement.outerHTML; })();") { html ->
                 val cleanHtml = html.replace("\\u003C", "<").replace("\\u003E", ">")
@@ -50,11 +54,18 @@ class YoutubeJsonScrapping(private val webViewModel: TubeFyViewModel) {
                 )
                 result = result.replaceFirst("= '{", "{").replaceFirst("';", "")
                     .replace("\\\\\\\\\"", "")
-                webViewModel.setHtmlContent(result)
+//                webViewModel.setHtmlContent(result)
+                CoroutineScope(Dispatchers.IO).launch {
+//                    withContext(Dispatchers.IO)
+//                    {
+                        passDatas(result)
+//                    }
 
-
+                }
         }
     }
+
+
 
 
     fun decodeHexString(input: String): String {
@@ -91,5 +102,8 @@ class YoutubeJsonScrapping(private val webViewModel: TubeFyViewModel) {
         } else {
             null
         }
+    }
+    private suspend fun passDatas(data:String) {
+        sharedJsonContentPrivate.emit(data)
     }
 }
