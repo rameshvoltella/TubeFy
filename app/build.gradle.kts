@@ -62,8 +62,8 @@ dependencies {
     kapt(libs.hilt.android.compiler)
     implementation("androidx.navigation:navigation-runtime-ktx:2.7.7")
     implementation("androidx.work:work-runtime-ktx:2.9.0")
-//   ksp("com.squareup.moshi:moshi-kotlin-codegen:1.15.1")
-//   implementation("com.squareup.moshi:moshi-kotlin:1.15.1")
+    kapt("com.squareup.moshi:moshi-kotlin-codegen:1.15.1")
+   implementation("com.squareup.moshi:moshi-kotlin:1.15.1")
     // Hiltsa
   /*  implementation("com.google.dagger:hilt-android:2.50")
     implementation("androidx.navigation:navigation-runtime-ktx:2.7.7")

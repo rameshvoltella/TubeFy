@@ -1,23 +1,20 @@
 package com.ramzmania.tubefy.core.yotubesearch.scrapping
 
-import android.content.Context
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import com.ramzmania.tubefy.core.yotubesearch.YoutubeStripConstant
-import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import javax.inject.Inject
 
-class YoutubeJsonScrapping @Inject constructor(val webView: WebView) {
+class YoutubeJsonScrapping constructor(val webView: WebView) {
  private val sharedJsonContentPrivate= MutableSharedFlow<String>()
     val sharedJsonContent:SharedFlow<String>  = sharedJsonContentPrivate
 
-    fun fetchPageSource(url: String, webViewModel: TubeFyViewModel) {
+    fun fetchPageSource(url: String) {
 //        val webView=WebView(context)
         CoroutineScope(Dispatchers.IO).launch {
             try {
@@ -29,7 +26,7 @@ class YoutubeJsonScrapping @Inject constructor(val webView: WebView) {
                         override fun onPageFinished(view: WebView?, url: String?) {
                             super.onPageFinished(view, url)
 //                            CoroutineScope(Dispatchers.IO).launch {
-                                getHtmlContent(webView,webViewModel)
+                                getHtmlContent(webView)
 //                            }
                         }
                     }
@@ -41,7 +38,7 @@ class YoutubeJsonScrapping @Inject constructor(val webView: WebView) {
         }
     }
 
-    private  fun getHtmlContent(webView: WebView,webViewModel: TubeFyViewModel) {
+    private  fun getHtmlContent(webView: WebView) {
 
             webView.evaluateJavascript("(function() { return document.documentElement.outerHTML; })();") { html ->
                 val cleanHtml = html.replace("\\u003C", "<").replace("\\u003E", ">")
