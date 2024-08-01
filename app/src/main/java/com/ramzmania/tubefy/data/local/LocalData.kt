@@ -1,7 +1,7 @@
 package com.ramzmania.tubefy.data.local
 
-import com.ramzmania.tubefy.core.yotubesearch.BasicResponse
-import com.ramzmania.tubefy.core.yotubesearch.TubeFyBaseData
+import com.ramzmania.tubefy.core.dataformatter.BasicResponse
+import com.ramzmania.tubefy.core.dataformatter.TubeFyBaseData
 import com.ramzmania.tubefy.data.ContextModule
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.youtubestripper.ApiResponse
