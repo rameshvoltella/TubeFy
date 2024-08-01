@@ -1,4 +1,3 @@
 package com.ramzmania.tubefy.core.yotubesearch
 
-class BasicResponse {
-}
+data class BasicResponse(val sortedVideoDataList:List<TubeFyBaseData>)
