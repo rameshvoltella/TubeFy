@@ -87,7 +87,7 @@ data class ReelShortsInnerTubeCommand(
 
 @JsonClass(generateAdapter = true)
 data class ReelShortsReelWatchEndpoint(
-    @Json(name = "videoId") val reelWatchEndpoint: String
+    @Json(name = "videoId") val videoId: String
 
 )
 
@@ -131,7 +131,7 @@ data class VideoHeadlineRunAccessibilityData(
 
 @JsonClass(generateAdapter = true)
 data class VideoHeadlineRunAccessibilityInnerData(
-    @Json(name = "label") val label: VideoHeadlineRunAccessibilityInnerData
+    @Json(name = "label") val label: String
 
 )
 

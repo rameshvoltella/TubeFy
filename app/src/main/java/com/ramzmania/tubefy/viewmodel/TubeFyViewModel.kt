@@ -29,7 +29,7 @@ class TubeFyViewModel @Inject constructor(val contextModule: ContextModule,val s
     }
 
     fun startScrapping() {
-        scrapping.fetchPageSource("https://www.youtube.com/results?search_query=wwe")
+        scrapping.fetchPageSource("https://www.youtube.com/results?search_query=freefire")
     }
 
 

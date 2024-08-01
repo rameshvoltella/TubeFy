@@ -2,10 +2,12 @@ package com.ramzmania.tubefy
 
 
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.viewModels
 import androidx.lifecycle.Observer
+import com.ramzmania.tubefy.core.dataformatter.YouTubePageStripDataFormatter
 import com.ramzmania.tubefy.data.dto.youtubestripper.ApiResponse
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
 import com.squareup.moshi.Moshi
@@ -32,6 +34,13 @@ class Main: ComponentActivity()
             val response2= parseJson(htmlContent)
             Toast.makeText(applicationContext,"YOOOO"+            response2!!.contents.sectionListRenderer.contents.get(0).itemSectionRenderer!!.contentsBaseRenderer.size
                 ,1).show()
+           var list= YouTubePageStripDataFormatter().getFormattedData(response2)
+//            Toast.makeText(applicationContext,"list"+  list!!.size
+//                ,1).show()
+            for(data in list!!)
+            {
+                Log.d("sorted list",""+data.videoId)
+            }
         })
         webViewModel.startScrapping()
 
