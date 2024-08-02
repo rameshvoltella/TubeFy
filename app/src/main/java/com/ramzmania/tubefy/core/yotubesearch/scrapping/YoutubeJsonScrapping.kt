@@ -2,17 +2,21 @@ package com.ramzmania.tubefy.core.yotubesearch.scrapping
 
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import com.ramzmania.tubefy.core.yotubesearch.YoutubeStripConstant
+import com.ramzmania.tubefy.core.yotubesearch.YoutubeConstant
+import com.ramzmania.tubefy.data.dto.youtubestripper.ApiResponse
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
 class YoutubeJsonScrapping constructor(val webView: WebView) {
- private val sharedJsonContentPrivate= MutableSharedFlow<String>()
-    val sharedJsonContent:SharedFlow<String>  = sharedJsonContentPrivate
+ private val sharedJsonContentPrivate= MutableSharedFlow<ApiResponse?>()
+    val sharedJsonContent:SharedFlow<ApiResponse?>  = sharedJsonContentPrivate
 
     fun fetchPageSource(url: String) {
 //        val webView=WebView(context)
@@ -45,18 +49,16 @@ class YoutubeJsonScrapping constructor(val webView: WebView) {
                 var result = decodeHexString(
                     extractDataBetween(
                         cleanHtml,
-                        YoutubeStripConstant.START_TAG,
-                        YoutubeStripConstant.END_TAG
+                        YoutubeConstant.START_TAG,
+                        YoutubeConstant.END_TAG
                     ) + ""
                 )
                 result = result.replaceFirst("= '{", "{").replaceFirst("';", "")
                     .replace("\\\\\\\\\"", "")
 //                webViewModel.setHtmlContent(result)
                 CoroutineScope(Dispatchers.IO).launch {
-//                    withContext(Dispatchers.IO)
-//                    {
-                        passDatas(result)
-//                    }
+
+                        passDatas(parseJson(result))
 
                 }
         }
@@ -100,7 +102,15 @@ class YoutubeJsonScrapping constructor(val webView: WebView) {
             null
         }
     }
-    private suspend fun passDatas(data:String) {
+    private suspend fun passDatas(data:ApiResponse?) {
         sharedJsonContentPrivate.emit(data)
+    }
+
+    fun parseJson(jsonString: String): ApiResponse? {
+        val moshi=Moshi.Builder()
+            .add(KotlinJsonAdapterFactory())
+            .build()
+        val jsonAdapter = moshi.adapter(ApiResponse::class.java)
+        return jsonAdapter.fromJson(jsonString)
     }
 }

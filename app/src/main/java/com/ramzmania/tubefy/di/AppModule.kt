@@ -4,6 +4,8 @@ import android.content.Context
 import android.webkit.WebView
 import com.ramzmania.tubefy.core.yotubesearch.scrapping.YoutubeJsonScrapping
 import com.ramzmania.tubefy.data.ContextModule
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -33,6 +35,13 @@ class AppModule {
     fun provideYoutubeJsonScrapping(@ApplicationContext context: Context):YoutubeJsonScrapping{
         return YoutubeJsonScrapping(WebView(context))
     }
+//    @Provides
+//    @Singleton
+//    fun provideMoshi(): Moshi {
+//        return Moshi.Builder()
+//            .add(KotlinJsonAdapterFactory())
+//            .build()
+//    }
 
 //    @Binds
 //    @Singleton

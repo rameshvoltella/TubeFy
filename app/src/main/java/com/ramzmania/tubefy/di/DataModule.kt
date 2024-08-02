@@ -3,8 +3,11 @@ package com.ramzmania.tubefy.di
 
 import com.ramzmania.tubefy.data.local.LocalRepository
 import com.ramzmania.tubefy.data.local.LocalRepositorySource
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.Binds
 import dagger.Module
+import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
@@ -17,5 +20,8 @@ abstract class DataModule {
     @Binds
     @Singleton
     abstract fun provideDataRepository(dataRepository: LocalRepository): LocalRepositorySource
+
+
+
 
 }
