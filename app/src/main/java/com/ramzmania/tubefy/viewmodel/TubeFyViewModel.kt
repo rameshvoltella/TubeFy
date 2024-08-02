@@ -32,12 +32,24 @@ class TubeFyViewModel @Inject constructor(val contextModule: ContextModule,val s
     private val formattedListPrivate = MutableLiveData<Resource<BasicResponse>>()
     val formattedList: LiveData<Resource<BasicResponse>> get() = formattedListPrivate
 
+    private val streamUrlDataPrivate=MutableLiveData<Resource<StreamUrlData>>()
+     val streamUrlData:LiveData<Resource<StreamUrlData>>get() = streamUrlDataPrivate
+
     fun setHtmlContent(content: ApiResponse?) {
 //        htmlContentPrivate.value = content
         viewModelScope.launch { localRepositorySource.manipulateYoutubeSearchStripData(content!!).collect{
 
             formattedListPrivate.value=it
         }}
+    }
+
+    fun getStreamUrl(videoId:String)
+    {
+        viewModelScope.launch {
+            localRepositorySource.getStreamUrl(videoId).collect{
+                streamUrlDataPrivate.value=it
+            }
+        }
     }
 
     fun startScrapping( searchQuery:String) {

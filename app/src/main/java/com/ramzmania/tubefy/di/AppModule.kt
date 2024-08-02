@@ -2,6 +2,7 @@ package com.ramzmania.tubefy.di
 
 import android.content.Context
 import android.webkit.WebView
+import com.ramzmania.tubefy.core.newpipeextractor.PipeDownloader
 import com.ramzmania.tubefy.core.yotubesearch.scrapping.YoutubeJsonScrapping
 import com.ramzmania.tubefy.data.ContextModule
 import com.squareup.moshi.Moshi
@@ -12,6 +13,8 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import okhttp3.OkHttpClient
+import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
 @Module
@@ -48,5 +51,16 @@ class AppModule {
 //    fun provideWebView(@ApplicationContext context: Context):WebView{
 //        return WebView(context)
 //    }
+
+    @Provides
+    @Singleton
+    fun provideOkHttpClient(): OkHttpClient = OkHttpClient.Builder()
+        .readTimeout(30, TimeUnit.SECONDS)
+        .build()
+
+    @Provides
+    @Singleton
+    fun provideDownloader(client: OkHttpClient): PipeDownloader
+            = PipeDownloader(client)
 
 }
