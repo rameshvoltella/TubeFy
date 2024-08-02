@@ -18,6 +18,7 @@ import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.hilt.android.AndroidEntryPoint
+import org.schabi.newpipe.extractor.search.SearchInfo
 
 @AndroidEntryPoint
 class Main : BaseBinderActivity<KkBinding, TubeFyViewModel>() {
@@ -32,12 +33,14 @@ class Main : BaseBinderActivity<KkBinding, TubeFyViewModel>() {
     override fun observeViewModel() {
         observe(viewModel.formattedList, ::handleFormatListResponse)
         observe(viewModel.streamUrlData, ::HandleStreamUrlResponse)
+        observe(viewModel.newPipeSearch, ::HandleNewPipeSearchResponse)
 
     }
 
 
     override fun observeActivity() {
-        viewModel.startScrapping("wwe")
+//        viewModel.startScrapping("wwe")
+        viewModel.searchNewPipePage()
     }
 
     /*    override fun onCreate(savedInstanceState: Bundle?) {
@@ -115,6 +118,23 @@ class Main : BaseBinderActivity<KkBinding, TubeFyViewModel>() {
             else -> {}
         }
     }
+    fun HandleNewPipeSearchResponse(resource: Resource<SearchInfo>) {
+        when (resource) {
+            is Resource.Loading -> {}
+            is Resource.Success -> {
+                Toast.makeText(applicationContext, "" + resource.data!!.relatedItems[0].name, 1).show()
+//                Log.d("url", "" + resource.data!!.streamUrl)
+            }
+
+            is Resource.DataError -> {
+            }
+
+            else -> {}
+        }
+
+    }
 }
+
+
 
 
