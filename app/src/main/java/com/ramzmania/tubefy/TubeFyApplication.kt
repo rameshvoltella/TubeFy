@@ -7,7 +7,7 @@ import org.schabi.newpipe.extractor.NewPipe
 import javax.inject.Inject
 
 @HiltAndroidApp
-class App:Application() {
+class TubeFyApplication:Application() {
     @Inject
     lateinit var pipeDownloader: PipeDownloader
     override fun onCreate() {

@@ -1,4 +1,4 @@
-package com.ramzmania.tubefy
+package com.ramzmania.tubefy.ui
 
 
 import android.util.Log
@@ -45,12 +45,19 @@ private var nextPage: Page? = null
 
     override fun observeActivity() {
 //        viewModel.startScrapping("wwe")
-        viewModel.searchYoutubeV3()
         binding.next.setOnClickListener {
             if (Page.isValid(nextPage)) {
                 viewModel.searchNewPipeNextPage(nextPage!!)
             }
         }
+
+        binding.YOUtbev3.setOnClickListener {
+            viewModel.searchYoutubeV3()
+
+        }
+        binding.lasttype.setOnClickListener { viewModel.startWebScrapping("aavesham") }
+
+        binding.newpipehome.setOnClickListener { viewModel.searchNewPipePage() }
     }
 
     /*    override fun onCreate(savedInstanceState: Bundle?) {
@@ -95,13 +102,14 @@ private var nextPage: Page? = null
             }
 
             is Resource.Success -> {
-                Toast.makeText(applicationContext, ">" + "started done", 1).show()
+//                Toast.makeText(applicationContext, ">" + "started done", 1).show()
 
                 Toast.makeText(
                     applicationContext,
-                    ">" + formatResponse.data!!.sortedVideoDataList.size,
+                    "WEB SCRAPPING" + formatResponse.data!!.sortedVideoDataList.size,
                     1
                 ).show()
+
                 viewModel.getStreamUrl(formatResponse.data!!.sortedVideoDataList[0].videoId)
 
 
@@ -118,7 +126,7 @@ private var nextPage: Page? = null
         when (resource) {
             is Resource.Loading -> {}
             is Resource.Success -> {
-                Toast.makeText(applicationContext, "" + resource.data!!.streamUrl, 1).show()
+                Toast.makeText(applicationContext, "WEB SCAPPING DATA>" + resource.data!!.streamUrl, 1).show()
                 Log.d("url", "" + resource.data!!.streamUrl)
             }
 
@@ -133,9 +141,9 @@ private var nextPage: Page? = null
             is Resource.Loading -> {}
             is Resource.Success -> {
                 nextPage=resource.data!!.nextPage
-//                Toast.makeText(applicationContext, "" + resource.data!!.relatedItems[0].name, 1).show()
+                Toast.makeText(applicationContext, "NEWPIPE HOME" + resource.data!!.relatedItems[0].name, 1).show()
 //                Log.d("url", "" + resource.data!!.streamUrl)
-                calculateSearchResult(resource.data!!.relatedItems)
+//                calculateSearchResult(resource.data!!.relatedItems)
             }
 
             is Resource.DataError -> {
@@ -162,8 +170,8 @@ private var nextPage: Page? = null
             is Resource.Loading -> {}
             is Resource.Success -> {
                 nextPage=resource.data!!.nextPage
-                calculateSearchResult(resource.data.items)
-//                Toast.makeText(applicationContext, "" + resource.data.items, 1).show()
+//                calculateSearchResult(resource.data.items)
+                Toast.makeText(applicationContext, "NEWPIPE NEXT>" + resource.data.items.size, 1).show()
 //                Log.d("url", "" + resource.data!!.streamUrl)
             }
 
@@ -178,7 +186,7 @@ private var nextPage: Page? = null
         when (resource) {
             is Resource.Loading -> {}
             is Resource.Success -> {
-                Toast.makeText(applicationContext, "" + resource.data!!.items.size, 1).show()
+                Toast.makeText(applicationContext, "YOUTUBE V3>" + resource.data!!.items.size, 1).show()
 //                Log.d("url", "" + resource.data!!.streamUrl)
             }
 

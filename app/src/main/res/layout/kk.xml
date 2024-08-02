@@ -10,11 +10,32 @@
     <ProgressBar
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"/>
-    <Button
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:orientation="vertical"
         android:layout_centerInParent="true"
+> <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/lasttype"
+        android:text="WEBVIEWTYPE"/>
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/newpipehome"
+            android:text="NEWPIPEHOME"/>
+        <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:id="@+id/next"
-        android:text="Nextpage"/>
+        android:text="NewPipeNextpage"/>
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/YOUtbev3"
+            android:text="YOUTUBEV#"/>
+    </LinearLayout>
+
 
 </RelativeLayout>
