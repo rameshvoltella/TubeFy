@@ -13,6 +13,9 @@ import com.ramzmania.tubefy.data.local.LocalRepositorySource
 import com.ramzmania.tubefy.ui.base.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
+import org.schabi.newpipe.extractor.InfoItem
+import org.schabi.newpipe.extractor.ListExtractor
+import org.schabi.newpipe.extractor.Page
 import org.schabi.newpipe.extractor.search.SearchInfo
 import java.util.Arrays
 import javax.inject.Inject
@@ -41,6 +44,10 @@ class TubeFyViewModel @Inject constructor(val contextModule: ContextModule,val s
     private val newPipeSearchPrivate=MutableLiveData<Resource<SearchInfo>>()
     val newPipeSearch:LiveData<Resource<SearchInfo>>get() = newPipeSearchPrivate
 
+    private val newPipeSearchNextPrivate=MutableLiveData<Resource<ListExtractor.InfoItemsPage<InfoItem>>>()
+    val newPipeSearchNext:LiveData<Resource<ListExtractor.InfoItemsPage<InfoItem>>>get() = newPipeSearchNextPrivate
+
+
     fun setHtmlContent(content: ApiResponse?) {
 //        htmlContentPrivate.value = content
         viewModelScope.launch { localRepositorySource.manipulateYoutubeSearchStripData(content!!).collect{
@@ -68,8 +75,19 @@ class TubeFyViewModel @Inject constructor(val contextModule: ContextModule,val s
         val contentFilter = arrayOf<String>("music_songs")
 
         viewModelScope.launch {
-            localRepositorySource.getPageSearch(0, "wwe", listOf(*contentFilter),"").collect{
+            localRepositorySource.getPageSearch(0, "aavesham", listOf(*contentFilter),"").collect{
                 newPipeSearchPrivate.value=it
+            }
+        }
+    }
+
+    fun searchNewPipeNextPage(page: Page)
+    {
+        val contentFilter = arrayOf<String>("music_songs")
+
+        viewModelScope.launch {
+            localRepositorySource.getPageNextSearch(0, "aavesham", listOf(*contentFilter),"",page).collect{
+                newPipeSearchNextPrivate.value=it
             }
         }
     }

@@ -1,14 +1,10 @@
 package com.ramzmania.tubefy
 
 
-import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
-import androidx.activity.ComponentActivity
-import androidx.activity.viewModels
 import com.ramzmania.tubefy.core.dataformatter.BasicResponse
 import com.ramzmania.tubefy.core.dataformatter.StreamUrlData
-import com.ramzmania.tubefy.core.dataformatter.YouTubePageStripDataFormatter
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.youtubestripper.ApiResponse
 import com.ramzmania.tubefy.data.observe
@@ -18,6 +14,9 @@ import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.hilt.android.AndroidEntryPoint
+import org.schabi.newpipe.extractor.InfoItem
+import org.schabi.newpipe.extractor.ListExtractor
+import org.schabi.newpipe.extractor.Page
 import org.schabi.newpipe.extractor.search.SearchInfo
 
 @AndroidEntryPoint
@@ -25,7 +24,9 @@ class Main : BaseBinderActivity<KkBinding, TubeFyViewModel>() {
 //    @Inject
 //    lateinit var scrapping:YoutubeJsonScrapping
 
-    private val webViewModel: TubeFyViewModel by viewModels()
+//    private val webViewModel: TubeFyViewModel by viewModels()
+private var nextPage: Page? = null
+//    var nameList:ArrayList<String>?=ArrayList()
     override fun getViewModelClass() = TubeFyViewModel::class.java
 
     override fun getViewBinding() = KkBinding.inflate(layoutInflater)
@@ -34,6 +35,7 @@ class Main : BaseBinderActivity<KkBinding, TubeFyViewModel>() {
         observe(viewModel.formattedList, ::handleFormatListResponse)
         observe(viewModel.streamUrlData, ::HandleStreamUrlResponse)
         observe(viewModel.newPipeSearch, ::HandleNewPipeSearchResponse)
+        observe(viewModel.newPipeSearchNext,::HandleNewPipeSearchNextResponse)
 
     }
 
@@ -41,6 +43,11 @@ class Main : BaseBinderActivity<KkBinding, TubeFyViewModel>() {
     override fun observeActivity() {
 //        viewModel.startScrapping("wwe")
         viewModel.searchNewPipePage()
+        binding.next.setOnClickListener {
+            if (Page.isValid(nextPage)) {
+                viewModel.searchNewPipeNextPage(nextPage!!)
+            }
+        }
     }
 
     /*    override fun onCreate(savedInstanceState: Bundle?) {
@@ -122,8 +129,10 @@ class Main : BaseBinderActivity<KkBinding, TubeFyViewModel>() {
         when (resource) {
             is Resource.Loading -> {}
             is Resource.Success -> {
-                Toast.makeText(applicationContext, "" + resource.data!!.relatedItems[0].name, 1).show()
+                nextPage=resource.data!!.nextPage
+//                Toast.makeText(applicationContext, "" + resource.data!!.relatedItems[0].name, 1).show()
 //                Log.d("url", "" + resource.data!!.streamUrl)
+                calculateSearchResult(resource.data!!.relatedItems)
             }
 
             is Resource.DataError -> {
@@ -133,7 +142,37 @@ class Main : BaseBinderActivity<KkBinding, TubeFyViewModel>() {
         }
 
     }
+
+    private fun calculateSearchResult(relatedItems: MutableList<InfoItem>) {
+        for(data in relatedItems) {
+            Log.d("onlynames",data.name+"<>"+data.url)
+        }
+    }
+//    private fun calculateSearchResult2(relatedItems: MutableList<InfoItem>) {
+//        for(data in relatedItems) {
+//            Log.d("onlynames",data.name)
+//        }
+//    }
+
+    fun HandleNewPipeSearchNextResponse(resource: Resource<ListExtractor.InfoItemsPage<InfoItem>>) {
+        when (resource) {
+            is Resource.Loading -> {}
+            is Resource.Success -> {
+                nextPage=resource.data!!.nextPage
+                calculateSearchResult(resource.data.items)
+//                Toast.makeText(applicationContext, "" + resource.data.items, 1).show()
+//                Log.d("url", "" + resource.data!!.streamUrl)
+            }
+
+            is Resource.DataError -> {
+            }
+
+            else -> {}
+        }
+    }
+
 }
+
 
 
 
