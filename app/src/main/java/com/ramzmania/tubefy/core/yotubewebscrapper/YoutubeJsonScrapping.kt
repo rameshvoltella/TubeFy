@@ -16,12 +16,12 @@ import kotlinx.coroutines.withContext
 class YoutubeJsonScrapping constructor(val webView: WebView) {
  private val sharedJsonContentPrivate= MutableSharedFlow<ApiResponse?>()
     val sharedJsonContent:SharedFlow<ApiResponse?>  = sharedJsonContentPrivate
+    var alreadyEvaluated = false;
 
     fun fetchPageSource(url: String) {
 //        val webView=WebView(context)
         CoroutineScope(Dispatchers.IO).launch {
             try {
-
                 withContext(Dispatchers.Main) {
                     webView.settings.javaScriptEnabled = true
 
@@ -42,7 +42,8 @@ class YoutubeJsonScrapping constructor(val webView: WebView) {
     }
 
     private  fun getHtmlContent(webView: WebView) {
-
+        if (!alreadyEvaluated) {
+            alreadyEvaluated = true
             webView.evaluateJavascript("(function() { return document.documentElement.outerHTML; })();") { html ->
                 val cleanHtml = html.replace("\\u003C", "<").replace("\\u003E", ">")
                 var result = decodeHexString(
@@ -57,10 +58,14 @@ class YoutubeJsonScrapping constructor(val webView: WebView) {
 //                webViewModel.setHtmlContent(result)
                 CoroutineScope(Dispatchers.IO).launch {
 
-                        passDatas(parseJson(result))
+                    passDatas(parseJson(result))
 
                 }
+            }
+        } else {
+            alreadyEvaluated = false
         }
+
     }
 
 
