@@ -1,6 +1,9 @@
 package com.ramzmania.tubefy.core
 
 object YoutubeCoreConstant {
+    const val  YOUTUBE_V3_BASE_URL ="https://www.googleapis.com/youtube/v3/"
+const val  YOUTUBE_V3API_KEY="AIzaSyDD7uj_20UvVdn4DYZA31WBXi44QnPg3-g"
+
 
     const val START_TAG = "var ytInitialData"
     const val END_TAG = "</script>"

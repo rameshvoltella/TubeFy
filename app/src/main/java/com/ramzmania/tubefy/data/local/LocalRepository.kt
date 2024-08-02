@@ -19,26 +19,4 @@ class LocalRepository @Inject constructor(
         return flow { emit(localRepository.manipulateYoutubeSearchStripData(youtubeJsonScrapping)) }
     }
 
-    override suspend fun getStreamUrl(videoId: String): Flow<Resource<StreamUrlData>> {
-        return flow { emit(localRepository.getStreamUrl(videoId)) }
-    }
-
-    override suspend fun getPageSearch(
-        serviceId: Int,
-        searchString: String,
-        contentFilter: List<String?>,
-        sortFilter: String
-    ): Flow<Resource<SearchInfo>> {
-        return flow { emit(localRepository.getPageSearch(serviceId,searchString,contentFilter, sortFilter)) }
-    }
-
-    override suspend fun getPageNextSearch(
-        serviceId: Int,
-        searchString: String,
-        contentFilter: List<String?>,
-        sortFilter: String,
-        page: Page
-    ): Flow<Resource<ListExtractor.InfoItemsPage<InfoItem>>> {
-        return flow { emit(localRepository.getPageNextSearch(serviceId, searchString, contentFilter, sortFilter, page)) }
-    }
 }

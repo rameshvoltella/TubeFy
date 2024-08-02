@@ -5,11 +5,12 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.ramzmania.tubefy.core.dataformatter.BasicResponse
 import com.ramzmania.tubefy.core.dataformatter.StreamUrlData
-import com.ramzmania.tubefy.core.yotubewebscrapper.scrapping.YoutubeJsonScrapping
+import com.ramzmania.tubefy.core.yotubewebscrapper.YoutubeJsonScrapping
 import com.ramzmania.tubefy.data.ContextModule
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.youtubestripper.ApiResponse
 import com.ramzmania.tubefy.data.local.LocalRepositorySource
+import com.ramzmania.tubefy.data.remote.RemoteRepositorySource
 import com.ramzmania.tubefy.ui.base.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -21,7 +22,7 @@ import java.util.Arrays
 import javax.inject.Inject
 
 @HiltViewModel
-class TubeFyViewModel @Inject constructor(val contextModule: ContextModule,val scrapping: YoutubeJsonScrapping, private val localRepositorySource: LocalRepositorySource):BaseViewModel() {
+class TubeFyViewModel @Inject constructor(val contextModule: ContextModule, val scrapping: YoutubeJsonScrapping, private val localRepositorySource: LocalRepositorySource,private val remoteRepositorySource: RemoteRepositorySource):BaseViewModel() {
 
     init {
         viewModelScope.launch {
@@ -59,7 +60,7 @@ class TubeFyViewModel @Inject constructor(val contextModule: ContextModule,val s
     fun getStreamUrl(videoId:String)
     {
         viewModelScope.launch {
-            localRepositorySource.getStreamUrl(videoId).collect{
+            remoteRepositorySource.getStreamUrl(videoId).collect{
                 streamUrlDataPrivate.value=it
             }
         }
@@ -75,7 +76,7 @@ class TubeFyViewModel @Inject constructor(val contextModule: ContextModule,val s
         val contentFilter = arrayOf<String>("music_songs")
 
         viewModelScope.launch {
-            localRepositorySource.getPageSearch(0, "aavesham", listOf(*contentFilter),"").collect{
+            remoteRepositorySource.getPageSearch(0, "aavesham", listOf(*contentFilter),"").collect{
                 newPipeSearchPrivate.value=it
             }
         }
@@ -86,7 +87,7 @@ class TubeFyViewModel @Inject constructor(val contextModule: ContextModule,val s
         val contentFilter = arrayOf<String>("music_songs")
 
         viewModelScope.launch {
-            localRepositorySource.getPageNextSearch(0, "aavesham", listOf(*contentFilter),"",page).collect{
+            remoteRepositorySource.getPageNextSearch(0, "aavesham", listOf(*contentFilter),"",page).collect{
                 newPipeSearchNextPrivate.value=it
             }
         }

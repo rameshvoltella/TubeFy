@@ -12,15 +12,5 @@ import org.schabi.newpipe.extractor.search.SearchInfo
 interface LocalDataSource {
 
     suspend fun manipulateYoutubeSearchStripData(youtubeJsonScrapping: ApiResponse): Resource<BasicResponse>
-    suspend fun getStreamUrl(videoId:String):Resource<StreamUrlData>
 
-    /*NewPipe search sources*/
-
-    suspend fun getPageSearch( serviceId: Int, searchString: String,
-                               contentFilter: List<String?>,
-                               sortFilter: String):Resource<SearchInfo>
-
-    suspend fun getPageNextSearch(serviceId: Int, searchString: String,
-                                  contentFilter: List<String?>,
-                                  sortFilter: String,page: Page):Resource<ListExtractor.InfoItemsPage<InfoItem>>
 }

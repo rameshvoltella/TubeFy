@@ -3,8 +3,10 @@ package com.ramzmania.tubefy.di
 import android.content.Context
 import android.webkit.WebView
 import com.ramzmania.tubefy.core.newpipeextractor.PipeDownloader
-import com.ramzmania.tubefy.core.yotubewebscrapper.scrapping.YoutubeJsonScrapping
+import com.ramzmania.tubefy.core.yotubewebscrapper.YoutubeJsonScrapping
 import com.ramzmania.tubefy.data.ContextModule
+import com.ramzmania.tubefy.data.Network
+import com.ramzmania.tubefy.data.NetworkConnectivity
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -32,7 +34,7 @@ class AppModule {
 
     @Provides
     @Singleton
-    fun provideYoutubeJsonScrapping(@ApplicationContext context: Context):YoutubeJsonScrapping{
+    fun provideYoutubeJsonScrapping(@ApplicationContext context: Context): YoutubeJsonScrapping {
         return YoutubeJsonScrapping(WebView(context))
     }
 //    @Provides
@@ -59,5 +61,11 @@ class AppModule {
     @Singleton
     fun provideDownloader(client: OkHttpClient): PipeDownloader
             = PipeDownloader(client)
+
+    @Provides
+    @Singleton
+    fun provideNetworkConnectivity(@ApplicationContext context: Context): NetworkConnectivity {
+        return Network(context)
+    }
 
 }

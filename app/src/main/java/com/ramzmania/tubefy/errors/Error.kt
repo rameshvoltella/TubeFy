@@ -15,6 +15,7 @@ const val NETWORK_ERROR = -2
 const val DEFAULT_ERROR = -3
 const val NEW_PIPE_SEARCH_ERROR = 3000
 const val NEW_PIPE_SEARCH_MORE_ERROR = 3000
+
 const val PASS_WORD_ERROR = -101
 const val USER_NAME_ERROR = -102
 const val CHECK_YOUR_FIELDS = -103
