@@ -3,11 +3,8 @@ package com.ramzmania.tubefy.di
 import android.content.Context
 import android.webkit.WebView
 import com.ramzmania.tubefy.core.newpipeextractor.PipeDownloader
-import com.ramzmania.tubefy.core.yotubesearch.scrapping.YoutubeJsonScrapping
+import com.ramzmania.tubefy.core.yotubewebscrapper.scrapping.YoutubeJsonScrapping
 import com.ramzmania.tubefy.data.ContextModule
-import com.squareup.moshi.Moshi
-import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
-import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

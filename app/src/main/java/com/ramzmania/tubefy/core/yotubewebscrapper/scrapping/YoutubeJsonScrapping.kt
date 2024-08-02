@@ -1,8 +1,8 @@
-package com.ramzmania.tubefy.core.yotubesearch.scrapping
+package com.ramzmania.tubefy.core.yotubewebscrapper.scrapping
 
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import com.ramzmania.tubefy.core.yotubesearch.YoutubeConstant
+import com.ramzmania.tubefy.core.YoutubeCoreConstant
 import com.ramzmania.tubefy.data.dto.youtubestripper.ApiResponse
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -12,7 +12,6 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import javax.inject.Inject
 
 class YoutubeJsonScrapping constructor(val webView: WebView) {
  private val sharedJsonContentPrivate= MutableSharedFlow<ApiResponse?>()
@@ -49,8 +48,8 @@ class YoutubeJsonScrapping constructor(val webView: WebView) {
                 var result = decodeHexString(
                     extractDataBetween(
                         cleanHtml,
-                        YoutubeConstant.START_TAG,
-                        YoutubeConstant.END_TAG
+                        YoutubeCoreConstant.START_TAG,
+                        YoutubeCoreConstant.END_TAG
                     ) + ""
                 )
                 result = result.replaceFirst("= '{", "{").replaceFirst("';", "")

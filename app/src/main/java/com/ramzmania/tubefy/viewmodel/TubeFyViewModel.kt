@@ -5,7 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.ramzmania.tubefy.core.dataformatter.BasicResponse
 import com.ramzmania.tubefy.core.dataformatter.StreamUrlData
-import com.ramzmania.tubefy.core.yotubesearch.scrapping.YoutubeJsonScrapping
+import com.ramzmania.tubefy.core.yotubewebscrapper.scrapping.YoutubeJsonScrapping
 import com.ramzmania.tubefy.data.ContextModule
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.youtubestripper.ApiResponse

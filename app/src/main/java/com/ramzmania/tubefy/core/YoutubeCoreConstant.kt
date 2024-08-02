@@ -1,5 +1,10 @@
-package com.ramzmania.tubefy.core.newpipeextractor
+package com.ramzmania.tubefy.core
 
+object YoutubeCoreConstant {
+
+    const val START_TAG = "var ytInitialData"
+    const val END_TAG = "</script>"
+    const val YOUTUBE_WATCH_URL="https://www.youtube.com/watch?v="
     const val DEFAULT_THROTTLE_TIMEOUT = 120L
 
     const val KEY_SERVICE_ID = "key_service_id"
@@ -13,3 +18,4 @@ package com.ramzmania.tubefy.core.newpipeextractor
     const val KEY_MAIN_PAGE_CHANGE = "key_main_page_change"
 
     const val NO_SERVICE_ID = -1
+}
