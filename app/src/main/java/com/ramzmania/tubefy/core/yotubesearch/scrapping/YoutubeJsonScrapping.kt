@@ -1,20 +1,25 @@
 package com.ramzmania.tubefy.core.yotubesearch.scrapping
 
-import android.content.Context
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import com.ramzmania.tubefy.core.yotubesearch.YoutubeStripConstant
-import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
+import com.ramzmania.tubefy.core.yotubesearch.YoutubeConstant
+import com.ramzmania.tubefy.data.dto.youtubestripper.ApiResponse
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
-class YoutubeJsonScrapping(private val webViewModel: TubeFyViewModel) {
+class YoutubeJsonScrapping constructor(val webView: WebView) {
+ private val sharedJsonContentPrivate= MutableSharedFlow<ApiResponse?>()
+    val sharedJsonContent:SharedFlow<ApiResponse?>  = sharedJsonContentPrivate
 
-
-    fun fetchPageSource(url: String, context: Context) {
-        val webView=WebView(context)
+    fun fetchPageSource(url: String) {
+//        val webView=WebView(context)
         CoroutineScope(Dispatchers.IO).launch {
             try {
 
@@ -44,17 +49,22 @@ class YoutubeJsonScrapping(private val webViewModel: TubeFyViewModel) {
                 var result = decodeHexString(
                     extractDataBetween(
                         cleanHtml,
-                        YoutubeStripConstant.START_TAG,
-                        YoutubeStripConstant.END_TAG
+                        YoutubeConstant.START_TAG,
+                        YoutubeConstant.END_TAG
                     ) + ""
                 )
                 result = result.replaceFirst("= '{", "{").replaceFirst("';", "")
                     .replace("\\\\\\\\\"", "")
-                webViewModel.setHtmlContent(result)
+//                webViewModel.setHtmlContent(result)
+                CoroutineScope(Dispatchers.IO).launch {
 
+                        passDatas(parseJson(result))
 
+                }
         }
     }
+
+
 
 
     fun decodeHexString(input: String): String {
@@ -91,5 +101,16 @@ class YoutubeJsonScrapping(private val webViewModel: TubeFyViewModel) {
         } else {
             null
         }
+    }
+    private suspend fun passDatas(data:ApiResponse?) {
+        sharedJsonContentPrivate.emit(data)
+    }
+
+    fun parseJson(jsonString: String): ApiResponse? {
+        val moshi=Moshi.Builder()
+            .add(KotlinJsonAdapterFactory())
+            .build()
+        val jsonAdapter = moshi.adapter(ApiResponse::class.java)
+        return jsonAdapter.fromJson(jsonString)
     }
 }
