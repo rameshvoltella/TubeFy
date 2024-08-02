@@ -8,6 +8,7 @@ import com.ramzmania.tubefy.core.dataformatter.StreamUrlData
 import com.ramzmania.tubefy.core.yotubewebscrapper.YoutubeJsonScrapping
 import com.ramzmania.tubefy.data.ContextModule
 import com.ramzmania.tubefy.data.Resource
+import com.ramzmania.tubefy.data.dto.youtubeV3.YoutubeV3Response
 import com.ramzmania.tubefy.data.dto.youtubestripper.ApiResponse
 import com.ramzmania.tubefy.data.local.LocalRepositorySource
 import com.ramzmania.tubefy.data.remote.RemoteRepositorySource
@@ -23,6 +24,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class TubeFyViewModel @Inject constructor(val contextModule: ContextModule, val scrapping: YoutubeJsonScrapping, private val localRepositorySource: LocalRepositorySource,private val remoteRepositorySource: RemoteRepositorySource):BaseViewModel() {
+
+    private var nextYoutubeV3PageToken: String? = null
 
     init {
         viewModelScope.launch {
@@ -47,6 +50,9 @@ class TubeFyViewModel @Inject constructor(val contextModule: ContextModule, val 
 
     private val newPipeSearchNextPrivate=MutableLiveData<Resource<ListExtractor.InfoItemsPage<InfoItem>>>()
     val newPipeSearchNext:LiveData<Resource<ListExtractor.InfoItemsPage<InfoItem>>>get() = newPipeSearchNextPrivate
+
+    private val youtubeV3SearchPrivate=MutableLiveData<Resource<YoutubeV3Response>>()
+    val youtubeV3Search:LiveData<Resource<YoutubeV3Response>>get() = youtubeV3SearchPrivate
 
 
     fun setHtmlContent(content: ApiResponse?) {
@@ -89,6 +95,17 @@ class TubeFyViewModel @Inject constructor(val contextModule: ContextModule, val 
         viewModelScope.launch {
             remoteRepositorySource.getPageNextSearch(0, "aavesham", listOf(*contentFilter),"",page).collect{
                 newPipeSearchNextPrivate.value=it
+            }
+        }
+    }
+
+
+    fun searchYoutubeV3()
+    {
+
+        viewModelScope.launch {
+            remoteRepositorySource.requestYoutubeV3("snippet", "aavesham", nextYoutubeV3PageToken).collect{
+                youtubeV3SearchPrivate.value=it
             }
         }
     }

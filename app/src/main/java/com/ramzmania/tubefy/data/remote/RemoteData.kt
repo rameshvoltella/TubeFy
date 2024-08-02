@@ -1,6 +1,7 @@
 package com.ramzmania.tubefy.data.remote
 
 import com.ramzmania.tubefy.core.YoutubeCoreConstant
+import com.ramzmania.tubefy.core.YoutubeCoreConstant.YOUTUBE_V3_MAX_RESULT
 import com.ramzmania.tubefy.core.dataformatter.StreamUrlData
 import com.ramzmania.tubefy.core.newpipeextractor.newPipeSearchFor
 import com.ramzmania.tubefy.core.newpipeextractor.newPipeSearchNextPageFor
@@ -42,7 +43,7 @@ constructor(
 
         return when (val response = processCall {
             youtubeV3Service.getVideo(
-               part,searchQuery,pageToken
+               part,searchQuery,pageToken,YOUTUBE_V3_MAX_RESULT
             )
         }) {
             is Any -> {

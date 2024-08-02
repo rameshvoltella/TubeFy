@@ -6,6 +6,7 @@ import android.widget.Toast
 import com.ramzmania.tubefy.core.dataformatter.BasicResponse
 import com.ramzmania.tubefy.core.dataformatter.StreamUrlData
 import com.ramzmania.tubefy.data.Resource
+import com.ramzmania.tubefy.data.dto.youtubeV3.YoutubeV3Response
 import com.ramzmania.tubefy.data.dto.youtubestripper.ApiResponse
 import com.ramzmania.tubefy.data.observe
 import com.ramzmania.tubefy.databinding.KkBinding
@@ -36,13 +37,15 @@ private var nextPage: Page? = null
         observe(viewModel.streamUrlData, ::HandleStreamUrlResponse)
         observe(viewModel.newPipeSearch, ::HandleNewPipeSearchResponse)
         observe(viewModel.newPipeSearchNext,::HandleNewPipeSearchNextResponse)
+        observe(viewModel.youtubeV3Search,::HandleYoutubeV3Response)
+
 
     }
 
 
     override fun observeActivity() {
 //        viewModel.startScrapping("wwe")
-        viewModel.searchNewPipePage()
+        viewModel.searchYoutubeV3()
         binding.next.setOnClickListener {
             if (Page.isValid(nextPage)) {
                 viewModel.searchNewPipeNextPage(nextPage!!)
@@ -171,7 +174,24 @@ private var nextPage: Page? = null
         }
     }
 
+    fun HandleYoutubeV3Response(resource: Resource<YoutubeV3Response>) {
+        when (resource) {
+            is Resource.Loading -> {}
+            is Resource.Success -> {
+                Toast.makeText(applicationContext, "" + resource.data!!.items.size, 1).show()
+//                Log.d("url", "" + resource.data!!.streamUrl)
+            }
+
+            is Resource.DataError -> {
+            }
+
+            else -> {}
+        }
+    }
+
 }
+
+
 
 
 

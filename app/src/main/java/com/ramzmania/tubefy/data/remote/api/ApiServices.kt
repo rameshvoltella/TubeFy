@@ -12,7 +12,8 @@ interface ApiServices {
     suspend fun getVideo(
         @Query("part") part: String,
         @Query("q") q: String,
-        @Query("pageToken") pageToken: String?
+        @Query("pageToken") pageToken: String?,
+        @Query("maxResults")maxResult:Int
     ) : Response<YoutubeV3Response>
 
 }
