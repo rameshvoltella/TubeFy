@@ -3,8 +3,8 @@ package com.ramzmania.tubefy.viewmodel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
-import com.ramzmania.tubefy.core.dataformatter.BasicResponse
-import com.ramzmania.tubefy.core.dataformatter.StreamUrlData
+import com.ramzmania.tubefy.core.dataformatter.dto.BasicResponse
+import com.ramzmania.tubefy.core.dataformatter.dto.StreamUrlData
 import com.ramzmania.tubefy.core.yotubewebscrapper.YoutubeJsonScrapping
 import com.ramzmania.tubefy.data.ContextModule
 import com.ramzmania.tubefy.data.Resource
@@ -19,7 +19,6 @@ import org.schabi.newpipe.extractor.InfoItem
 import org.schabi.newpipe.extractor.ListExtractor
 import org.schabi.newpipe.extractor.Page
 import org.schabi.newpipe.extractor.search.SearchInfo
-import java.util.Arrays
 import javax.inject.Inject
 
 @HiltViewModel

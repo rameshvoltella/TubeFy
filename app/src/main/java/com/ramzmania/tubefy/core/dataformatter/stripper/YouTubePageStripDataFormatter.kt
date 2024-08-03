@@ -1,14 +1,15 @@
-package com.ramzmania.tubefy.core.dataformatter
+package com.ramzmania.tubefy.core.dataformatter.stripper
 
 import android.util.Log
+import com.ramzmania.tubefy.core.dataformatter.dto.TubeFyCoreTypeData
 import com.ramzmania.tubefy.data.dto.youtubestripper.ApiResponse
 
 class YouTubePageStripDataFormatter {
 
-    fun getFormattedData(youtubeJsonScrapping: ApiResponse):ArrayList<TubeFyBaseData>?{
+    fun getFormattedData(youtubeJsonScrapping: ApiResponse):ArrayList<TubeFyCoreTypeData>?{
 //        youtubeJsonScrapping.contents
 //        for ()
-        var sortedVideoList:ArrayList<TubeFyBaseData>?=ArrayList()
+        var sortedVideoList:ArrayList<TubeFyCoreTypeData>?=ArrayList()
         for(contents in youtubeJsonScrapping.contents.sectionListRenderer.contents)
         {
             var videoName=""
@@ -53,7 +54,7 @@ class YouTubePageStripDataFormatter {
                                         }
                                     }
                                 }
-                                sortedVideoList?.add(TubeFyBaseData(videoId,videoName,videoImage))
+                                sortedVideoList?.add(TubeFyCoreTypeData(videoId,videoName,videoImage))
                             }
 
                         }
@@ -71,7 +72,7 @@ class YouTubePageStripDataFormatter {
                                    videoImage=thumbnails.reelShortsThumpNailUrl
                                }
                             }
-                            sortedVideoList?.add(TubeFyBaseData(videoId,videoName,videoImage))
+                            sortedVideoList?.add(TubeFyCoreTypeData(videoId,videoName,videoImage))
 
 
 

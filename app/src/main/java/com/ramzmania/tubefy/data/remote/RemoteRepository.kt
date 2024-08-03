@@ -1,10 +1,8 @@
 package com.ramzmania.tubefy.data.remote
 
-import com.ramzmania.tubefy.core.dataformatter.BasicResponse
-import com.ramzmania.tubefy.core.dataformatter.StreamUrlData
+import com.ramzmania.tubefy.core.dataformatter.dto.StreamUrlData
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.youtubeV3.YoutubeV3Response
-import com.ramzmania.tubefy.data.dto.youtubestripper.ApiResponse
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import org.schabi.newpipe.extractor.InfoItem

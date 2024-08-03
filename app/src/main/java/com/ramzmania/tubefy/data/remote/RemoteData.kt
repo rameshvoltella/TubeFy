@@ -3,9 +3,10 @@ package com.ramzmania.tubefy.data.remote
 import android.util.Log
 import com.ramzmania.tubefy.core.YoutubeCoreConstant
 import com.ramzmania.tubefy.core.YoutubeCoreConstant.YOUTUBE_V3_MAX_RESULT
-import com.ramzmania.tubefy.core.dataformatter.NewPipeDataFormatter
-import com.ramzmania.tubefy.core.dataformatter.StreamUrlData
-import com.ramzmania.tubefy.core.dataformatter.TubeFyCoreBaseData
+import com.ramzmania.tubefy.core.dataformatter.dto.NewPipeSortingInput
+import com.ramzmania.tubefy.core.dataformatter.newpipe.NewPipeDataFormatter
+import com.ramzmania.tubefy.core.dataformatter.dto.StreamUrlData
+import com.ramzmania.tubefy.core.dataformatter.dto.TubeFyCoreUniversalData
 import com.ramzmania.tubefy.core.newpipeextractor.newPipeSearchFor
 import com.ramzmania.tubefy.core.newpipeextractor.newPipeSearchNextPageFor
 import com.ramzmania.tubefy.data.NetworkConnectivity
@@ -99,9 +100,8 @@ constructor(
         withContext(Dispatchers.IO)
         {
             searchInfo= newPipeSearchFor(serviceId, searchString, contentFilter, sortFilter)
-            val result = newPipeFormatter.run(searchInfo!!.relatedItems)
-            val baseDataModel=TubeFyCoreBaseData(result,searchInfo?.nextPage)
-            Log.d("TAGGIZ",""+baseDataModel.youtubeSortedList!!.size)
+            val result = newPipeFormatter.run(NewPipeSortingInput(searchInfo!!.relatedItems,searchInfo!!.nextPage))
+            Log.d("TAGGIZ",""+result.youtubeSortedData.youtubeSortedList!!.size)
 
         }
         return if(searchInfo!=null)
@@ -134,9 +134,9 @@ constructor(
              }*/
         return withContext(Dispatchers.IO) {
             val nextPageSearchInfo = newPipeSearchNextPageFor(serviceId, searchString, contentFilter, sortFilter, page)
-            val result = newPipeFormatter.run(nextPageSearchInfo.items)
-            val baseDataModel=TubeFyCoreBaseData(result,nextPageSearchInfo.nextPage)
-            Log.d("TAGGIZ",""+baseDataModel.youtubeSortedList!!.size)
+            val result = newPipeFormatter.run(NewPipeSortingInput(nextPageSearchInfo.items,nextPageSearchInfo.nextPage))
+//            val baseDataModel= TubeFyCoreUniversalData(NewPipeSortingInput(result,nextPageSearchInfo.nextPage))
+            Log.d("TAGGIZ",""+result.youtubeSortedData.youtubeSortedList!!.size)
             nextPageSearchInfo.let {
                 Resource.Success(it)
             } ?: Resource.DataError(NEW_PIPE_SEARCH_MORE_ERROR)

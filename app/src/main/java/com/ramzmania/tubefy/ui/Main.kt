@@ -3,8 +3,8 @@ package com.ramzmania.tubefy.ui
 
 import android.util.Log
 import android.widget.Toast
-import com.ramzmania.tubefy.core.dataformatter.BasicResponse
-import com.ramzmania.tubefy.core.dataformatter.StreamUrlData
+import com.ramzmania.tubefy.core.dataformatter.dto.BasicResponse
+import com.ramzmania.tubefy.core.dataformatter.dto.StreamUrlData
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.youtubeV3.YoutubeV3Response
 import com.ramzmania.tubefy.data.dto.youtubestripper.ApiResponse
