@@ -1,7 +1,9 @@
 package com.ramzmania.tubefy.data.remote
 
+import android.util.Log
 import com.ramzmania.tubefy.core.YoutubeCoreConstant
 import com.ramzmania.tubefy.core.YoutubeCoreConstant.YOUTUBE_V3_MAX_RESULT
+import com.ramzmania.tubefy.core.dataformatter.NewPipeDataFormatter
 import com.ramzmania.tubefy.core.dataformatter.StreamUrlData
 import com.ramzmania.tubefy.core.newpipeextractor.newPipeSearchFor
 import com.ramzmania.tubefy.core.newpipeextractor.newPipeSearchNextPageFor
@@ -32,7 +34,7 @@ class RemoteData@Inject
 constructor(
     private val serviceGenerator: ServiceGenerator,
     private val networkConnectivity: NetworkConnectivity,
-    private val contextModule: ContextModule
+    private val newPipeFormatter: NewPipeDataFormatter,
 ) :RemoteDataSource {
     override suspend fun requestYoutubeV3(
         part: String,
@@ -97,6 +99,9 @@ constructor(
         withContext(Dispatchers.IO)
         {
             searchInfo= newPipeSearchFor(serviceId, searchString, contentFilter, sortFilter)
+            val result = newPipeFormatter.run(searchInfo.relatedItems)
+            Log.d("TAGGIZ",""+result?.size)
+
         }
         return if(searchInfo!=null)
         {
