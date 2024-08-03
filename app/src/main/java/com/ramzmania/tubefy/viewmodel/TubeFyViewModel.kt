@@ -3,7 +3,6 @@ package com.ramzmania.tubefy.viewmodel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
-import com.ramzmania.tubefy.core.dataformatter.dto.BasicResponse
 import com.ramzmania.tubefy.core.dataformatter.dto.StreamUrlData
 import com.ramzmania.tubefy.core.dataformatter.dto.TubeFyCoreUniversalData
 import com.ramzmania.tubefy.core.yotubewebextractor.YoutubeJsonScrapping
@@ -34,28 +33,20 @@ class TubeFyViewModel @Inject constructor(val contextModule: ContextModule, val 
     private val htmlContentPrivate = MutableLiveData<String>()
     val htmlContent: LiveData<String> get() = htmlContentPrivate
 
-    private val formattedListPrivate = MutableLiveData<Resource<TubeFyCoreUniversalData>>()
-    val formattedList: LiveData<Resource<TubeFyCoreUniversalData>> get() = formattedListPrivate
+
 
     private val streamUrlDataPrivate=MutableLiveData<Resource<StreamUrlData>>()
      val streamUrlData:LiveData<Resource<StreamUrlData>>get() = streamUrlDataPrivate
 
-
-    private val newPipeSearchPrivate=MutableLiveData<Resource<TubeFyCoreUniversalData>>()
-    val newPipeSearch:LiveData<Resource<TubeFyCoreUniversalData>>get() = newPipeSearchPrivate
-
-    private val newPipeSearchNextPrivate=MutableLiveData<Resource<TubeFyCoreUniversalData>>()
-    val newPipeSearchNext:LiveData<Resource<TubeFyCoreUniversalData>>get() = newPipeSearchNextPrivate
-
-    private val youtubeV3SearchPrivate=MutableLiveData<Resource<TubeFyCoreUniversalData>>()
-    val youtubeV3Search:LiveData<Resource<TubeFyCoreUniversalData>>get() = youtubeV3SearchPrivate
+    private val youTubeSearchDataPrivate=MutableLiveData<Resource<TubeFyCoreUniversalData>>()
+    val youTubeSearchData:LiveData<Resource<TubeFyCoreUniversalData>>get() = youTubeSearchDataPrivate
 
 
     fun setHtmlContent(content: ApiResponse?) {
 //        htmlContentPrivate.value = content
         viewModelScope.launch { localRepositorySource.manipulateYoutubeSearchStripData(content!!).collect{
 
-            formattedListPrivate.value=it
+            youTubeSearchDataPrivate.value=it
         }}
     }
 
@@ -79,7 +70,7 @@ class TubeFyViewModel @Inject constructor(val contextModule: ContextModule, val 
 
         viewModelScope.launch {
             remoteRepositorySource.getNewPipePageSearch(0, "aavesham", listOf(*contentFilter),"").collect{
-                newPipeSearchPrivate.value=it
+                youTubeSearchDataPrivate.value=it
             }
         }
     }
@@ -90,7 +81,7 @@ class TubeFyViewModel @Inject constructor(val contextModule: ContextModule, val 
 
         viewModelScope.launch {
             remoteRepositorySource.getNewPipePageNextSearch(0, "aavesham", listOf(*contentFilter),"",page).collect{
-                newPipeSearchNextPrivate.value=it
+                youTubeSearchDataPrivate.value=it
             }
         }
     }
@@ -101,7 +92,7 @@ class TubeFyViewModel @Inject constructor(val contextModule: ContextModule, val 
 
         viewModelScope.launch {
             remoteRepositorySource.requestYoutubeV3("snippet", "aavesham", nextYoutubeV3PageToken).collect{
-                youtubeV3SearchPrivate.value=it
+                youTubeSearchDataPrivate.value=it
             }
         }
     }

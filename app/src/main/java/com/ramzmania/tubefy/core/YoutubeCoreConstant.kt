@@ -22,4 +22,9 @@ object YoutubeCoreConstant {
     const val KEY_MAIN_PAGE_CHANGE = "key_main_page_change"
 
     const val NO_SERVICE_ID = -1
+    fun extractYoutubeVideoId(url: String): String? {
+        val regex = "^(?:https?://)?(?:www\\.|music\\.)?(?:youtube\\.com/(?:[^/\\n\\s]+/.+/|(?:v|e(?:mbed)?)|\\?v=|\\&v=|embed/|\\?video_id=|shorts/|watch\\?v=|\\&video_id=)|youtu\\.be/)([a-zA-Z0-9_-]{11}).*".toRegex()
+        val matchResult = regex.find(url)
+        return matchResult?.groups?.get(1)?.value
+    }
 }

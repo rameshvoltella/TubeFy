@@ -3,6 +3,8 @@ package com.ramzmania.tubefy.ui
 
 import android.util.Log
 import android.widget.Toast
+import com.ramzmania.tubefy.core.YoutubeCoreConstant.extractYoutubeVideoId
+import com.ramzmania.tubefy.core.dataformatter.YoutubeApiType
 import com.ramzmania.tubefy.core.dataformatter.dto.BasicResponse
 import com.ramzmania.tubefy.core.dataformatter.dto.StreamUrlData
 import com.ramzmania.tubefy.core.dataformatter.dto.TubeFyCoreTypeData
@@ -31,12 +33,8 @@ private var nextPage: Page? = null
     override fun getViewBinding() = KkBinding.inflate(layoutInflater)
 
     override fun observeViewModel() {
-        observe(viewModel.formattedList, ::handleFormatListResponse)
+        observe(viewModel.youTubeSearchData, ::handleYoutubeSearchListResponse)
         observe(viewModel.streamUrlData, ::HandleStreamUrlResponse)
-        observe(viewModel.newPipeSearch, ::HandleNewPipeSearchResponse)
-        observe(viewModel.newPipeSearchNext,::HandleNewPipeSearchNextResponse)
-        observe(viewModel.youtubeV3Search,::HandleYoutubeV3Response)
-
 
     }
 
@@ -94,31 +92,7 @@ private var nextPage: Page? = null
         return jsonAdapter.fromJson(jsonString)
     }
 
-    fun handleFormatListResponse(formatResponse: Resource<TubeFyCoreUniversalData>) {
-        when (formatResponse) {
-            is Resource.Loading -> {
-            }
 
-            is Resource.Success -> {
-//                Toast.makeText(applicationContext, ">" + "started done", 1).show()
-
-                Toast.makeText(
-                    applicationContext,
-                    "WEB SCRAPPING" + formatResponse.data!!.youtubeSortedData.youtubeSortedList!!.size,
-                    1
-                ).show()
-
-                viewModel.getStreamUrl(formatResponse.data!!.youtubeSortedData.youtubeSortedList!![0].videoId)
-
-
-            }
-
-            is Resource.DataError -> {
-            }
-
-            else -> {}
-        }
-    }
 
     private fun HandleStreamUrlResponse(resource: Resource<StreamUrlData>) {
         when (resource) {
@@ -134,60 +108,35 @@ private var nextPage: Page? = null
             else -> {}
         }
     }
-    fun HandleNewPipeSearchResponse(resource: Resource<TubeFyCoreUniversalData>) {
-        when (resource) {
-            is Resource.Loading -> {}
-            is Resource.Success -> {
-                nextPage=resource.data!!.youtubeSortedData.newPipePage
-                calculateSearchResult(resource.data!!.youtubeSortedData.youtubeSortedList!!.toMutableList())
-
-                Toast.makeText(applicationContext, "NEWPIPE HOME" + resource.data!!.youtubeSortedData.youtubeSortedList!!.size, 1).show()
-//                Log.d("url", "" + resource.data!!.streamUrl)
-//                calculateSearchResult(resource.data!!.relatedItems)
-            }
-
-            is Resource.DataError -> {
-            }
-
-            else -> {}
-        }
-
-    }
 
     private fun calculateSearchResult(relatedItems: MutableList<TubeFyCoreTypeData>) {
         for(data in relatedItems) {
             Log.d("onlynames",data.videoTitle+"<>"+data.videoId)
         }
     }
-//    private fun calculateSearchResult2(relatedItems: MutableList<InfoItem>) {
-//        for(data in relatedItems) {
-//            Log.d("onlynames",data.name)
-//        }
-//    }
 
-    fun HandleNewPipeSearchNextResponse(resource: Resource<TubeFyCoreUniversalData>) {
+    fun handleYoutubeSearchListResponse(resource: Resource<TubeFyCoreUniversalData>) {
         when (resource) {
             is Resource.Loading -> {}
             is Resource.Success -> {
-                nextPage=resource.data!!.youtubeSortedData.newPipePage
-                calculateSearchResult(resource.data!!.youtubeSortedData.youtubeSortedList!!.toMutableList())
-                Toast.makeText(applicationContext, "NEWPIPE Next" + resource.data!!.youtubeSortedData.youtubeSortedList!!.size, 1).show()
-
-//                Log.d("url", "" + resource.data!!.streamUrl)
-            }
-
-            is Resource.DataError -> {
-            }
-
-            else -> {}
-        }
-    }
-
-    fun HandleYoutubeV3Response(resource: Resource<TubeFyCoreUniversalData>) {
-        when (resource) {
-            is Resource.Loading -> {}
-            is Resource.Success -> {
-                Toast.makeText(applicationContext, "YOUTUBE V3>" + resource.data!!.youtubeSortedData.youtubeSortedList!!.size, 1).show()
+                var type="none"
+                if(resource.data?.apiType==YoutubeApiType.WEB_SCRAPPER)
+                {
+                    type="WEB"
+                }else  if(resource.data?.apiType==YoutubeApiType.YOUTUBE_V3_API)
+                {
+                    type="YOUTUBE V3"
+                }
+                else  if(resource.data?.apiType==YoutubeApiType.NEW_PIPE_API)
+                {
+                    type="NEWPIPE"
+                    nextPage=resource.data.youtubeSortedData.newPipePage
+                }
+                val videoID = extractYoutubeVideoId(
+                    resource.data?.youtubeSortedData?.youtubeSortedList?.get(0)?.videoId
+                    ?: "")
+                Toast.makeText(applicationContext, "$type ---- $videoID"+resource.data?.youtubeSortedData?.youtubeSortedList?.get(0)?.videoId, 1).show()
+                calculateSearchResult(resource.data?.youtubeSortedData?.youtubeSortedList!!.toMutableList())
 //                Log.d("url", "" + resource.data!!.streamUrl)
             }
 
