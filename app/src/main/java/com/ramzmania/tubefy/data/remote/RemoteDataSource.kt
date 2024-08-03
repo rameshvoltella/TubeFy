@@ -1,6 +1,7 @@
 package com.ramzmania.tubefy.data.remote
 
 import com.ramzmania.tubefy.core.dataformatter.dto.StreamUrlData
+import com.ramzmania.tubefy.core.dataformatter.dto.TubeFyCoreUniversalData
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.youtubeV3.YoutubeV3Response
 import org.schabi.newpipe.extractor.InfoItem
@@ -17,13 +18,13 @@ interface RemoteDataSource {
 
     /*NewPipe search sources*/
 
-    suspend fun getPageSearch( serviceId: Int, searchString: String,
+    suspend fun getNewPipePageSearch( serviceId: Int, searchString: String,
                                contentFilter: List<String?>,
-                               sortFilter: String):Resource<SearchInfo>
+                               sortFilter: String):Resource<TubeFyCoreUniversalData>
 
-    suspend fun getPageNextSearch(serviceId: Int, searchString: String,
+    suspend fun getNewPipePageNextSearch(serviceId: Int, searchString: String,
                                   contentFilter: List<String?>,
                                   sortFilter: String,page: Page
-    ):Resource<ListExtractor.InfoItemsPage<InfoItem>>
+    ):Resource<TubeFyCoreUniversalData>
 
 }

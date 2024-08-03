@@ -5,6 +5,8 @@ import android.util.Log
 import android.widget.Toast
 import com.ramzmania.tubefy.core.dataformatter.dto.BasicResponse
 import com.ramzmania.tubefy.core.dataformatter.dto.StreamUrlData
+import com.ramzmania.tubefy.core.dataformatter.dto.TubeFyCoreTypeData
+import com.ramzmania.tubefy.core.dataformatter.dto.TubeFyCoreUniversalData
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.youtubeV3.YoutubeV3Response
 import com.ramzmania.tubefy.data.dto.youtubestripper.ApiResponse
@@ -136,12 +138,14 @@ private var nextPage: Page? = null
             else -> {}
         }
     }
-    fun HandleNewPipeSearchResponse(resource: Resource<SearchInfo>) {
+    fun HandleNewPipeSearchResponse(resource: Resource<TubeFyCoreUniversalData>) {
         when (resource) {
             is Resource.Loading -> {}
             is Resource.Success -> {
-                nextPage=resource.data!!.nextPage
-                Toast.makeText(applicationContext, "NEWPIPE HOME" + resource.data!!.relatedItems[0].name, 1).show()
+                nextPage=resource.data!!.youtubeSortedData.newPipePage
+                calculateSearchResult(resource.data!!.youtubeSortedData.youtubeSortedList!!.toMutableList())
+
+                Toast.makeText(applicationContext, "NEWPIPE HOME" + resource.data!!.youtubeSortedData.youtubeSortedList!!.size, 1).show()
 //                Log.d("url", "" + resource.data!!.streamUrl)
 //                calculateSearchResult(resource.data!!.relatedItems)
             }
@@ -154,9 +158,9 @@ private var nextPage: Page? = null
 
     }
 
-    private fun calculateSearchResult(relatedItems: MutableList<InfoItem>) {
+    private fun calculateSearchResult(relatedItems: MutableList<TubeFyCoreTypeData>) {
         for(data in relatedItems) {
-            Log.d("onlynames",data.name+"<>"+data.url)
+            Log.d("onlynames",data.videoTitle+"<>"+data.videoId)
         }
     }
 //    private fun calculateSearchResult2(relatedItems: MutableList<InfoItem>) {
@@ -165,13 +169,14 @@ private var nextPage: Page? = null
 //        }
 //    }
 
-    fun HandleNewPipeSearchNextResponse(resource: Resource<ListExtractor.InfoItemsPage<InfoItem>>) {
+    fun HandleNewPipeSearchNextResponse(resource: Resource<TubeFyCoreUniversalData>) {
         when (resource) {
             is Resource.Loading -> {}
             is Resource.Success -> {
-                nextPage=resource.data!!.nextPage
-//                calculateSearchResult(resource.data.items)
-                Toast.makeText(applicationContext, "NEWPIPE NEXT>" + resource.data.items.size, 1).show()
+                nextPage=resource.data!!.youtubeSortedData.newPipePage
+                calculateSearchResult(resource.data!!.youtubeSortedData.youtubeSortedList!!.toMutableList())
+                Toast.makeText(applicationContext, "NEWPIPE Next" + resource.data!!.youtubeSortedData.youtubeSortedList!!.size, 1).show()
+
 //                Log.d("url", "" + resource.data!!.streamUrl)
             }
 

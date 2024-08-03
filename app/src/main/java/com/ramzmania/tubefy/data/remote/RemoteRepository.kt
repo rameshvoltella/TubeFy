@@ -1,6 +1,7 @@
 package com.ramzmania.tubefy.data.remote
 
 import com.ramzmania.tubefy.core.dataformatter.dto.StreamUrlData
+import com.ramzmania.tubefy.core.dataformatter.dto.TubeFyCoreUniversalData
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.youtubeV3.YoutubeV3Response
 import kotlinx.coroutines.flow.Flow
@@ -27,23 +28,23 @@ class RemoteRepository @Inject constructor(
         return flow { emit(remoteRepository.getStreamUrl(videoId)) }
     }
 
-    override suspend fun getPageSearch(
+    override suspend fun getNewPipePageSearch(
         serviceId: Int,
         searchString: String,
         contentFilter: List<String?>,
         sortFilter: String
-    ): Flow<Resource<SearchInfo>> {
-        return flow { emit(remoteRepository.getPageSearch(serviceId,searchString,contentFilter, sortFilter)) }
+    ): Flow<Resource<TubeFyCoreUniversalData>> {
+        return flow { emit(remoteRepository.getNewPipePageSearch(serviceId,searchString,contentFilter, sortFilter)) }
     }
 
-    override suspend fun getPageNextSearch(
+    override suspend fun getNewPipePageNextSearch(
         serviceId: Int,
         searchString: String,
         contentFilter: List<String?>,
         sortFilter: String,
         page: Page
-    ): Flow<Resource<ListExtractor.InfoItemsPage<InfoItem>>> {
-        return flow { emit(remoteRepository.getPageNextSearch(serviceId, searchString, contentFilter, sortFilter, page)) }
+    ): Flow<Resource<TubeFyCoreUniversalData>> {
+        return flow { emit(remoteRepository.getNewPipePageNextSearch(serviceId, searchString, contentFilter, sortFilter, page)) }
     }
 
 }

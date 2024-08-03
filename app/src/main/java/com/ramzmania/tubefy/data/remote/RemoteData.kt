@@ -91,12 +91,12 @@ constructor(
         }
     }
 
-    override suspend fun getPageSearch(
+    override suspend fun getNewPipePageSearch(
         serviceId: Int,
         searchString: String,
         contentFilter: List<String?>,
         sortFilter: String
-    ): Resource<SearchInfo> {
+    ): Resource<TubeFyCoreUniversalData> {
         var searchInfo: SearchInfo?=null
         withContext(Dispatchers.IO)
         {
@@ -105,31 +105,51 @@ constructor(
             when(result)
             {
                 is FormattingResult.SUCCESS ->{
-                    Log.d("TAGGIZ",""+result.data.youtubeSortedData.youtubeSortedList!!.size)
+//                    Log.d("TAGGIZ",""+result.data.youtubeSortedData.youtubeSortedList!!.size)
+                    Resource.Success(result)
 
                 }
                 is FormattingResult.FAILURE ->{
+                    Resource.DataError(NEW_PIPE_SEARCH_ERROR)
 
                 }
             }
 
         }
-        return if(searchInfo!=null)
-        {
-            Resource.Success(searchInfo!!)
-        }else
-        {
-            Resource.DataError(NEW_PIPE_SEARCH_ERROR)
+        return withContext(Dispatchers.IO) {
+            val pageSearchInfo = newPipeSearchFor(serviceId, searchString, contentFilter, sortFilter)
+
+            val result = newPipeFormatter.run(NewPipeSortingInput(pageSearchInfo.relatedItems,pageSearchInfo.nextPage))
+            when(result)
+            {
+                is FormattingResult.SUCCESS ->{
+//                    Log.d("TAGGIZ",""+result.data.youtubeSortedData.youtubeSortedList!!.size)
+                    Resource.Success(result.data)
+
+                }
+                is FormattingResult.FAILURE ->{
+                    Resource.DataError(NEW_PIPE_SEARCH_ERROR)
+
+                }
+            }
+
         }
+//        return if(searchInfo!=null)
+//        {
+//            Resource.Success(searchInfo!!)
+//        }else
+//        {
+//            Resource.DataError(NEW_PIPE_SEARCH_ERROR)
+//        }
     }
 
-    override suspend fun getPageNextSearch(
+    override suspend fun getNewPipePageNextSearch(
         serviceId: Int,
         searchString: String,
         contentFilter: List<String?>,
         sortFilter: String,
         page: Page
-    ): Resource<ListExtractor.InfoItemsPage<InfoItem>> {
+    ): Resource<TubeFyCoreUniversalData> {
         /* var nextPageSearchInfo:ListExtractor.InfoItemsPage<InfoItem>?=null
              withContext(Dispatchers.IO)
              {
@@ -149,16 +169,16 @@ constructor(
             when(result)
             {
                 is FormattingResult.SUCCESS ->{
-                    Log.d("TAGGIZNEXT",""+result.data.youtubeSortedData.youtubeSortedList!!.size)
+//                    Log.d("TAGGIZ",""+result.data.youtubeSortedData.youtubeSortedList!!.size)
+                    Resource.Success(result.data)
 
                 }
                 is FormattingResult.FAILURE ->{
+                    Resource.DataError(NEW_PIPE_SEARCH_ERROR)
 
                 }
             }
-            nextPageSearchInfo.let {
-                Resource.Success(it)
-            } ?: Resource.DataError(NEW_PIPE_SEARCH_MORE_ERROR)
+
         }
 
     }
