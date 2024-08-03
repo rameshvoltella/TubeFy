@@ -3,12 +3,8 @@ package com.ramzmania.tubefy.data.remote
 import com.ramzmania.tubefy.core.dataformatter.dto.StreamUrlData
 import com.ramzmania.tubefy.core.dataformatter.dto.TubeFyCoreUniversalData
 import com.ramzmania.tubefy.data.Resource
-import com.ramzmania.tubefy.data.dto.youtubeV3.YoutubeV3Response
 import kotlinx.coroutines.flow.Flow
-import org.schabi.newpipe.extractor.InfoItem
-import org.schabi.newpipe.extractor.ListExtractor
 import org.schabi.newpipe.extractor.Page
-import org.schabi.newpipe.extractor.search.SearchInfo
 
 interface RemoteRepositorySource {
     suspend fun getStreamUrl(videoId: String): Flow<Resource<StreamUrlData>>
@@ -24,6 +20,6 @@ interface RemoteRepositorySource {
     ):Flow<Resource<TubeFyCoreUniversalData>>
    suspend fun requestYoutubeV3(part: String,
                                 searchQuery: String,
-                                pageToken: String?): Flow<Resource<YoutubeV3Response>>
+                                pageToken: String?): Flow<Resource<TubeFyCoreUniversalData>>
 
 }

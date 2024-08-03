@@ -1,6 +1,5 @@
 package com.ramzmania.tubefy.data.remote
 
-import android.util.Log
 import com.ramzmania.tubefy.core.YoutubeCoreConstant
 import com.ramzmania.tubefy.core.YoutubeCoreConstant.YOUTUBE_V3_MAX_RESULT
 import com.ramzmania.tubefy.core.dataformatter.FormattingResult
@@ -8,22 +7,21 @@ import com.ramzmania.tubefy.core.dataformatter.dto.NewPipeSortingInput
 import com.ramzmania.tubefy.core.dataformatter.newpipe.NewPipeDataFormatter
 import com.ramzmania.tubefy.core.dataformatter.dto.StreamUrlData
 import com.ramzmania.tubefy.core.dataformatter.dto.TubeFyCoreUniversalData
+import com.ramzmania.tubefy.core.dataformatter.youtubeV3.YoutubeV3Formatter
 import com.ramzmania.tubefy.core.newpipeextractor.newPipeSearchFor
 import com.ramzmania.tubefy.core.newpipeextractor.newPipeSearchNextPageFor
 import com.ramzmania.tubefy.data.NetworkConnectivity
 import com.ramzmania.tubefy.data.Resource
-import com.ramzmania.tubefy.data.dto.youtubeV3.YoutubeV3Response
+import com.ramzmania.tubefy.data.dto.youtubeV3.YoutubeSearchResponse
 import com.ramzmania.tubefy.data.remote.api.ApiServices
 import com.ramzmania.tubefy.data.remote.api.ServiceGenerator
 import com.ramzmania.tubefy.errors.NETWORK_ERROR
 import com.ramzmania.tubefy.errors.NEW_PIPE_SEARCH_ERROR
-import com.ramzmania.tubefy.errors.NEW_PIPE_SEARCH_MORE_ERROR
 import com.ramzmania.tubefy.errors.NO_INTERNET_CONNECTION
 import com.ramzmania.tubefy.errors.SERVER_ERROR
+import com.ramzmania.tubefy.errors.YOUTUBE_V3_SEARCH_ERROR
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.schabi.newpipe.extractor.InfoItem
-import org.schabi.newpipe.extractor.ListExtractor
 import org.schabi.newpipe.extractor.Page
 import org.schabi.newpipe.extractor.search.SearchInfo
 import org.schabi.newpipe.extractor.services.youtube.YoutubeService
@@ -36,13 +34,13 @@ class RemoteData@Inject
 constructor(
     private val serviceGenerator: ServiceGenerator,
     private val networkConnectivity: NetworkConnectivity,
-    private val newPipeFormatter: NewPipeDataFormatter,
+    private val newPipeFormatter: NewPipeDataFormatter,private val youtubeV3Formatter: YoutubeV3Formatter
 ) :RemoteDataSource {
     override suspend fun requestYoutubeV3(
         part: String,
         searchQuery: String,
         pageToken: String?
-    ): Resource<YoutubeV3Response> {
+    ): Resource<TubeFyCoreUniversalData> {
         val youtubeV3Service = serviceGenerator.createService(ApiServices::class.java)
 
         return when (val response = processCall {
@@ -52,13 +50,23 @@ constructor(
         }) {
             is Any -> {
                 try {
-                    (response is YoutubeV3Response).let {
+                    (response is YoutubeSearchResponse).let {
+                        val result=youtubeV3Formatter.run(response as YoutubeSearchResponse)
+                        return when(result)
+                        {
+                            is FormattingResult.SUCCESS->{  Resource.Success(result.data)
+                            }
+                            is FormattingResult.FAILURE->{Resource.DataError(YOUTUBE_V3_SEARCH_ERROR)}
 
-                        Resource.Success(data = response as YoutubeV3Response)
+                        }
+//                        Resource.Success(result)
+//                        Resource.DataError(YOUTUBE_V3_SEARCH_ERROR)
                     }
+//                    Resource.DataError(YOUTUBE_V3_SEARCH_ERROR)
+
                 } catch (e: Exception) {
                     e.printStackTrace()
-                    Resource.DataError(errorCode = response as Int)
+                    Resource.DataError(YOUTUBE_V3_SEARCH_ERROR)
                 }
             }
             else -> {
@@ -106,6 +114,7 @@ constructor(
             {
                 is FormattingResult.SUCCESS ->{
 //                    Log.d("TAGGIZ",""+result.data.youtubeSortedData.youtubeSortedList!!.size)
+
                     Resource.Success(result)
 
                 }

@@ -9,17 +9,13 @@ import com.ramzmania.tubefy.core.dataformatter.dto.TubeFyCoreUniversalData
 import com.ramzmania.tubefy.core.yotubewebscrapper.YoutubeJsonScrapping
 import com.ramzmania.tubefy.data.ContextModule
 import com.ramzmania.tubefy.data.Resource
-import com.ramzmania.tubefy.data.dto.youtubeV3.YoutubeV3Response
 import com.ramzmania.tubefy.data.dto.youtubestripper.ApiResponse
 import com.ramzmania.tubefy.data.local.LocalRepositorySource
 import com.ramzmania.tubefy.data.remote.RemoteRepositorySource
 import com.ramzmania.tubefy.ui.base.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
-import org.schabi.newpipe.extractor.InfoItem
-import org.schabi.newpipe.extractor.ListExtractor
 import org.schabi.newpipe.extractor.Page
-import org.schabi.newpipe.extractor.search.SearchInfo
 import javax.inject.Inject
 
 @HiltViewModel
@@ -51,8 +47,8 @@ class TubeFyViewModel @Inject constructor(val contextModule: ContextModule, val 
     private val newPipeSearchNextPrivate=MutableLiveData<Resource<TubeFyCoreUniversalData>>()
     val newPipeSearchNext:LiveData<Resource<TubeFyCoreUniversalData>>get() = newPipeSearchNextPrivate
 
-    private val youtubeV3SearchPrivate=MutableLiveData<Resource<YoutubeV3Response>>()
-    val youtubeV3Search:LiveData<Resource<YoutubeV3Response>>get() = youtubeV3SearchPrivate
+    private val youtubeV3SearchPrivate=MutableLiveData<Resource<TubeFyCoreUniversalData>>()
+    val youtubeV3Search:LiveData<Resource<TubeFyCoreUniversalData>>get() = youtubeV3SearchPrivate
 
 
     fun setHtmlContent(content: ApiResponse?) {

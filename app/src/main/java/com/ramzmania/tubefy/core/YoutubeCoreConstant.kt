@@ -3,7 +3,7 @@ package com.ramzmania.tubefy.core
 object YoutubeCoreConstant {
     const val  YOUTUBE_V3_BASE_URL ="https://www.googleapis.com/youtube/v3/"
     const val  YOUTUBE_V3API_KEY="AIzaSyDD7uj_20UvVdn4DYZA31WBXi44QnPg3-g"
-    const val  YOUTUBE_V3_MAX_RESULT=30
+    const val  YOUTUBE_V3_MAX_RESULT=20
 
 
     const val START_TAG = "var ytInitialData"

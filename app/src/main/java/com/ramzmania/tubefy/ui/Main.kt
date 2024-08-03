@@ -8,7 +8,6 @@ import com.ramzmania.tubefy.core.dataformatter.dto.StreamUrlData
 import com.ramzmania.tubefy.core.dataformatter.dto.TubeFyCoreTypeData
 import com.ramzmania.tubefy.core.dataformatter.dto.TubeFyCoreUniversalData
 import com.ramzmania.tubefy.data.Resource
-import com.ramzmania.tubefy.data.dto.youtubeV3.YoutubeV3Response
 import com.ramzmania.tubefy.data.dto.youtubestripper.ApiResponse
 import com.ramzmania.tubefy.data.observe
 import com.ramzmania.tubefy.databinding.KkBinding
@@ -17,10 +16,7 @@ import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.hilt.android.AndroidEntryPoint
-import org.schabi.newpipe.extractor.InfoItem
-import org.schabi.newpipe.extractor.ListExtractor
 import org.schabi.newpipe.extractor.Page
-import org.schabi.newpipe.extractor.search.SearchInfo
 
 @AndroidEntryPoint
 class Main : BaseBinderActivity<KkBinding, TubeFyViewModel>() {
@@ -187,11 +183,11 @@ private var nextPage: Page? = null
         }
     }
 
-    fun HandleYoutubeV3Response(resource: Resource<YoutubeV3Response>) {
+    fun HandleYoutubeV3Response(resource: Resource<TubeFyCoreUniversalData>) {
         when (resource) {
             is Resource.Loading -> {}
             is Resource.Success -> {
-                Toast.makeText(applicationContext, "YOUTUBE V3>" + resource.data!!.items.size, 1).show()
+                Toast.makeText(applicationContext, "YOUTUBE V3>" + resource.data!!.youtubeSortedData.youtubeSortedList!!.size, 1).show()
 //                Log.d("url", "" + resource.data!!.streamUrl)
             }
 
