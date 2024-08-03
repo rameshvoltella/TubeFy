@@ -94,7 +94,7 @@ private var nextPage: Page? = null
         return jsonAdapter.fromJson(jsonString)
     }
 
-    fun handleFormatListResponse(formatResponse: Resource<BasicResponse>) {
+    fun handleFormatListResponse(formatResponse: Resource<TubeFyCoreUniversalData>) {
         when (formatResponse) {
             is Resource.Loading -> {
             }
@@ -104,11 +104,11 @@ private var nextPage: Page? = null
 
                 Toast.makeText(
                     applicationContext,
-                    "WEB SCRAPPING" + formatResponse.data!!.sortedVideoDataList.size,
+                    "WEB SCRAPPING" + formatResponse.data!!.youtubeSortedData.youtubeSortedList!!.size,
                     1
                 ).show()
 
-                viewModel.getStreamUrl(formatResponse.data!!.sortedVideoDataList[0].videoId)
+                viewModel.getStreamUrl(formatResponse.data!!.youtubeSortedData.youtubeSortedList!![0].videoId)
 
 
             }

@@ -34,8 +34,8 @@ class TubeFyViewModel @Inject constructor(val contextModule: ContextModule, val 
     private val htmlContentPrivate = MutableLiveData<String>()
     val htmlContent: LiveData<String> get() = htmlContentPrivate
 
-    private val formattedListPrivate = MutableLiveData<Resource<BasicResponse>>()
-    val formattedList: LiveData<Resource<BasicResponse>> get() = formattedListPrivate
+    private val formattedListPrivate = MutableLiveData<Resource<TubeFyCoreUniversalData>>()
+    val formattedList: LiveData<Resource<TubeFyCoreUniversalData>> get() = formattedListPrivate
 
     private val streamUrlDataPrivate=MutableLiveData<Resource<StreamUrlData>>()
      val streamUrlData:LiveData<Resource<StreamUrlData>>get() = streamUrlDataPrivate
