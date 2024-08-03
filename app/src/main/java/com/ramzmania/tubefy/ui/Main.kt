@@ -1,8 +1,11 @@
 package com.ramzmania.tubefy.ui
 
 
+import android.content.Intent
+import android.net.Uri
 import android.util.Log
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import com.ramzmania.tubefy.core.YoutubeCoreConstant.extractYoutubeVideoId
 import com.ramzmania.tubefy.core.dataformatter.YoutubeApiType
 import com.ramzmania.tubefy.core.dataformatter.dto.BasicResponse
@@ -100,6 +103,7 @@ private var nextPage: Page? = null
             is Resource.Success -> {
                 Toast.makeText(applicationContext, "WEB SCAPPING DATA>" + resource.data!!.streamUrl, 1).show()
                 Log.d("url", "" + resource.data!!.streamUrl)
+                openUrlInBrowser( resource.data!!.streamUrl)
             }
 
             is Resource.DataError -> {
@@ -132,11 +136,12 @@ private var nextPage: Page? = null
                     type="NEWPIPE"
                     nextPage=resource.data.youtubeSortedData.newPipePage
                 }
+                viewModel.getStreamUrl(resource.data?.youtubeSortedData?.youtubeSortedList?.get(0)?.videoId!!)
                 val videoID = extractYoutubeVideoId(
                     resource.data?.youtubeSortedData?.youtubeSortedList?.get(0)?.videoId
                     ?: "")
                 Toast.makeText(applicationContext, "$type ---- $videoID"+resource.data?.youtubeSortedData?.youtubeSortedList?.get(0)?.videoId, 1).show()
-                calculateSearchResult(resource.data?.youtubeSortedData?.youtubeSortedList!!.toMutableList())
+//                calculateSearchResult(resource.data?.youtubeSortedData?.youtubeSortedList!!.toMutableList())
 //                Log.d("url", "" + resource.data!!.streamUrl)
             }
 
@@ -146,7 +151,14 @@ private var nextPage: Page? = null
             else -> {}
         }
     }
-
+    private fun openUrlInBrowser(url: String) {
+        val intent = Intent(Intent.ACTION_VIEW)
+        intent.data = Uri.parse(url)
+        // Verify that there's at least one app that can handle this intent
+//        if (intent.resolveActivity(packageManager) != null) {
+            startActivity(intent)
+//        }
+    }
 }
 
 

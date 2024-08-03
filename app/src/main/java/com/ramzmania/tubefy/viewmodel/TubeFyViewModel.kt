@@ -3,6 +3,8 @@ package com.ramzmania.tubefy.viewmodel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import com.ramzmania.tubefy.core.YoutubeCoreConstant
+import com.ramzmania.tubefy.core.YoutubeCoreConstant.extractYoutubeVideoId
 import com.ramzmania.tubefy.core.dataformatter.dto.StreamUrlData
 import com.ramzmania.tubefy.core.dataformatter.dto.TubeFyCoreUniversalData
 import com.ramzmania.tubefy.core.yotubewebextractor.YoutubeJsonScrapping
@@ -53,7 +55,8 @@ class TubeFyViewModel @Inject constructor(val contextModule: ContextModule, val 
     fun getStreamUrl(videoId:String)
     {
         viewModelScope.launch {
-            remoteRepositorySource.getStreamUrl(videoId).collect{
+            remoteRepositorySource.getStreamUrl(extractYoutubeVideoId(videoId
+            )!!).collect{
                 streamUrlDataPrivate.value=it
             }
         }
