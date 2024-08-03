@@ -5,9 +5,9 @@ import com.ramzmania.tubefy.core.YoutubeCoreConstant
 import com.ramzmania.tubefy.core.YoutubeCoreConstant.YOUTUBE_V3_MAX_RESULT
 import com.ramzmania.tubefy.core.dataformatter.NewPipeDataFormatter
 import com.ramzmania.tubefy.core.dataformatter.StreamUrlData
+import com.ramzmania.tubefy.core.dataformatter.TubeFyCoreBaseData
 import com.ramzmania.tubefy.core.newpipeextractor.newPipeSearchFor
 import com.ramzmania.tubefy.core.newpipeextractor.newPipeSearchNextPageFor
-import com.ramzmania.tubefy.data.ContextModule
 import com.ramzmania.tubefy.data.NetworkConnectivity
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.youtubeV3.YoutubeV3Response
@@ -99,8 +99,9 @@ constructor(
         withContext(Dispatchers.IO)
         {
             searchInfo= newPipeSearchFor(serviceId, searchString, contentFilter, sortFilter)
-            val result = newPipeFormatter.run(searchInfo.relatedItems)
-            Log.d("TAGGIZ",""+result?.size)
+            val result = newPipeFormatter.run(searchInfo!!.relatedItems)
+            val baseDataModel=TubeFyCoreBaseData(result,searchInfo?.nextPage)
+            Log.d("TAGGIZ",""+baseDataModel.youtubeSortedList!!.size)
 
         }
         return if(searchInfo!=null)
@@ -133,6 +134,9 @@ constructor(
              }*/
         return withContext(Dispatchers.IO) {
             val nextPageSearchInfo = newPipeSearchNextPageFor(serviceId, searchString, contentFilter, sortFilter, page)
+            val result = newPipeFormatter.run(nextPageSearchInfo.items)
+            val baseDataModel=TubeFyCoreBaseData(result,nextPageSearchInfo.nextPage)
+            Log.d("TAGGIZ",""+baseDataModel.youtubeSortedList!!.size)
             nextPageSearchInfo.let {
                 Resource.Success(it)
             } ?: Resource.DataError(NEW_PIPE_SEARCH_MORE_ERROR)
