@@ -3,6 +3,7 @@ package com.ramzmania.tubefy.data.remote
 import android.util.Log
 import com.ramzmania.tubefy.core.YoutubeCoreConstant
 import com.ramzmania.tubefy.core.YoutubeCoreConstant.YOUTUBE_V3_MAX_RESULT
+import com.ramzmania.tubefy.core.dataformatter.FormattingResult
 import com.ramzmania.tubefy.core.dataformatter.dto.NewPipeSortingInput
 import com.ramzmania.tubefy.core.dataformatter.newpipe.NewPipeDataFormatter
 import com.ramzmania.tubefy.core.dataformatter.dto.StreamUrlData
@@ -101,7 +102,16 @@ constructor(
         {
             searchInfo= newPipeSearchFor(serviceId, searchString, contentFilter, sortFilter)
             val result = newPipeFormatter.run(NewPipeSortingInput(searchInfo!!.relatedItems,searchInfo!!.nextPage))
-            Log.d("TAGGIZ",""+result.youtubeSortedData.youtubeSortedList!!.size)
+            when(result)
+            {
+                is FormattingResult.SUCCESS ->{
+                    Log.d("TAGGIZ",""+result.data.youtubeSortedData.youtubeSortedList!!.size)
+
+                }
+                is FormattingResult.FAILURE ->{
+
+                }
+            }
 
         }
         return if(searchInfo!=null)
@@ -136,7 +146,16 @@ constructor(
             val nextPageSearchInfo = newPipeSearchNextPageFor(serviceId, searchString, contentFilter, sortFilter, page)
             val result = newPipeFormatter.run(NewPipeSortingInput(nextPageSearchInfo.items,nextPageSearchInfo.nextPage))
 //            val baseDataModel= TubeFyCoreUniversalData(NewPipeSortingInput(result,nextPageSearchInfo.nextPage))
-            Log.d("TAGGIZ",""+result.youtubeSortedData.youtubeSortedList!!.size)
+            when(result)
+            {
+                is FormattingResult.SUCCESS ->{
+                    Log.d("TAGGIZNEXT",""+result.data.youtubeSortedData.youtubeSortedList!!.size)
+
+                }
+                is FormattingResult.FAILURE ->{
+
+                }
+            }
             nextPageSearchInfo.let {
                 Resource.Success(it)
             } ?: Resource.DataError(NEW_PIPE_SEARCH_MORE_ERROR)

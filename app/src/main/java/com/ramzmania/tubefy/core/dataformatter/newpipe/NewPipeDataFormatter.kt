@@ -1,5 +1,6 @@
 package com.ramzmania.tubefy.core.dataformatter.newpipe
 
+import com.ramzmania.tubefy.core.dataformatter.FormattingResult
 import com.ramzmania.tubefy.core.dataformatter.UniversalYoutubeDataFormatter
 import com.ramzmania.tubefy.core.dataformatter.YoutubeApiType
 import com.ramzmania.tubefy.core.dataformatter.dto.NewPipeSortingInput
@@ -14,15 +15,30 @@ import javax.inject.Singleton
 
 @Singleton
 class NewPipeDataFormatter @Inject constructor():
-    UniversalYoutubeDataFormatter<NewPipeSortingInput, TubeFyCoreUniversalData>() {
-    override suspend fun runFormatting(input: NewPipeSortingInput): TubeFyCoreUniversalData {
+    UniversalYoutubeDataFormatter<NewPipeSortingInput, FormattingResult<TubeFyCoreUniversalData,Exception>>() {
+    override suspend fun runFormatting(input: NewPipeSortingInput): FormattingResult<TubeFyCoreUniversalData,Exception> {
         return withContext(Dispatchers.IO){
-            val sortedVideoList: ArrayList<TubeFyCoreTypeData> =ArrayList()
-            for(newPipeSearchData in input.result)
+            try {
+                val sortedVideoList: ArrayList<TubeFyCoreTypeData> = ArrayList()
+                for (newPipeSearchData in input.result) {
+                    sortedVideoList.add(
+                        TubeFyCoreTypeData(
+                            newPipeSearchData.url,
+                            newPipeSearchData.name,
+                            newPipeSearchData.thumbnails[0].url
+                        )
+                    )
+                }
+
+                FormattingResult.SUCCESS( TubeFyCoreUniversalData(
+                    TubeFyCoreFormattedData(sortedVideoList, input.nextPage),
+                    YoutubeApiType.NEW_PIPE_API
+                ))
+
+            }catch (ex:Exception)
             {
-                sortedVideoList.add(TubeFyCoreTypeData(newPipeSearchData.url,newPipeSearchData.name,newPipeSearchData.thumbnails[0].url))
+                FormattingResult.FAILURE(Exception("Unable to get Youtube URL"))
             }
-            TubeFyCoreUniversalData(TubeFyCoreFormattedData(sortedVideoList,input.nextPage),YoutubeApiType.NEW_PIPE_API)
         }
 
     }
