@@ -3,7 +3,7 @@ package com.ramzmania.tubefy.di
 import android.content.Context
 import android.webkit.WebView
 import com.ramzmania.tubefy.core.newpipeextractor.PipeDownloader
-import com.ramzmania.tubefy.core.yotubewebscrapper.YoutubeJsonScrapping
+import com.ramzmania.tubefy.core.yotubewebextractor.YoutubeJsonScrapping
 import com.ramzmania.tubefy.data.ContextModule
 import com.ramzmania.tubefy.data.Network
 import com.ramzmania.tubefy.data.NetworkConnectivity

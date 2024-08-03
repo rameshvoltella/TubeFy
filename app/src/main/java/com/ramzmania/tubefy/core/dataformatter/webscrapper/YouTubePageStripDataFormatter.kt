@@ -1,4 +1,4 @@
-package com.ramzmania.tubefy.core.dataformatter.stripper
+package com.ramzmania.tubefy.core.dataformatter.webscrapper
 
 import android.util.Log
 import com.ramzmania.tubefy.core.dataformatter.dto.TubeFyCoreTypeData

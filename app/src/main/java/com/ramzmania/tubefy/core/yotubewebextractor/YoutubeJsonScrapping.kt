@@ -1,4 +1,4 @@
-package com.ramzmania.tubefy.core.yotubewebscrapper
+package com.ramzmania.tubefy.core.yotubewebextractor
 
 import android.webkit.WebView
 import android.webkit.WebViewClient

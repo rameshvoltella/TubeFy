@@ -6,7 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.ramzmania.tubefy.core.dataformatter.dto.BasicResponse
 import com.ramzmania.tubefy.core.dataformatter.dto.StreamUrlData
 import com.ramzmania.tubefy.core.dataformatter.dto.TubeFyCoreUniversalData
-import com.ramzmania.tubefy.core.yotubewebscrapper.YoutubeJsonScrapping
+import com.ramzmania.tubefy.core.yotubewebextractor.YoutubeJsonScrapping
 import com.ramzmania.tubefy.data.ContextModule
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.youtubestripper.ApiResponse
