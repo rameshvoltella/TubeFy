@@ -5,10 +5,8 @@ import android.content.Intent
 import android.net.Uri
 import android.util.Log
 import android.widget.Toast
-import androidx.core.content.ContextCompat
 import com.ramzmania.tubefy.core.YoutubeCoreConstant.extractYoutubeVideoId
 import com.ramzmania.tubefy.core.dataformatter.YoutubeApiType
-import com.ramzmania.tubefy.core.dataformatter.dto.BasicResponse
 import com.ramzmania.tubefy.core.dataformatter.dto.StreamUrlData
 import com.ramzmania.tubefy.core.dataformatter.dto.TubeFyCoreTypeData
 import com.ramzmania.tubefy.core.dataformatter.dto.TubeFyCoreUniversalData

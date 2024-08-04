@@ -3,7 +3,7 @@ package com.ramzmania.tubefy.data.remote
 import com.ramzmania.tubefy.core.YoutubeCoreConstant
 import com.ramzmania.tubefy.core.YoutubeCoreConstant.YOUTUBE_V3_MAX_RESULT
 import com.ramzmania.tubefy.core.dataformatter.FormattingResult
-import com.ramzmania.tubefy.core.dataformatter.dto.NewPipeSortingInput
+import com.ramzmania.tubefy.core.dataformatter.dto.NewPipeSortingData
 import com.ramzmania.tubefy.core.dataformatter.newpipe.NewPipeDataFormatter
 import com.ramzmania.tubefy.core.dataformatter.dto.StreamUrlData
 import com.ramzmania.tubefy.core.dataformatter.dto.TubeFyCoreUniversalData
@@ -109,7 +109,7 @@ constructor(
         withContext(Dispatchers.IO)
         {
             searchInfo= newPipeSearchFor(serviceId, searchString, contentFilter, sortFilter)
-            val result = newPipeFormatter.run(NewPipeSortingInput(searchInfo!!.relatedItems,searchInfo!!.nextPage))
+            val result = newPipeFormatter.run(NewPipeSortingData(searchInfo!!.relatedItems,searchInfo!!.nextPage))
             when(result)
             {
                 is FormattingResult.SUCCESS ->{
@@ -128,7 +128,7 @@ constructor(
         return withContext(Dispatchers.IO) {
             val pageSearchInfo = newPipeSearchFor(serviceId, searchString, contentFilter, sortFilter)
 
-            val result = newPipeFormatter.run(NewPipeSortingInput(pageSearchInfo.relatedItems,pageSearchInfo.nextPage))
+            val result = newPipeFormatter.run(NewPipeSortingData(pageSearchInfo.relatedItems,pageSearchInfo.nextPage))
             when(result)
             {
                 is FormattingResult.SUCCESS ->{
@@ -173,7 +173,7 @@ constructor(
              }*/
         return withContext(Dispatchers.IO) {
             val nextPageSearchInfo = newPipeSearchNextPageFor(serviceId, searchString, contentFilter, sortFilter, page)
-            val result = newPipeFormatter.run(NewPipeSortingInput(nextPageSearchInfo.items,nextPageSearchInfo.nextPage))
+            val result = newPipeFormatter.run(NewPipeSortingData(nextPageSearchInfo.items,nextPageSearchInfo.nextPage))
 //            val baseDataModel= TubeFyCoreUniversalData(NewPipeSortingInput(result,nextPageSearchInfo.nextPage))
             when(result)
             {

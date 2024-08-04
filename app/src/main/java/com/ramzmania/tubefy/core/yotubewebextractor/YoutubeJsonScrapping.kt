@@ -1,5 +1,8 @@
 package com.ramzmania.tubefy.core.yotubewebextractor
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import com.ramzmania.tubefy.core.YoutubeCoreConstant
@@ -13,7 +16,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class YoutubeJsonScrapping constructor(val webView: WebView) {
+class YoutubeJsonScrapping constructor(val webView: WebView,val context : Context) {
  private val sharedJsonContentPrivate= MutableSharedFlow<ApiResponse?>()
     val sharedJsonContent:SharedFlow<ApiResponse?>  = sharedJsonContentPrivate
     var alreadyEvaluated = false;
@@ -29,7 +32,7 @@ class YoutubeJsonScrapping constructor(val webView: WebView) {
                         override fun onPageFinished(view: WebView?, url: String?) {
                             super.onPageFinished(view, url)
 //                            CoroutineScope(Dispatchers.IO).launch {
-                                getHtmlContent(webView)
+                                get2HtmlContent(webView)
 //                            }
                         }
                     }
@@ -61,6 +64,38 @@ class YoutubeJsonScrapping constructor(val webView: WebView) {
                     passDatas(parseJson(result))
 
                 }
+            }
+        } else {
+            alreadyEvaluated = false
+        }
+
+    }
+    private  fun get2HtmlContent(webView: WebView) {
+        if (!alreadyEvaluated) {
+            alreadyEvaluated = true
+            webView.evaluateJavascript("(function() { return document.documentElement.outerHTML; })();") { html ->
+                val cleanHtml = html.replace("\\u003C", "<").replace("\\u003E", ">")
+                var result = decodeHexString(
+                    extractDataBetween(
+                        cleanHtml,
+                        "initialData.push({path: '\\\\/search', params",
+                        "'});ytcfg.set"
+                    ) + ""
+                )
+                result=getDataSubstring(result)
+                result=result.replace("\\\\\\\\\"", "")
+                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                val clip = ClipData.newPlainText("label", result)
+                clipboard.setPrimaryClip(clip)
+//                getDataSubstring
+                result = result.replaceFirst("= '{", "{").replaceFirst("';", "")
+                    .replace("\\\\\\\\\"", "")
+////                webViewModel.setHtmlContent(result)
+//                CoroutineScope(Dispatchers.IO).launch {
+//
+//                    passDatas(parseJson(result))
+//
+//                }
             }
         } else {
             alreadyEvaluated = false
@@ -116,5 +151,14 @@ class YoutubeJsonScrapping constructor(val webView: WebView) {
             .build()
         val jsonAdapter = moshi.adapter(ApiResponse::class.java)
         return jsonAdapter.fromJson(jsonString)
+    }
+    fun getDataSubstring(jsonString: String): String {
+        val key = "data: '"
+        val startIndex = jsonString.indexOf(key)
+        return if (startIndex != -1) {
+            jsonString.substring(startIndex + key.length)
+        } else {
+            ""
+        }
     }
 }

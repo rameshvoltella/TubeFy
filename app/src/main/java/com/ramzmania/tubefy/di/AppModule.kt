@@ -35,7 +35,7 @@ class AppModule {
     @Provides
     @Singleton
     fun provideYoutubeJsonScrapping(@ApplicationContext context: Context): YoutubeJsonScrapping {
-        return YoutubeJsonScrapping(WebView(context))
+        return YoutubeJsonScrapping(WebView(context),context)
     }
 //    @Provides
 //    @Singleton

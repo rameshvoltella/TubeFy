@@ -3,20 +3,19 @@ package com.ramzmania.tubefy.core.dataformatter.newpipe
 import com.ramzmania.tubefy.core.dataformatter.FormattingResult
 import com.ramzmania.tubefy.core.dataformatter.UniversalYoutubeDataFormatter
 import com.ramzmania.tubefy.core.dataformatter.YoutubeApiType
-import com.ramzmania.tubefy.core.dataformatter.dto.NewPipeSortingInput
+import com.ramzmania.tubefy.core.dataformatter.dto.NewPipeSortingData
 import com.ramzmania.tubefy.core.dataformatter.dto.TubeFyCoreFormattedData
 import com.ramzmania.tubefy.core.dataformatter.dto.TubeFyCoreTypeData
 import com.ramzmania.tubefy.core.dataformatter.dto.TubeFyCoreUniversalData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.schabi.newpipe.extractor.InfoItem
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class NewPipeDataFormatter @Inject constructor():
-    UniversalYoutubeDataFormatter<NewPipeSortingInput, FormattingResult<TubeFyCoreUniversalData,Exception>>() {
-    override suspend fun runFormatting(input: NewPipeSortingInput): FormattingResult<TubeFyCoreUniversalData,Exception> {
+    UniversalYoutubeDataFormatter<NewPipeSortingData, FormattingResult<TubeFyCoreUniversalData,Exception>>() {
+    override suspend fun runFormatting(input: NewPipeSortingData): FormattingResult<TubeFyCoreUniversalData,Exception> {
         return withContext(Dispatchers.IO){
             try {
                 val sortedVideoList: ArrayList<TubeFyCoreTypeData> = ArrayList()
