@@ -32,7 +32,7 @@ class YoutubeJsonScrapping constructor(val webView: WebView,val context : Contex
                         override fun onPageFinished(view: WebView?, url: String?) {
                             super.onPageFinished(view, url)
 //                            CoroutineScope(Dispatchers.IO).launch {
-                            getMusicHomeHtmlContent(webView)
+                            getMusicPlayListHtmlContent(webView)
 //                            }
                         }
                     }
@@ -104,6 +104,39 @@ class YoutubeJsonScrapping constructor(val webView: WebView,val context : Contex
     }
 
     private  fun getMusicHomeHtmlContent(webView: WebView) {
+        if (!alreadyEvaluated) {
+            alreadyEvaluated = true
+            webView.evaluateJavascript("(function() { return document.documentElement.outerHTML; })();") { html ->
+                val cleanHtml = html.replace("\\u003C", "<").replace("\\u003E", ">")
+                var result = decodeHexString(
+                    extractDataBetween(
+                        cleanHtml,
+                        "initialData.push({path: '\\\\/browse', params",
+                        "'});ytcfg.set"
+                    ) + ""
+                )
+                result=getDataSubstring(result)
+                result=result.replace("\\\\\\\\\"", "")
+                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                val clip = ClipData.newPlainText("label", result)
+                clipboard.setPrimaryClip(clip)
+//                getDataSubstring
+                result = result.replaceFirst("= '{", "{").replaceFirst("';", "")
+                    .replace("\\\\\\\\\"", "")
+////                webViewModel.setHtmlContent(result)
+//                CoroutineScope(Dispatchers.IO).launch {
+//
+//                    passDatas(parseJson(result))
+//
+//                }
+            }
+        } else {
+            alreadyEvaluated = false
+        }
+
+    }
+
+    private  fun getMusicPlayListHtmlContent(webView: WebView) {
         if (!alreadyEvaluated) {
             alreadyEvaluated = true
             webView.evaluateJavascript("(function() { return document.documentElement.outerHTML; })();") { html ->
