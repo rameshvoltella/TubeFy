@@ -77,7 +77,10 @@ class TubeFyViewModel @Inject constructor(
 
     fun setHtmlMusicContent(content: MusicHomeResponse?) {
 //        htmlContentPrivate.value = content
-        val videoInfoList = extractVideoInfo(content!!.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()?.tabRenderer?.content?.sectionListRenderer?.contents?.flatMap { it.musicCarouselShelfRenderer?.contents ?: emptyList() })
+        val videoInfoList =
+            extractVideoInfo(content!!.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()?.tabRenderer?.content?.sectionListRenderer?.contents?.flatMap {
+                it.musicCarouselShelfRenderer?.contents ?: emptyList()
+            })
 
         videoInfoList.forEach {
             println("Video ID: ${it.videoId}, Playlist ID: ${it.playlistId}, Thumbnail: ${it.thumbnail}, Title: ${it.title}, Subtitle: ${it.subtitle}")
@@ -87,9 +90,42 @@ class TubeFyViewModel @Inject constructor(
 
     fun setHtmlMusicPlayListContent(content: YoutubeMusicPlayListContent?) {
         if (content != null) {
-            Log.d("dad",""+ content.contents?.twoColumnBrowseResultsRenderer?.contents?.sectionListRenderer?.contents?.get(0)?.musicPlaylistShelfRenderer!!.contents?.get(0)?.musicResponsiveListItemRenderer?.flexColumns?.get(0)?.musicResponsiveListItemFlexColumnRenderer!!.text!!.runs?.get(0)!!.text)
-            Log.d("dad",""+ content.contents?.twoColumnBrowseResultsRenderer?.contents?.sectionListRenderer?.contents?.get(0)?.musicPlaylistShelfRenderer!!.contents?.get(0)?.musicResponsiveListItemRenderer?.flexColumns?.get(0)?.musicResponsiveListItemFlexColumnRenderer!!.text!!.runs?.get(0)!!.navigationEndpoint!!.watchEndpoint!!.videoId)
-            Log.d("dad",""+ content.contents?.twoColumnBrowseResultsRenderer.contents.sectionListRenderer.contents[0]?.musicPlaylistShelfRenderer?.contents?.get(0)?.musicResponsiveListItemRenderer?.thumbnail?.musicThumbnailRenderer?.thumbnail?.thumbnails?.get(0)!!.url)
+//            Log.d("dad",""+ content.contents?.twoColumnBrowseResultsRenderer?.contents?.sectionListRenderer?.contents?.get(0)?.musicPlaylistShelfRenderer!!.contents?.get(0)?.musicResponsiveListItemRenderer?.flexColumns?.get(0)?.musicResponsiveListItemFlexColumnRenderer!!.text!!.runs?.get(0)!!.text)
+//            Log.d("dad",""+ content.contents?.twoColumnBrowseResultsRenderer?.contents?.sectionListRenderer?.contents?.get(0)?.musicPlaylistShelfRenderer!!.contents?.get(0)?.musicResponsiveListItemRenderer?.flexColumns?.get(0)?.musicResponsiveListItemFlexColumnRenderer!!.text!!.runs?.get(0)!!.navigationEndpoint!!.watchEndpoint!!.videoId)
+//            Log.d("dad",""+ content.contents?.twoColumnBrowseResultsRenderer?.contents?.sectionListRenderer?.contents?.get(0)?.musicPlaylistShelfRenderer!!.contents?.get(0)?.musicResponsiveListItemRenderer?.thumbnail?.musicThumbnailRenderer?.thumbnail?.thumbnails?.get(0)!!.url)
+//
+            for (sectionContents in content.contents?.twoColumnBrowseResultsRenderer?.contents?.sectionListRenderer?.contents!!) {
+                for (musicPlaylistShelfRendererContents in sectionContents.musicPlaylistShelfRenderer?.contents!!) {
+//                    musicPlaylistShelfRendererConten
+                    var videoName: String = ""
+                    var videoId: String? = ""
+                    var tnhumpNail: String? = null
+                    for (flexColumList in musicPlaylistShelfRendererContents.musicResponsiveListItemRenderer?.flexColumns!!) {
+                        for (musicResponsiveRunData in flexColumList.musicResponsiveListItemFlexColumnRenderer?.text?.runs!!) {
+                            if (musicResponsiveRunData.navigationEndpoint?.watchEndpoint != null) {
+                                videoId =
+                                    musicResponsiveRunData.navigationEndpoint.watchEndpoint.videoId
+                            }
+                            videoName=videoName+"\n"+ musicResponsiveRunData.text
+                        }
+
+                    }
+                    for (thumpDetails in musicPlaylistShelfRendererContents.musicResponsiveListItemRenderer?.thumbnail?.musicThumbnailRenderer?.thumbnail?.thumbnails!!) {
+                        if (tnhumpNail == null) {
+                            tnhumpNail = thumpDetails.url
+                        }
+                        else
+                        {
+                            break
+                        }
+                    }
+
+                    Log.d("fulldeatils","video->"+videoId+"<tnhumpNail>"+tnhumpNail+"<><name"+videoName)
+                }
+
+
+            }
+
 
         }
     }
@@ -116,7 +152,10 @@ class TubeFyViewModel @Inject constructor(
 
     fun startWebScrapping(searchQuery: String) {
 //        scrapping.fetchPageSource("https://music.youtube.com/", YoutubeScrapType.YOUTUBE_MUSIC)
-        scrapping.fetchPageSource("https://music.youtube.com/playlist?list=RDCLAK5uy_n6_pc7SPVqtuPg_cK3AUxh9AbQP-_Qh-w", YoutubeScrapType.YOUTUBE_PLAYLIST)
+        scrapping.fetchPageSource(
+            "https://music.youtube.com/playlist?list=RDCLAK5uy_n6_pc7SPVqtuPg_cK3AUxh9AbQP-_Qh-w",
+            YoutubeScrapType.YOUTUBE_PLAYLIST
+        )
 
     }
 
@@ -174,6 +213,7 @@ class TubeFyViewModel @Inject constructor(
         val title: String?,
         val subtitle: String?
     )
+
     fun extractVideoInfo(contents: List<MusicCarouselContent>?): List<VideoInfo> {
         val videoInfoList = mutableListOf<VideoInfo>()
 
@@ -183,8 +223,10 @@ class TubeFyViewModel @Inject constructor(
 
             if (musicTwoRowItemRenderer != null) {
                 val videoId = musicTwoRowItemRenderer.navigationEndpoint?.browseEndpoint?.browseId
-                val playlistId = musicTwoRowItemRenderer.menu?.menuRenderer?.items?.firstOrNull()?.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint?.playlistId
-                val thumbnail = musicTwoRowItemRenderer.thumbnailRenderer?.musicThumbnailRenderer?.thumbnail?.thumbnails?.firstOrNull()?.url
+                val playlistId =
+                    musicTwoRowItemRenderer.menu?.menuRenderer?.items?.firstOrNull()?.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint?.playlistId
+                val thumbnail =
+                    musicTwoRowItemRenderer.thumbnailRenderer?.musicThumbnailRenderer?.thumbnail?.thumbnails?.firstOrNull()?.url
                 val title = musicTwoRowItemRenderer.title?.runs?.firstOrNull()?.text
                 val subtitle = musicTwoRowItemRenderer.subtitle?.runs?.firstOrNull()?.text
 
@@ -192,14 +234,22 @@ class TubeFyViewModel @Inject constructor(
             }
 
             if (musicResponsiveListItemRenderer != null) {
-                val videoId = musicResponsiveListItemRenderer.flexColumns?.flatMap { it.musicResponsiveListItemFlexColumnRenderer?.text?.runs ?: emptyList() }
+                val videoId = musicResponsiveListItemRenderer.flexColumns?.flatMap {
+                    it.musicResponsiveListItemFlexColumnRenderer?.text?.runs ?: emptyList()
+                }
                     ?.firstOrNull { it.navigationEndpoint?.watchEndpoint?.videoId != null }?.navigationEndpoint?.watchEndpoint?.videoId
-                val playlistId = musicResponsiveListItemRenderer.flexColumns?.flatMap { it.musicResponsiveListItemFlexColumnRenderer?.text?.runs ?: emptyList() }
+                val playlistId = musicResponsiveListItemRenderer.flexColumns?.flatMap {
+                    it.musicResponsiveListItemFlexColumnRenderer?.text?.runs ?: emptyList()
+                }
                     ?.firstOrNull { it.navigationEndpoint?.watchEndpoint?.playlistId != null }?.navigationEndpoint?.watchEndpoint?.playlistId
-                val thumbnail = musicResponsiveListItemRenderer.thumbnail?.musicThumbnailRenderer?.thumbnail?.thumbnails?.firstOrNull()?.url
-                val title = musicResponsiveListItemRenderer.flexColumns?.flatMap { it.musicResponsiveListItemFlexColumnRenderer?.text?.runs ?: emptyList() }
+                val thumbnail =
+                    musicResponsiveListItemRenderer.thumbnail?.musicThumbnailRenderer?.thumbnail?.thumbnails?.firstOrNull()?.url
+                val title = musicResponsiveListItemRenderer.flexColumns?.flatMap {
+                    it.musicResponsiveListItemFlexColumnRenderer?.text?.runs ?: emptyList()
+                }
                     ?.firstOrNull { it.text != null }?.text
-                val subtitle = "" // Assuming subtitle is not available in MusicResponsiveListItemRenderer
+                val subtitle =
+                    "" // Assuming subtitle is not available in MusicResponsiveListItemRenderer
 //              "kk".toInt()
                 videoInfoList.add(VideoInfo(videoId, playlistId, thumbnail, title, subtitle))
             }
