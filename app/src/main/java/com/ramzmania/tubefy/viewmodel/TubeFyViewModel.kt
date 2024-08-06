@@ -14,6 +14,7 @@ import com.ramzmania.tubefy.core.yotubewebextractor.YoutubeJsonScrapping
 import com.ramzmania.tubefy.core.yotubewebextractor.YoutubeScrapType
 import com.ramzmania.tubefy.data.ContextModule
 import com.ramzmania.tubefy.data.Resource
+import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.YoutubeMusicPlayListContent
 import com.ramzmania.tubefy.data.dto.youtubestripper.ApiResponse
 import com.ramzmania.tubefy.data.local.LocalRepositorySource
 import com.ramzmania.tubefy.data.remote.RemoteRepositorySource
@@ -43,6 +44,12 @@ class TubeFyViewModel @Inject constructor(
         viewModelScope.launch {
             scrapping.sharedJsonMusicHomeContent.collect { result ->
                 setHtmlMusicContent(result)
+            }
+        }
+
+        viewModelScope.launch {
+            scrapping.sharedJsonMusicHomePlayListContent.collect { result ->
+                setHtmlMusicPlayListContent(result)
             }
         }
     }
@@ -78,6 +85,15 @@ class TubeFyViewModel @Inject constructor(
 
     }
 
+    fun setHtmlMusicPlayListContent(content: YoutubeMusicPlayListContent?) {
+        if (content != null) {
+            Log.d("dad",""+ content.contents?.twoColumnBrowseResultsRenderer?.contents?.sectionListRenderer?.contents?.get(0)?.musicPlaylistShelfRenderer!!.contents?.get(0)?.musicResponsiveListItemRenderer?.flexColumns?.get(0)?.musicResponsiveListItemFlexColumnRenderer!!.text!!.runs?.get(0)!!.text)
+            Log.d("dad",""+ content.contents?.twoColumnBrowseResultsRenderer?.contents?.sectionListRenderer?.contents?.get(0)?.musicPlaylistShelfRenderer!!.contents?.get(0)?.musicResponsiveListItemRenderer?.flexColumns?.get(0)?.musicResponsiveListItemFlexColumnRenderer!!.text!!.runs?.get(0)!!.navigationEndpoint!!.watchEndpoint!!.videoId)
+            Log.d("dad",""+ content.contents?.twoColumnBrowseResultsRenderer.contents.sectionListRenderer.contents[0]?.musicPlaylistShelfRenderer?.contents?.get(0)?.musicResponsiveListItemRenderer?.thumbnail?.musicThumbnailRenderer?.thumbnail?.thumbnails?.get(0)!!.url)
+
+        }
+    }
+
     fun getStreamUrl(videoId: String) {
         viewModelScope.launch {
             remoteRepositorySource.getStreamUrl(
@@ -99,7 +115,9 @@ class TubeFyViewModel @Inject constructor(
     }
 
     fun startWebScrapping(searchQuery: String) {
-        scrapping.fetchPageSource("https://music.youtube.com/", YoutubeScrapType.YOUTUBE_MUSIC)
+//        scrapping.fetchPageSource("https://music.youtube.com/", YoutubeScrapType.YOUTUBE_MUSIC)
+        scrapping.fetchPageSource("https://music.youtube.com/playlist?list=RDCLAK5uy_n6_pc7SPVqtuPg_cK3AUxh9AbQP-_Qh-w", YoutubeScrapType.YOUTUBE_PLAYLIST)
+
     }
 
 

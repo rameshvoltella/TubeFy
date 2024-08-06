@@ -8,6 +8,7 @@ import android.util.Log
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import com.ramzmania.tubefy.core.YoutubeCoreConstant
+import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.YoutubeMusicPlayListContent
 import com.ramzmania.tubefy.data.dto.youtubestripper.ApiResponse
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -23,6 +24,8 @@ class YoutubeJsonScrapping constructor(val webView: WebView,val context : Contex
     val sharedJsonContent:SharedFlow<ApiResponse?>  = sharedJsonContentPrivate
     private val sharedJsonMusicHomeContentPrivate= MutableSharedFlow<MusicHomeResponse?>()
     val sharedJsonMusicHomeContent:SharedFlow<MusicHomeResponse?>  = sharedJsonMusicHomeContentPrivate
+    private val sharedJsonMusicHomePlayListContentPrivate= MutableSharedFlow<YoutubeMusicPlayListContent?>()
+    val sharedJsonMusicHomePlayListContent:SharedFlow<YoutubeMusicPlayListContent?>  = sharedJsonMusicHomePlayListContentPrivate
     var alreadyEvaluated = false;
 
     fun fetchPageSource(url: String,type:YoutubeScrapType) {
@@ -39,6 +42,9 @@ class YoutubeJsonScrapping constructor(val webView: WebView,val context : Contex
 //                            CoroutineScope(Dispatchers.IO).launch {
                             if(type== YoutubeScrapType.YOUTUBE_MUSIC) {
                                 getMusicHomeHtmlContent(webView)
+                            }else if(type==YoutubeScrapType.YOUTUBE_PLAYLIST)
+                            {
+                                getMusicPlayListHtmlContent(webView)
                             }
 //                            }
                         }
@@ -68,7 +74,7 @@ class YoutubeJsonScrapping constructor(val webView: WebView,val context : Contex
 //                webViewModel.setHtmlContent(result)
                 CoroutineScope(Dispatchers.IO).launch {
 
-                    passDatas(parseJsons(result))
+                    passYtVideoHomeData(parseJsons(result))
 
                 }
             }
@@ -134,7 +140,7 @@ class YoutubeJsonScrapping constructor(val webView: WebView,val context : Contex
                 CoroutineScope(Dispatchers.IO).launch {
                     Log.d("passing home data","yaaa1111")
 
-                    passHomeData(parseJsons(result))
+                    passYtMusicHomeData(parseJsons(result))
 
                 }
             }
@@ -145,6 +151,40 @@ class YoutubeJsonScrapping constructor(val webView: WebView,val context : Contex
     }
 
     private  fun getMusicPlayListHtmlContent(webView: WebView) {
+        if (!alreadyEvaluated) {
+            alreadyEvaluated = true
+            webView.evaluateJavascript("(function() { return document.documentElement.outerHTML; })();") { html ->
+                val cleanHtml = html.replace("\\u003C", "<").replace("\\u003E", ">")
+                var result = decodeHexString(
+                    extractDataBetween(
+                        cleanHtml,
+                        "initialData.push({path: '\\\\/browse', params",
+                        "'});ytcfg.set"
+                    ) + ""
+                )
+                result=getDataSubstring(result)
+                result=result.replace("\\\\\\\\\"", "")
+//                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+//                val clip = ClipData.newPlainText("label", result)
+//                clipboard.setPrimaryClip(clip)
+////                getDataSubstring
+//                result = result.replaceFirst("= '{", "{").replaceFirst("';", "")
+//                    .replace("\\\\\\\\\"", "")
+////                webViewModel.setHtmlContent(result)
+                CoroutineScope(Dispatchers.IO).launch {
+                    Log.d("passing home data","yaaa1111")
+
+                    passYTMusicPlayListData(parseJsons(result))
+
+                }
+            }
+        } else {
+            alreadyEvaluated = false
+        }
+
+    }
+
+   /* private  fun getMusicPlayListHtmlContent(webView: WebView) {
         if (!alreadyEvaluated) {
             alreadyEvaluated = true
             webView.evaluateJavascript("(function() { return document.documentElement.outerHTML; })();") { html ->
@@ -175,7 +215,7 @@ class YoutubeJsonScrapping constructor(val webView: WebView,val context : Contex
             alreadyEvaluated = false
         }
 
-    }
+    }*/
 
 
     private  fun getMusicGenresHtmlContent(webView: WebView) {
@@ -247,12 +287,17 @@ class YoutubeJsonScrapping constructor(val webView: WebView,val context : Contex
             null
         }
     }
-    private suspend fun passDatas(data:ApiResponse?) {
+    private suspend fun passYtVideoHomeData(data:ApiResponse?) {
         sharedJsonContentPrivate.emit(data)
     }
-    private suspend fun passHomeData(data:MusicHomeResponse?) {
+    private suspend fun passYtMusicHomeData(data:MusicHomeResponse?) {
         Log.d("passing home data","yaaa")
         sharedJsonMusicHomeContentPrivate.emit(data)
+    }
+
+    private suspend fun passYTMusicPlayListData(data: YoutubeMusicPlayListContent?) {
+        Log.d("passing home data","yaaa")
+        sharedJsonMusicHomePlayListContentPrivate.emit(data)
     }
 
 //    fun parseJson(jsonString: String): ApiResponse? {
