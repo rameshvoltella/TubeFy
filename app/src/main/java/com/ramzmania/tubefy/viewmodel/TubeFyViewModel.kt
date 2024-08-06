@@ -94,12 +94,13 @@ class TubeFyViewModel @Inject constructor(
 //            Log.d("dad",""+ content.contents?.twoColumnBrowseResultsRenderer?.contents?.sectionListRenderer?.contents?.get(0)?.musicPlaylistShelfRenderer!!.contents?.get(0)?.musicResponsiveListItemRenderer?.flexColumns?.get(0)?.musicResponsiveListItemFlexColumnRenderer!!.text!!.runs?.get(0)!!.navigationEndpoint!!.watchEndpoint!!.videoId)
 //            Log.d("dad",""+ content.contents?.twoColumnBrowseResultsRenderer?.contents?.sectionListRenderer?.contents?.get(0)?.musicPlaylistShelfRenderer!!.contents?.get(0)?.musicResponsiveListItemRenderer?.thumbnail?.musicThumbnailRenderer?.thumbnail?.thumbnails?.get(0)!!.url)
 //
+           /* var playlistData=ArrayList<VideoPlayListModel>()
             for (sectionContents in content.contents?.twoColumnBrowseResultsRenderer?.contents?.sectionListRenderer?.contents!!) {
                 for (musicPlaylistShelfRendererContents in sectionContents.musicPlaylistShelfRenderer?.contents!!) {
 //                    musicPlaylistShelfRendererConten
-                    var videoName: String = ""
+                    var videoName: String? = ""
                     var videoId: String? = ""
-                    var tnhumpNail: String? = null
+                    var thumpNail: String? = null
                     for (flexColumList in musicPlaylistShelfRendererContents.musicResponsiveListItemRenderer?.flexColumns!!) {
                         for (musicResponsiveRunData in flexColumList.musicResponsiveListItemFlexColumnRenderer?.text?.runs!!) {
                             if (musicResponsiveRunData.navigationEndpoint?.watchEndpoint != null) {
@@ -111,20 +112,46 @@ class TubeFyViewModel @Inject constructor(
 
                     }
                     for (thumpDetails in musicPlaylistShelfRendererContents.musicResponsiveListItemRenderer?.thumbnail?.musicThumbnailRenderer?.thumbnail?.thumbnails!!) {
-                        if (tnhumpNail == null) {
-                            tnhumpNail = thumpDetails.url
+                        if (thumpNail == null) {
+                            thumpNail = thumpDetails.url
                         }
                         else
                         {
                             break
                         }
                     }
+                    playlistData.add(VideoPlayListModel(videoId,videoName,thumpNail))
 
-                    Log.d("fulldeatils","video->"+videoId+"<tnhumpNail>"+tnhumpNail+"<><name"+videoName)
+                    Log.d("fulldeatils","video->"+videoId+"<tnhumpNail>"+thumpNail+"<><name"+videoName)
                 }
 
 
+            }*/
+            val playlistData = ArrayList<VideoPlayListModel>()
+            content.contents?.twoColumnBrowseResultsRenderer?.contents?.sectionListRenderer?.contents?.forEach { sectionContents ->
+                sectionContents.musicPlaylistShelfRenderer?.contents?.forEach { musicPlaylistShelfRendererContents ->
+                    var videoName = StringBuilder()
+                    var videoId: String? = null
+                    var thumpNail: String? = null
+
+                    musicPlaylistShelfRendererContents.musicResponsiveListItemRenderer?.flexColumns?.forEach { flexColumList ->
+                        flexColumList.musicResponsiveListItemFlexColumnRenderer?.text?.runs?.forEach { musicResponsiveRunData ->
+                            musicResponsiveRunData.navigationEndpoint?.watchEndpoint?.videoId?.let {
+                                videoId = it
+                            }
+                            videoName.append("\n").append(musicResponsiveRunData.text)
+                        }
+                    }
+
+                    musicPlaylistShelfRendererContents.musicResponsiveListItemRenderer?.thumbnail?.musicThumbnailRenderer?.thumbnail?.thumbnails?.firstOrNull()?.let {
+                        thumpNail = it.url
+                    }
+
+                    playlistData.add(VideoPlayListModel(videoId, videoName.toString(), thumpNail))
+                    Log.d("fulldeatils", "video->$videoId<thumpNail>$thumpNail<><name>${videoName.toString()}")
+                }
             }
+
 
 
         }
@@ -198,12 +225,10 @@ class TubeFyViewModel @Inject constructor(
         }
     }
 
-    data class SearchHomeScreen(
-        val playList: String,
-        val videoId: String,
-        val title: String,
-        val subTitle: String,
-        val thump: String
+    data class VideoPlayListModel(
+        val videoId: String?,
+        val title: String?,
+        val thumbnail: String?
     )
 
     data class VideoInfo(
