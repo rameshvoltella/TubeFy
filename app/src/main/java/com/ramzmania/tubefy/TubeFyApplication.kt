@@ -13,5 +13,10 @@ class TubeFyApplication:Application() {
     override fun onCreate() {
         super.onCreate()
         NewPipe.init(pipeDownloader)
+
+//        https://music.youtube.com/podcasts
+//        https://music.youtube.com/charts
+//        https://music.youtube.com/moods_and_genres
+//        https://music.youtube.com/new_releases
     }
 }
