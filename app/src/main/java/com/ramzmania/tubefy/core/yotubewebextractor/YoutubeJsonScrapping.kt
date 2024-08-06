@@ -68,7 +68,7 @@ class YoutubeJsonScrapping constructor(val webView: WebView,val context : Contex
 //                webViewModel.setHtmlContent(result)
                 CoroutineScope(Dispatchers.IO).launch {
 
-                    passDatas(parseJson(result))
+                    passDatas(parseJsons(result))
 
                 }
             }
@@ -134,7 +134,7 @@ class YoutubeJsonScrapping constructor(val webView: WebView,val context : Contex
                 CoroutineScope(Dispatchers.IO).launch {
                     Log.d("passing home data","yaaa1111")
 
-                    passHomeData(parseMusicHomeJson(result))
+                    passHomeData(parseJsons(result))
 
                 }
             }
@@ -255,21 +255,29 @@ class YoutubeJsonScrapping constructor(val webView: WebView,val context : Contex
         sharedJsonMusicHomeContentPrivate.emit(data)
     }
 
-    fun parseJson(jsonString: String): ApiResponse? {
-        val moshi=Moshi.Builder()
+//    fun parseJson(jsonString: String): ApiResponse? {
+//        val moshi=Moshi.Builder()
+//            .add(KotlinJsonAdapterFactory())
+//            .build()
+//        val jsonAdapter = moshi.adapter(ApiResponse::class.java)
+//        return jsonAdapter.fromJson(jsonString)
+//    }
+//
+//    fun parseMusicHomeJson(jsonString: String): MusicHomeResponse? {
+//        Log.d("passing home data","yaaa2222")
+//
+//        val moshi=Moshi.Builder()
+//            .add(KotlinJsonAdapterFactory())
+//            .build()
+//        val jsonAdapter = moshi.adapter(MusicHomeResponse::class.java)
+//        return jsonAdapter.fromJson(jsonString)
+//    }
+
+    inline fun <reified T> parseJsons(jsonString: String): T? {
+        val moshi = Moshi.Builder()
             .add(KotlinJsonAdapterFactory())
             .build()
-        val jsonAdapter = moshi.adapter(ApiResponse::class.java)
-        return jsonAdapter.fromJson(jsonString)
-    }
-
-    fun parseMusicHomeJson(jsonString: String): MusicHomeResponse? {
-        Log.d("passing home data","yaaa2222")
-
-        val moshi=Moshi.Builder()
-            .add(KotlinJsonAdapterFactory())
-            .build()
-        val jsonAdapter = moshi.adapter(MusicHomeResponse::class.java)
+        val jsonAdapter = moshi.adapter(T::class.java)
         return jsonAdapter.fromJson(jsonString)
     }
     fun getDataSubstring(jsonString: String): String {
