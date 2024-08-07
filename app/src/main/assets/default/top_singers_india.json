@@ -1,0 +1,45 @@
+{
+  "singers": [
+    {
+      "name": "Arijit Singh",
+      "notable_works": ["Tum Hi Ho", "Channa Mereya", "Raabta"],
+      "filmfare_awards": 6
+    },
+    {
+      "name": "Shreya Ghoshal",
+      "notable_works": ["Teri Ore", "Dola Re Dola", "Sun Raha Hai Na Tu"],
+      "filmfare_awards": 7
+    },
+    {
+      "name": "Sonu Nigam",
+      "notable_works": ["Kal Ho Na Ho", "Abhijeet Bhattacharya", "Tanhai"],
+      "filmfare_awards": 2
+    },
+    {
+      "name": "Udit Narayan",
+      "notable_works": ["Pehla Nasha", "Dilwale Dulhania Le Jayenge", "Tujhe Dekha To"],
+      "filmfare_awards": 4
+    },
+    {
+      "name": "Alka Yagnik",
+      "notable_works": ["Taal Se Taal Mila", "Chamma Chamma", "Tere Naam"],
+      "filmfare_awards": 7
+    },
+    {
+      "name": "Kavita Krishnamurthy",
+      "notable_works": ["Ek Do Teen", "Hawa Hawai", "Chandani"],
+      "filmfare_awards": 2
+    },
+    {
+      "name": "Asha Bhosle",
+      "notable_works": ["Dum Maro Dum", "Chura Liya Hai Tumne Jo Dil Ko", "Parde Mein Rehne Do"],
+      "filmfare_awards": 7
+    },
+    {
+      "name": "Kishore Kumar",
+      "notable_works": ["Ek Ladki Bheegi Bhaagi Si", "Palatke Tera Naam", "Mere Sapno Ki Rani"],
+      "filmfare_awards": 8
+    },
+    {
+      "name": "Mohammad Rafi",
+      "notable_works": ["Chaudhvin Ka Chand Ho", "Teri Aankhon Ke Siva", "Kya Hua Tera Wada"

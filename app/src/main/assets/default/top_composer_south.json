@@ -1,0 +1,49 @@
+{
+  "composers": [
+    {
+      "name": "Anirudh Ravichander",
+      "notable_works": ["Kolaveri Di", "Master", "Petta"],
+      "awards": ["Filmfare Awards South"]
+    },
+    {
+      "name": "G.V. Prakash Kumar",
+      "notable_works": ["Madras", "Kadavul Irukaan Kumaru", "Sarvam Thaala Mayam"],
+      "awards": ["Filmfare Awards South"]
+    },
+    {
+      "name": "Harris Jayaraj",
+      "notable_works": ["Enthiran", "Thuppakki", "Dhruva"],
+      "awards": ["Filmfare Awards South"]
+    },
+    {
+      "name": "S. Thaman",
+      "notable_works": ["Ala Vaikunthapurramuloo", "Sarkar", "Dhruva"],
+      "awards": ["Filmfare Awards South"]
+    },
+    {
+      "name": "Rajesh Murugesan",
+      "notable_works": ["Premam", "Kumbalangi Nights", "Richie"],
+      "awards": ["Kerala State Film Awards"]
+    },
+    {
+      "name": "Jubair Mohammad",
+      "notable_works": ["Kappela", "Anugraheethan Antony"],
+      "awards": ["Kerala State Film Awards"]
+    },
+    {
+      "name": "Vikram Montrose",
+      "notable_works": ["Sathuranga Vettai 2", "Kalki"],
+      "awards": ["Filmfare Awards South"]
+    },
+    {
+      "name": "Karthik Raja",
+      "notable_works": ["Jodi", "Udhaya", "Boys"],
+      "awards": ["Filmfare Awards South"]
+    },
+    {
+      "name": "Sandeep Chowta",
+      "notable_works": ["S/O Satyamurthy", "Sikkim", "Pelli Sandadi"],
+      "awards": ["Filmfare Awards South"]
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-package com.ramzmania.tubefy.core.yotubewebextractor
+package com.ramzmania.tubefy.core.extractors.yotubewebextractor
 
 enum class YoutubeScrapType {
 

@@ -1,7 +1,7 @@
 package com.ramzmania.tubefy.data.remote
 
-import com.ramzmania.tubefy.core.dataformatter.dto.StreamUrlData
-import com.ramzmania.tubefy.core.dataformatter.dto.TubeFyCoreUniversalData
+import com.ramzmania.tubefy.data.dto.searchformat.StreamUrlData
+import com.ramzmania.tubefy.data.dto.searchformat.TubeFyCoreUniversalData
 import com.ramzmania.tubefy.data.Resource
 import org.schabi.newpipe.extractor.Page
 

@@ -1,0 +1,54 @@
+{
+  "composers": [
+    {
+      "name": "Vineeth Sreenivasan",
+      "notable_works": ["Malarvaadi Arts Club", "Jacobinte Swargarajyam", "Oru Vadakkan Selfie"],
+      "awards": ["Kerala State Film Awards"]
+    },
+    {
+      "name": "Rajesh Murugesan",
+      "notable_works": ["Premam", "Kumbalangi Nights", "Richie"],
+      "awards": ["Kerala State Film Awards"]
+    },
+    {
+      "name": "Gokul Anand",
+      "notable_works": ["Kuttanadan Marpappa", "Kochi Rajavu"],
+      "awards": ["Kerala State Film Awards"]
+    },
+    {
+      "name": "Shaan Rahman",
+      "notable_works": ["Neram", "Premam", "Kali"],
+      "awards": ["Kerala State Film Awards"]
+    },
+    {
+      "name": "Biji Bal",
+      "notable_works": ["Aadu Oru Bheekara Jeeviyanu", "Adventures of Omanakuttan"],
+      "awards": ["Kerala State Film Awards"]
+    },
+    {
+      "name": "Sreejith Edavana",
+      "notable_works": ["Manoharam", "Makal"],
+      "awards": ["Kerala State Film Awards"]
+    },
+    {
+      "name": "Prashant Pillai",
+      "notable_works": ["Anuksha", "Nammal Thammil"],
+      "awards": ["Kerala State Film Awards"]
+    },
+    {
+      "name": "Vinu Thomas",
+      "notable_works": ["Aadupuliyattam", "Kali"],
+      "awards": ["Kerala State Film Awards"]
+    },
+    {
+      "name": "Jakes Bejoy",
+      "notable_works": ["Kammara Sambhavam", "Madhura Raja"],
+      "awards": ["Kerala State Film Awards"]
+    },
+    {
+      "name": "Sushin Shyam",
+      "notable_works": ["Kumbalangi Nights", "Home", "Malik"],
+      "awards": ["Kerala State Film Awards"]
+    }
+  ]
+}

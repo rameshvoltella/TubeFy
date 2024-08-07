@@ -1,21 +1,21 @@
 package com.ramzmania.tubefy.viewmodel
 
-import MusicCarouselContent
-import MusicHomeResponse
+
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
-import com.ramzmania.tubefy.core.YoutubeCoreConstant
 import com.ramzmania.tubefy.core.YoutubeCoreConstant.extractYoutubeVideoId
-import com.ramzmania.tubefy.core.dataformatter.dto.StreamUrlData
-import com.ramzmania.tubefy.core.dataformatter.dto.TubeFyCoreUniversalData
-import com.ramzmania.tubefy.core.yotubewebextractor.YoutubeJsonScrapping
-import com.ramzmania.tubefy.core.yotubewebextractor.YoutubeScrapType
+import com.ramzmania.tubefy.data.dto.searchformat.StreamUrlData
+import com.ramzmania.tubefy.data.dto.searchformat.TubeFyCoreUniversalData
+import com.ramzmania.tubefy.core.extractors.yotubewebextractor.YoutubeJsonScrapping
+import com.ramzmania.tubefy.core.extractors.yotubewebextractor.YoutubeScrapType
 import com.ramzmania.tubefy.data.ContextModule
 import com.ramzmania.tubefy.data.Resource
+import com.ramzmania.tubefy.data.dto.home.HomePageResponse
 import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.YoutubeMusicPlayListContent
 import com.ramzmania.tubefy.data.dto.youtubestripper.ApiResponse
+import com.ramzmania.tubefy.data.dto.youtubestripper.MusicHomeResponse2
 import com.ramzmania.tubefy.data.local.LocalRepositorySource
 import com.ramzmania.tubefy.data.remote.RemoteRepositorySource
 import com.ramzmania.tubefy.ui.base.BaseViewModel
@@ -64,6 +64,8 @@ class TubeFyViewModel @Inject constructor(
     private val youTubeSearchDataPrivate = MutableLiveData<Resource<TubeFyCoreUniversalData>>()
     val youTubeSearchData: LiveData<Resource<TubeFyCoreUniversalData>> get() = youTubeSearchDataPrivate
 
+    private val youTubeMusicHomeDataPrivate = MutableLiveData<Resource<List<HomePageResponse?>>>()
+    val youTubeMusicHomeData: LiveData<Resource<List<HomePageResponse?>>> get() = youTubeMusicHomeDataPrivate
 
     fun setHtmlContent(content: ApiResponse?) {
 //        htmlContentPrivate.value = content
@@ -75,15 +77,21 @@ class TubeFyViewModel @Inject constructor(
         }
     }
 
-    fun setHtmlMusicContent(content: MusicHomeResponse?) {
+    fun setHtmlMusicContent(content: MusicHomeResponse2?) {
 //        htmlContentPrivate.value = content
-        val videoInfoList =
+    /*    val videoInfoList =
             extractVideoInfo(content!!.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()?.tabRenderer?.content?.sectionListRenderer?.contents?.flatMap {
                 it.musicCarouselShelfRenderer?.contents ?: emptyList()
             })
 
         videoInfoList.forEach {
             println("Video ID: ${it.videoId}, Playlist ID: ${it.playlistId}, Thumbnail: ${it.thumbnail}, Title: ${it.title}, Subtitle: ${it.subtitle}")
+        }*/
+        viewModelScope.launch {
+            localRepositorySource.manipulateYoutubeMusicHomeStripData(content!!).collect {
+
+                youTubeMusicHomeDataPrivate.value = it
+            }
         }
 
     }
@@ -178,11 +186,11 @@ class TubeFyViewModel @Inject constructor(
     }
 
     fun startWebScrapping(searchQuery: String) {
-//        scrapping.fetchPageSource("https://music.youtube.com/", YoutubeScrapType.YOUTUBE_MUSIC)
-        scrapping.fetchPageSource(
-            "https://music.youtube.com/playlist?list=RDCLAK5uy_n6_pc7SPVqtuPg_cK3AUxh9AbQP-_Qh-w",
-            YoutubeScrapType.YOUTUBE_PLAYLIST
-        )
+        scrapping.fetchPageSource("https://music.youtube.com/", YoutubeScrapType.YOUTUBE_MUSIC)
+//        scrapping.fetchPageSource(
+//            "https://music.youtube.com/playlist?list=RDCLAK5uy_n6_pc7SPVqtuPg_cK3AUxh9AbQP-_Qh-w",
+//            YoutubeScrapType.YOUTUBE_PLAYLIST
+//        )
 
     }
 
@@ -231,15 +239,15 @@ class TubeFyViewModel @Inject constructor(
         val thumbnail: String?
     )
 
-    data class VideoInfo(
+   /* data class VideoInfo(
         val videoId: String?,
         val playlistId: String?,
         val thumbnail: String?,
         val title: String?,
         val subtitle: String?
-    )
+    )*/
 
-    fun extractVideoInfo(contents: List<MusicCarouselContent>?): List<VideoInfo> {
+/*    fun extractVideoInfo(contents: List<MusicCarouselContent>?): List<VideoInfo> {
         val videoInfoList = mutableListOf<VideoInfo>()
 
         contents?.forEach { content ->
@@ -281,6 +289,6 @@ class TubeFyViewModel @Inject constructor(
         }
 
         return videoInfoList
-    }
+    }*/
 
 }

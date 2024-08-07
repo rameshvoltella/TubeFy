@@ -7,10 +7,11 @@ import android.util.Log
 import android.widget.Toast
 import com.ramzmania.tubefy.core.YoutubeCoreConstant.extractYoutubeVideoId
 import com.ramzmania.tubefy.core.dataformatter.YoutubeApiType
-import com.ramzmania.tubefy.core.dataformatter.dto.StreamUrlData
-import com.ramzmania.tubefy.core.dataformatter.dto.TubeFyCoreTypeData
-import com.ramzmania.tubefy.core.dataformatter.dto.TubeFyCoreUniversalData
+import com.ramzmania.tubefy.data.dto.searchformat.StreamUrlData
+import com.ramzmania.tubefy.data.dto.searchformat.TubeFyCoreTypeData
+import com.ramzmania.tubefy.data.dto.searchformat.TubeFyCoreUniversalData
 import com.ramzmania.tubefy.data.Resource
+import com.ramzmania.tubefy.data.dto.home.HomePageResponse
 import com.ramzmania.tubefy.data.dto.youtubestripper.ApiResponse
 import com.ramzmania.tubefy.data.observe
 import com.ramzmania.tubefy.databinding.KkBinding
@@ -36,6 +37,8 @@ private var nextPage: Page? = null
     override fun observeViewModel() {
         observe(viewModel.youTubeSearchData, ::handleYoutubeSearchListResponse)
         observe(viewModel.streamUrlData, ::HandleStreamUrlResponse)
+        observe(viewModel.youTubeMusicHomeData, ::HandleYtMusicHomeResponse)
+
 
     }
 
@@ -110,6 +113,23 @@ private var nextPage: Page? = null
             else -> {}
         }
     }
+    fun HandleYtMusicHomeResponse(resource: Resource<List<HomePageResponse?>>) {
+        when (resource) {
+            is Resource.Loading -> {}
+            is Resource.Success -> {
+                Toast.makeText(applicationContext, "WEB SCAPPING DATA>" + resource.data!!.size, 1).show()
+                Log.d("url", "" + resource.data[0]!!.contentData!!.size)
+//                Log.d("url", "" + resource.data[1]!!.contentData!!.size)
+
+//                openUrlInBrowser( resource.data!!.streamUrl)
+            }
+
+            is Resource.DataError -> {
+            }
+
+            else -> {}
+        }
+    }
 
     private fun calculateSearchResult(relatedItems: MutableList<TubeFyCoreTypeData>) {
         for(data in relatedItems) {
@@ -158,6 +178,8 @@ private var nextPage: Page? = null
 //        }
     }
 }
+
+
 
 
 

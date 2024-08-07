@@ -1,17 +1,25 @@
 package com.ramzmania.tubefy.core.dataformatter.youtubemusic
 
-import MusicCarouselContent
+import android.util.Log
 import com.ramzmania.tubefy.core.dataformatter.FormattingResult
 import com.ramzmania.tubefy.core.dataformatter.UniversalYoutubeDataFormatter
 import com.ramzmania.tubefy.data.dto.base.BaseContentData
+import com.ramzmania.tubefy.data.dto.home.CellType
 import com.ramzmania.tubefy.data.dto.home.HomePageResponse
-import com.ramzmania.tubefy.data.dto.youtubemusic.YoutubeMusicHomeVideoData
+import com.ramzmania.tubefy.data.dto.youtubestripper.MusicHomeResponse2
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class YoutubeHomeDataFormatter :
-    UniversalYoutubeDataFormatter<List<MusicCarouselContent>?, FormattingResult<List<HomePageResponse?>, Exception>>() {
-    override suspend fun runFormatting(input: List<MusicCarouselContent>?): FormattingResult<List<HomePageResponse?>, Exception> {
+@Singleton
+class YoutubeMusicHomeDataFormatter @Inject constructor()  :
+    UniversalYoutubeDataFormatter<MusicHomeResponse2, FormattingResult<List<HomePageResponse?>, Exception>>() {
+    override suspend fun runFormatting(inputData: MusicHomeResponse2): FormattingResult<List<HomePageResponse?>, Exception> {
 //        val videoInfoList = mutableListOf<YoutubeMusicHomeVideoData>()
-        val videoSortedList = Array
+       var input= inputData!!.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()?.tabRenderer?.content?.sectionListRenderer?.contents?.flatMap {
+           it.musicCarouselShelfRenderer?.contents ?: emptyList()
+       }
+        try{
+        val videoSortedList = mutableListOf<HomePageResponse>()
         val videoSortedListWithPlaylist = mutableListOf<BaseContentData>()
         val videoSortedListWithoutPlaylist = mutableListOf<BaseContentData>()
 
@@ -22,13 +30,13 @@ class YoutubeHomeDataFormatter :
             if (musicTwoRowItemRenderer != null) {
                 val videoId = musicTwoRowItemRenderer.navigationEndpoint?.browseEndpoint?.browseId
                 val playlistId =
-                    videoId
-                        ?: musicTwoRowItemRenderer.menu?.menuRenderer?.items?.firstOrNull()?.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint?.playlistId
+                    musicTwoRowItemRenderer.menu?.menuRenderer?.items?.firstOrNull()?.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint?.playlistId
                 val thumbnail =
                     musicTwoRowItemRenderer.thumbnailRenderer?.musicThumbnailRenderer?.thumbnail?.thumbnails?.firstOrNull()?.url
                 val title = musicTwoRowItemRenderer.title?.runs?.firstOrNull()?.text
                 val subtitle = musicTwoRowItemRenderer.subtitle?.runs?.firstOrNull()?.text
-                if (playlistId != null) {
+                Log.d("check first","$videoId <><> $playlistId")
+                if (videoId!!.length> 11) {
                     videoSortedListWithPlaylist.add(
                         BaseContentData(
                             videoId,
@@ -57,7 +65,7 @@ class YoutubeHomeDataFormatter :
                     it.musicResponsiveListItemFlexColumnRenderer?.text?.runs ?: emptyList()
                 }
                     ?.firstOrNull { it.navigationEndpoint?.watchEndpoint?.videoId != null }?.navigationEndpoint?.watchEndpoint?.videoId
-                val playlistId = videoId ?: musicResponsiveListItemRenderer.flexColumns?.flatMap {
+                val playlistId = musicResponsiveListItemRenderer.flexColumns?.flatMap {
                     it.musicResponsiveListItemFlexColumnRenderer?.text?.runs ?: emptyList()
                 }
                     ?.firstOrNull { it.navigationEndpoint?.watchEndpoint?.playlistId != null }?.navigationEndpoint?.watchEndpoint?.playlistId
@@ -70,13 +78,15 @@ class YoutubeHomeDataFormatter :
                 val subtitle =
                     "" // Assuming subtitle is not available in MusicResponsiveListItemRenderer
 //              "kk".toInt()
-                if (playlistId != null) {
+                Log.d("check two","$videoId <><> $playlistId")
+
+                if (videoId!!.length> 11) {
                     videoSortedListWithPlaylist.add(
                         BaseContentData(
                             videoId,
                             playlistId,
                             thumbnail,
-                            if (subtitle.isNullOrBlank()) title else "$title\n$subtitle"
+                            if (subtitle.isNullOrBlank()) title else "$title\n$subtitle",true
                         )
                     )
                 } else {
@@ -85,11 +95,33 @@ class YoutubeHomeDataFormatter :
                             videoId,
                             playlistId,
                             thumbnail,
-                            if (subtitle.isNullOrBlank()) title else "$title\n$subtitle"
+                            if (subtitle.isNullOrBlank()) title else "$title\n$subtitle",true
                         )
                     )
                 }
             }
+        }
+            Log.d("what size","videoSortedListWithoutPlaylist>>>"+videoSortedListWithoutPlaylist.size)
+            Log.d("what size","videoSortedListWithPlaylist>>>"+videoSortedListWithPlaylist.size)
+
+            if (videoSortedListWithoutPlaylist.size > 0) {
+            videoSortedList.add(HomePageResponse(CellType.LIST, videoSortedListWithoutPlaylist))
+        }
+        if (videoSortedListWithPlaylist.size > 0) {
+
+            videoSortedList.add(
+                HomePageResponse(
+                    CellType.HORIZONTAL_LIST,
+                    videoSortedListWithPlaylist
+                )
+            )
+        }
+        return FormattingResult.SUCCESS(videoSortedList)
+    }
+        catch (ex:Exception)
+        {
+            return FormattingResult.FAILURE(Exception("ERROR IN MUSIC HOME PAGE SORT"))
+
         }
     }
 }

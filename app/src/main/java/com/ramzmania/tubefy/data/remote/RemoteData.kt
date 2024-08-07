@@ -1,15 +1,16 @@
 package com.ramzmania.tubefy.data.remote
 
+import android.util.Log
 import com.ramzmania.tubefy.core.YoutubeCoreConstant
 import com.ramzmania.tubefy.core.YoutubeCoreConstant.YOUTUBE_V3_MAX_RESULT
 import com.ramzmania.tubefy.core.dataformatter.FormattingResult
-import com.ramzmania.tubefy.core.dataformatter.dto.NewPipeSortingData
+import com.ramzmania.tubefy.data.dto.searchformat.NewPipeSortingData
 import com.ramzmania.tubefy.core.dataformatter.newpipe.NewPipeDataFormatter
-import com.ramzmania.tubefy.core.dataformatter.dto.StreamUrlData
-import com.ramzmania.tubefy.core.dataformatter.dto.TubeFyCoreUniversalData
+import com.ramzmania.tubefy.data.dto.searchformat.StreamUrlData
+import com.ramzmania.tubefy.data.dto.searchformat.TubeFyCoreUniversalData
 import com.ramzmania.tubefy.core.dataformatter.youtubeV3.YoutubeV3Formatter
-import com.ramzmania.tubefy.core.newpipeextractor.newPipeSearchFor
-import com.ramzmania.tubefy.core.newpipeextractor.newPipeSearchNextPageFor
+import com.ramzmania.tubefy.core.extractors.newpipeextractor.newPipeSearchFor
+import com.ramzmania.tubefy.core.extractors.newpipeextractor.newPipeSearchNextPageFor
 import com.ramzmania.tubefy.data.NetworkConnectivity
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.youtubeV3.YoutubeSearchResponse
@@ -22,7 +23,9 @@ import com.ramzmania.tubefy.errors.SERVER_ERROR
 import com.ramzmania.tubefy.errors.YOUTUBE_V3_SEARCH_ERROR
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.schabi.newpipe.extractor.NewPipe
 import org.schabi.newpipe.extractor.Page
+import org.schabi.newpipe.extractor.playlist.PlaylistInfo
 import org.schabi.newpipe.extractor.search.SearchInfo
 import org.schabi.newpipe.extractor.services.youtube.YoutubeService
 import org.schabi.newpipe.extractor.services.youtube.extractors.YoutubeStreamExtractor
@@ -106,8 +109,23 @@ constructor(
         sortFilter: String
     ): Resource<TubeFyCoreUniversalData> {
         var searchInfo: SearchInfo?=null
+        var searchInfo2: SearchInfo?=null
+
         withContext(Dispatchers.IO)
         {
+//            val contentFilter2 = arrayOf<String>("music_playlists")
+//val dataaaa=PlaylistInfo.getInfo("https://music.youtube.com/playlist?list=PLDNtAuXIhbEOkqGHXzjWh8sLnnhFRSxl_")
+//            searchInfo2= SearchInfo.getInfo(
+//                NewPipe.getService(0),
+//                NewPipe.getService(0)
+//                    .searchQHFactory
+//                    .fromQuery("https://music.youtube.com/playlist?list=PLDNtAuXIhbEOkqGHXzjWh8sLnnhFRSxl_", contentFilter2.toMutableList(),"")
+//            )
+//            for (ff in dataaaa!!.relatedItems)
+//            {
+//               Log.d("data", ff.url)
+//            }
+
             searchInfo= newPipeSearchFor(serviceId, searchString, contentFilter, sortFilter)
             val result = newPipeFormatter.run(NewPipeSortingData(searchInfo!!.relatedItems,searchInfo!!.nextPage))
             when(result)

@@ -3,10 +3,10 @@ package com.ramzmania.tubefy.core.dataformatter.newpipe
 import com.ramzmania.tubefy.core.dataformatter.FormattingResult
 import com.ramzmania.tubefy.core.dataformatter.UniversalYoutubeDataFormatter
 import com.ramzmania.tubefy.core.dataformatter.YoutubeApiType
-import com.ramzmania.tubefy.core.dataformatter.dto.NewPipeSortingData
-import com.ramzmania.tubefy.core.dataformatter.dto.TubeFyCoreFormattedData
-import com.ramzmania.tubefy.core.dataformatter.dto.TubeFyCoreTypeData
-import com.ramzmania.tubefy.core.dataformatter.dto.TubeFyCoreUniversalData
+import com.ramzmania.tubefy.data.dto.searchformat.NewPipeSortingData
+import com.ramzmania.tubefy.data.dto.searchformat.TubeFyCoreFormattedData
+import com.ramzmania.tubefy.data.dto.searchformat.TubeFyCoreTypeData
+import com.ramzmania.tubefy.data.dto.searchformat.TubeFyCoreUniversalData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -32,7 +32,8 @@ class NewPipeDataFormatter @Inject constructor():
                 FormattingResult.SUCCESS( TubeFyCoreUniversalData(
                     TubeFyCoreFormattedData(sortedVideoList, input.nextPage),
                     YoutubeApiType.NEW_PIPE_API
-                ))
+                )
+                )
 
             }catch (ex:Exception)
             {

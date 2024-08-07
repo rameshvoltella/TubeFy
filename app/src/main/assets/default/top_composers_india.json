@@ -1,0 +1,54 @@
+{
+  "composers": [
+    {
+      "name": "A.R. Rahman",
+      "notable_works": ["Slumdog Millionaire", "Lagaan", "Taal"],
+      "academy_awards": 2
+    },
+    {
+      "name": "R.D. Burman",
+      "notable_works": ["Sholay", "Khatta Meetha", "Chupke Chupke"],
+      "filmfare_awards": 5
+    },
+    {
+      "name": "Laxmikant-Pyarelal",
+      "notable_works": ["Amar Akbar Anthony", "Hamaare Tumhare", "Khatta Meetha"],
+      "filmfare_awards": 7
+    },
+    {
+      "name": "Shankar-Ehsaan-Loy",
+      "notable_works": ["Dil Chahta Hai", "Kal Ho Na Ho", "Zindagi Na Milegi Dobara"],
+      "filmfare_awards": 3
+    },
+    {
+      "name": "Ilaiyaraaja",
+      "notable_works": ["Thalapathi", "Sindhu Bhairavi", "Annakkili"],
+      "national_awards": 4
+    },
+    {
+      "name": "Jatin-Lalit",
+      "notable_works": ["Dilwale Dulhania Le Jayenge", "Kabhi Haan Kabhi Naa", "Pardes"],
+      "filmfare_awards": 2
+    },
+    {
+      "name": "Bappi Lahiri",
+      "notable_works": ["Disco Dancer", "Chalte Chalte", "Namak Halaal"],
+      "filmfare_awards": 2
+    },
+    {
+      "name": "Anu Malik",
+      "notable_works": ["Baazigar", "Hama", "Chameli"],
+      "filmfare_awards": 2
+    },
+    {
+      "name": "Salim-Sulaiman",
+      "notable_works": ["Chakde! India", "Kurbaan", "Band Baaja Baaraat"],
+      "filmfare_awards": 2
+    },
+    {
+      "name": "Pritam",
+      "notable_works": ["Jab We Met", "Barfi!", "Dangal"],
+      "filmfare_awards": 3
+    }
+  ]
+}

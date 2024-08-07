@@ -1,0 +1,44 @@
+{
+  "playlist_categories": [
+    {
+      "title": "Top 10",
+      "description": "The top 10 most popular songs right now."
+    },
+    {
+      "title": "Latest Releases",
+      "description": "The newest music releases from various artists."
+    },
+    {
+      "title": "Fresh Hits",
+      "description": "The latest trending hits and popular new songs."
+    },
+    {
+      "title": "Best of the Year",
+      "description": "The best songs of the year, as selected by critics and listeners."
+    },
+    {
+      "title": "Most Played",
+      "description": "The most played tracks on the platform."
+    },
+    {
+      "title": "Chill Vibes",
+      "description": "Relaxing and laid-back music for a chill atmosphere."
+    },
+    {
+      "title": "Workout Tunes",
+      "description": "High-energy music perfect for workouts and exercise."
+    },
+    {
+      "title": "Classics",
+      "description": "Timeless classics from various genres."
+    },
+    {
+      "title": "Indie Favorites",
+      "description": "Popular and emerging indie tracks."
+    },
+    {
+      "title": "Throwbacks",
+      "description": "Songs from the past that are still loved today."
+    }
+  ]
+}

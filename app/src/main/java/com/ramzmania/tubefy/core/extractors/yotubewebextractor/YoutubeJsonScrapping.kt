@@ -1,6 +1,5 @@
-package com.ramzmania.tubefy.core.yotubewebextractor
+package com.ramzmania.tubefy.core.extractors.yotubewebextractor
 
-import MusicHomeResponse
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -10,6 +9,7 @@ import android.webkit.WebViewClient
 import com.ramzmania.tubefy.core.YoutubeCoreConstant
 import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.YoutubeMusicPlayListContent
 import com.ramzmania.tubefy.data.dto.youtubestripper.ApiResponse
+import com.ramzmania.tubefy.data.dto.youtubestripper.MusicHomeResponse2
 import com.ramzmania.tubefy.utils.parseJson
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -23,13 +23,13 @@ import kotlinx.coroutines.withContext
 class YoutubeJsonScrapping constructor(val webView: WebView,val context : Context) {
  private val sharedJsonContentPrivate= MutableSharedFlow<ApiResponse?>()
     val sharedJsonContent:SharedFlow<ApiResponse?>  = sharedJsonContentPrivate
-    private val sharedJsonMusicHomeContentPrivate= MutableSharedFlow<MusicHomeResponse?>()
-    val sharedJsonMusicHomeContent:SharedFlow<MusicHomeResponse?>  = sharedJsonMusicHomeContentPrivate
+    private val sharedJsonMusicHomeContentPrivate= MutableSharedFlow<MusicHomeResponse2?>()
+    val sharedJsonMusicHomeContent:SharedFlow<MusicHomeResponse2?>  = sharedJsonMusicHomeContentPrivate
     private val sharedJsonMusicHomePlayListContentPrivate= MutableSharedFlow<YoutubeMusicPlayListContent?>()
     val sharedJsonMusicHomePlayListContent:SharedFlow<YoutubeMusicPlayListContent?>  = sharedJsonMusicHomePlayListContentPrivate
     var alreadyEvaluated = false;
 
-    fun fetchPageSource(url: String,type:YoutubeScrapType) {
+    fun fetchPageSource(url: String,type: YoutubeScrapType) {
 //        val webView=WebView(context)
 //        var url="https://music.youtube.com"
         CoroutineScope(Dispatchers.IO).launch {
@@ -43,9 +43,11 @@ class YoutubeJsonScrapping constructor(val webView: WebView,val context : Contex
 //                            CoroutineScope(Dispatchers.IO).launch {
                             if(type== YoutubeScrapType.YOUTUBE_MUSIC) {
                                 getMusicHomeHtmlContent(webView)
-                            }else if(type==YoutubeScrapType.YOUTUBE_PLAYLIST)
+                            }else if(type== YoutubeScrapType.YOUTUBE_PLAYLIST)
                             {
                                 getMusicPlayListHtmlContent(webView)
+                            }else if(type== YoutubeScrapType.YOUTUBE_HOME){
+                                getYoutubeContent(webView)
                             }
 //                            }
                         }
@@ -58,7 +60,7 @@ class YoutubeJsonScrapping constructor(val webView: WebView,val context : Contex
         }
     }
 
-    private  fun getHtmlContent(webView: WebView) {
+    private  fun getYoutubeContent(webView: WebView) {
         if (!alreadyEvaluated) {
             alreadyEvaluated = true
             webView.evaluateJavascript("(function() { return document.documentElement.outerHTML; })();") { html ->
@@ -291,7 +293,7 @@ class YoutubeJsonScrapping constructor(val webView: WebView,val context : Contex
     private suspend fun passYtVideoHomeData(data:ApiResponse?) {
         sharedJsonContentPrivate.emit(data)
     }
-    private suspend fun passYtMusicHomeData(data:MusicHomeResponse?) {
+    private suspend fun passYtMusicHomeData(data:MusicHomeResponse2?) {
         Log.d("passing home data","yaaa")
         sharedJsonMusicHomeContentPrivate.emit(data)
     }

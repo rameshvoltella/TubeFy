@@ -1,0 +1,54 @@
+{
+  "composers": [
+    {
+      "name": "John Williams",
+      "notable_works": ["Star Wars", "Jurassic Park", "Harry Potter"],
+      "academy_awards": 5
+    },
+    {
+      "name": "Hans Zimmer",
+      "notable_works": ["Inception", "The Lion King", "Gladiator"],
+      "academy_awards": 1
+    },
+    {
+      "name": "Ennio Morricone",
+      "notable_works": ["The Good, the Bad and the Ugly", "Once Upon a Time in the West", "The Mission"],
+      "academy_awards": 2
+    },
+    {
+      "name": "Alan Silvestri",
+      "notable_works": ["Back to the Future", "Forrest Gump", "The Avengers"],
+      "academy_awards": 0
+    },
+    {
+      "name": "James Horner",
+      "notable_works": ["Titanic", "Avatar", "Braveheart"],
+      "academy_awards": 2
+    },
+    {
+      "name": "Danny Elfman",
+      "notable_works": ["Batman", "The Nightmare Before Christmas", "Edward Scissorhands"],
+      "academy_awards": 0
+    },
+    {
+      "name": "Gustavo Santaolalla",
+      "notable_works": ["Brokeback Mountain", "The Motorcycle Diaries", "The Last of Us"],
+      "academy_awards": 2
+    },
+    {
+      "name": "Thomas Newman",
+      "notable_works": ["American Beauty", "Finding Nemo", "Skyfall"],
+      "academy_awards": 0
+    },
+    {
+      "name": "Carter Burwell",
+      "notable_works": ["Fargo", "Twilight", "Three Billboards Outside Ebbing, Missouri"],
+      "academy_awards": 0
+    },
+    {
+      "name": "Alexandre Desplat",
+      "notable_works": ["The Grand Budapest Hotel", "The King's Speech", "The Shape of Water"],
+      "academy_awards": 2
+    }
+  ]
+}

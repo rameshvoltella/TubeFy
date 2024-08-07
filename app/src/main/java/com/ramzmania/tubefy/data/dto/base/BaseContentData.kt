@@ -1,3 +1,6 @@
 package com.ramzmania.tubefy.data.dto.base
 
-data class BaseContentData (val songThumpNail:String?, val songTitle:String?, val videoId:String?, val videoPlayList:String?)
+data class BaseContentData (val videoId: String?,
+                            val playlistId: String?,
+                            val thumbnail: String?,
+                            val title: String?,val isScrapData:Boolean=false)
