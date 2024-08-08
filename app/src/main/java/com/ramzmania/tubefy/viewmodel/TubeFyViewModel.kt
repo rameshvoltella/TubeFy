@@ -67,6 +67,9 @@ class TubeFyViewModel @Inject constructor(
     private val youTubeMusicHomeDataPrivate = MutableLiveData<Resource<List<HomePageResponse?>>>()
     val youTubeMusicHomeData: LiveData<Resource<List<HomePageResponse?>>> get() = youTubeMusicHomeDataPrivate
 
+    private val youTubeMusicHomeDefaultDataPrivate = MutableLiveData<Resource<List<HomePageResponse?>>>()
+    val youTubeMusicHomeDefaultData: LiveData<Resource<List<HomePageResponse?>>> get() = youTubeMusicHomeDefaultDataPrivate
+
     fun setHtmlContent(content: ApiResponse?) {
 //        htmlContentPrivate.value = content
         viewModelScope.launch {
@@ -94,6 +97,16 @@ class TubeFyViewModel @Inject constructor(
             }
         }
 
+    }
+
+    fun loadDefaultHomeData()
+    {
+        viewModelScope.launch {
+            localRepositorySource.loadDefaultHomePageData().collect {
+
+                youTubeMusicHomeDefaultDataPrivate.value = it
+            }
+        }
     }
 
     fun setHtmlMusicPlayListContent(content: YoutubeMusicPlayListContent?) {

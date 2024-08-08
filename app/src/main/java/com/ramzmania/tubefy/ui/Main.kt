@@ -38,6 +38,8 @@ private var nextPage: Page? = null
         observe(viewModel.youTubeSearchData, ::handleYoutubeSearchListResponse)
         observe(viewModel.streamUrlData, ::HandleStreamUrlResponse)
         observe(viewModel.youTubeMusicHomeData, ::HandleYtMusicHomeResponse)
+        observe(viewModel.youTubeMusicHomeDefaultData, ::HandleDefaultHomeResponse)
+
 
 
     }
@@ -55,7 +57,8 @@ private var nextPage: Page? = null
             viewModel.searchYoutubeV3()
 
         }
-        binding.lasttype.setOnClickListener { viewModel.startWebScrapping("aavesham") }
+        binding.lasttype.setOnClickListener { viewModel.loadDefaultHomeData()
+            viewModel.startWebScrapping("aavesham") }
 
         binding.newpipehome.setOnClickListener { viewModel.searchNewPipePage() }
     }
@@ -120,6 +123,32 @@ private var nextPage: Page? = null
                 Toast.makeText(applicationContext, "WEB SCAPPING DATA>" + resource.data!!.size, 1).show()
                 Log.d("url", "" + resource.data[0]!!.contentData!!.size)
 //                Log.d("url", "" + resource.data[1]!!.contentData!!.size)
+
+//                openUrlInBrowser( resource.data!!.streamUrl)
+            }
+
+            is Resource.DataError -> {
+            }
+
+            else -> {}
+        }
+    }
+
+    fun HandleDefaultHomeResponse(resource: Resource<List<HomePageResponse?>>) {
+        when (resource) {
+            is Resource.Loading -> {}
+            is Resource.Success -> {
+                Toast.makeText(applicationContext, "DAT FROM ASSERTS DATA>" + resource.data!!.size, 1).show()
+
+                resource.data.forEach {
+                    Log.d("url", "<><><>" + it?.contentData?.get(0)?.playlistId)
+
+                }
+//                Log.d("url", "" + resource.data[1]!!.contentData?.get(0)?.playlistId)
+//                Log.d("url", "" + resource.data[2]!!.contentData?.get(0)?.playlistId)
+//                Log.d("url", "" + resource.data[3]!!.contentData?.get(0)?.playlistId)
+//                Log.d("url", "" + resource.data[4]!!.contentData?.get(0)?.playlistId)
+//                Log.d("url", "" + resource.data[5]!!.contentData?.get(0)?.playlistId)
 
 //                openUrlInBrowser( resource.data!!.streamUrl)
             }

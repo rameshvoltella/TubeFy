@@ -1,0 +1,44 @@
+{
+  "data": [
+    {
+      "name": "Lo-fi",
+      "description": "Relaxing and chill music with a vintage feel, often used as background music for studying or working."
+    },
+    {
+      "name": "Sad",
+      "description": "Music that evokes feelings of melancholy or sorrow, often characterized by slow tempos and somber melodies."
+    },
+    {
+      "name": "Happy",
+      "description": "Upbeat and joyful music that promotes a positive and energetic mood, often featuring lively rhythms and melodies."
+    },
+    {
+      "name": "Romantic",
+      "description": "Music that expresses love and affection, often characterized by soft melodies and emotional lyrics."
+    },
+    {
+      "name": "Energetic",
+      "description": "High-tempo music that stimulates activity and excitement, typically featuring fast beats and powerful rhythms."
+    },
+    {
+      "name": "Chill",
+      "description": "Relaxed and soothing music that helps to create a calm and serene atmosphere, often with mellow beats and smooth sounds."
+    },
+    {
+      "name": "Epic",
+      "description": "Grand and dramatic music that builds intensity and creates a sense of awe, often used in film scores and trailers."
+    },
+    {
+      "name": "Dance",
+      "description": "Music designed to get people moving, characterized by rhythmic beats and catchy melodies, often used in clubs and parties."
+    },
+    {
+      "name": "Meditative",
+      "description": "Music intended to aid in relaxation and meditation, often featuring gentle, repetitive sounds and minimalistic arrangements."
+    },
+    {
+      "name": "Ambient",
+      "description": "Music that focuses on creating atmospheric soundscapes, often with minimal rhythmic elements and a focus on texture and tone."
+    }
+  ]
+}

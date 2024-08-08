@@ -20,4 +20,8 @@ class LocalRepository @Inject constructor(
         return flow { emit(localRepository.manipulateYoutubeMusicHomeStripData(youtubeMusicHomeJsonScrapping)) }
     }
 
+    override suspend fun loadDefaultHomePageData(): Flow<Resource<List<HomePageResponse?>>> {
+        return flow { emit(localRepository.loadDefaultHomePageData()) }
+    }
+
 }

@@ -1,45 +1,54 @@
 {
-  "singers": [
+  "data": [
     {
       "name": "Arijit Singh",
-      "notable_works": ["Tum Hi Ho", "Channa Mereya", "Raabta"],
-      "filmfare_awards": 6
-    },
-    {
-      "name": "Shreya Ghoshal",
-      "notable_works": ["Teri Ore", "Dola Re Dola", "Sun Raha Hai Na Tu"],
-      "filmfare_awards": 7
+      "notable_works": ["Slumdog Millionaire", "Lagaan", "Taal"],
+      "academy_awards": 2
     },
     {
       "name": "Sonu Nigam",
-      "notable_works": ["Kal Ho Na Ho", "Abhijeet Bhattacharya", "Tanhai"],
-      "filmfare_awards": 2
+      "notable_works": ["Sholay", "Khatta Meetha", "Chupke Chupke"],
+      "filmfare_awards": 5
     },
     {
-      "name": "Udit Narayan",
-      "notable_works": ["Pehla Nasha", "Dilwale Dulhania Le Jayenge", "Tujhe Dekha To"],
-      "filmfare_awards": 4
-    },
-    {
-      "name": "Alka Yagnik",
-      "notable_works": ["Taal Se Taal Mila", "Chamma Chamma", "Tere Naam"],
+      "name": "Shreya Ghoshal",
+      "notable_works": ["Amar Akbar Anthony", "Hamaare Tumhare", "Khatta Meetha"],
       "filmfare_awards": 7
     },
     {
-      "name": "Kavita Krishnamurthy",
-      "notable_works": ["Ek Do Teen", "Hawa Hawai", "Chandani"],
+      "name": "Salim-Sulaiman",
+      "notable_works": ["Dil Chahta Hai", "Kal Ho Na Ho", "Zindagi Na Milegi Dobara"],
+      "filmfare_awards": 3
+    },
+    {
+      "name": "Pritam",
+      "notable_works": ["Thalapathi", "Sindhu Bhairavi", "Annakkili"],
+      "national_awards": 4
+    },
+    {
+      "name": "Mohammed Rafi",
+      "notable_works": ["Dilwale Dulhania Le Jayenge", "Kabhi Haan Kabhi Naa", "Pardes"],
       "filmfare_awards": 2
     },
     {
-      "name": "Asha Bhosle",
-      "notable_works": ["Dum Maro Dum", "Chura Liya Hai Tumne Jo Dil Ko", "Parde Mein Rehne Do"],
-      "filmfare_awards": 7
+      "name": "Kumar Sanu",
+      "notable_works": ["Disco Dancer", "Chalte Chalte", "Namak Halaal"],
+      "filmfare_awards": 2
     },
     {
       "name": "Kishore Kumar",
-      "notable_works": ["Ek Ladki Bheegi Bhaagi Si", "Palatke Tera Naam", "Mere Sapno Ki Rani"],
-      "filmfare_awards": 8
+      "notable_works": ["Baazigar", "Hama", "Chameli"],
+      "filmfare_awards": 2
     },
     {
-      "name": "Mohammad Rafi",
-      "notable_works": ["Chaudhvin Ka Chand Ho", "Teri Aankhon Ke Siva", "Kya Hua Tera Wada"
+      "name": "Javed Ali",
+      "notable_works": ["Chakde! India", "Kurbaan", "Band Baaja Baaraat"],
+      "filmfare_awards": 2
+    },
+    {
+      "name": "Ilaiyaraaja",
+      "notable_works": ["Jab We Met", "Barfi!", "Dangal"],
+      "filmfare_awards": 3
+    }
+  ]
+}

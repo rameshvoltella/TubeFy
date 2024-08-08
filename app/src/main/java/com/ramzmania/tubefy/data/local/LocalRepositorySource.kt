@@ -10,5 +10,7 @@ import kotlinx.coroutines.flow.Flow
 interface LocalRepositorySource {
     suspend fun manipulateYoutubeSearchStripData(youtubeJsonScrapping: ApiResponse): Flow<Resource<TubeFyCoreUniversalData>>
     suspend fun manipulateYoutubeMusicHomeStripData(youtubeMusicHomeJsonScrapping: MusicHomeResponse2): Flow<Resource<List<HomePageResponse?>>>
+    suspend fun loadDefaultHomePageData(): Flow<Resource<List<HomePageResponse?>>>
+
 
 }
