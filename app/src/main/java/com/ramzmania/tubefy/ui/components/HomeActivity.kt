@@ -39,8 +39,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.ramzmania.tubefy.R
+import com.ramzmania.tubefy.ui.components.screen.BooksScreen
 import com.ramzmania.tubefy.ui.components.screen.HomeInitialScreen
-import com.ramzmania.tubefy.ui.theme.TubeFyApplicationTheme
+import com.ramzmania.tubefy.ui.components.screen.MusicScreen
+import com.ramzmania.tubefy.ui.components.screen.ProfileScreen
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint

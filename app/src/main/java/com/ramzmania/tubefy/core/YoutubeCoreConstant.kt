@@ -32,4 +32,13 @@ object YoutubeCoreConstant {
             url
         }
     }
+    fun decodeThumpUrl(encodedUrl: String): String {
+        // Replace encoded characters with their actual representations
+        return encodedUrl
+            .replace("\\/", "/") // Decode `\/` to `/`
+            .replace("\\x3d", "=") // Decode `\x3d` to `=`
+            .replace("\\x3f", "?") // Decode `\x3f` to `?`
+            .replace("\\x2f", "/") // Decode `\x2f` to `/`
+        // Add more replacements as needed for other encoded characters
+    }
 }

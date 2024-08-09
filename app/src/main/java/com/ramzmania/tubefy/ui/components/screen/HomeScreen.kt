@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -18,6 +19,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.ramzmania.tubefy.R
+import com.ramzmania.tubefy.core.YoutubeCoreConstant
 import com.ramzmania.tubefy.data.dto.base.BaseContentData
 import com.ramzmania.tubefy.data.dto.home.CellType
 import com.ramzmania.tubefy.data.dto.home.HomePageResponse
@@ -69,9 +71,46 @@ fun SingleContentCell(contentData: List<BaseContentData>?) {
         ContentItem(data = data)
     }
 }
-
 @Composable
 fun ContentItem(data: BaseContentData) {
+    Column(
+        modifier = Modifier
+            .padding(8.dp)
+            .fillMaxWidth()
+    ) {
+        Log.d("incoming", "" + data.thumbnail)
+
+        data.thumbnail?.let { thumbnailUrl ->
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(YoutubeCoreConstant.decodeThumpUrl(thumbnailUrl))
+                    .crossfade(true)
+                    .placeholder(R.drawable.tubefy_icon)
+                    .error(R.drawable.tubefy_icon)
+                    .build(),
+                contentDescription = "Drawable Image",
+                modifier = Modifier
+                    .padding(20.dp)
+                    .height(200.dp)
+                    .width(200.dp),
+                contentScale = ContentScale.Crop
+            )
+        } ?: AsyncImage(
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(R.drawable.tubefy_icon)
+                .build(),
+            contentDescription = "Placeholder Image",
+            modifier = Modifier
+                .padding(20.dp)
+                .height(200.dp)
+                .width(200.dp),
+            contentScale = ContentScale.Crop
+        )
+    }
+}
+
+@Composable
+fun Content2Item(data: BaseContentData) {
     Column(
         modifier = Modifier
             .padding(8.dp)
@@ -88,7 +127,7 @@ fun ContentItem(data: BaseContentData) {
 //            )
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
-                    .data("https://via.placeholder.com/150")
+                    .data(YoutubeCoreConstant.decodeThumpUrl(it))
                     .crossfade(true)
                     .build(),
                 contentDescription = "Drawable Image",
