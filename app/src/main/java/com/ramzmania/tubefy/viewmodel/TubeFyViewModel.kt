@@ -101,8 +101,11 @@ class TubeFyViewModel @Inject constructor(
 
     fun loadDefaultHomeData()
     {
+        Log.d("loading","called")
+
         viewModelScope.launch {
             localRepositorySource.loadDefaultHomePageData().collect {
+                Log.d("loading","came")
 
                 youTubeMusicHomeDefaultDataPrivate.value = it
             }
@@ -198,8 +201,10 @@ class TubeFyViewModel @Inject constructor(
 //        scrapping.fetchPageSource("https://music.youtube.com/")
     }
 
-    fun startWebScrapping(searchQuery: String) {
-        scrapping.fetchPageSource("https://music.youtube.com/", YoutubeScrapType.YOUTUBE_MUSIC)
+    fun startWebScrapping(url: String,youtubeScrapType: YoutubeScrapType) {
+        scrapping.fetchPageSource(url, youtubeScrapType)
+
+//        scrapping.fetchPageSource("https://music.youtube.com/", YoutubeScrapType.YOUTUBE_MUSIC)
 //        scrapping.fetchPageSource(
 //            "https://music.youtube.com/playlist?list=RDCLAK5uy_n6_pc7SPVqtuPg_cK3AUxh9AbQP-_Qh-w",
 //            YoutubeScrapType.YOUTUBE_PLAYLIST

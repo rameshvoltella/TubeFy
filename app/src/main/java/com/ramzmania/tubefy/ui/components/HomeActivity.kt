@@ -39,8 +39,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.ramzmania.tubefy.R
+import com.ramzmania.tubefy.ui.components.screen.HomeInitialScreen
 import com.ramzmania.tubefy.ui.theme.TubeFyApplicationTheme
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class HomeActivity: ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -100,7 +103,7 @@ fun MainScreenPreview() {
 fun Navigation(navController: NavHostController) {
     NavHost(navController, startDestination = NavigationItem.Home.route) {
         composable(NavigationItem.Home.route) {
-            HomeScreen()
+            HomeInitialScreen()
         }
         composable(NavigationItem.Music.route) {
             MusicScreen()

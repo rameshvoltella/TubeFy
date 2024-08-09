@@ -1,4 +1,5 @@
 package com.ramzmania.tubefy.ui.components.screen
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -8,24 +9,32 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.ramzmania.tubefy.R
 import com.ramzmania.tubefy.data.dto.base.BaseContentData
 import com.ramzmania.tubefy.data.dto.home.CellType
 import com.ramzmania.tubefy.data.dto.home.HomePageResponse
 
 @Composable
 fun HomePageContentList(homePageResponses: List<HomePageResponse?>) {
+
     LazyColumn {
         items(homePageResponses) { response ->
+
             response?.let {
                 when (it.cellType) {
                     CellType.LIST -> VerticalContentList(contentData = it.contentData)
                     CellType.HORIZONTAL_LIST -> HorizontalContentList(contentData = it.contentData)
                     CellType.THREE_TYPE_CELL -> VerticalContentList(contentData = it.contentData)
                     CellType.SINGLE_CELL -> SingleContentCell(contentData = it.contentData)
-                    CellType.PLAYLIST_ONLY -> VerticalContentList(contentData = it.contentData)
+                    CellType.PLAYLIST_ONLY -> HorizontalContentList(contentData = it.contentData)
                 }
             }
         }
@@ -78,7 +87,7 @@ fun ContentItem(data: BaseContentData) {
 //            )
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
-                    .data(it)
+                    .data("https://via.placeholder.com/150")
                     .crossfade(true)
                     .build(),
                 contentDescription = "Drawable Image",
@@ -93,8 +102,41 @@ fun ContentItem(data: BaseContentData) {
             Text(
                 text = it,
                 modifier = Modifier.padding(top = 8.dp),
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = colorResource(id = R.color.purple_700),
 //                style = MaterialTheme.typography.h6
             )
         }
     }
+}
+@Preview(showBackground = true)
+@Composable
+fun HomePageContentListPreview() {
+    val videoSortedList = mutableListOf<HomePageResponse>()
+
+    val mockContentData = listOf(
+        BaseContentData(
+            playlistId = "",
+            videoId = "",
+            title = "Song Title 1",
+            thumbnail = "https://via.placeholder.com/150"
+        ),
+        BaseContentData(
+            playlistId = "",
+            videoId = "",
+            title = "Song Title 1",
+            thumbnail = "https://via.placeholder.com/150"
+        ),
+        BaseContentData(
+            playlistId = "",
+            videoId = "",
+            title = "Song Title 1",
+            thumbnail = "https://via.placeholder.com/150"
+        )
+    )
+    videoSortedList.add(HomePageResponse(CellType.HORIZONTAL_LIST,mockContentData))
+    videoSortedList.add(HomePageResponse(CellType.HORIZONTAL_LIST,mockContentData))
+
+    HomePageContentList(homePageResponses = videoSortedList)
 }

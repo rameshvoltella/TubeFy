@@ -7,6 +7,7 @@ import android.util.Log
 import android.widget.Toast
 import com.ramzmania.tubefy.core.YoutubeCoreConstant.extractYoutubeVideoId
 import com.ramzmania.tubefy.core.dataformatter.YoutubeApiType
+import com.ramzmania.tubefy.core.extractors.yotubewebextractor.YoutubeScrapType
 import com.ramzmania.tubefy.data.dto.searchformat.StreamUrlData
 import com.ramzmania.tubefy.data.dto.searchformat.TubeFyCoreTypeData
 import com.ramzmania.tubefy.data.dto.searchformat.TubeFyCoreUniversalData
@@ -58,7 +59,7 @@ private var nextPage: Page? = null
 
         }
         binding.lasttype.setOnClickListener { viewModel.loadDefaultHomeData()
-            viewModel.startWebScrapping("aavesham") }
+            viewModel.startWebScrapping("aavesham", YoutubeScrapType.YOUTUBE_MUSIC) }
 
         binding.newpipehome.setOnClickListener { viewModel.searchNewPipePage() }
     }
