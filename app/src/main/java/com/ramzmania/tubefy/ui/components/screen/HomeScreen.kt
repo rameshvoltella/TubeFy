@@ -12,13 +12,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -76,7 +79,7 @@ fun VerticalContentList(contentData: List<BaseContentData>?,viewModel: TubeFyVie
     contentData?.let {
         Column {
             it.forEach { data ->
-                ContentItem(data = data){ selectedItem ->
+                ContentItemList(data = data){ selectedItem ->
                     // Handle item click here
                     Log.d("ItemClicked", "Clicked item: ${selectedItem.videoId}")
                     viewModel.getStreamUrl(selectedItem.videoId!!)
@@ -116,6 +119,57 @@ fun ContentItem(data: BaseContentData, onClick: (BaseContentData) -> Unit) {
     Column(
         modifier = Modifier
             .padding(8.dp)
+            .wrapContentWidth()
+            .clickable { onClick(data) }
+    ) {
+        Log.d("incoming", "" + data.thumbnail)
+
+        data.thumbnail?.let { thumbnailUrl ->
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(YoutubeCoreConstant.decodeThumpUrl(thumbnailUrl))
+                    .crossfade(true)
+                    .placeholder(R.drawable.placeholder)
+                    .error(R.drawable.placeholder)
+                    .build(),
+                contentDescription = "Drawable Image",
+                modifier = Modifier
+                    .padding(10.dp)
+                    .height(200.dp)
+                    .width(200.dp),
+                contentScale = ContentScale.Crop
+            )
+        } ?: AsyncImage(
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(R.drawable.images)
+                .crossfade(true)
+                .placeholder(R.drawable.placeholder)
+                .error(R.drawable.placeholder)
+                .build(),
+            contentDescription = "Placeholder Image",
+            modifier = Modifier
+                .padding(20.dp)
+                .height(200.dp)
+                .width(200.dp),
+            contentScale = ContentScale.Crop
+        )
+        Text(text = data.title!!,
+            fontWeight = FontWeight.Bold,
+            color = Color.White,
+            modifier = Modifier.padding(horizontal = 5.dp).width(200.dp),
+            textAlign = TextAlign.Left,
+            maxLines = 2,
+            fontSize = 16.sp
+            )
+
+    }
+}
+
+@Composable
+fun ContentItemList(data: BaseContentData,onClick: (BaseContentData) -> Unit) {
+    Row(
+        modifier = Modifier
+            .padding(8.dp)
             .fillMaxWidth()
             .clickable { onClick(data) }
     ) {
@@ -126,28 +180,40 @@ fun ContentItem(data: BaseContentData, onClick: (BaseContentData) -> Unit) {
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(YoutubeCoreConstant.decodeThumpUrl(thumbnailUrl))
                     .crossfade(true)
-                    .placeholder(R.drawable.tubefy_icon)
-                    .error(R.drawable.tubefy_icon)
+                    .placeholder(R.drawable.placeholder)
+                    .error(R.drawable.placeholder)
                     .build(),
                 contentDescription = "Drawable Image",
                 modifier = Modifier
-                    .padding(20.dp)
-                    .height(200.dp)
-                    .width(200.dp),
+                    .padding(horizontal = 5.dp, vertical = 5.dp)
+                    .height(40.dp)
+                    .width(40.dp),
                 contentScale = ContentScale.Crop
             )
         } ?: AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
-                .data(R.drawable.tubefy_icon)
+                .data(R.drawable.images)
+                .crossfade(true)
+                .placeholder(R.drawable.placeholder)
+                .error(R.drawable.placeholder)
                 .build(),
+
             contentDescription = "Placeholder Image",
             modifier = Modifier
-                .padding(20.dp)
-                .height(200.dp)
-                .width(200.dp),
+                .padding(horizontal = 5.dp, vertical = 5.dp)
+                .height(20.dp)
+                .width(20.dp),
             contentScale = ContentScale.Crop
         )
+        Text(text = data.title!!,fontWeight = FontWeight.Thin,
+            color = Color.White,
+            modifier = Modifier.align(Alignment.CenterVertically).padding(horizontal = 5.dp),
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            fontSize = 20.sp)
+
     }
+
 }
 
 @Composable
@@ -191,7 +257,7 @@ fun Content2Item(data: BaseContentData) {
         }
     }
 }
-@Preview(showBackground = true)
+//@Preview(showBackground = true)
 @Composable
 fun HomePageContentListPreview() {
     val videoSortedList = mutableListOf<HomePageResponse>()
@@ -220,4 +286,11 @@ fun HomePageContentListPreview() {
     videoSortedList.add(HomePageResponse(CellType.HORIZONTAL_LIST,mockContentData))
 
     HomePageContentList(homePageResponses = videoSortedList)
+}
+
+@Preview
+@Composable
+fun LisrtContent()
+{
+    ContentItemList( BaseContentData("ekjsndflknqwek;fj;kqwasdasjek;fjq;kwejfk;qwej;kfjkq;wjfkjakwsjfklasjkfnjaks","e","e","e",false),onClick = {})
 }
