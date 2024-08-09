@@ -1,11 +1,17 @@
 package com.ramzmania.tubefy.ui.components.screen
+import android.content.Intent
+import android.net.Uri
 import android.util.Log
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -16,16 +22,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.ramzmania.tubefy.R
 import com.ramzmania.tubefy.core.YoutubeCoreConstant
+import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.base.BaseContentData
 import com.ramzmania.tubefy.data.dto.home.CellType
 import com.ramzmania.tubefy.data.dto.home.HomePageResponse
+import com.ramzmania.tubefy.data.dto.searchformat.StreamUrlData
+import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
 
 @Composable
-fun HomePageContentList(homePageResponses: List<HomePageResponse?>) {
+fun HomePageContentList(homePageResponses: List<HomePageResponse?>,viewModel: TubeFyViewModel = hiltViewModel()) {
+    val streamUrlData by viewModel.streamUrlData.observeAsState()
+    val context = LocalContext.current
 
     LazyColumn {
         items(homePageResponses) { response ->
@@ -41,42 +53,71 @@ fun HomePageContentList(homePageResponses: List<HomePageResponse?>) {
             }
         }
     }
+
+    LaunchedEffect(key1 = streamUrlData) {
+        if (streamUrlData is Resource.Success) {
+            val items = (streamUrlData as Resource.Success<StreamUrlData>).data
+                // Prepend new data to the existing list
+            Log.d("datata",">>VADAAA")
+
+            Log.d("datata",">>"+streamUrlData!!.data!!.streamUrl)
+            if (streamUrlData!!.data!!.streamUrl.isNotEmpty()) {
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(streamUrlData!!.data!!.streamUrl))
+                context.startActivity(intent)
+            }
+            }
+        }
+
 }
 
+
 @Composable
-fun VerticalContentList(contentData: List<BaseContentData>?) {
+fun VerticalContentList(contentData: List<BaseContentData>?,viewModel: TubeFyViewModel = hiltViewModel()) {
     contentData?.let {
         Column {
             it.forEach { data ->
-                ContentItem(data = data)
+                ContentItem(data = data){ selectedItem ->
+                    // Handle item click here
+                    Log.d("ItemClicked", "Clicked item: ${selectedItem.videoId}")
+                    viewModel.getStreamUrl(selectedItem.videoId!!)
+
+                }
             }
         }
     }
 }
 
 @Composable
-fun HorizontalContentList(contentData: List<BaseContentData>?) {
+fun HorizontalContentList(contentData: List<BaseContentData>?,viewModel: TubeFyViewModel = hiltViewModel()) {
     contentData?.let {
         LazyRow {
             items(it) { data ->
-                ContentItem(data = data)
+                ContentItem(data = data){ selectedItem ->
+                    // Handle item click here
+                    Log.d("ItemClicked", "Clicked item: ${selectedItem.videoId}")
+                    viewModel.getStreamUrl(selectedItem.videoId!!)
+                }
             }
         }
     }
 }
 
 @Composable
-fun SingleContentCell(contentData: List<BaseContentData>?) {
+fun SingleContentCell(contentData: List<BaseContentData>?,viewModel: TubeFyViewModel = hiltViewModel()) {
     contentData?.firstOrNull()?.let { data ->
-        ContentItem(data = data)
+        ContentItem(data = data){ selectedItem ->
+            // Handle item click here
+            Log.d("ItemClicked", "Clicked item: ${selectedItem.videoId}")
+            viewModel.getStreamUrl(selectedItem.videoId!!)        }
     }
 }
 @Composable
-fun ContentItem(data: BaseContentData) {
+fun ContentItem(data: BaseContentData, onClick: (BaseContentData) -> Unit) {
     Column(
         modifier = Modifier
             .padding(8.dp)
             .fillMaxWidth()
+            .clickable { onClick(data) }
     ) {
         Log.d("incoming", "" + data.thumbnail)
 
