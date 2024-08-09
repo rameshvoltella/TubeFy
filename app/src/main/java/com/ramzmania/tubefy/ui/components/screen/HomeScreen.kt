@@ -77,6 +77,7 @@ fun ContentItem(data: BaseContentData) {
             .padding(8.dp)
             .fillMaxWidth()
     ) {
+        Log.d("incomming",""+data.thumbnail)
         data.thumbnail?.let {
 //            Image(
 //                painter = rememberImagePainter(data = it),

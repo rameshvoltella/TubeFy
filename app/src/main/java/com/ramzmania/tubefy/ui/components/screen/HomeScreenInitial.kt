@@ -21,6 +21,9 @@ import com.ramzmania.tubefy.core.extractors.yotubewebextractor.YoutubeScrapType
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
 import com.ramzmania.tubefy.data.dto.home.HomePageResponse
 import com.ramzmania.tubefy.data.Resource
+
+
+
 @Composable
 fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
     // Trigger loading of default home data
@@ -32,6 +35,32 @@ fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
     // Observe the data from the ViewModel
     val homeData by viewModel.youTubeMusicHomeDefaultData.observeAsState()
     val scrapData by viewModel.youTubeMusicHomeData.observeAsState()
+
+    // Mutable state for the final list to display
+    var finalItems by remember { mutableStateOf<List<HomePageResponse?>>(emptyList()) }
+
+    // Update finalItems based on homeData
+    LaunchedEffect(homeData) {
+        if (homeData is Resource.Success) {
+            val items = (homeData as Resource.Success<List<HomePageResponse?>>).data
+            if (items != null && items.isNotEmpty()) {
+                // Prepend new data to the existing list
+                finalItems = items + finalItems
+
+            }
+        }
+    }
+
+    // Update finalItems based on scrapData
+    LaunchedEffect(scrapData) {
+        if (scrapData is Resource.Success) {
+            val items = (scrapData as Resource.Success<List<HomePageResponse?>>).data
+            if (items != null && items.isNotEmpty()) {
+                // Prepend new data to the existing list
+                finalItems = items + finalItems
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -50,73 +79,28 @@ fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        when (homeData) {
-            is Resource.Loading -> {
-                CircularProgressIndicator(
-                    color = Color.White,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
-            }
-            is Resource.Success -> {
-                val items = (homeData as Resource.Success<List<HomePageResponse?>>).data
-                if (items != null && items.isNotEmpty()) {
-                    // Show the list of items
-                    HomePageContentList(homePageResponses = items)
-                } else {
-                    // Show error if the list is empty
-                    Text(
-                        text = "No data available",
-                        color = Color.Red,
-                        fontSize = 18.sp,
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
-                    )
-                }
-            }
-            is Resource.DataError -> {
-                Text(
-                    text = "Error loading data",
-                    color = Color.Red,
-                    fontSize = 18.sp,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
-            }
-            else -> {}
+        // Show loading indicators or error messages
+        if (homeData is Resource.Loading || scrapData is Resource.Loading) {
+            CircularProgressIndicator(
+                color = Color.White,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
+        } else if (homeData is Resource.DataError || scrapData is Resource.DataError) {
+            Text(
+                text = "Error loading data",
+                color = Color.Red,
+                fontSize = 18.sp,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
         }
 
-        when (scrapData) {
-            is Resource.Loading -> {
-//                CircularProgressIndicator(
-//                    color = Color.White,
-//                    modifier = Modifier.align(Alignment.CenterHorizontally)
-//                )
-            }
-            is Resource.Success -> {
-                val items = (homeData as Resource.Success<List<HomePageResponse?>>).data
-                if (items != null && items.isNotEmpty()) {
-                    // Show the list of items
-                    HomePageContentList(homePageResponses = items)
-                } else {
-                    // Show error if the list is empty
-                    Text(
-                        text = "No data available",
-                        color = Color.Red,
-                        fontSize = 18.sp,
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
-                    )
-                }
-            }
-            is Resource.DataError -> {
-//                Text(
-//                    text = "Error loading data",
-//                    color = Color.Red,
-//                    fontSize = 18.sp,
-//                    modifier = Modifier.align(Alignment.CenterHorizontally)
-//                )
-            }
-            else -> {}
+        // Display the updated list
+        if (finalItems.isNotEmpty()) {
+            HomePageContentList(homePageResponses = finalItems)
         }
     }
 }
+
 
 @Preview(showBackground = true)
 @Composable
