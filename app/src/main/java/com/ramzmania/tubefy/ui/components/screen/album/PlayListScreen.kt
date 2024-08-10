@@ -1,5 +1,8 @@
 package com.ramzmania.tubefy.ui.components.screen.album
 
+import android.content.Intent
+import android.net.Uri
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -16,8 +19,12 @@ import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -32,12 +39,24 @@ import coil.compose.rememberImagePainter
 import coil.request.ImageRequest
 import com.ramzmania.tubefy.R
 import com.ramzmania.tubefy.core.YoutubeCoreConstant
+import com.ramzmania.tubefy.core.extractors.yotubewebextractor.YoutubeScrapType
+import com.ramzmania.tubefy.data.Resource
+import com.ramzmania.tubefy.data.dto.home.HomePageResponse
+import com.ramzmania.tubefy.data.dto.searchformat.StreamUrlData
+import com.ramzmania.tubefy.data.dto.searchformat.TubeFyCoreTypeData
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
 
 @Composable
 fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel(),navController: NavController) {
+    val playListData by viewModel.youTubePlayListData.observeAsState()
     val streamUrlData by viewModel.streamUrlData.observeAsState()
-
+    var finalItems by remember { mutableStateOf<List<TubeFyCoreTypeData?>>(emptyList()) }
+    val navBackStackEntry = navController.currentBackStackEntry
+    val playlistId = navBackStackEntry?.arguments?.getString("playlistId")
+    LaunchedEffect(Unit) {
+        val playlistId = navBackStackEntry?.arguments?.getString("playlistId")
+        viewModel.loadPlayList(playlistId!!)
+    }
     Column(modifier = Modifier.fillMaxSize()) {
         AlbumHeader(
             imageUrl = "https://www.udiscovermusic.com/wp-content/uploads/2015/10/100-Greatest-Album-Covers.jpg", // Replace with your image URL
@@ -45,15 +64,40 @@ fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel(),navController: NavC
             artist = "Danny Elfman",
             year = "2011"
         )
-        AlbumTrackList(tracks = listOf(
-            "Charlie Trains Atom",
-            "On The Move",
-            "Into The Zoo",
-            "Why We're Here",
-            "Meet Atom"
-            // Add more tracks here
-        ))
+        AlbumTrackList(tracks =finalItems)
     }
+    LaunchedEffect(key1 = playListData) {
+        if (playListData is Resource.Success) {
+//            val items = (streamUrlData as Resource.Success<StreamUrlData>).data
+            // Prepend new data to the existing list
+            Log.d("datata", ">>VADAAA"+playListData!!.data!!.playListVideoList?.get(0)?.videoId)
+            finalItems=playListData!!.data!!.playListVideoList!!
+
+//            if(playListData!!.data!!.playListVideoList?.get(0)?.videoId!=null)
+//            {
+//                viewModel.getStreamUrl(playListData!!.data!!.playListVideoList?.get(0)?.videoId!!)
+//            }
+            // Log.d("datata", "palyislisis>>" + (playListData!!.data!!.playListVideoList?.get(0)?.videoId ?: ))
+//            if (streamUrlData!!.data!!.streamUrl.isNotEmpty()) {
+//                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(streamUrlData!!.data!!.streamUrl))
+//                context.startActivity(intent)
+//            }
+        }
+    }
+    LaunchedEffect(key1 = streamUrlData) {
+        if (streamUrlData is Resource.Success) {
+            val items = (streamUrlData as Resource.Success<StreamUrlData>).data
+            // Prepend new data to the existing list
+            Log.d("datata", ">>VADAAA")
+
+            Log.d("datata", ">>" + streamUrlData!!.data!!.streamUrl)
+            if (streamUrlData!!.data!!.streamUrl.isNotEmpty()) {
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(streamUrlData!!.data!!.streamUrl))
+//                context.startActivity(intent)
+            }
+        }
+    }
+
 }
 
 @Composable
@@ -91,23 +135,23 @@ fun AlbumHeader(imageUrl: String, title: String, artist: String, year: String) {
 }
 
 @Composable
-fun AlbumTrackList(tracks: List<String>) {
+fun AlbumTrackList(tracks:List<TubeFyCoreTypeData?>) {
     LazyColumn {
-        items(tracks) { track ->
-            TrackItem(trackName = track)
+        items(tracks!!) { track ->
+            TrackItem(trackName = track!!)
         }
     }
 }
 
 @Composable
-fun TrackItem(trackName: String) {
+fun TrackItem(trackName: TubeFyCoreTypeData) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .clickable { /* Handle click */ }
     ) {
-        Text(text = trackName,  color = Color.White)
+        Text(text = trackName.videoTitle,  color = Color.Black)
         Divider(modifier = Modifier.padding(vertical = 4.dp), color = Color.Gray)
     }
 }

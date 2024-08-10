@@ -135,7 +135,20 @@ fun HorizontalContentList(navController:NavController?,
                         Log.d("ItemClicked", "Clicked item playlistId: ${selectedItem.playlistId}")
 
 //                        viewModel.loadPlayList(selectedItem.playlistId!!)
-                        navController!!.navigate(NavigationItem.PlayList.route) {
+//                        navController!!.navigate(NavigationItem.PlayList.route) {
+//                          /*  navController.graph.startDestinationRoute?.let { route ->
+//                                popUpTo(route) {
+//                                    saveState = true
+//                                }
+//                            }
+//                            launchSingleTop = true
+//                            restoreState = true*/
+//                            // Avoid recreating the composable
+//                            launchSingleTop = true
+//                            // Restore state
+//                            restoreState = true
+//                        }
+                        navController!!.navigate(NavigationItem.PlayList.createRoute(selectedItem.playlistId!!, selectedItem.playlistId!!)) {
                             navController.graph.startDestinationRoute?.let { route ->
                                 popUpTo(route) {
                                     saveState = true
