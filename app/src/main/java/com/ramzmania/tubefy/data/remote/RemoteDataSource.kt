@@ -3,6 +3,7 @@ package com.ramzmania.tubefy.data.remote
 import com.ramzmania.tubefy.data.dto.searchformat.StreamUrlData
 import com.ramzmania.tubefy.data.dto.searchformat.TubeFyCoreUniversalData
 import com.ramzmania.tubefy.data.Resource
+import com.ramzmania.tubefy.data.dto.playlist.PlayListData
 import org.schabi.newpipe.extractor.Page
 
 interface RemoteDataSource {
@@ -11,6 +12,9 @@ interface RemoteDataSource {
                                  pageToken: String?): Resource<TubeFyCoreUniversalData>
 
     suspend fun getStreamUrl(videoId:String):Resource<StreamUrlData>
+
+    suspend fun getPlayListInfo(playListUrl:String):Resource<PlayListData>
+
 
     /*NewPipe search sources*/
 

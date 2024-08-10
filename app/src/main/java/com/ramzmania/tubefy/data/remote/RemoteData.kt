@@ -6,13 +6,16 @@ import com.ramzmania.tubefy.core.YoutubeCoreConstant.YOUTUBE_V3_MAX_RESULT
 import com.ramzmania.tubefy.core.dataformatter.FormattingResult
 import com.ramzmania.tubefy.data.dto.searchformat.NewPipeSortingData
 import com.ramzmania.tubefy.core.dataformatter.newpipe.NewPipeDataFormatter
+import com.ramzmania.tubefy.core.dataformatter.newpipe.NewPipeDataFormatterFactory
 import com.ramzmania.tubefy.data.dto.searchformat.StreamUrlData
 import com.ramzmania.tubefy.data.dto.searchformat.TubeFyCoreUniversalData
 import com.ramzmania.tubefy.core.dataformatter.youtubeV3.YoutubeV3Formatter
+import com.ramzmania.tubefy.core.extractors.newpipeextractor.newPipePlayListData
 import com.ramzmania.tubefy.core.extractors.newpipeextractor.newPipeSearchFor
 import com.ramzmania.tubefy.core.extractors.newpipeextractor.newPipeSearchNextPageFor
 import com.ramzmania.tubefy.data.NetworkConnectivity
 import com.ramzmania.tubefy.data.Resource
+import com.ramzmania.tubefy.data.dto.playlist.PlayListData
 import com.ramzmania.tubefy.data.dto.youtubeV3.YoutubeSearchResponse
 import com.ramzmania.tubefy.data.remote.api.ApiServices
 import com.ramzmania.tubefy.data.remote.api.ServiceGenerator
@@ -23,12 +26,14 @@ import com.ramzmania.tubefy.errors.SERVER_ERROR
 import com.ramzmania.tubefy.errors.YOUTUBE_V3_SEARCH_ERROR
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.schabi.newpipe.extractor.InfoItem
 import org.schabi.newpipe.extractor.NewPipe
 import org.schabi.newpipe.extractor.Page
 import org.schabi.newpipe.extractor.playlist.PlaylistInfo
 import org.schabi.newpipe.extractor.search.SearchInfo
 import org.schabi.newpipe.extractor.services.youtube.YoutubeService
 import org.schabi.newpipe.extractor.services.youtube.extractors.YoutubeStreamExtractor
+import org.schabi.newpipe.extractor.stream.StreamInfoItem
 import retrofit2.Response
 import java.io.IOException
 import javax.inject.Inject
@@ -37,7 +42,7 @@ class RemoteData@Inject
 constructor(
     private val serviceGenerator: ServiceGenerator,
     private val networkConnectivity: NetworkConnectivity,
-    private val newPipeFormatter: NewPipeDataFormatter,private val youtubeV3Formatter: YoutubeV3Formatter
+    private val newPipeFormatterFactory: NewPipeDataFormatterFactory, private val youtubeV3Formatter: YoutubeV3Formatter
 ) :RemoteDataSource {
     override suspend fun requestYoutubeV3(
         part: String,
@@ -127,6 +132,7 @@ constructor(
 //            }
 
             searchInfo= newPipeSearchFor(serviceId, searchString, contentFilter, sortFilter)
+            val newPipeFormatter: NewPipeDataFormatter<InfoItem> = newPipeFormatterFactory.createForInfoItem()
             val result = newPipeFormatter.run(NewPipeSortingData(searchInfo!!.relatedItems,searchInfo!!.nextPage))
             when(result)
             {
@@ -145,7 +151,7 @@ constructor(
         }
         return withContext(Dispatchers.IO) {
             val pageSearchInfo = newPipeSearchFor(serviceId, searchString, contentFilter, sortFilter)
-
+            val newPipeFormatter: NewPipeDataFormatter<InfoItem> = newPipeFormatterFactory.createForInfoItem()
             val result = newPipeFormatter.run(NewPipeSortingData(pageSearchInfo.relatedItems,pageSearchInfo.nextPage))
             when(result)
             {
@@ -170,6 +176,29 @@ constructor(
 //        }
     }
 
+    override suspend fun getPlayListInfo( playListUrl: String):Resource<PlayListData>
+    {
+        return withContext(Dispatchers.IO) {
+             val newPipeFormatter: NewPipeDataFormatter<StreamInfoItem?> = newPipeFormatterFactory.createForPlayListItem()
+             val newPipePlayList = newPipePlayListData(playListUrl)
+             val result = newPipeFormatter.run(NewPipeSortingData(newPipePlayList.relatedItems,newPipePlayList.nextPage))
+            when(result)
+            {
+                is FormattingResult.SUCCESS ->{
+//                    Log.d("TAGGIZ",""+result.data.youtubeSortedData.youtubeSortedList!!.size)
+                    Resource.Success(PlayListData(newPipePlayList.thumbnails[0].url,result.data.youtubeSortedData.youtubeSortedList))
+
+                }
+                is FormattingResult.FAILURE ->{
+                    Resource.DataError(NEW_PIPE_SEARCH_ERROR)
+
+                }
+            }
+
+         }
+
+    }
+
     override suspend fun getNewPipePageNextSearch(
         serviceId: Int,
         searchString: String,
@@ -190,6 +219,7 @@ constructor(
                  Resource.DataError(NEW_PIPE_SEARCH_MORE_ERROR)
              }*/
         return withContext(Dispatchers.IO) {
+            val newPipeFormatter: NewPipeDataFormatter<InfoItem> = newPipeFormatterFactory.createForInfoItem()
             val nextPageSearchInfo = newPipeSearchNextPageFor(serviceId, searchString, contentFilter, sortFilter, page)
             val result = newPipeFormatter.run(NewPipeSortingData(nextPageSearchInfo.items,nextPageSearchInfo.nextPage))
 //            val baseDataModel= TubeFyCoreUniversalData(NewPipeSortingInput(result,nextPageSearchInfo.nextPage))

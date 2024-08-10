@@ -3,6 +3,7 @@ package com.ramzmania.tubefy.data.remote
 import com.ramzmania.tubefy.data.dto.searchformat.StreamUrlData
 import com.ramzmania.tubefy.data.dto.searchformat.TubeFyCoreUniversalData
 import com.ramzmania.tubefy.data.Resource
+import com.ramzmania.tubefy.data.dto.playlist.PlayListData
 import kotlinx.coroutines.flow.Flow
 import org.schabi.newpipe.extractor.Page
 
@@ -21,5 +22,8 @@ interface RemoteRepositorySource {
    suspend fun requestYoutubeV3(part: String,
                                 searchQuery: String,
                                 pageToken: String?): Flow<Resource<TubeFyCoreUniversalData>>
+
+    suspend fun getPlayListInfo(playListUrl:String):Flow<Resource<PlayListData>>
+
 
 }

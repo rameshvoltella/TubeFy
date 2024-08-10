@@ -13,6 +13,7 @@ import com.ramzmania.tubefy.core.extractors.yotubewebextractor.YoutubeScrapType
 import com.ramzmania.tubefy.data.ContextModule
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.home.HomePageResponse
+import com.ramzmania.tubefy.data.dto.playlist.PlayListData
 import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.YoutubeMusicPlayListContent
 import com.ramzmania.tubefy.data.dto.youtubestripper.ApiResponse
 import com.ramzmania.tubefy.data.dto.youtubestripper.MusicHomeResponse2
@@ -70,6 +71,10 @@ class TubeFyViewModel @Inject constructor(
     private val youTubeMusicHomeDefaultDataPrivate = MutableLiveData<Resource<List<HomePageResponse?>>>()
     val youTubeMusicHomeDefaultData: LiveData<Resource<List<HomePageResponse?>>> get() = youTubeMusicHomeDefaultDataPrivate
 
+
+    private val youTubePlayListPrivate = MutableLiveData<Resource<PlayListData>>()
+    val youTubePlayListData: LiveData<Resource<PlayListData>> get() = youTubePlayListPrivate
+
     fun setHtmlContent(content: ApiResponse?) {
 //        htmlContentPrivate.value = content
         viewModelScope.launch {
@@ -110,6 +115,27 @@ class TubeFyViewModel @Inject constructor(
                 youTubeMusicHomeDefaultDataPrivate.value = it
             }
         }
+    }
+
+    fun loadPlayList(playListUrl:String)
+    {
+        if(!playListUrl.startsWith("https:"))
+        {
+            viewModelScope.launch {
+                remoteRepositorySource.getPlayListInfo("https://music.youtube.com/playlist?list=$playListUrl").collect {
+                    youTubePlayListPrivate.value = it
+                }
+            }
+        }
+        else{
+            viewModelScope.launch {
+                remoteRepositorySource.getPlayListInfo(playListUrl).collect {
+                    youTubePlayListPrivate.value = it
+                }
+            }
+        }
+
+
     }
 
     fun setHtmlMusicPlayListContent(content: YoutubeMusicPlayListContent?) {

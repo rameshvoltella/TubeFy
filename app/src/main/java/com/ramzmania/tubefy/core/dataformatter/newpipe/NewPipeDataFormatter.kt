@@ -9,26 +9,45 @@ import com.ramzmania.tubefy.data.dto.searchformat.TubeFyCoreTypeData
 import com.ramzmania.tubefy.data.dto.searchformat.TubeFyCoreUniversalData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.schabi.newpipe.extractor.InfoItem
+import org.schabi.newpipe.extractor.stream.StreamInfoItem
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class NewPipeDataFormatter @Inject constructor():
-    UniversalYoutubeDataFormatter<NewPipeSortingData, FormattingResult<TubeFyCoreUniversalData,Exception>>() {
-    override suspend fun runFormatting(input: NewPipeSortingData): FormattingResult<TubeFyCoreUniversalData,Exception> {
+class NewPipeDataFormatter <T> @Inject constructor():
+    UniversalYoutubeDataFormatter<NewPipeSortingData<T>, FormattingResult<TubeFyCoreUniversalData,Exception>>() {
+    override suspend fun runFormatting(input: NewPipeSortingData<T>): FormattingResult<TubeFyCoreUniversalData,Exception> {
         return withContext(Dispatchers.IO){
             try {
                 val sortedVideoList: ArrayList<TubeFyCoreTypeData> = ArrayList()
                 for (newPipeSearchData in input.result) {
-                    sortedVideoList.add(
-                        TubeFyCoreTypeData(
-                            newPipeSearchData.url,
-                            newPipeSearchData.name,
-                            newPipeSearchData.thumbnails[0].url
-                        )
-                    )
-                }
+                    when (newPipeSearchData) {
+                        is StreamInfoItem -> {
+                            sortedVideoList.add(
+                                TubeFyCoreTypeData(
+                                    newPipeSearchData.url,
+                                    newPipeSearchData.name,
+                                    newPipeSearchData.thumbnails[0].url
+                                )
+                            )
+                        }
+                        is InfoItem -> {
+                            sortedVideoList.add(
+                                TubeFyCoreTypeData(
+                                    newPipeSearchData.url,
+                                    newPipeSearchData.name,
+                                    newPipeSearchData.thumbnails[0].url
+                                )
+                            )
+                        }
 
+                        // Handle other types if necessary
+                        else -> {
+                            // Handle cases where T is not InfoItem
+                        }
+                    }
+                }
                 FormattingResult.SUCCESS( TubeFyCoreUniversalData(
                     TubeFyCoreFormattedData(sortedVideoList, input.nextPage),
                     YoutubeApiType.NEW_PIPE_API

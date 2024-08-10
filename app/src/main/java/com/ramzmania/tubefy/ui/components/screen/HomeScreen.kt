@@ -1,4 +1,5 @@
 package com.ramzmania.tubefy.ui.components.screen
+
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
@@ -34,12 +35,18 @@ import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.base.BaseContentData
 import com.ramzmania.tubefy.data.dto.home.CellType
 import com.ramzmania.tubefy.data.dto.home.HomePageResponse
+import com.ramzmania.tubefy.data.dto.playlist.PlayListData
 import com.ramzmania.tubefy.data.dto.searchformat.StreamUrlData
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
 
 @Composable
-fun HomePageContentList(homePageResponses: List<HomePageResponse?>,viewModel: TubeFyViewModel = hiltViewModel()) {
+fun HomePageContentList(
+    homePageResponses: List<HomePageResponse?>,
+    viewModel: TubeFyViewModel = hiltViewModel()
+) {
     val streamUrlData by viewModel.streamUrlData.observeAsState()
+    val playListData by viewModel.youTubePlayListData.observeAsState()
+
     val context = LocalContext.current
 
     LazyColumn {
@@ -57,29 +64,50 @@ fun HomePageContentList(homePageResponses: List<HomePageResponse?>,viewModel: Tu
         }
     }
 
+    LaunchedEffect(key1 = playListData) {
+        if (playListData is Resource.Success) {
+//            val items = (streamUrlData as Resource.Success<StreamUrlData>).data
+            // Prepend new data to the existing list
+            Log.d("datata", ">>VADAAA"+playListData!!.data!!.playListVideoList?.get(0)?.videoId)
+if(playListData!!.data!!.playListVideoList?.get(0)?.videoId!=null)
+{
+    viewModel.getStreamUrl(playListData!!.data!!.playListVideoList?.get(0)?.videoId!!)
+}
+           // Log.d("datata", "palyislisis>>" + (playListData!!.data!!.playListVideoList?.get(0)?.videoId ?: ))
+//            if (streamUrlData!!.data!!.streamUrl.isNotEmpty()) {
+//                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(streamUrlData!!.data!!.streamUrl))
+//                context.startActivity(intent)
+//            }
+        }
+    }
     LaunchedEffect(key1 = streamUrlData) {
         if (streamUrlData is Resource.Success) {
             val items = (streamUrlData as Resource.Success<StreamUrlData>).data
-                // Prepend new data to the existing list
-            Log.d("datata",">>VADAAA")
+            // Prepend new data to the existing list
+            Log.d("datata", ">>VADAAA")
 
-            Log.d("datata",">>"+streamUrlData!!.data!!.streamUrl)
+            Log.d("datata", ">>" + streamUrlData!!.data!!.streamUrl)
             if (streamUrlData!!.data!!.streamUrl.isNotEmpty()) {
                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse(streamUrlData!!.data!!.streamUrl))
                 context.startActivity(intent)
             }
-            }
         }
+    }
+
+
 
 }
 
 
 @Composable
-fun VerticalContentList(contentData: List<BaseContentData>?,viewModel: TubeFyViewModel = hiltViewModel()) {
+fun VerticalContentList(
+    contentData: List<BaseContentData>?,
+    viewModel: TubeFyViewModel = hiltViewModel()
+) {
     contentData?.let {
         Column {
             it.forEach { data ->
-                ContentItemList(data = data){ selectedItem ->
+                ContentItemList(data = data) { selectedItem ->
                     // Handle item click here
                     Log.d("ItemClicked", "Clicked item: ${selectedItem.videoId}")
                     viewModel.getStreamUrl(selectedItem.videoId!!)
@@ -91,14 +119,26 @@ fun VerticalContentList(contentData: List<BaseContentData>?,viewModel: TubeFyVie
 }
 
 @Composable
-fun HorizontalContentList(contentData: List<BaseContentData>?,viewModel: TubeFyViewModel = hiltViewModel()) {
+fun HorizontalContentList(
+    contentData: List<BaseContentData>?,
+    viewModel: TubeFyViewModel = hiltViewModel()
+) {
     contentData?.let {
         LazyRow {
             items(it) { data ->
-                ContentItem(data = data){ selectedItem ->
+                ContentItem(data = data) { selectedItem ->
                     // Handle item click here
-                    Log.d("ItemClicked", "Clicked item: ${selectedItem.videoId}")
-                    viewModel.getStreamUrl(selectedItem.videoId!!)
+                    Log.d("ItemClicked", "Clicked item horizontal: ${selectedItem.videoId}")
+                    if(selectedItem.videoId?.length!!>11)
+                    {
+                        Log.d("ItemClicked", "Clicked item playlistId: ${selectedItem.playlistId}")
+
+                        viewModel.loadPlayList(selectedItem.playlistId!!)
+                    }else
+                    {
+                        viewModel.getStreamUrl(selectedItem.videoId)
+
+                    }
                 }
             }
         }
@@ -106,14 +146,19 @@ fun HorizontalContentList(contentData: List<BaseContentData>?,viewModel: TubeFyV
 }
 
 @Composable
-fun SingleContentCell(contentData: List<BaseContentData>?,viewModel: TubeFyViewModel = hiltViewModel()) {
+fun SingleContentCell(
+    contentData: List<BaseContentData>?,
+    viewModel: TubeFyViewModel = hiltViewModel()
+) {
     contentData?.firstOrNull()?.let { data ->
-        ContentItem(data = data){ selectedItem ->
+        ContentItem(data = data) { selectedItem ->
             // Handle item click here
             Log.d("ItemClicked", "Clicked item: ${selectedItem.videoId}")
-            viewModel.getStreamUrl(selectedItem.videoId!!)        }
+            viewModel.getStreamUrl(selectedItem.videoId!!)
+        }
     }
 }
+
 @Composable
 fun ContentItem(data: BaseContentData, onClick: (BaseContentData) -> Unit) {
     Column(
@@ -153,20 +198,23 @@ fun ContentItem(data: BaseContentData, onClick: (BaseContentData) -> Unit) {
                 .width(200.dp),
             contentScale = ContentScale.Crop
         )
-        Text(text = data.title!!,
+        Text(
+            text = data.title!!,
             fontWeight = FontWeight.Bold,
             color = Color.White,
-            modifier = Modifier.padding(horizontal = 5.dp).width(200.dp),
+            modifier = Modifier
+                .padding(horizontal = 5.dp)
+                .width(200.dp),
             textAlign = TextAlign.Left,
             maxLines = 2,
             fontSize = 16.sp
-            )
+        )
 
     }
 }
 
 @Composable
-fun ContentItemList(data: BaseContentData,onClick: (BaseContentData) -> Unit) {
+fun ContentItemList(data: BaseContentData, onClick: (BaseContentData) -> Unit) {
     Row(
         modifier = Modifier
             .padding(8.dp)
@@ -205,12 +253,16 @@ fun ContentItemList(data: BaseContentData,onClick: (BaseContentData) -> Unit) {
                 .width(20.dp),
             contentScale = ContentScale.Crop
         )
-        Text(text = data.title!!,fontWeight = FontWeight.Thin,
+        Text(
+            text = data.title!!, fontWeight = FontWeight.Thin,
             color = Color.White,
-            modifier = Modifier.align(Alignment.CenterVertically).padding(horizontal = 5.dp),
+            modifier = Modifier
+                .align(Alignment.CenterVertically)
+                .padding(horizontal = 5.dp),
             textAlign = TextAlign.Center,
             maxLines = 1,
-            fontSize = 20.sp)
+            fontSize = 20.sp
+        )
 
     }
 
@@ -223,7 +275,7 @@ fun Content2Item(data: BaseContentData) {
             .padding(8.dp)
             .fillMaxWidth()
     ) {
-        Log.d("incomming",""+data.thumbnail)
+        Log.d("incomming", "" + data.thumbnail)
         data.thumbnail?.let {
 //            Image(
 //                painter = rememberImagePainter(data = it),
@@ -257,6 +309,7 @@ fun Content2Item(data: BaseContentData) {
         }
     }
 }
+
 //@Preview(showBackground = true)
 @Composable
 fun HomePageContentListPreview() {
@@ -282,15 +335,21 @@ fun HomePageContentListPreview() {
             thumbnail = "https://via.placeholder.com/150"
         )
     )
-    videoSortedList.add(HomePageResponse(CellType.HORIZONTAL_LIST,mockContentData))
-    videoSortedList.add(HomePageResponse(CellType.HORIZONTAL_LIST,mockContentData))
+    videoSortedList.add(HomePageResponse(CellType.HORIZONTAL_LIST, mockContentData))
+    videoSortedList.add(HomePageResponse(CellType.HORIZONTAL_LIST, mockContentData))
 
     HomePageContentList(homePageResponses = videoSortedList)
 }
 
 @Preview
 @Composable
-fun LisrtContent()
-{
-    ContentItemList( BaseContentData("ekjsndflknqwek;fj;kqwasdasjek;fjq;kwejfk;qwej;kfjkq;wjfkjakwsjfklasjkfnjaks","e","e","e",false),onClick = {})
+fun LisrtContent() {
+    ContentItemList(
+        BaseContentData(
+            "ekjsndflknqwek;fj;kqwasdasjek;fjq;kwejfk;qwej;kfjkq;wjfkjakwsjfklasjkfnjaks",
+            "e",
+            "e",
+            "e",
+            false
+        ), onClick = {})
 }
