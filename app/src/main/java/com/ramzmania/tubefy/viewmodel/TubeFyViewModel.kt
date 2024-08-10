@@ -34,6 +34,7 @@ class TubeFyViewModel @Inject constructor(
 ) : BaseViewModel() {
 
     private var nextYoutubeV3PageToken: String? = null
+    private var reloadHomeScreen=true
 
     init {
         viewModelScope.launch {
@@ -334,5 +335,15 @@ class TubeFyViewModel @Inject constructor(
 
         return videoInfoList
     }*/
+
+    fun setHomeScreenReload(reloadHomeScreen:Boolean)
+    {
+        this.reloadHomeScreen=reloadHomeScreen
+    }
+
+    fun getHomeScreenReloadStatus():Boolean
+    {
+        return reloadHomeScreen
+    }
 
 }

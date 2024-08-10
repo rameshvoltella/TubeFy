@@ -148,6 +148,7 @@ fun HorizontalContentList(navController:NavController?,
 //                            // Restore state
 //                            restoreState = true
 //                        }
+                        viewModel.setHomeScreenReload(false)
                         navController!!.navigate(NavigationItem.PlayList.createRoute(selectedItem.playlistId!!, selectedItem.playlistId!!)) {
                             navController.graph.startDestinationRoute?.let { route ->
                                 popUpTo(route) {

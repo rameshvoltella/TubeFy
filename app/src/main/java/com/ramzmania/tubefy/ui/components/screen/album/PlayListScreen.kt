@@ -52,7 +52,9 @@ fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel(),navController: NavC
     val streamUrlData by viewModel.streamUrlData.observeAsState()
     var finalItems by remember { mutableStateOf<List<TubeFyCoreTypeData?>>(emptyList()) }
     val navBackStackEntry = navController.currentBackStackEntry
-    val playlistId = navBackStackEntry?.arguments?.getString("playlistId")
+    val context = LocalContext.current
+
+//    val playlistId = navBackStackEntry?.arguments?.getString("playlistId")
     LaunchedEffect(Unit) {
         val playlistId = navBackStackEntry?.arguments?.getString("playlistId")
         viewModel.loadPlayList(playlistId!!)
@@ -93,7 +95,7 @@ fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel(),navController: NavC
             Log.d("datata", ">>" + streamUrlData!!.data!!.streamUrl)
             if (streamUrlData!!.data!!.streamUrl.isNotEmpty()) {
                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse(streamUrlData!!.data!!.streamUrl))
-//                context.startActivity(intent)
+                context.startActivity(intent)
             }
         }
     }
@@ -144,12 +146,12 @@ fun AlbumTrackList(tracks:List<TubeFyCoreTypeData?>) {
 }
 
 @Composable
-fun TrackItem(trackName: TubeFyCoreTypeData) {
+fun TrackItem(trackName: TubeFyCoreTypeData,viewModel: TubeFyViewModel = hiltViewModel()) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
-            .clickable { /* Handle click */ }
+            .clickable { viewModel.getStreamUrl(trackName.videoId) }
     ) {
         Text(text = trackName.videoTitle,  color = Color.Black)
         Divider(modifier = Modifier.padding(vertical = 4.dp), color = Color.Gray)
