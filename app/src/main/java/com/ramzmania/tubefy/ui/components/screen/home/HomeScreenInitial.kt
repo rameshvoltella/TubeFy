@@ -1,6 +1,5 @@
-package com.ramzmania.tubefy.ui.components.screen
+package com.ramzmania.tubefy.ui.components.screen.home
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -16,6 +15,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import com.ramzmania.tubefy.R
 import com.ramzmania.tubefy.core.extractors.yotubewebextractor.YoutubeScrapType
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
@@ -25,7 +25,7 @@ import com.ramzmania.tubefy.data.Resource
 
 
 @Composable
-fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
+fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel(),navController: NavController?) {
     // Trigger loading of default home data
     LaunchedEffect(Unit) {
         viewModel.startWebScrapping("https://music.youtube.com/", YoutubeScrapType.YOUTUBE_MUSIC)
@@ -96,7 +96,7 @@ fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
 
         // Display the updated list
         if (finalItems.isNotEmpty()) {
-            HomePageContentList(homePageResponses = finalItems)
+            HomePageContentList(homePageResponses = finalItems, navController = navController)
         }
     }
 }
@@ -105,5 +105,5 @@ fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
 @Preview(showBackground = true)
 @Composable
 fun HomeScreenPreview() {
-    HomeInitialScreen()
+//    HomeInitialScreen()
 }

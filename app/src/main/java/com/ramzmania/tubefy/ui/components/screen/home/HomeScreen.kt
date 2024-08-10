@@ -1,4 +1,4 @@
-package com.ramzmania.tubefy.ui.components.screen
+package com.ramzmania.tubefy.ui.components.screen.home
 
 import android.content.Intent
 import android.net.Uri
@@ -19,14 +19,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.ramzmania.tubefy.R
@@ -35,17 +35,18 @@ import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.base.BaseContentData
 import com.ramzmania.tubefy.data.dto.home.CellType
 import com.ramzmania.tubefy.data.dto.home.HomePageResponse
-import com.ramzmania.tubefy.data.dto.playlist.PlayListData
 import com.ramzmania.tubefy.data.dto.searchformat.StreamUrlData
+import com.ramzmania.tubefy.ui.components.NavigationItem
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
 
 @Composable
 fun HomePageContentList(
     homePageResponses: List<HomePageResponse?>,
-    viewModel: TubeFyViewModel = hiltViewModel()
+    viewModel: TubeFyViewModel = hiltViewModel(),navController: NavController?
 ) {
     val streamUrlData by viewModel.streamUrlData.observeAsState()
     val playListData by viewModel.youTubePlayListData.observeAsState()
+//    val navController = rememberNavController()
 
     val context = LocalContext.current
 
@@ -55,10 +56,10 @@ fun HomePageContentList(
             response?.let {
                 when (it.cellType) {
                     CellType.LIST -> VerticalContentList(contentData = it.contentData)
-                    CellType.HORIZONTAL_LIST -> HorizontalContentList(contentData = it.contentData)
+                    CellType.HORIZONTAL_LIST -> HorizontalContentList(contentData = it.contentData, navController = navController)
                     CellType.THREE_TYPE_CELL -> VerticalContentList(contentData = it.contentData)
                     CellType.SINGLE_CELL -> SingleContentCell(contentData = it.contentData)
-                    CellType.PLAYLIST_ONLY -> HorizontalContentList(contentData = it.contentData)
+                    CellType.PLAYLIST_ONLY -> HorizontalContentList(contentData = it.contentData,navController = navController)
                 }
             }
         }
@@ -119,7 +120,7 @@ fun VerticalContentList(
 }
 
 @Composable
-fun HorizontalContentList(
+fun HorizontalContentList(navController:NavController?,
     contentData: List<BaseContentData>?,
     viewModel: TubeFyViewModel = hiltViewModel()
 ) {
@@ -133,7 +134,16 @@ fun HorizontalContentList(
                     {
                         Log.d("ItemClicked", "Clicked item playlistId: ${selectedItem.playlistId}")
 
-                        viewModel.loadPlayList(selectedItem.playlistId!!)
+//                        viewModel.loadPlayList(selectedItem.playlistId!!)
+                        navController!!.navigate(NavigationItem.PlayList.route) {
+                            navController.graph.startDestinationRoute?.let { route ->
+                                popUpTo(route) {
+                                    saveState = true
+                                }
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
                     }else
                     {
                         viewModel.getStreamUrl(selectedItem.videoId)
@@ -338,7 +348,7 @@ fun HomePageContentListPreview() {
     videoSortedList.add(HomePageResponse(CellType.HORIZONTAL_LIST, mockContentData))
     videoSortedList.add(HomePageResponse(CellType.HORIZONTAL_LIST, mockContentData))
 
-    HomePageContentList(homePageResponses = videoSortedList)
+//    HomePageContentList(homePageResponses = videoSortedList)
 }
 
 @Preview

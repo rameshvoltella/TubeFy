@@ -26,6 +26,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.compose.rememberImagePainter
 import coil.request.ImageRequest
@@ -34,7 +35,7 @@ import com.ramzmania.tubefy.core.YoutubeCoreConstant
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
 
 @Composable
-fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
+fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel(),navController: NavController) {
     val streamUrlData by viewModel.streamUrlData.observeAsState()
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -114,5 +115,5 @@ fun TrackItem(trackName: String) {
 @Preview
 @Composable
 fun PreviewAlbumScreen() {
-    AlbumScreen()
+//    AlbumScreen()
 }

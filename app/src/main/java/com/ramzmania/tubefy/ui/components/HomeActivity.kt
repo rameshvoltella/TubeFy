@@ -40,9 +40,10 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.ramzmania.tubefy.R
 import com.ramzmania.tubefy.ui.components.screen.BooksScreen
-import com.ramzmania.tubefy.ui.components.screen.HomeInitialScreen
+import com.ramzmania.tubefy.ui.components.screen.home.HomeInitialScreen
 import com.ramzmania.tubefy.ui.components.screen.MusicScreen
 import com.ramzmania.tubefy.ui.components.screen.ProfileScreen
+import com.ramzmania.tubefy.ui.components.screen.album.AlbumScreen
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -105,7 +106,7 @@ fun MainScreenPreview() {
 fun Navigation(navController: NavHostController) {
     NavHost(navController, startDestination = NavigationItem.Home.route) {
         composable(NavigationItem.Home.route) {
-            HomeInitialScreen()
+            HomeInitialScreen(navController = navController)
         }
         composable(NavigationItem.Music.route) {
             MusicScreen()
@@ -116,6 +117,9 @@ fun Navigation(navController: NavHostController) {
         }
         composable(NavigationItem.Profile.route) {
             ProfileScreen()
+        }
+        composable(NavigationItem.PlayList.route) { backStackEntry ->
+            AlbumScreen(navController = navController)
         }
     }
 }
