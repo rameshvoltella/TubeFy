@@ -99,15 +99,15 @@ fun ProfileScreen() {
             .background(colorResource(id = com.ramzmania.tubefy.R.color.purple_200))
             .wrapContentSize(Alignment.Center)
     ) {
-//        Text(
-//            text = "Profile View",
-//            fontWeight = FontWeight.Bold,
-//            color = Color.White,
-//            modifier = Modifier.align(Alignment.CenterHorizontally),
-//            textAlign = TextAlign.Center,
-//            fontSize = 25.sp
-//        )
-        MediaPlayerScreen()
+        Text(
+            text = "Profile View",
+            fontWeight = FontWeight.Bold,
+            color = Color.White,
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+            textAlign = TextAlign.Center,
+            fontSize = 25.sp
+        )
+//        MediaPlayerScreen("")
     }
 }
 

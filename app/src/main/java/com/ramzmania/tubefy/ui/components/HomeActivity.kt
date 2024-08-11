@@ -54,6 +54,7 @@ import com.ramzmania.tubefy.ui.components.screen.home.HomeInitialScreen
 import com.ramzmania.tubefy.ui.components.screen.MusicScreen
 import com.ramzmania.tubefy.ui.components.screen.ProfileScreen
 import com.ramzmania.tubefy.ui.components.screen.album.AlbumScreen
+import com.ramzmania.tubefy.ui.components.screen.player.MediaPlayerScreen
 import com.ramzmania.tubefy.ui.components.screen.player.PlaybackService
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -69,7 +70,7 @@ class HomeActivity: ComponentActivity() {
         }
     }
 
-    @UnstableApi
+    /*@UnstableApi
     override fun onStart() {
         super.onStart()
         try {
@@ -103,7 +104,7 @@ ex.printStackTrace()
         mediaController = null
         super.onStop()
     }
-
+*/
     fun playPDFAudio() {
 //        Toast.makeText(applicationContext,"playing"+File(filesDir.absolutePath
 //                + "/pdfAudio/audio.wav").absolutePath,1).show()
@@ -209,6 +210,9 @@ fun Navigation(navController: NavHostController) {
         }
         composable(NavigationItem.PlayList.route) { backStackEntry ->
             AlbumScreen(navController = navController)
+        }
+        composable(NavigationItem.AudioPlayer.route) { backStackEntry ->
+            MediaPlayerScreen(navController = navController)
         }
     }
 }

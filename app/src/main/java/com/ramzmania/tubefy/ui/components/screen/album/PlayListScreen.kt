@@ -39,12 +39,16 @@ import coil.compose.rememberImagePainter
 import coil.request.ImageRequest
 import com.ramzmania.tubefy.R
 import com.ramzmania.tubefy.core.YoutubeCoreConstant
+import com.ramzmania.tubefy.core.YoutubeCoreConstant.decodeThumpUrl
 import com.ramzmania.tubefy.core.extractors.yotubewebextractor.YoutubeScrapType
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.home.HomePageResponse
 import com.ramzmania.tubefy.data.dto.searchformat.StreamUrlData
 import com.ramzmania.tubefy.data.dto.searchformat.TubeFyCoreTypeData
+import com.ramzmania.tubefy.ui.components.NavigationItem
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 @Composable
 fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel(),navController: NavController) {
@@ -72,7 +76,7 @@ fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel(),navController: NavC
             artist = "Danny Elfman",
             year = "2011"
         )
-        AlbumTrackList(tracks =finalItems)
+        AlbumTrackList(tracks =finalItems,navController=navController)
     }
     LaunchedEffect(key1 = playListData) {
         if (playListData is Resource.Success) {
@@ -154,21 +158,37 @@ fun AlbumHeader(imageUrl: String, title: String, artist: String, year: String) {
 }
 
 @Composable
-fun AlbumTrackList(tracks:List<TubeFyCoreTypeData?>) {
+fun AlbumTrackList(tracks:List<TubeFyCoreTypeData?>,navController:NavController) {
     LazyColumn {
         items(tracks!!) { track ->
-            TrackItem(trackName = track!!)
+            TrackItem(trackName = track!!,navController=navController)
         }
     }
 }
 
 @Composable
-fun TrackItem(trackName: TubeFyCoreTypeData,viewModel: TubeFyViewModel = hiltViewModel()) {
+fun TrackItem(trackName: TubeFyCoreTypeData,viewModel: TubeFyViewModel = hiltViewModel(),navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
-            .clickable { viewModel.getStreamUrl(trackName.videoId) }
+            .clickable {
+//                val videoId = "someVideoId"
+//                val videoName = "Mere Khwabon Mein | Lyrical Song"
+
+// Encode videoName if it contains special characters
+                val encodedVideoUrl = URLEncoder.encode(decodeThumpUrl(trackName.videoImage), StandardCharsets.UTF_8.toString())
+                val encodedVideoId = URLEncoder.encode(trackName.videoId, StandardCharsets.UTF_8.toString())
+
+                navController!!.navigate(NavigationItem.AudioPlayer.createRoute(encodedVideoId, encodedVideoUrl)) {
+                navController.graph.route?.let { route ->
+                    popUpTo(route) {
+                        saveState = true
+                    }
+                }
+                launchSingleTop = true
+                restoreState = true
+            } }
     ) {
         Text(text = trackName.videoTitle,  color = Color.Black)
         Divider(modifier = Modifier.padding(vertical = 4.dp), color = Color.Gray)
