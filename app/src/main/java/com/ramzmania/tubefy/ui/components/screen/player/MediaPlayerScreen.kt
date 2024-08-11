@@ -20,16 +20,18 @@ import androidx.media3.session.MediaController
 import androidx.navigation.NavController
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.searchformat.StreamUrlData
+import com.ramzmania.tubefy.utils.LocalNavController
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 
 @OptIn(UnstableApi::class)
 @Composable
-fun MediaPlayerScreen(viewModel: TubeFyViewModel = hiltViewModel(), navController: NavController) {
+fun MediaPlayerScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
     var mediaController by remember { mutableStateOf<MediaController?>(null) }
     var isPlaying by remember { mutableStateOf(false) }
     val streamUrlData by viewModel.streamUrlData.observeAsState()
+    val navController= LocalNavController.current
 
     // Replace this URL with your desired media URL
     var mediaUri = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"

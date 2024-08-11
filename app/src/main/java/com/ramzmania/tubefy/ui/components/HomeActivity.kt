@@ -25,6 +25,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.CompositionLocalProvider
 
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.geometry.Offset
@@ -56,6 +57,7 @@ import com.ramzmania.tubefy.ui.components.screen.ProfileScreen
 import com.ramzmania.tubefy.ui.components.screen.album.AlbumScreen
 import com.ramzmania.tubefy.ui.components.screen.player.MediaPlayerScreen
 import com.ramzmania.tubefy.ui.components.screen.player.PlaybackService
+import com.ramzmania.tubefy.utils.LocalNavController
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -169,19 +171,21 @@ fun MainScreen() {
 
     Box(modifier = Modifier.fillMaxSize()) {
         // Content that extends behind the bottom bar
-        Scaffold(
-            topBar = { TopBar() },
-            bottomBar = { BottomNavigationBar(navController) },
-            content = {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    Navigation(navController = navController)
-                }
-            },
-            contentColor = colorResource(R.color.colorPrimary)
-        )
-
+        CompositionLocalProvider(
+            LocalNavController provides navController // Added missing comma
+        ) {
+            Scaffold(
+                topBar = { TopBar() },
+                bottomBar = { BottomNavigationBar(navController) },
+                content = {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        Navigation(navController = navController)
+                    }
+                },
+                contentColor = colorResource(R.color.colorPrimary)
+            )
+        }
         // Place BottomNavigationBar at the bottom
-
     }
 }
 
@@ -209,10 +213,10 @@ fun Navigation(navController: NavHostController) {
             ProfileScreen()
         }
         composable(NavigationItem.PlayList.route) { backStackEntry ->
-            AlbumScreen(navController = navController)
+            AlbumScreen()
         }
         composable(NavigationItem.AudioPlayer.route) { backStackEntry ->
-            MediaPlayerScreen(navController = navController)
+            MediaPlayerScreen()
         }
     }
 }

@@ -1,7 +1,7 @@
 {
   "playlist_categories": [
     {
-      "title": "Trending songs",
+      "title": "Big Dawgs",
       "playlist": "non",
       "description": "The top 10 most popular songs right now."
     },
@@ -19,6 +19,11 @@
       "title": "Best of the Year",
       "playlist": "RDCLAK5uy_nSq67AJ2d75MFNJ3j_4ClEtSgC-opBM84",
       "description": "The best songs of the year, as selected by critics and listeners."
+    },
+    {
+      "title": "aavesham",
+      "playlist": "non",
+      "description": "The most played tracks on the platform."
     },
     {
       "title": "Most Played",
