@@ -6,6 +6,7 @@ import com.squareup.moshi.JsonClass
 @JsonClass(generateAdapter = true)
 data class PlaylistCategory(
     @Json(name = "title") val title: String?,
+    @Json(name = "playlist") val playlist: String?,
     @Json(name = "description") val description: String?
 )
 

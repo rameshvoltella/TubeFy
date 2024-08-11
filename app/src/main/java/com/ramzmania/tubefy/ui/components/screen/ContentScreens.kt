@@ -12,6 +12,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
+import com.ramzmania.tubefy.ui.components.screen.player.MediaPlayerScreen
 
 
 @Composable
@@ -19,7 +20,7 @@ fun MusicScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(colorResource(id =  com.ramzmania.tubefy.R.color.colorPrimary))
+            .background(colorResource(id = com.ramzmania.tubefy.R.color.colorPrimary))
             .wrapContentSize(Alignment.Center)
     ) {
         Text(
@@ -44,7 +45,7 @@ fun MoviesScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(colorResource(id =  com.ramzmania.tubefy.R.color.colorPrimary))
+            .background(colorResource(id = com.ramzmania.tubefy.R.color.colorPrimary))
             .wrapContentSize(Alignment.Center)
     ) {
         Text(
@@ -70,7 +71,7 @@ fun BooksScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(colorResource(id =  com.ramzmania.tubefy.R.color.purple_200))
+            .background(colorResource(id = com.ramzmania.tubefy.R.color.purple_200))
             .wrapContentSize(Alignment.Center)
     ) {
         Text(
@@ -95,17 +96,18 @@ fun ProfileScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(colorResource(id =  com.ramzmania.tubefy.R.color.purple_200))
+            .background(colorResource(id = com.ramzmania.tubefy.R.color.purple_200))
             .wrapContentSize(Alignment.Center)
     ) {
-        Text(
-            text = "Profile View",
-            fontWeight = FontWeight.Bold,
-            color = Color.White,
-            modifier = Modifier.align(Alignment.CenterHorizontally),
-            textAlign = TextAlign.Center,
-            fontSize = 25.sp
-        )
+//        Text(
+//            text = "Profile View",
+//            fontWeight = FontWeight.Bold,
+//            color = Color.White,
+//            modifier = Modifier.align(Alignment.CenterHorizontally),
+//            textAlign = TextAlign.Center,
+//            fontSize = 25.sp
+//        )
+        MediaPlayerScreen()
     }
 }
 
