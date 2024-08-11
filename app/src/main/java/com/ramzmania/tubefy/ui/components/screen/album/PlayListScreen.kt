@@ -50,6 +50,8 @@ import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
 fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel(),navController: NavController) {
     val playListData by viewModel.youTubePlayListData.observeAsState()
     val streamUrlData by viewModel.streamUrlData.observeAsState()
+    val searchPlayListName by viewModel.youTubeSearchData.observeAsState()
+
     var finalItems by remember { mutableStateOf<List<TubeFyCoreTypeData?>>(emptyList()) }
     val navBackStackEntry = navController.currentBackStackEntry
     val context = LocalContext.current
@@ -57,7 +59,11 @@ fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel(),navController: NavC
 //    val playlistId = navBackStackEntry?.arguments?.getString("playlistId")
     LaunchedEffect(Unit) {
         val playlistId = navBackStackEntry?.arguments?.getString("playlistId")
-        viewModel.loadPlayList(playlistId!!)
+        if(playlistId!!.startsWith("PLAYLIST-ID-")) {
+            viewModel.searchNewPipePage(playlistId.replace("PLAYLIST-ID-",""))
+        }else {
+            viewModel.loadPlayList(playlistId!!)
+        }
     }
     Column(modifier = Modifier.fillMaxSize()) {
         AlbumHeader(
@@ -97,6 +103,17 @@ fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel(),navController: NavC
                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse(streamUrlData!!.data!!.streamUrl))
                 context.startActivity(intent)
             }
+        }
+    }
+
+    LaunchedEffect(key1 = searchPlayListName) {
+        if (searchPlayListName is Resource.Success) {
+//            val items = (streamUrlData as Resource.Success<StreamUrlData>).data
+            // Prepend new data to the existing list
+            Log.d("datata","first")
+            Log.d("datata", ">>VADAAACAME"+searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!.size)
+            finalItems=searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!
+
         }
     }
 

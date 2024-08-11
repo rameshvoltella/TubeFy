@@ -13,6 +13,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -47,7 +49,6 @@ fun HomePageContentList(
     val streamUrlData by viewModel.streamUrlData.observeAsState()
     val playListData by viewModel.youTubePlayListData.observeAsState()
 //    val navController = rememberNavController()
-
     val context = LocalContext.current
 
     LazyColumn {
@@ -129,8 +130,8 @@ fun HorizontalContentList(navController:NavController?,
             items(it) { data ->
                 ContentItem(data = data) { selectedItem ->
                     // Handle item click here
-                    Log.d("ItemClicked", "Clicked item horizontal: ${selectedItem.videoId}")
-                    if(selectedItem.videoId?.length!!>11)
+                    Log.d("ItemClicked", "Clicked item horizontalFIRST: ${selectedItem.playlistId}")
+                    if(selectedItem.videoId?.length!!>11||selectedItem.playlistId!!.startsWith("PLAYLIST-ID-"))
                     {
                         Log.d("ItemClicked", "Clicked item playlistId: ${selectedItem.playlistId}")
 
@@ -149,7 +150,7 @@ fun HorizontalContentList(navController:NavController?,
 //                            restoreState = true
 //                        }
                         viewModel.setHomeScreenReload(false)
-                        navController!!.navigate(NavigationItem.PlayList.createRoute(selectedItem.playlistId!!, selectedItem.playlistId!!)) {
+                        navController!!.navigate(NavigationItem.PlayList.createRoute(selectedItem.playlistId!!, selectedItem.title!!)) {
                             navController.graph.startDestinationRoute?.let { route ->
                                 popUpTo(route) {
                                     saveState = true
@@ -158,6 +159,7 @@ fun HorizontalContentList(navController:NavController?,
                             launchSingleTop = true
                             restoreState = true
                         }
+
                     }else
                     {
                         viewModel.getStreamUrl(selectedItem.videoId)

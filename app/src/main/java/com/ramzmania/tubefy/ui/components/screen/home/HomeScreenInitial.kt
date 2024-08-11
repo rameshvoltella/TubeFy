@@ -1,10 +1,12 @@
 package com.ramzmania.tubefy.ui.components.screen.home
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -26,10 +28,25 @@ import com.ramzmania.tubefy.data.Resource
 
 @Composable
 fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel(),navController: NavController?) {
+//    var isDataLoaded by rememberSaveable { mutableStateOf(false) }
+    var isDefaultDataLoaded by rememberSaveable { mutableStateOf(false) }
+    var isScrapDataLoaded by rememberSaveable { mutableStateOf(false) }
+
     // Trigger loading of default home data
     LaunchedEffect(Unit) {
-        viewModel.startWebScrapping("https://music.youtube.com/", YoutubeScrapType.YOUTUBE_MUSIC)
-        viewModel.loadDefaultHomeData()
+
+        Log.d("poda","isloaded"+isDefaultDataLoaded)
+        if(!isScrapDataLoaded) {
+
+            viewModel.startWebScrapping(
+                "https://music.youtube.com/",
+                YoutubeScrapType.YOUTUBE_MUSIC
+            )
+        }
+        if(!isDefaultDataLoaded) {
+
+            viewModel.loadDefaultHomeData()
+        }
     }
 
     // Observe the data from the ViewModel
@@ -37,27 +54,33 @@ fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel(),navController
     val scrapData by viewModel.youTubeMusicHomeData.observeAsState()
 
     // Mutable state for the final list to display
-    var finalItems by remember { mutableStateOf<List<HomePageResponse?>>(emptyList()) }
+    var finalItems by rememberSaveable { mutableStateOf<List<HomePageResponse?>>(emptyList()) }
 
     // Update finalItems based on homeData
     LaunchedEffect(homeData) {
-        if (homeData is Resource.Success) {
-            val items = (homeData as Resource.Success<List<HomePageResponse?>>).data
-            if (items != null && items.isNotEmpty()) {
-                // Prepend new data to the existing list
-                finalItems = items + finalItems
+        if(!isDefaultDataLoaded) {
+            if (homeData is Resource.Success) {
+                val items = (homeData as Resource.Success<List<HomePageResponse?>>).data
+                if (items != null && items.isNotEmpty()) {
+                    // Prepend new data to the existing list
+                    finalItems = items + finalItems
+                    isDefaultDataLoaded = true
 
+                }
             }
         }
     }
 
     // Update finalItems based on scrapData
     LaunchedEffect(scrapData) {
-        if (scrapData is Resource.Success) {
-            val items = (scrapData as Resource.Success<List<HomePageResponse?>>).data
-            if (items != null && items.isNotEmpty()) {
-                // Prepend new data to the existing list
-                finalItems = items + finalItems
+        if(!isScrapDataLoaded) {
+            if (scrapData is Resource.Success) {
+                val items = (scrapData as Resource.Success<List<HomePageResponse?>>).data
+                if (items != null && items.isNotEmpty()) {
+                    // Prepend new data to the existing list
+                    finalItems = items + finalItems
+                    isScrapDataLoaded=true
+                }
             }
         }
     }

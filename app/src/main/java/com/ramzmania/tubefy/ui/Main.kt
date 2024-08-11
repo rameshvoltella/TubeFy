@@ -65,7 +65,7 @@ private var nextPage: Page? = null
         binding.lasttype.setOnClickListener { viewModel.loadDefaultHomeData()
             viewModel.startWebScrapping("aavesham", YoutubeScrapType.YOUTUBE_MUSIC) }
 
-        binding.newpipehome.setOnClickListener { viewModel.searchNewPipePage() }
+        binding.newpipehome.setOnClickListener { viewModel.searchNewPipePage("aavesham") }
     }
 
     /*    override fun onCreate(savedInstanceState: Bundle?) {

@@ -18,8 +18,8 @@ class DefaultHomePlayListDataFormatter @Inject constructor()  :
 
         try{
             input?.categoryData?.playlistCategories?.forEach {
-                println("Title: ${it.title}, Description: ${it.description}")
-                videoSortedListWithPlaylist.add(BaseContentData("",it.title,"",it.title))
+//                println("Title: ${it.title}, Description: ${it.description}")
+                videoSortedListWithPlaylist.add(BaseContentData("","PLAYLIST-ID-$it.title","",it.title))
             }
             videoSortedList.add(HomePageResponse(CellType.PLAYLIST_ONLY,videoSortedListWithPlaylist))
             if(input?.composersList!=null)
@@ -28,7 +28,7 @@ class DefaultHomePlayListDataFormatter @Inject constructor()  :
                     val composerSortedListWithPlaylist = mutableListOf<BaseContentData>()
 
                     it?.composers?.forEach {
-                        composerSortedListWithPlaylist.add(BaseContentData("",it.name,"",it.name))
+                        composerSortedListWithPlaylist.add(BaseContentData("","PLAYLIST-ID-${it.name}","",it.name))
                     }
                     videoSortedList.add(HomePageResponse(CellType.PLAYLIST_ONLY,composerSortedListWithPlaylist))
 
