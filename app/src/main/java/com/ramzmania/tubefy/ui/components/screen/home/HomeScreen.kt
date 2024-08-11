@@ -40,6 +40,8 @@ import com.ramzmania.tubefy.data.dto.home.HomePageResponse
 import com.ramzmania.tubefy.data.dto.searchformat.StreamUrlData
 import com.ramzmania.tubefy.ui.components.NavigationItem
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 @Composable
 fun HomePageContentList(
@@ -56,9 +58,9 @@ fun HomePageContentList(
 
             response?.let {
                 when (it.cellType) {
-                    CellType.LIST -> VerticalContentList(contentData = it.contentData)
+                    CellType.LIST -> VerticalContentList(contentData = it.contentData,navController = navController)
                     CellType.HORIZONTAL_LIST -> HorizontalContentList(contentData = it.contentData, navController = navController)
-                    CellType.THREE_TYPE_CELL -> VerticalContentList(contentData = it.contentData)
+                    CellType.THREE_TYPE_CELL -> VerticalContentList(contentData = it.contentData,navController = navController)
                     CellType.SINGLE_CELL -> SingleContentCell(contentData = it.contentData)
                     CellType.PLAYLIST_ONLY -> HorizontalContentList(contentData = it.contentData,navController = navController)
                 }
@@ -102,7 +104,7 @@ if(playListData!!.data!!.playListVideoList?.get(0)?.videoId!=null)
 
 
 @Composable
-fun VerticalContentList(
+fun VerticalContentList(navController:NavController?,
     contentData: List<BaseContentData>?,
     viewModel: TubeFyViewModel = hiltViewModel()
 ) {
@@ -112,7 +114,22 @@ fun VerticalContentList(
                 ContentItemList(data = data) { selectedItem ->
                     // Handle item click here
                     Log.d("ItemClicked", "Clicked item: ${selectedItem.videoId}")
-                    viewModel.getStreamUrl(selectedItem.videoId!!)
+//                    viewModel.getStreamUrl(selectedItem.videoId!!)
+                    val encodedVideoUrl = URLEncoder.encode(
+                        YoutubeCoreConstant.decodeThumpUrl(
+                            selectedItem.thumbnail!!
+                        ), StandardCharsets.UTF_8.toString())
+                    val encodedVideoId = URLEncoder.encode(selectedItem.videoId, StandardCharsets.UTF_8.toString())
+
+                    navController!!.navigate(NavigationItem.AudioPlayer.createRoute(encodedVideoId, encodedVideoUrl)) {
+                        navController.graph.startDestinationRoute?.let { route ->
+                            popUpTo(route) {
+                                saveState = true
+                            }
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
 
                 }
             }

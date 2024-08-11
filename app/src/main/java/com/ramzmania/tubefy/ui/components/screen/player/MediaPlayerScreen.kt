@@ -35,11 +35,12 @@ fun MediaPlayerScreen(viewModel: TubeFyViewModel = hiltViewModel(), navControlle
     var mediaUri = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
 val context=LocalContext.current
     val navBackStackEntry = navController.currentBackStackEntry
-    val videoThumpUrl = URLDecoder.decode(navBackStackEntry?.arguments?.getString("videoUrl"), StandardCharsets.UTF_8.toString())
-Log.d("thiump url",videoThumpUrl)
+    var albumArt by remember { mutableStateOf("") }
+//Log.d("thiump url",videoThumpUrl)
     LaunchedEffect(Unit) {
 //        val videoId = navBackStackEntry?.arguments?.getString("videoId")
         val videoId = URLDecoder.decode(navBackStackEntry?.arguments?.getString("videoId"), StandardCharsets.UTF_8.toString())
+        albumArt = URLDecoder.decode(navBackStackEntry?.arguments?.getString("videoUrl"), StandardCharsets.UTF_8.toString())
 
         viewModel.getStreamUrl(videoId!!)
     }
@@ -52,7 +53,7 @@ Log.d("thiump url",videoThumpUrl)
             Log.d("datata", ">>" + streamUrlData!!.data!!.streamUrl)
             if (streamUrlData!!.data!!.streamUrl.isNotEmpty()) {
                 mediaUri=streamUrlData!!.data!!.streamUrl
-                playAudio(mediaController!!,mediaUri,videoThumpUrl)
+                playAudio(mediaController!!,mediaUri,albumArt)
 
             }
         }
