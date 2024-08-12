@@ -7,7 +7,16 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.lazy.staggeredgrid.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -58,7 +67,7 @@ fun HomePageContentList(
 
             response?.let {
                 when (it.cellType) {
-                    CellType.LIST -> VerticalContentList(contentData = it.contentData,navController = navController)
+                    CellType.LIST -> GridContentList(contentData = it.contentData,navController = navController)
                     CellType.HORIZONTAL_LIST -> HorizontalContentList(contentData = it.contentData, navController = navController)
                     CellType.THREE_TYPE_CELL -> VerticalContentList(contentData = it.contentData,navController = navController)
                     CellType.SINGLE_CELL -> SingleContentCell(contentData = it.contentData)
@@ -131,6 +140,51 @@ fun VerticalContentList(navController:NavController?,
                         restoreState = true
                     }
 
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun GridContentList(
+    navController: NavController?,
+    contentData: List<BaseContentData>?,
+    viewModel: TubeFyViewModel = hiltViewModel()
+) {
+    val gridContent= contentData?.size?.div(2)
+    val newheight=70 * gridContent!!
+    contentData?.let {
+        LazyVerticalGrid(columns = GridCells.Fixed(2), modifier = Modifier.fillMaxSize().height(newheight.dp).padding(vertical = 10.dp)) {
+            items(it) { data ->
+                ContentItemList(data = data) { selectedItem ->
+                    // Handle item click here
+                    Log.d("ItemClicked", "Clicked item: ${selectedItem.videoId}")
+
+                    val encodedVideoUrl = URLEncoder.encode(
+                        YoutubeCoreConstant.decodeThumpUrl(
+                            selectedItem.thumbnail!!
+                        ), StandardCharsets.UTF_8.toString()
+                    )
+                    val encodedVideoId = URLEncoder.encode(
+                        selectedItem.videoId,
+                        StandardCharsets.UTF_8.toString()
+                    )
+
+                    navController!!.navigate(
+                        NavigationItem.AudioPlayer.createRoute(
+                            encodedVideoId,
+                            encodedVideoUrl
+                        )
+                    ) {
+                        navController.graph.startDestinationRoute?.let { route ->
+                            popUpTo(route) {
+                                saveState = true
+                            }
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
                 }
             }
         }
@@ -255,61 +309,75 @@ fun ContentItem(data: BaseContentData, onClick: (BaseContentData) -> Unit) {
 
     }
 }
+@Composable
+fun GridItem(item: String) {
+    Text(text = item)
+}
+
 
 @Composable
 fun ContentItemList(data: BaseContentData, onClick: (BaseContentData) -> Unit) {
-    Row(
+    Card(
         modifier = Modifier
             .padding(8.dp)
             .fillMaxWidth()
-            .clickable { onClick(data) }
+            .clickable { onClick(data) },
+        elevation = CardDefaults.cardElevation(4.dp), // Use CardDefaults.cardElevation for elevation
+        colors = CardDefaults.cardColors(containerColor = Color.DarkGray), // Set background color
+        shape = RoundedCornerShape(8.dp) // Adjust the corner radius for a rounded effect
     ) {
-        Log.d("incoming", "" + data.thumbnail)
+        Row(
+            modifier = Modifier
+//                .padding(8.dp)
+                .fillMaxWidth()
+        ) {
+            Log.d("incoming", "" + data.title)
 
-        data.thumbnail?.let { thumbnailUrl ->
-            AsyncImage(
+            data.thumbnail?.let { thumbnailUrl ->
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(YoutubeCoreConstant.decodeThumpUrl(thumbnailUrl))
+                        .crossfade(true)
+                        .placeholder(R.drawable.placeholder)
+                        .error(R.drawable.placeholder)
+                        .build(),
+                    contentDescription = "Drawable Image",
+                    modifier = Modifier
+                        .height(50.dp)
+                        .width(50.dp),
+                    contentScale = ContentScale.Crop
+                )
+            } ?: AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
-                    .data(YoutubeCoreConstant.decodeThumpUrl(thumbnailUrl))
+                    .data(R.drawable.images)
                     .crossfade(true)
                     .placeholder(R.drawable.placeholder)
                     .error(R.drawable.placeholder)
                     .build(),
-                contentDescription = "Drawable Image",
-                modifier = Modifier
-                    .padding(horizontal = 5.dp, vertical = 5.dp)
-                    .height(40.dp)
-                    .width(40.dp),
+                contentDescription = "Placeholder Image",
+                        modifier = Modifier
+                        .height(50.dp)
+                    .width(50.dp),
                 contentScale = ContentScale.Crop
             )
-        } ?: AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-                .data(R.drawable.images)
-                .crossfade(true)
-                .placeholder(R.drawable.placeholder)
-                .error(R.drawable.placeholder)
-                .build(),
 
-            contentDescription = "Placeholder Image",
-            modifier = Modifier
-                .padding(horizontal = 5.dp, vertical = 5.dp)
-                .height(20.dp)
-                .width(20.dp),
-            contentScale = ContentScale.Crop
-        )
-        Text(
-            text = data.title!!, fontWeight = FontWeight.Thin,
-            color = Color.White,
-            modifier = Modifier
-                .align(Alignment.CenterVertically)
-                .padding(horizontal = 5.dp),
-            textAlign = TextAlign.Center,
-            maxLines = 1,
-            fontSize = 20.sp
-        )
-
+            Text(
+                text = data.title!!,
+                fontWeight = FontWeight.Medium,
+                color = Color.White,
+                modifier = Modifier
+                    .align(Alignment.CenterVertically)
+                    .fillMaxWidth()
+                    .padding(horizontal = 5.dp),
+                textAlign = TextAlign.Left,
+                maxLines = 1,
+                fontSize = 16.sp
+            )
+        }
     }
-
 }
+
+
 
 @Composable
 fun Content2Item(data: BaseContentData) {
@@ -390,9 +458,9 @@ fun LisrtContent() {
     ContentItemList(
         BaseContentData(
             "ekjsndflknqwek;fj;kqwasdasjek;fjq;kwejfk;qwej;kfjkq;wjfkjakwsjfklasjkfnjaks",
+            "esadfasdfasasvsavhasljvhasdhvjhadvasdhk",
             "e",
-            "e",
-            "e",
+            "unda",
             false
         ), onClick = {})
 }
