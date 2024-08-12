@@ -240,11 +240,11 @@ class TubeFyViewModel @Inject constructor(
     }
 
 
-    fun searchNewPipePage(searchKey:String) {
-        val contentFilter = arrayOf<String>("music_songs")
-
+    fun searchNewPipePage(searchKey:String, contentFilter: MutableList<String>) {
+//        val contentFilter = arrayOf<String>("music_songs")
+Log.d("incomming<>","<>"+contentFilter)
         viewModelScope.launch {
-            remoteRepositorySource.getNewPipePageSearch(0, searchKey, listOf(*contentFilter), "")
+            remoteRepositorySource.getNewPipePageSearch(0, searchKey, contentFilter, "")
                 .collect {
                     Log.d("resultya","yadadada")
                     youTubeSearchDataPrivate.value = it

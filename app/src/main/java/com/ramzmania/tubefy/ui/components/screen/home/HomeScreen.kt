@@ -251,7 +251,7 @@ fun HorizontalContentList(
                         ) {
                             Log.d(
                                 "ItemClicked",
-                                "Clicked item playlistId: ${selectedItem.playlistId}"
+                                "Clicked item playlistId: ${selectedItem.playlistId}"+"<>"+" ${selectedItem.title}"+"<>"+" ${selectedItem.thumbnail}"
                             )
 
 //                        viewModel.loadPlayList(selectedItem.playlistId!!)
@@ -273,7 +273,7 @@ fun HorizontalContentList(
                                 NavigationItem.PlayList.createRoute(
                                     selectedItem.playlistId!!,
                                     selectedItem.title!!,URLEncoder.encode(
-                                        YoutubeCoreConstant.decodeThumpUrl(selectedItem.thumbnail!!),
+                                        YoutubeCoreConstant.decodeThumpUrl(selectedItem.thumbnail?.takeIf { it.isNotEmpty() } ?: "nourl"),
                                         StandardCharsets.UTF_8.toString()
                                     )
                                 )

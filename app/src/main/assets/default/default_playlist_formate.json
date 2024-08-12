@@ -1,23 +1,23 @@
 {
   "playlist_categories": [
     {
-      "title": "Big Dawgs",
+      "title": "Trending",
       "playlist": "non",
       "description": "The top 10 most popular songs right now."
     },
     {
       "title": "Latest Releases",
-      "playlist": "JCf7lKL1UQ4&list=TLGGMEIA3Ao4REQxMTA4MjAyNA",
+      "playlist": "non",
       "description": "The newest music releases from various artists."
     },
     {
       "title": "Fresh Hits",
-      "playlist": "OLAK5uy_lSTp1DIuzZBUyee3kDsXwPgP25WdfwB40",
+      "playlist": "non",
       "description": "The latest trending hits and popular new songs."
     },
     {
       "title": "Best of the Year",
-      "playlist": "RDCLAK5uy_nSq67AJ2d75MFNJ3j_4ClEtSgC-opBM84",
+      "playlist": "non",
       "description": "The best songs of the year, as selected by critics and listeners."
     },
     {
@@ -27,7 +27,7 @@
     },
     {
       "title": "Most Played",
-      "playlist": "JCf7lKL1UQ4&list=TLGGMEIA3Ao4REQxMTA4MjAyNA",
+      "playlist": "non",
       "description": "The most played tracks on the platform."
     },
     {

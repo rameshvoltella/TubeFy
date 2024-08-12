@@ -3,7 +3,6 @@ package com.ramzmania.tubefy.ui.components.screen.album
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -21,8 +20,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -33,7 +30,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -44,16 +40,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import coil.compose.rememberImagePainter
 import coil.request.ImageRequest
 import com.ramzmania.tubefy.R
 import com.ramzmania.tubefy.core.YoutubeCoreConstant
 import com.ramzmania.tubefy.core.YoutubeCoreConstant.decodeThumpUrl
-import com.ramzmania.tubefy.core.extractors.yotubewebextractor.YoutubeScrapType
 import com.ramzmania.tubefy.data.Resource
-import com.ramzmania.tubefy.data.dto.home.HomePageResponse
 import com.ramzmania.tubefy.data.dto.searchformat.StreamUrlData
 import com.ramzmania.tubefy.data.dto.searchformat.TubeFyCoreTypeData
 import com.ramzmania.tubefy.ui.components.NavigationItem
@@ -62,6 +54,7 @@ import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
 import java.net.URLDecoder
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+import java.util.Calendar
 
 @Composable
 fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
@@ -73,12 +66,27 @@ fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
     val navController= LocalNavController.current
     val navBackStackEntry = navController.currentBackStackEntry
     val context = LocalContext.current
+    Log.d("sadakku",">>>>>")
 
 //    val playlistId = navBackStackEntry?.arguments?.getString("playlistId")
     LaunchedEffect(Unit) {
         val playlistId = navBackStackEntry?.arguments?.getString("playlistId")
+        Log.d("sadakku",">>2222>>>"+playlistId)
         if(playlistId!!.startsWith("PLAYLIST-ID-")) {
-            viewModel.searchNewPipePage(playlistId.replace("PLAYLIST-ID-",""))
+            if(playlistId!!.startsWith("PLAYLIST-ID-YT"))
+            {
+                Log.d("incomming<>","<>music_songs")
+
+                viewModel.searchNewPipePage(playlistId.replace("PLAYLIST-ID-","")+" songs of "+Calendar.getInstance().get(Calendar.YEAR),
+                    mutableListOf()
+                )
+            }else
+            {
+                viewModel.searchNewPipePage(playlistId.replace("PLAYLIST-ID-",""),
+                    mutableListOf("music_songs")
+                )
+            }
+
         }else {
             viewModel.loadPlayList(playlistId!!)
         }

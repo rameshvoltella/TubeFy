@@ -22,8 +22,8 @@ class DefaultHomePlayListDataFormatter @Inject constructor()  :
                 if(it.playlist.equals("non")) {
                     videoSortedListWithPlaylist.add(
                         BaseContentData(
-                            "",
-                            "PLAYLIST-ID-$it.title",
+                            it.title,
+                            "PLAYLIST-ID-YT${it.title}",
                             "",
                             it.title
                         )
