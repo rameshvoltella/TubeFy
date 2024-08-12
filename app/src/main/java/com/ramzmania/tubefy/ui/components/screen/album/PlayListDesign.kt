@@ -6,7 +6,6 @@ import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -20,7 +19,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -59,145 +57,79 @@ import com.ramzmania.tubefy.data.dto.searchformat.TubeFyCoreTypeData
 import com.ramzmania.tubefy.ui.components.NavigationItem
 import com.ramzmania.tubefy.utils.LocalNavController
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
-import java.net.URLDecoder
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
 @Composable
-fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
-    val playListData by viewModel.youTubePlayListData.observeAsState()
-    val streamUrlData by viewModel.streamUrlData.observeAsState()
-    val searchPlayListName by viewModel.youTubeSearchData.observeAsState()
-    var isLoading by remember { mutableStateOf(true) }  // Track loading state
-    var finalItems by remember { mutableStateOf<List<TubeFyCoreTypeData?>>(emptyList()) }
-    val navController= LocalNavController.current
-    val navBackStackEntry = navController.currentBackStackEntry
-    val context = LocalContext.current
+fun Album2Screen(final:List<TubeFyCoreTypeData?>) {
 
-//    val playlistId = navBackStackEntry?.arguments?.getString("playlistId")
-    LaunchedEffect(Unit) {
-        val playlistId = navBackStackEntry?.arguments?.getString("playlistId")
-        if(playlistId!!.startsWith("PLAYLIST-ID-")) {
-            viewModel.searchNewPipePage(playlistId.replace("PLAYLIST-ID-",""))
-        }else {
-            viewModel.loadPlayList(playlistId!!)
-        }
-    }
+    var finalItems by remember { mutableStateOf<List<TubeFyCoreTypeData?>>(final) }
+
     Column(modifier = Modifier
         .fillMaxSize()
         .background(Color.Black)) {
-        navBackStackEntry?.arguments?.getString("playlistName")?.let {
-            AlbumHeader(
-                imageUrl = URLDecoder.decode(navBackStackEntry?.arguments?.getString("playlistImage"), StandardCharsets.UTF_8.toString())
-            , // Replace with your image URL
-                title = it,
-
-            )
-        }
-        if (isLoading) {
-            // Show progress indicator while loading
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(color = colorResource(id = R.color.tubefyred))
-            }
-        } else {
-            // Show track list when data is loaded
-            AlbumTrackList(tracks = finalItems)
-        }
-//        AlbumTrackList(tracks =finalItems)
-    }
-    LaunchedEffect(key1 = playListData) {
-        if (playListData is Resource.Success) {
-//            val items = (streamUrlData as Resource.Success<StreamUrlData>).data
-            // Prepend new data to the existing list
-            Log.d("datata", ">>VADAAA"+playListData!!.data!!.playListVideoList?.get(0)?.videoId)
-            finalItems=playListData!!.data!!.playListVideoList!!
-            isLoading=false
-//            if(playListData!!.data!!.playListVideoList?.get(0)?.videoId!=null)
-//            {
-//                viewModel.getStreamUrl(playListData!!.data!!.playListVideoList?.get(0)?.videoId!!)
-//            }
-            // Log.d("datata", "palyislisis>>" + (playListData!!.data!!.playListVideoList?.get(0)?.videoId ?: ))
-//            if (streamUrlData!!.data!!.streamUrl.isNotEmpty()) {
-//                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(streamUrlData!!.data!!.streamUrl))
-//                context.startActivity(intent)
-//            }
-        }
-    }
-    LaunchedEffect(key1 = streamUrlData) {
-        if (streamUrlData is Resource.Success) {
-            val items = (streamUrlData as Resource.Success<StreamUrlData>).data
-            // Prepend new data to the existing list
-            Log.d("datata", ">>VADAAA")
-
-            Log.d("datata", ">>" + streamUrlData!!.data!!.streamUrl)
-            if (streamUrlData!!.data!!.streamUrl.isNotEmpty()) {
-                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(streamUrlData!!.data!!.streamUrl))
-                context.startActivity(intent)
-            }
-        }
+        Album2Header(
+            imageUrl = "https://www.udiscovermusic.com/wp-content/uploads/2015/10/100-Greatest-Album-Covers.jpg", // Replace with your image URL
+            title = "Real Steel (Original Motion Picture Score)"
+        )
+        Album2TrackList(tracks =finalItems)
     }
 
-    LaunchedEffect(key1 = searchPlayListName) {
-        if (searchPlayListName is Resource.Success) {
-//            val items = (streamUrlData as Resource.Success<StreamUrlData>).data
-            // Prepend new data to the existing list
-            Log.d("datata","first")
-            Log.d("datata", ">>VADAAACAME"+searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!.size)
-            finalItems=searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!
-            isLoading = false
-        }
-    }
 
 }
 
 @Composable
-fun AlbumHeader(imageUrl: String, title: String) {
+fun Album2Header(imageUrl: String, title: String) {
     Column(modifier = Modifier.fillMaxWidth()) {
-    AsyncImage(
-        model = ImageRequest.Builder(LocalContext.current)
-            .data(YoutubeCoreConstant.decodeThumpUrl(imageUrl))
-            .crossfade(true)
-            .placeholder(R.drawable.placeholder)
-            .error(R.drawable.placeholder)
-            .build(),
-        contentDescription = "Drawable Image",
-        modifier = Modifier
-            .padding(horizontal = 5.dp, vertical = 5.dp)
-            .width(200.dp)
-            .height(200.dp)
-            .align(Alignment.CenterHorizontally)
-            .fillMaxWidth(),
-        contentScale = ContentScale.Crop
-    )
-    Spacer(modifier = Modifier.height(8.dp))
-    Text(text = title,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 10.dp),
-        fontWeight = FontWeight.Medium,
-        color = colorResource(id = R.color.tubefyred),
-        textAlign = TextAlign.Left,
-        maxLines = 2,
-        fontSize = 16.sp)
+      /*  AsyncImage(
+            painter = rememberImagePainter(data = imageUrl),
+            contentDescription = null,
+            modifier = Modifier
+                .height(200.dp)
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(8.dp))
+        )*/
+        AsyncImage(
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(YoutubeCoreConstant.decodeThumpUrl(imageUrl))
+                .crossfade(true)
+                .placeholder(R.drawable.placeholder)
+                .error(R.drawable.placeholder)
+                .build(),
+            contentDescription = "Drawable Image",
+            modifier = Modifier
+                .padding(horizontal = 5.dp, vertical = 5.dp)
+                .width(200.dp)
+                .height(200.dp)
+                .align(Alignment.CenterHorizontally)
+                .fillMaxWidth(),
+            contentScale = ContentScale.Crop
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(text = title,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            fontWeight = FontWeight.Medium,
+            color = colorResource(id = R.color.tubefyred),
+            textAlign = TextAlign.Left,
+            maxLines = 2,
+            fontSize = 18.sp)
 
-}
+    }
 }
 
 @Composable
-fun AlbumTrackList(tracks:List<TubeFyCoreTypeData?>) {
+fun Album2TrackList(tracks:List<TubeFyCoreTypeData?>) {
     LazyColumn {
         items(tracks!!) { track ->
-            TrackItem(trackName = track!!)
+            Track2Item(trackName = track!!)
         }
     }
 }
 
 @Composable
-fun TrackItem(trackName: TubeFyCoreTypeData,viewModel: TubeFyViewModel = hiltViewModel()) {
-    val newNav=  LocalNavController.current
+fun Track2Item(trackName: TubeFyCoreTypeData) {
 
     Column(
         modifier = Modifier
@@ -215,25 +147,12 @@ fun TrackItem(trackName: TubeFyCoreTypeData,viewModel: TubeFyViewModel = hiltVie
                 val encodedVideoId =
                     URLEncoder.encode(trackName.videoId, StandardCharsets.UTF_8.toString())
 //                LocalNavController.current
-                newNav!!.navigate(
-                    NavigationItem.AudioPlayer.createRoute(
-                        encodedVideoId,
-                        encodedVideoUrl
-                    )
-                ) {
-                    newNav.graph.route?.let { route ->
-                        popUpTo(route) {
-                            saveState = true
-                        }
-                    }
-                    launchSingleTop = true
-                    restoreState = true
-                }
+
             }
     ) {
         Card(
             modifier = Modifier
-//                .padding(8.dp)
+                .padding(8.dp)
                 .fillMaxWidth(),
             elevation = CardDefaults.cardElevation(4.dp), // Use CardDefaults.cardElevation for elevation
             colors = CardDefaults.cardColors(containerColor = Color.DarkGray), // Set background color
@@ -287,13 +206,12 @@ fun TrackItem(trackName: TubeFyCoreTypeData,viewModel: TubeFyViewModel = hiltVie
                 )
             }
         }
-//        Text(text = trackName.videoTitle,  color = Color.Black)
-//        Divider(modifier = Modifier.padding(vertical = 4.dp), color = Color.Gray)
     }
 }
 
 @Preview
 @Composable
-fun PreviewAlbumScreen() {
-//    AlbumScreen()
+fun Preview2AlbumScreen() {
+   val kk= listOf(TubeFyCoreTypeData("video","sjn","sjdfb"))
+    Album2Screen(kk)
 }

@@ -272,7 +272,10 @@ fun HorizontalContentList(
                             navController!!.navigate(
                                 NavigationItem.PlayList.createRoute(
                                     selectedItem.playlistId!!,
-                                    selectedItem.title!!
+                                    selectedItem.title!!,URLEncoder.encode(
+                                        YoutubeCoreConstant.decodeThumpUrl(selectedItem.thumbnail!!),
+                                        StandardCharsets.UTF_8.toString()
+                                    )
                                 )
                             ) {
                                 navController.graph.startDestinationRoute?.let { route ->

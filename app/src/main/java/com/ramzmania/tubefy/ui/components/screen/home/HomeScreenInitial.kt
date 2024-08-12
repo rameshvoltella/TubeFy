@@ -91,7 +91,7 @@ fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel(),navController
             .background(colorResource(id = R.color.colorPrimary))
             .wrapContentSize(Alignment.Center)
     ) {
-        Text(
+      /*  Text(
             text = "Home View",
             fontWeight = FontWeight.Bold,
             color = Color.White,
@@ -100,7 +100,7 @@ fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel(),navController
             fontSize = 25.sp
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(16.dp))*/
 
         // Show loading indicators or error messages
         if (homeData is Resource.Loading || scrapData is Resource.Loading) {

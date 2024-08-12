@@ -46,7 +46,7 @@ class DefaultHomePlayListDataFormatter @Inject constructor()  :
                     val composerSortedListWithPlaylist = mutableListOf<BaseContentData>()
 
                     it?.composers?.forEach {
-                        composerSortedListWithPlaylist.add(BaseContentData("","PLAYLIST-ID-${it.name}","",it.name))
+                        composerSortedListWithPlaylist.add(BaseContentData("","PLAYLIST-ID-${it.name}",""+it.image,it.name))
                     }
                     videoSortedList.add(HomePageResponse(CellType.PLAYLIST_ONLY,composerSortedListWithPlaylist))
 

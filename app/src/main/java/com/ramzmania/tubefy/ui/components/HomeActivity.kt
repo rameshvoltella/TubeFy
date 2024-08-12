@@ -175,7 +175,7 @@ fun MainScreen() {
             LocalNavController provides navController // Added missing comma
         ) {
             Scaffold(
-                topBar = { TopBar() },
+//                topBar = { TopBar() },
                 bottomBar = { BottomNavigationBar(navController) },
                 content = {
                     Box(modifier = Modifier.fillMaxSize()) {
