@@ -3,57 +3,79 @@
     {
       "title": "Trending",
       "playlist": "non",
-      "description": "The top 10 most popular songs right now."
+      "description": "The top 10 most popular songs right now.",
+      "image": "https://yt3.googleusercontent.com/5K2ZqFLrYQWw-D7_kOCzQBS43_F3pd3_phfUXtpbFCwwfq0rFVRNnc_xTGD0jT3o34dUw0de-qM=s900-c-k-c0x00ffffff-no-rj"
+
     },
     {
       "title": "Latest Releases",
       "playlist": "non",
-      "description": "The newest music releases from various artists."
+      "description": "The newest music releases from various artists.",
+      "image": "https://c8.alamy.com/comp/CBDMRK/new-releases-text-in-white-chalk-handwriting-on-a-vintage-slate-blackboard-CBDMRK.jpg"
+
     },
     {
       "title": "Fresh Hits",
       "playlist": "non",
-      "description": "The latest trending hits and popular new songs."
+      "description": "The latest trending hits and popular new songs.",
+      "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRkU513CDnA2Q-Ln_5-gLUAQX5-J-JdEq9zdQ&s"
+
     },
     {
       "title": "Best of the Year",
       "playlist": "non",
-      "description": "The best songs of the year, as selected by critics and listeners."
+      "description": "The best songs of the year, as selected by critics and listeners.",
+      "image": "https://www.shutterstock.com/shutterstock/photos/685815853/display_1500/stock-vector-vintage-style-postcard-best-year-ever-vector-eps-grunge-effects-can-be-easily-removed-for-a-685815853.jpg"
+
     },
     {
-      "title": "aavesham",
+      "title": "International Hits",
       "playlist": "non",
-      "description": "The most played tracks on the platform."
+      "description": "The most played tracks on the platform.",
+      "image": "https://dynamic.brandcrowd.com/template/preview/design/bd9206c2-313e-4514-baf3-b5782eb0f955/cef0bfe5-7e67-4b7f-8ea4-af3859fcb0ce?v=4&designTemplateVersion=1&logoTemplateVersion=4&size=design-preview-standalone-1x"
+
     },
     {
       "title": "Most Played",
       "playlist": "non",
-      "description": "The most played tracks on the platform."
+      "description": "The most played tracks on the platform.",
+      "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTOIZeJyR1WPAW_65n1l6o88oL5zmytqv_zyA&s"
+
     },
     {
       "title": "Chill Vibes",
       "playlist": "non",
-      "description": "Relaxing and laid-back music for a chill atmosphere."
+      "description": "Relaxing and laid-back music for a chill atmosphere.",
+      "image": "https://image-cdn-ak.spotifycdn.com/image/ab67706c0000da84672ab214077d7446c6dcd0ed"
+
     },
     {
       "title": "Workout Tunes",
       "playlist": "non",
-      "description": "High-energy music perfect for workouts and exercise."
+      "description": "High-energy music perfect for workouts and exercise.",
+      "image": "https://i1.sndcdn.com/artworks-FDmrzyn7ptB28ynL-4CF7Ug-t500x500.jpg"
+
     },
     {
       "title": "Classics",
       "playlist": "non",
-      "description": "Timeless classics from various genres."
+      "description": "Timeless classics from various genres.",
+      "image": "https://yt3.googleusercontent.com/BypOGtr2lsqjZ8C-VBzyBf6oZphNo6VAeVYnEzLOrTAe9w0iKa-dcPXb_pBpNYgZnq7w2zDh=s900-c-k-c0x00ffffff-no-rj"
+
     },
     {
       "title": "Indie Favorites",
       "playlist": "non",
-      "description": "Popular and emerging indie tracks."
+      "description": "Popular and emerging indie tracks.",
+      "image": "https://i.scdn.co/image/ab67616d0000b2733091e78025a2cf25ebf4282a"
+
     },
     {
       "title": "Throwbacks",
       "playlist": "non",
-      "description": "Songs from the past that are still loved today."
+      "description": "Songs from the past that are still loved today.",
+      "image": ""
+
     }
   ]
 }
