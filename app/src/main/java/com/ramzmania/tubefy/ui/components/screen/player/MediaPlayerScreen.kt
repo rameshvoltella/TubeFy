@@ -18,6 +18,7 @@ import androidx.media3.common.MediaMetadata
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaController
 import androidx.navigation.NavController
+import com.ramzmania.tubefy.core.YoutubeCoreConstant
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.searchformat.StreamUrlData
 import com.ramzmania.tubefy.utils.LocalNavController
@@ -35,7 +36,6 @@ fun MediaPlayerScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
 
     // Replace this URL with your desired media URL
     var mediaUri = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
-val context=LocalContext.current
     val navBackStackEntry = navController.currentBackStackEntry
     var albumArt by remember { mutableStateOf("") }
 //Log.d("thiump url",videoThumpUrl)
@@ -43,7 +43,7 @@ val context=LocalContext.current
 //        val videoId = navBackStackEntry?.arguments?.getString("videoId")
         val videoId = URLDecoder.decode(navBackStackEntry?.arguments?.getString("videoId"), StandardCharsets.UTF_8.toString())
         albumArt = URLDecoder.decode(navBackStackEntry?.arguments?.getString("videoUrl"), StandardCharsets.UTF_8.toString())
-
+//        "https://i3.ytimg.com/vi/${YoutubeCoreConstant.extractYoutubeVideoId(videoId)}/hqdefault.jpg
         viewModel.getStreamUrl(videoId!!)
     }
     LaunchedEffect(key1 = streamUrlData) {

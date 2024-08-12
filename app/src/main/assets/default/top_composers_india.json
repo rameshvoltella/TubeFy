@@ -3,52 +3,62 @@
     {
       "name": "A.R. Rahman",
       "notable_works": ["Slumdog Millionaire", "Lagaan", "Taal"],
-      "academy_awards": 2
+      "academy_awards": 2,
+      "image": "https://i.scdn.co/image/ab67616d00001e02d25246639ee0acbe06c09ff8"
     },
     {
       "name": "R.D. Burman",
       "notable_works": ["Sholay", "Khatta Meetha", "Chupke Chupke"],
-      "filmfare_awards": 5
+      "filmfare_awards": 5,
+      "image":"https://upload.wikimedia.org/wikipedia/commons/f/f6/Rahul_Dev_Burman.jpg"
     },
     {
       "name": "Laxmikant-Pyarelal",
       "notable_works": ["Amar Akbar Anthony", "Hamaare Tumhare", "Khatta Meetha"],
-      "filmfare_awards": 7
+      "filmfare_awards": 7,
+      "image":"https://laxmikantpyarelal.com/wp-content/uploads/2019/10/lp-recording.jpg?w=750"
     },
     {
       "name": "Shankar-Ehsaan-Loy",
       "notable_works": ["Dil Chahta Hai", "Kal Ho Na Ho", "Zindagi Na Milegi Dobara"],
-      "filmfare_awards": 3
+      "filmfare_awards": 3,
+      "image":"https://thisis-images.spotifycdn.com/37i9dQZF1DZ06evO0nRc0G-default.jpg"
     },
     {
       "name": "Ilaiyaraaja",
       "notable_works": ["Thalapathi", "Sindhu Bhairavi", "Annakkili"],
-      "national_awards": 4
+      "national_awards": 4,
+      "image":"https://upload.wikimedia.org/wikipedia/commons/2/26/Ilaiyaraaja_at_Merku_Thodarchi_Malai_Press_Meet.jpg"
     },
     {
       "name": "Jatin-Lalit",
       "notable_works": ["Dilwale Dulhania Le Jayenge", "Kabhi Haan Kabhi Naa", "Pardes"],
-      "filmfare_awards": 2
+      "filmfare_awards": 2,
+      "image":"https://c.saavncdn.com/artists/Jatin-Lalit_500x500.jpg"
     },
     {
       "name": "Bappi Lahiri",
       "notable_works": ["Disco Dancer", "Chalte Chalte", "Namak Halaal"],
-      "filmfare_awards": 2
+      "filmfare_awards": 2,
+      "image":"https://assets.vogue.in/photos/620c930becc68b9d65d388f5/1:1/w_1606,h_1606,c_limit/Bappi%20Lahiri.jpg"
     },
     {
       "name": "Anu Malik",
       "notable_works": ["Baazigar", "Hama", "Chameli"],
-      "filmfare_awards": 2
+      "filmfare_awards": 2,
+      "image":"https://m.media-amazon.com/images/M/MV5BZGY1MWI3MzUtNzFkOS00OWQ1LThkYjYtYTBlNThjY2E4Y2I0XkEyXkFqcGdeQXVyMTExNDQ2MTI@._V1_.jpg"
     },
     {
       "name": "Salim-Sulaiman",
       "notable_works": ["Chakde! India", "Kurbaan", "Band Baaja Baaraat"],
-      "filmfare_awards": 2
+      "filmfare_awards": 2,
+      "image":"https://a10.gaanacdn.com/gn_img/artists/jBr3gybR1m/Br3gNGnQKR/size_m_1558507830.jpg"
     },
     {
       "name": "Pritam",
       "notable_works": ["Jab We Met", "Barfi!", "Dangal"],
-      "filmfare_awards": 3
+      "filmfare_awards": 3,
+      "image":"https://i.scdn.co/image/ab6761610000e5ebcb6926f44f620555ba444fca"
     }
   ]
 }

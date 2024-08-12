@@ -19,25 +19,25 @@ class DefaultHomePlayListDataFormatter @Inject constructor()  :
         try{
             input?.categoryData?.playlistCategories?.forEach {
 //                println("Title: ${it.title}, Description: ${it.description}")
-                if(it.playlist.equals("non")) {
+//                if(it.playlist.equals("non")) {
                     videoSortedListWithPlaylist.add(
                         BaseContentData(
                             it.title,
                             "PLAYLIST-ID-YT${it.title}",
-                            "",
+                            it.image,
                             it.title
                         )
                     )
-                }else
-                {
-                    videoSortedListWithPlaylist.add(
-                        BaseContentData(it.playlist,
-                            it.playlist,
-                            "",
-                            it.title
-                        )
-                    )
-                }
+//                }else
+//                {
+//                    videoSortedListWithPlaylist.add(
+//                        BaseContentData(it.playlist,
+//                            it.playlist,
+//                            "",
+//                            it.title
+//                        )
+//                    )
+//                }
             }
             videoSortedList.add(HomePageResponse(CellType.PLAYLIST_ONLY,videoSortedListWithPlaylist))
             if(input?.composersList!=null)

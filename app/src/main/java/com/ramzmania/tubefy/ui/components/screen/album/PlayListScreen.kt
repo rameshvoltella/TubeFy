@@ -217,7 +217,7 @@ fun TrackItem(trackName: TubeFyCoreTypeData,viewModel: TubeFyViewModel = hiltVie
 
 // Encode videoName if it contains special characters
                 val encodedVideoUrl = URLEncoder.encode(
-                    decodeThumpUrl(trackName.videoImage),
+                    decodeThumpUrl(trackName.videoBackupThump),
                     StandardCharsets.UTF_8.toString()
                 )
                 val encodedVideoId =

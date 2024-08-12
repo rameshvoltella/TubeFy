@@ -3,47 +3,56 @@
     {
       "name": "Anirudh Ravichander",
       "notable_works": ["Kolaveri Di", "Master", "Petta"],
-      "awards": ["Filmfare Awards South"]
+      "awards": ["Filmfare Awards South"],
+      "image":"https://www.gethucinema.com/tmdb/4RqfmPhND0cKe83kCohjCW06Q02.jpg"
     },
     {
       "name": "G.V. Prakash Kumar",
       "notable_works": ["Madras", "Kadavul Irukaan Kumaru", "Sarvam Thaala Mayam"],
-      "awards": ["Filmfare Awards South"]
+      "awards": ["Filmfare Awards South"],
+      "image":"https://yt3.googleusercontent.com/6ivjZjR6fbNqmtgkmODuEDqQPZ6xA0icK0oF526ldt3OVFAIfL7g5qz74lgaZqmcqT04v7B00w=s900-c-k-c0x00ffffff-no-rj"
     },
     {
       "name": "Harris Jayaraj",
       "notable_works": ["Enthiran", "Thuppakki", "Dhruva"],
-      "awards": ["Filmfare Awards South"]
+      "awards": ["Filmfare Awards South"],
+      "image":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ14ImVzC1W2bBwXYS1lqZl8ayeuDZpoPbzGA&s"
     },
     {
       "name": "S. Thaman",
       "notable_works": ["Ala Vaikunthapurramuloo", "Sarkar", "Dhruva"],
-      "awards": ["Filmfare Awards South"]
+      "awards": ["Filmfare Awards South"],
+      "image":"https://upload.wikimedia.org/wikipedia/commons/e/e8/S._Thaman_at_Damaal_Dumeel_Audio_Launch.jpg"
     },
     {
       "name": "Rajesh Murugesan",
       "notable_works": ["Premam", "Kumbalangi Nights", "Richie"],
-      "awards": ["Kerala State Film Awards"]
+      "awards": ["Kerala State Film Awards"],
+      "image":"https://upload.wikimedia.org/wikipedia/commons/thumb/7/73/Rajesh-Murugesan.jpg/800px-Rajesh-Murugesan.jpg"
     },
     {
       "name": "Jubair Mohammad",
       "notable_works": ["Kappela", "Anugraheethan Antony"],
-      "awards": ["Kerala State Film Awards"]
+      "awards": ["Kerala State Film Awards"],
+      "image":"https://upload.wikimedia.org/wikipedia/commons/4/4e/Jubair_Muhammed_Music_Director.jpg"
     },
     {
       "name": "Vikram Montrose",
       "notable_works": ["Sathuranga Vettai 2", "Kalki"],
-      "awards": ["Filmfare Awards South"]
+      "awards": ["Filmfare Awards South"],
+      "image":"https://viberatecdn.blob.core.windows.net/entity/artist/vikram-montrose-U39SL"
     },
     {
       "name": "Karthik Raja",
       "notable_works": ["Jodi", "Udhaya", "Boys"],
-      "awards": ["Filmfare Awards South"]
+      "awards": ["Filmfare Awards South"],
+      "image":"https://images.filmibeat.com/img/popcorn/profile_photos/karthik-raja-20180622153923-515.jpg"
     },
     {
       "name": "Sandeep Chowta",
       "notable_works": ["S/O Satyamurthy", "Sikkim", "Pelli Sandadi"],
-      "awards": ["Filmfare Awards South"]
+      "awards": ["Filmfare Awards South"],
+      "image":"https://static.toiimg.com/thumb/msid-60379477,width-400,resizemode-4/60379477.jpg"
     }
   ]
 }
