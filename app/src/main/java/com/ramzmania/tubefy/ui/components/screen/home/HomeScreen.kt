@@ -3,6 +3,7 @@ package com.ramzmania.tubefy.ui.components.screen.home
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -36,6 +37,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
@@ -48,6 +50,7 @@ import com.ramzmania.tubefy.data.dto.home.CellType
 import com.ramzmania.tubefy.data.dto.home.HomePageResponse
 import com.ramzmania.tubefy.data.dto.searchformat.StreamUrlData
 import com.ramzmania.tubefy.ui.components.NavigationItem
+import com.ramzmania.tubefy.utils.LocalNavController
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -55,7 +58,7 @@ import java.nio.charset.StandardCharsets
 @Composable
 fun HomePageContentList(
     homePageResponses: List<HomePageResponse?>,
-    viewModel: TubeFyViewModel = hiltViewModel(),navController: NavController?
+    viewModel: TubeFyViewModel = hiltViewModel(), navController: NavController?
 ) {
     val streamUrlData by viewModel.streamUrlData.observeAsState()
     val playListData by viewModel.youTubePlayListData.observeAsState()
@@ -67,11 +70,26 @@ fun HomePageContentList(
 
             response?.let {
                 when (it.cellType) {
-                    CellType.LIST -> GridContentList(contentData = it.contentData,navController = navController)
-                    CellType.HORIZONTAL_LIST -> HorizontalContentList(contentData = it.contentData, navController = navController)
-                    CellType.THREE_TYPE_CELL -> VerticalContentList(contentData = it.contentData,navController = navController)
+                    CellType.LIST -> GridContentList(
+                        contentData = it.contentData,
+                        navController = navController
+                    )
+
+                    CellType.HORIZONTAL_LIST -> HorizontalContentList(
+                        contentData = it.contentData,
+                        navController = navController
+                    )
+
+                    CellType.THREE_TYPE_CELL -> VerticalContentList(
+                        contentData = it.contentData,
+                        navController = navController
+                    )
+
                     CellType.SINGLE_CELL -> SingleContentCell(contentData = it.contentData)
-                    CellType.PLAYLIST_ONLY -> HorizontalContentList(contentData = it.contentData,navController = navController)
+                    CellType.PLAYLIST_ONLY -> HorizontalContentList(
+                        contentData = it.contentData,
+                        navController = navController
+                    )
                 }
             }
         }
@@ -81,12 +99,11 @@ fun HomePageContentList(
         if (playListData is Resource.Success) {
 //            val items = (streamUrlData as Resource.Success<StreamUrlData>).data
             // Prepend new data to the existing list
-            Log.d("datata", ">>VADAAA"+playListData!!.data!!.playListVideoList?.get(0)?.videoId)
-if(playListData!!.data!!.playListVideoList?.get(0)?.videoId!=null)
-{
-    viewModel.getStreamUrl(playListData!!.data!!.playListVideoList?.get(0)?.videoId!!)
-}
-           // Log.d("datata", "palyislisis>>" + (playListData!!.data!!.playListVideoList?.get(0)?.videoId ?: ))
+            Log.d("datata", ">>VADAAA" + playListData!!.data!!.playListVideoList?.get(0)?.videoId)
+            if (playListData!!.data!!.playListVideoList?.get(0)?.videoId != null) {
+                viewModel.getStreamUrl(playListData!!.data!!.playListVideoList?.get(0)?.videoId!!)
+            }
+            // Log.d("datata", "palyislisis>>" + (playListData!!.data!!.playListVideoList?.get(0)?.videoId ?: ))
 //            if (streamUrlData!!.data!!.streamUrl.isNotEmpty()) {
 //                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(streamUrlData!!.data!!.streamUrl))
 //                context.startActivity(intent)
@@ -108,12 +125,12 @@ if(playListData!!.data!!.playListVideoList?.get(0)?.videoId!=null)
     }
 
 
-
 }
 
 
 @Composable
-fun VerticalContentList(navController:NavController?,
+fun VerticalContentList(
+    navController: NavController?,
     contentData: List<BaseContentData>?,
     viewModel: TubeFyViewModel = hiltViewModel()
 ) {
@@ -127,10 +144,17 @@ fun VerticalContentList(navController:NavController?,
                     val encodedVideoUrl = URLEncoder.encode(
                         YoutubeCoreConstant.decodeThumpUrl(
                             selectedItem.thumbnail!!
-                        ), StandardCharsets.UTF_8.toString())
-                    val encodedVideoId = URLEncoder.encode(selectedItem.videoId, StandardCharsets.UTF_8.toString())
+                        ), StandardCharsets.UTF_8.toString()
+                    )
+                    val encodedVideoId =
+                        URLEncoder.encode(selectedItem.videoId, StandardCharsets.UTF_8.toString())
 
-                    navController!!.navigate(NavigationItem.AudioPlayer.createRoute(encodedVideoId, encodedVideoUrl)) {
+                    navController!!.navigate(
+                        NavigationItem.AudioPlayer.createRoute(
+                            encodedVideoId,
+                            encodedVideoUrl
+                        )
+                    ) {
                         navController.graph.startDestinationRoute?.let { route ->
                             popUpTo(route) {
                                 saveState = true
@@ -152,10 +176,15 @@ fun GridContentList(
     contentData: List<BaseContentData>?,
     viewModel: TubeFyViewModel = hiltViewModel()
 ) {
-    val gridContent= contentData?.size?.div(2)
-    val newheight=70 * gridContent!!
+    val gridContent = contentData?.size?.div(2)
+    val newheight = 70 * gridContent!!
     contentData?.let {
-        LazyVerticalGrid(columns = GridCells.Fixed(2), modifier = Modifier.fillMaxSize().height(newheight.dp).padding(vertical = 10.dp)) {
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2), modifier = Modifier
+                .fillMaxSize()
+                .height(newheight.dp)
+                .padding(vertical = 10.dp)
+        ) {
             items(it) { data ->
                 ContentItemList(data = data) { selectedItem ->
                     // Handle item click here
@@ -192,19 +221,38 @@ fun GridContentList(
 }
 
 @Composable
-fun HorizontalContentList(navController:NavController?,
+fun HorizontalContentList(
+    navController: NavController?,
     contentData: List<BaseContentData>?,
     viewModel: TubeFyViewModel = hiltViewModel()
 ) {
     contentData?.let {
-        LazyRow {
-            items(it) { data ->
-                ContentItem(data = data) { selectedItem ->
-                    // Handle item click here
-                    Log.d("ItemClicked", "Clicked item horizontalFIRST: ${selectedItem.playlistId}")
-                    if(selectedItem.videoId?.length!!>11||selectedItem.playlistId!!.startsWith("PLAYLIST-ID-"))
-                    {
-                        Log.d("ItemClicked", "Clicked item playlistId: ${selectedItem.playlistId}")
+        Column (Modifier.background(Color.Black)){
+
+            Text(  text = "TOP MIX",
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                modifier = Modifier.padding(10.dp,30.dp,10.dp),
+                textAlign = TextAlign.Left,
+                maxLines = 2,
+                fontSize = 20.sp)
+
+            LazyRow {
+                items(it) { data ->
+                    ContentItem(data = data) { selectedItem ->
+                        // Handle item click here
+                        Log.d(
+                            "ItemClicked",
+                            "Clicked item horizontalFIRST: ${selectedItem.playlistId}"
+                        )
+                        if (selectedItem.videoId?.length!! > 11 || selectedItem.playlistId!!.startsWith(
+                                "PLAYLIST-ID-"
+                            )
+                        ) {
+                            Log.d(
+                                "ItemClicked",
+                                "Clicked item playlistId: ${selectedItem.playlistId}"
+                            )
 
 //                        viewModel.loadPlayList(selectedItem.playlistId!!)
 //                        navController!!.navigate(NavigationItem.PlayList.route) {
@@ -220,21 +268,26 @@ fun HorizontalContentList(navController:NavController?,
 //                            // Restore state
 //                            restoreState = true
 //                        }
-                        viewModel.setHomeScreenReload(false)
-                        navController!!.navigate(NavigationItem.PlayList.createRoute(selectedItem.playlistId!!, selectedItem.title!!)) {
-                            navController.graph.startDestinationRoute?.let { route ->
-                                popUpTo(route) {
-                                    saveState = true
+                            viewModel.setHomeScreenReload(false)
+                            navController!!.navigate(
+                                NavigationItem.PlayList.createRoute(
+                                    selectedItem.playlistId!!,
+                                    selectedItem.title!!
+                                )
+                            ) {
+                                navController.graph.startDestinationRoute?.let { route ->
+                                    popUpTo(route) {
+                                        saveState = true
+                                    }
                                 }
+                                launchSingleTop = true
+                                restoreState = true
                             }
-                            launchSingleTop = true
-                            restoreState = true
+
+                        } else {
+                            viewModel.getStreamUrl(selectedItem.videoId)
+
                         }
-
-                    }else
-                    {
-                        viewModel.getStreamUrl(selectedItem.videoId)
-
                     }
                 }
             }
@@ -260,11 +313,11 @@ fun SingleContentCell(
 fun ContentItem(data: BaseContentData, onClick: (BaseContentData) -> Unit) {
     Column(
         modifier = Modifier
-            .padding(8.dp)
+            .padding(2.dp)
             .wrapContentWidth()
             .clickable { onClick(data) }
     ) {
-        Log.d("incoming", "" + data.thumbnail)
+//        Log.d("incoming", "" + data.thumbnail)
 
         data.thumbnail?.let { thumbnailUrl ->
             AsyncImage(
@@ -297,10 +350,10 @@ fun ContentItem(data: BaseContentData, onClick: (BaseContentData) -> Unit) {
         )
         Text(
             text = data.title!!,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.Thin,
             color = Color.White,
             modifier = Modifier
-                .padding(horizontal = 5.dp)
+                .padding(horizontal = 10.dp)
                 .width(200.dp),
             textAlign = TextAlign.Left,
             maxLines = 2,
@@ -309,6 +362,7 @@ fun ContentItem(data: BaseContentData, onClick: (BaseContentData) -> Unit) {
 
     }
 }
+
 @Composable
 fun GridItem(item: String) {
     Text(text = item)
@@ -355,8 +409,8 @@ fun ContentItemList(data: BaseContentData, onClick: (BaseContentData) -> Unit) {
                     .error(R.drawable.placeholder)
                     .build(),
                 contentDescription = "Placeholder Image",
-                        modifier = Modifier
-                        .height(50.dp)
+                modifier = Modifier
+                    .height(50.dp)
                     .width(50.dp),
                 contentScale = ContentScale.Crop
             )
@@ -376,7 +430,6 @@ fun ContentItemList(data: BaseContentData, onClick: (BaseContentData) -> Unit) {
         }
     }
 }
-
 
 
 @Composable
@@ -452,7 +505,7 @@ fun HomePageContentListPreview() {
 //    HomePageContentList(homePageResponses = videoSortedList)
 }
 
-@Preview
+//@Preview
 @Composable
 fun LisrtContent() {
     ContentItemList(
@@ -463,4 +516,42 @@ fun LisrtContent() {
             "unda",
             false
         ), onClick = {})
+}
+
+@Preview(showBackground = true)
+@Composable
+fun HorizontalContentListPreview() {
+    val navController = rememberNavController()
+    val mockViewModel = MockTubeFyViewModel()
+    val mockData = listOf(
+        BaseContentData(
+            videoId = "video1",
+            playlistId = "playlist1",
+            title = "Title 1",
+            thumbnail = "https://via.placeholder.com/150"
+        ),
+        BaseContentData(
+            videoId = "video2",
+            playlistId = "playlist2",
+            title = "Title 2",
+            thumbnail = "https://via.placeholder.com/150"
+        ),
+        // Add more mock items as needed
+    )
+
+    HorizontalContentList(
+        navController = navController,
+        contentData = mockData,
+//        viewModel = mockViewModel
+    )
+}
+
+class MockTubeFyViewModel : ViewModel() {
+    fun getStreamUrl(videoId: String?) {
+        // Mock implementation
+    }
+
+    fun setHomeScreenReload(reload: Boolean) {
+        // Mock implementation
+    }
 }
