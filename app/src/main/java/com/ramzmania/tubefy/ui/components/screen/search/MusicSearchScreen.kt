@@ -4,13 +4,17 @@ import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -30,6 +34,7 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
     var isLoading by remember { mutableStateOf(true) }  // Track loading state
     var finalItems by remember { mutableStateOf<List<TubeFyCoreTypeData?>>(emptyList()) }
     var page by remember { mutableStateOf<Page?>(null) }
+    val lazyListState = rememberLazyListState()
     LaunchedEffect(key1 = searchPlayListName) {
         if (searchPlayListName is Resource.Success) {
 //            val items = (streamUrlData as Resource.Success<StreamUrlData>).data
@@ -39,12 +44,37 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
                 "datata",
                 ">>VADAAACAME" + searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!.size
             )
-            finalItems = searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!
+            if(finalItems.size>0)
+            {
+                finalItems=finalItems+searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!
+            }else {
+                finalItems = searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!
+            }
             isLoading = false
             page = searchPlayListName!!.data!!.youtubeSortedData.newPipePage
 
         }
     }
+
+    LaunchedEffect(lazyListState) {
+        snapshotFlow { lazyListState.layoutInfo }
+            .collect { layoutInfo ->
+                if (layoutInfo.visibleItemsInfo.isNotEmpty()) {
+                    val lastVisibleItem = layoutInfo.visibleItemsInfo.last()
+                    val totalItems = layoutInfo.totalItemsCount
+                    // Check if we've reached near the end of the list
+                    if (lastVisibleItem.index >= totalItems - 1 && !isLoading) {
+                        // Trigger loading more items
+                        isLoading = true
+                        if(page!=null&&Page.isValid(page)) {
+                            Log.d("unda","yessssss"+page?.url)
+                            viewModel.searchNewPipeNextPage(page!!) // Implement this function in your ViewModel
+                        }
+                    }
+                }
+            }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -54,8 +84,9 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
         Text(
             text = "OLAKKA", color = Color.White,
         )
-        BasicTextField(
+        TextField(
             value = text,
+            placeholder = { Text("Search songs") },
             onValueChange = { newText -> text = newText },
             keyboardOptions = KeyboardOptions.Default.copy(
                 imeAction = ImeAction.Done
@@ -64,7 +95,7 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
                 // Handle text input
                 viewModel.searchNewPipePage(
                     text.text,
-                    mutableListOf()
+                    mutableListOf("music_songs")
                 )
             }),
             modifier = Modifier
@@ -78,12 +109,25 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
 
         // LazyColumn for the list
         LazyColumn(
+            state = lazyListState,
             contentPadding = PaddingValues(16.dp),
             modifier = Modifier.fillMaxSize()
         ) {
             items(finalItems.size) { index ->
                 finalItems[index]?.let { item ->
                     TrackItem(item)
+                }
+            }
+            if (isLoading) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
                 }
             }
         }

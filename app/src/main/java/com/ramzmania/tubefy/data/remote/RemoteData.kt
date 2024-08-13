@@ -226,7 +226,7 @@ constructor(
             when(result)
             {
                 is FormattingResult.SUCCESS ->{
-//                    Log.d("TAGGIZ",""+result.data.youtubeSortedData.youtubeSortedList!!.size)
+                    Log.d("TAGGIZNEXTPAGE",""+result.data.youtubeSortedData.youtubeSortedList!!.size)
                     Resource.Success(result.data)
 
                 }

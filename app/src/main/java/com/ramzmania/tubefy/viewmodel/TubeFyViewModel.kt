@@ -258,7 +258,7 @@ Log.d("incomming<>","<>"+contentFilter)
         viewModelScope.launch {
             remoteRepositorySource.getNewPipePageNextSearch(
                 0,
-                "aavesham",
+                "",
                 listOf(*contentFilter),
                 "",
                 page
