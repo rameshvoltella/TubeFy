@@ -12,7 +12,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 @androidx.annotation.OptIn(UnstableApi::class)
-@OptIn(UnstableApi::class)
 @Composable
 fun MediaControllerComposable(
     onPlayingChanged: (Boolean) -> Unit,
