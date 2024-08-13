@@ -57,6 +57,7 @@ import com.ramzmania.tubefy.ui.components.screen.ProfileScreen
 import com.ramzmania.tubefy.ui.components.screen.album.AlbumScreen
 import com.ramzmania.tubefy.ui.components.screen.player.PlaybackService
 import com.ramzmania.tubefy.ui.components.screen.player.PlayerBaseView
+import com.ramzmania.tubefy.ui.components.screen.search.AudioSearchScreen
 import com.ramzmania.tubefy.utils.LocalNavController
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -202,8 +203,8 @@ fun Navigation(navController: NavHostController) {
         composable(NavigationItem.Home.route) {
             HomeInitialScreen(navController = navController)
         }
-        composable(NavigationItem.Music.route) {
-            MusicScreen()
+        composable(NavigationItem.Search.route) {
+            AudioSearchScreen()
         }
 
         composable(NavigationItem.Books.route) {
@@ -242,7 +243,7 @@ fun TopBarPreview() {
 fun BottomNavigationBar(navController: NavController) {
     val items = listOf(
         NavigationItem.Home,
-        NavigationItem.Music,
+        NavigationItem.Search,
         NavigationItem.Books,
         NavigationItem.Profile
     )

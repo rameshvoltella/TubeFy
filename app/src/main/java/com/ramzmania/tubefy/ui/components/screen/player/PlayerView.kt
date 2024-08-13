@@ -143,31 +143,36 @@ fun PlayerBaseView(
         }
     }
 
-    LaunchedEffect(mediaController) {
+    LaunchedEffect(!isLoading) {
         while (true) {
-            if (mediaController?.isConnected == true && isPlaying) {
-                progress =
-                    (mediaController!!.currentPosition * 1.0f / mediaController!!.duration).coerceIn(
-                        0f,
-                        1f
-                    )
-                val milliSec = mediaController!!.currentPosition
+                if (mediaController?.isConnected == true && isPlaying) {
+                    progress =
+                        (mediaController!!.currentPosition * 1.0f / mediaController!!.duration).coerceIn(
+                            0f,
+                            1f
+                        )
 //                currentTime="%02d:%02d:%02d".format(milliSec / 1000 / 60 / 60, milliSec / 1000 / 60 % 60, milliSec / 1000 % 60)
-                currentTime = if (mediaController!!.duration >= 3600000) "%02d:%02d:%02d".format(
-                    mediaController!!.currentPosition / 1000 / 60 / 60,
-                    mediaController!!.currentPosition / 1000 / 60 % 60,
-                    mediaController!!.currentPosition / 1000 % 60
-                ) else "%02d:%02d".format(
-                    mediaController!!.currentPosition / 1000 / 60 % 60,
-                    mediaController!!.currentPosition / 1000 % 60
-                )
+                    currentTime =
+                        if (mediaController!!.duration >= 3600000) "%02d:%02d:%02d".format(
+                            mediaController!!.currentPosition / 1000 / 60 / 60,
+                            mediaController!!.currentPosition / 1000 / 60 % 60,
+                            mediaController!!.currentPosition / 1000 % 60
+                        ) else "%02d:%02d".format(
+                            mediaController!!.currentPosition / 1000 / 60 % 60,
+                            mediaController!!.currentPosition / 1000 % 60
+                        )
 
-                // Update progress every second
-                kotlinx.coroutines.delay(1000L)
-            } else {
-                // Stop updating if not playing
-                kotlinx.coroutines.delay(1000L)
-            }
+                    // Update progress every second
+                    kotlinx.coroutines.delay(1000L)
+                } else {
+                    // Stop updating if not playing
+                    kotlinx.coroutines.delay(1000L)
+//                    break
+                    if (mediaController?.isPlaying != true) {
+                        break
+                    }
+                }
+
         }
     }
 
