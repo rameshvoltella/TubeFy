@@ -31,7 +31,7 @@ import org.schabi.newpipe.extractor.Page
 fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
     var text by remember { mutableStateOf(TextFieldValue()) }
     val searchPlayListName by viewModel.youTubeSearchData.observeAsState()
-    var isLoading by remember { mutableStateOf(true) }  // Track loading state
+    var isLoading by remember { mutableStateOf(false) }  // Track loading state
     var finalItems by remember { mutableStateOf<List<TubeFyCoreTypeData?>>(emptyList()) }
     var page by remember { mutableStateOf<Page?>(null) }
     val lazyListState = rememberLazyListState()
@@ -44,16 +44,20 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
                 "datata",
                 ">>VADAAACAME" + searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!.size
             )
-            if(finalItems.size>0)
-            {
-                finalItems=finalItems+searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!
-            }else {
+            if (finalItems.size > 0) {
+                finalItems =
+                    finalItems + searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!
+            } else {
                 finalItems = searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!
             }
             isLoading = false
             page = searchPlayListName!!.data!!.youtubeSortedData.newPipePage
 
+        } else if (searchPlayListName is Resource.DataError) {
+            isLoading = false
+
         }
+
     }
 
     LaunchedEffect(lazyListState) {
@@ -65,10 +69,12 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
                     // Check if we've reached near the end of the list
                     if (lastVisibleItem.index >= totalItems - 1 && !isLoading) {
                         // Trigger loading more items
-                        isLoading = true
-                        if(page!=null&&Page.isValid(page)) {
-                            Log.d("unda","yessssss"+page?.url)
-                            viewModel.searchNewPipeNextPage(page!!) // Implement this function in your ViewModel
+                        if (finalItems.size >= 20) {
+                            isLoading = true
+                            if (page != null && Page.isValid(page)) {
+                                Log.d("unda", "yessssss" + page?.url)
+                                viewModel.searchNewPipeNextPage(page!!) // Implement this function in your ViewModel
+                            }
                         }
                     }
                 }
