@@ -57,6 +57,7 @@ import com.ramzmania.tubefy.ui.components.screen.ProfileScreen
 import com.ramzmania.tubefy.ui.components.screen.album.AlbumScreen
 import com.ramzmania.tubefy.ui.components.screen.player.MediaPlayerScreen
 import com.ramzmania.tubefy.ui.components.screen.player.PlaybackService
+import com.ramzmania.tubefy.ui.components.screen.player.PlayerBase2View
 import com.ramzmania.tubefy.ui.components.screen.player.PlayerBaseView
 import com.ramzmania.tubefy.utils.LocalNavController
 import dagger.hilt.android.AndroidEntryPoint
@@ -217,7 +218,7 @@ fun Navigation(navController: NavHostController) {
             AlbumScreen()
         }
         composable(NavigationItem.AudioPlayer.route) { backStackEntry ->
-            PlayerBaseView()
+            PlayerBase2View()
         }
     }
 }
