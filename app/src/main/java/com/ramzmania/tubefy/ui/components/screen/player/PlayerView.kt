@@ -69,6 +69,7 @@ fun PlayerBaseView(
     var isPlaying by remember { mutableStateOf(false) }
     var progress by remember { mutableStateOf(0f) }  // Track progress
     val streamUrlData by viewModel.streamUrlData.observeAsState()
+    val youTubePlayListBulkData by viewModel.youTubePlayListBulkData.observeAsState()
     val navController = LocalNavController.current
     val context = LocalContext.current
     var currentTime by remember { mutableStateOf("00:00") }
@@ -78,13 +79,17 @@ fun PlayerBaseView(
     var playerBottomSub by remember { mutableStateOf("") }
     var albumArt by remember { mutableStateOf("") }
     var videoId by remember { mutableStateOf("") }
+    var isBulk by remember { mutableStateOf("false") }  // Track loading state
+
 
     var mediaUri = ""
     val navBackStackEntry = navController.currentBackStackEntry
 
 
     LaunchedEffect(Unit) {
-         videoId = URLDecoder.decode(
+        isBulk = navBackStackEntry?.arguments?.getString("isBulk")!!
+        Log.d("isBulk", "isBulk>>>>" + isBulk)
+        videoId = URLDecoder.decode(
             navBackStackEntry?.arguments?.getString("videoId"),
             StandardCharsets.UTF_8.toString()
         )
@@ -109,8 +114,19 @@ fun PlayerBaseView(
             navBackStackEntry?.arguments?.getString("playerBottomSub"),
             StandardCharsets.UTF_8.toString()
         )
+        if (isBulk.equals("true")) {
+            viewModel.getBulkStreamUrl()
+        } else {
+            viewModel.getStreamUrl(videoId!!)
+        }
 
+    }
+    LaunchedEffect(key1 = youTubePlayListBulkData) {
+        if (youTubePlayListBulkData is Resource.Success) {
 
+            playAudioList(mediaController!!, youTubePlayListBulkData?.data!!)
+
+        }
     }
 
     LaunchedEffect(key1 = streamUrlData) {
@@ -147,33 +163,33 @@ fun PlayerBaseView(
 
     LaunchedEffect(!isLoading) {
         while (true) {
-                if (mediaController?.isConnected == true && isPlaying) {
-                    progress =
-                        (mediaController!!.currentPosition * 1.0f / mediaController!!.duration).coerceIn(
-                            0f,
-                            1f
-                        )
+            if (mediaController?.isConnected == true && isPlaying) {
+                progress =
+                    (mediaController!!.currentPosition * 1.0f / mediaController!!.duration).coerceIn(
+                        0f,
+                        1f
+                    )
 //                currentTime="%02d:%02d:%02d".format(milliSec / 1000 / 60 / 60, milliSec / 1000 / 60 % 60, milliSec / 1000 % 60)
-                    currentTime =
-                        if (mediaController!!.duration >= 3600000) "%02d:%02d:%02d".format(
-                            mediaController!!.currentPosition / 1000 / 60 / 60,
-                            mediaController!!.currentPosition / 1000 / 60 % 60,
-                            mediaController!!.currentPosition / 1000 % 60
-                        ) else "%02d:%02d".format(
-                            mediaController!!.currentPosition / 1000 / 60 % 60,
-                            mediaController!!.currentPosition / 1000 % 60
-                        )
+                currentTime =
+                    if (mediaController!!.duration >= 3600000) "%02d:%02d:%02d".format(
+                        mediaController!!.currentPosition / 1000 / 60 / 60,
+                        mediaController!!.currentPosition / 1000 / 60 % 60,
+                        mediaController!!.currentPosition / 1000 % 60
+                    ) else "%02d:%02d".format(
+                        mediaController!!.currentPosition / 1000 / 60 % 60,
+                        mediaController!!.currentPosition / 1000 % 60
+                    )
 
-                    // Update progress every second
-                    kotlinx.coroutines.delay(1000L)
-                } else {
-                    // Stop updating if not playing
-                    kotlinx.coroutines.delay(1000L)
+                // Update progress every second
+                kotlinx.coroutines.delay(1000L)
+            } else {
+                // Stop updating if not playing
+                kotlinx.coroutines.delay(1000L)
 //                    break
-                    if (mediaController?.isPlaying != true) {
-                        break
-                    }
+                if (mediaController?.isPlaying != true) {
+                    break
                 }
+            }
 
         }
     }
@@ -181,9 +197,8 @@ fun PlayerBaseView(
     MediaControllerComposable(
         onPlayingChanged = { playing ->
             isPlaying = playing
-            if(playing)
-            {
-                isLoading=false
+            if (playing) {
+                isLoading = false
             }
             totalTime = if (mediaController!!.duration >= 3600000) "%02d:%02d:%02d".format(
                 mediaController!!.duration / 1000 / 60 / 60,
@@ -204,10 +219,9 @@ fun PlayerBaseView(
                 )
             ) {
                 isLoading = false
-            }else
-            {
-                isLoading=true
-                viewModel.getStreamUrl(videoId!!)
+            } else {
+                isLoading = true
+
 
             }
 
@@ -219,7 +233,7 @@ fun PlayerBaseView(
             .fillMaxSize()
             .background(colorResource(id = R.color.colorPrimary))
     ) {
-        // Content...
+
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -365,6 +379,21 @@ fun PlayerPreview() {
     PlayerBaseView()
 }
 
+fun playAudioList(
+    mediaController: MediaController?,
+    mediaItems: List<MediaItem>
+) {
+    mediaController?.let {
+        if (it.isConnected) {
+            Log.d("click", "connected")
+
+            // Set the media items to the MediaController
+            it.setMediaItems(mediaItems)
+            it.playWhenReady = true
+            it.prepare()
+        }
+    }
+}
 
 fun playAudio(
     mediaController: MediaController,

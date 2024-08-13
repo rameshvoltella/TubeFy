@@ -1,9 +1,11 @@
 package com.ramzmania.tubefy.data.remote
 
+import androidx.media3.common.MediaItem
 import com.ramzmania.tubefy.data.dto.searchformat.StreamUrlData
 import com.ramzmania.tubefy.data.dto.searchformat.TubeFyCoreUniversalData
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.playlist.PlayListData
+import com.ramzmania.tubefy.player.YoutubePlayerPlaylistListModel
 import org.schabi.newpipe.extractor.Page
 
 interface RemoteDataSource {
@@ -26,5 +28,8 @@ interface RemoteDataSource {
                                   contentFilter: List<String?>,
                                   sortFilter: String,page: Page
     ):Resource<TubeFyCoreUniversalData>
+
+
+    suspend fun  getStreamBulkUrl(youtubePlayerPlaylistListModel: YoutubePlayerPlaylistListModel):Resource<List<MediaItem>>
 
 }

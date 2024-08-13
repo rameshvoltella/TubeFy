@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import androidx.media3.common.MediaItem
 import com.ramzmania.tubefy.core.YoutubeCoreConstant.extractYoutubeVideoId
 import com.ramzmania.tubefy.data.dto.searchformat.StreamUrlData
 import com.ramzmania.tubefy.data.dto.searchformat.TubeFyCoreUniversalData
@@ -14,11 +15,14 @@ import com.ramzmania.tubefy.data.ContextModule
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.home.HomePageResponse
 import com.ramzmania.tubefy.data.dto.playlist.PlayListData
+import com.ramzmania.tubefy.data.dto.searchformat.TubeFyCoreTypeData
 import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.YoutubeMusicPlayListContent
 import com.ramzmania.tubefy.data.dto.youtubestripper.ApiResponse
 import com.ramzmania.tubefy.data.dto.youtubestripper.MusicHomeResponse2
 import com.ramzmania.tubefy.data.local.LocalRepositorySource
 import com.ramzmania.tubefy.data.remote.RemoteRepositorySource
+import com.ramzmania.tubefy.player.PlayListSingleton
+import com.ramzmania.tubefy.player.YoutubePlayerPlaylistListModel
 import com.ramzmania.tubefy.ui.base.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -35,6 +39,9 @@ class TubeFyViewModel @Inject constructor(
 
     private var nextYoutubeV3PageToken: String? = null
     private var reloadHomeScreen=true
+    var youtubePlayerPlaylistListModel: YoutubePlayerPlaylistListModel?=null
+    var koko: String?="koko"
+
 
     init {
         viewModelScope.launch {
@@ -75,6 +82,9 @@ class TubeFyViewModel @Inject constructor(
 
     private val youTubePlayListPrivate = MutableLiveData<Resource<PlayListData>>()
     val youTubePlayListData: LiveData<Resource<PlayListData>> get() = youTubePlayListPrivate
+
+    private val youTubePlayListBulkPrivate = MutableLiveData<Resource<List<MediaItem>>>()
+    val youTubePlayListBulkData: LiveData<Resource<List<MediaItem>>> get() = youTubePlayListBulkPrivate
 
     fun setHtmlContent(content: ApiResponse?) {
 //        htmlContentPrivate.value = content
@@ -136,6 +146,36 @@ class TubeFyViewModel @Inject constructor(
             }
         }
 
+
+    }
+
+
+    fun getBulkStreamUrl()
+    {
+//        Log.d("bulk calling","bulk"+youTubePlayListBulkData)
+        Log.d("bulkmode","added 2222"+koko)
+
+        if(PlayListSingleton.getDataList()!=null) {
+            viewModelScope.launch {
+                Log.d("bulkmode","added 4444444")
+
+                remoteRepositorySource.getStreamBulkUrl(PlayListSingleton.getDataList()!!).collect {
+                    youTubePlayListBulkPrivate.value = it
+                }
+            }
+        }else
+        {
+            Log.d("bulkmode","added 3333333")
+
+        }
+    }
+
+    fun setCurrentPlayListData(playListItems: List<TubeFyCoreTypeData?>)
+    {
+        koko="poda"
+        youtubePlayerPlaylistListModel=YoutubePlayerPlaylistListModel(playListItems)
+        PlayListSingleton.addData(playListItems)
+        Log.d("bulkmode","added 111"+koko)
 
     }
 

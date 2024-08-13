@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -98,7 +99,7 @@ fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
             AlbumHeader(
                 imageUrl = URLDecoder.decode(navBackStackEntry?.arguments?.getString("playlistImage"), StandardCharsets.UTF_8.toString())
             , // Replace with your image URL
-                title = it,
+                title = it,finalItems=finalItems
 
             )
         }
@@ -156,13 +157,16 @@ fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
             Log.d("datata", ">>VADAAACAME"+searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!.size)
             finalItems=searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!
             isLoading = false
+            viewModel.setCurrentPlayListData(finalItems)
         }
     }
 
 }
 
 @Composable
-fun AlbumHeader(imageUrl: String, title: String) {
+fun AlbumHeader(imageUrl: String, title: String,viewModel: TubeFyViewModel = hiltViewModel(),finalItems:List<TubeFyCoreTypeData?>) {
+    val newNav=  LocalNavController.current
+
     Column(modifier = Modifier.fillMaxWidth()) {
     AsyncImage(
         model = ImageRequest.Builder(LocalContext.current)
@@ -190,6 +194,39 @@ fun AlbumHeader(imageUrl: String, title: String) {
         textAlign = TextAlign.Left,
         maxLines = 2,
         fontSize = 16.sp)
+
+        Button(onClick = {
+            if(finalItems.isNotEmpty()) {
+                val encodedVideoThumpUrl = URLEncoder.encode(
+                    decodeThumpUrl(finalItems.get(0)!!.videoImage),
+                    StandardCharsets.UTF_8.toString()
+                )
+                val encodedVideoId =
+                    URLEncoder.encode(finalItems.get(0)!!.videoId, StandardCharsets.UTF_8.toString())
+                val videoTitle =
+                    URLEncoder.encode(finalItems.get(0)!!.videoTitle, StandardCharsets.UTF_8.toString())
+//                LocalNavController.current
+                newNav!!.navigate(
+                    NavigationItem.AudioPlayer.createRoute(
+                        encodedVideoId,
+                        encodedVideoThumpUrl, videoTitle, videoTitle, videoTitle,true
+                    )
+                ) {
+                    newNav.graph.route?.let { route ->
+                        popUpTo(route) {
+                            saveState = true
+                        }
+                    }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            }
+        },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+
+           ){ Text(text = "Play All")}
 
 }
 }
@@ -222,12 +259,13 @@ fun TrackItem(trackName: TubeFyCoreTypeData,viewModel: TubeFyViewModel = hiltVie
                 )
                 val encodedVideoId =
                     URLEncoder.encode(trackName.videoId, StandardCharsets.UTF_8.toString())
-               val videoTitle= URLEncoder.encode(trackName.videoTitle, StandardCharsets.UTF_8.toString())
+                val videoTitle =
+                    URLEncoder.encode(trackName.videoTitle, StandardCharsets.UTF_8.toString())
 //                LocalNavController.current
                 newNav!!.navigate(
                     NavigationItem.AudioPlayer.createRoute(
                         encodedVideoId,
-                        encodedVideoThumpUrl,videoTitle,videoTitle,videoTitle
+                        encodedVideoThumpUrl, videoTitle, videoTitle, videoTitle
                     )
                 ) {
                     newNav.graph.route?.let { route ->

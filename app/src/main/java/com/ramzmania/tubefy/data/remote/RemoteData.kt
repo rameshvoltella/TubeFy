@@ -1,6 +1,7 @@
 package com.ramzmania.tubefy.data.remote
 
 import android.util.Log
+import androidx.media3.common.MediaItem
 import com.ramzmania.tubefy.core.YoutubeCoreConstant
 import com.ramzmania.tubefy.core.YoutubeCoreConstant.YOUTUBE_V3_MAX_RESULT
 import com.ramzmania.tubefy.core.dataformatter.FormattingResult
@@ -24,6 +25,8 @@ import com.ramzmania.tubefy.errors.NEW_PIPE_SEARCH_ERROR
 import com.ramzmania.tubefy.errors.NO_INTERNET_CONNECTION
 import com.ramzmania.tubefy.errors.SERVER_ERROR
 import com.ramzmania.tubefy.errors.YOUTUBE_V3_SEARCH_ERROR
+import com.ramzmania.tubefy.player.YoutubePlayerPlaylistListModel
+import com.ramzmania.tubefy.player.createMediaItems
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.schabi.newpipe.extractor.InfoItem
@@ -36,6 +39,8 @@ import org.schabi.newpipe.extractor.services.youtube.extractors.YoutubeStreamExt
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
 import retrofit2.Response
 import java.io.IOException
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 import javax.inject.Inject
 
 class RemoteData@Inject
@@ -94,7 +99,7 @@ constructor(
                 extractor.fetchPage()
 
                 if (extractor.videoStreams.isNotEmpty()) {
-                    streamUrl = extractor.videoStreams.first().url ?: ""
+                    streamUrl = extractor.videoStreams.first().content ?: ""
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -102,6 +107,48 @@ constructor(
         }
         return if(streamUrl.length>0) {
             Resource.Success(StreamUrlData(streamUrl))
+        }else{
+            Resource.DataError(404)
+        }
+    }
+
+
+
+     override suspend fun getStreamBulkUrl(youtubePlayerPlaylistListModel: YoutubePlayerPlaylistListModel): Resource<List<MediaItem>> {
+        var streamUrlArray: ArrayList<String> = ArrayList()
+         var videoThumpUrls: ArrayList<String> = ArrayList()
+         var videoTitles: ArrayList<String> = ArrayList()
+         var mediaItems:List<MediaItem>?=null
+
+//         var mediaUris:Array<String> = listOf("http://example.com/audio1.mp3", "http://example.com/audio2.mp3")
+//         val videoThumpUrls = listOf("http://example.com/thumb1.jpg", "http://example.com/thumb2.jpg")
+//         val videoTitles = listOf("Title 1", "Title 2")
+        withContext(Dispatchers.IO)
+        {
+            try {
+//                var currentIndex=0;
+                for(videoIds in youtubePlayerPlaylistListModel.playListData) {
+                    val extractor =
+                        YoutubeService(0).getStreamExtractor("${YoutubeCoreConstant.YOUTUBE_WATCH_URL}${YoutubeCoreConstant.extractYoutubeVideoId(videoIds!!.videoId)}") as YoutubeStreamExtractor
+                    extractor.fetchPage()
+
+                    if (extractor.videoStreams.isNotEmpty()) {
+                        streamUrlArray?.add(extractor.videoStreams.first().content ?: "")
+                        videoTitles.add(videoIds.videoTitle)
+                        videoThumpUrls.add("https://i.ytimg.com/vi/${
+                            YoutubeCoreConstant.extractYoutubeVideoId(
+                                videoIds.videoId
+                            )
+                        }/hq720.jpg")
+                    }
+                }
+                 mediaItems= createMediaItems(streamUrlArray, videoThumpUrls, videoTitles)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+        return if(mediaItems!=null) {
+            Resource.Success(mediaItems!!)
         }else{
             Resource.DataError(404)
         }

@@ -5,6 +5,8 @@ import android.net.Uri
 import androidx.core.net.toUri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import androidx.media3.common.PlaybackException
+import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaLibraryService
@@ -21,7 +23,14 @@ class PlaybackService : MediaLibraryService() {
     override fun onCreate() {
         super.onCreate()
 
-        val player = ExoPlayer.Builder(this).build()
+        val player = ExoPlayer.Builder(this).build().apply {
+            // Adding the error listener to the ExoPlayer instance
+            addListener(object : Player.Listener {
+                override fun onPlayerError(error: PlaybackException) {
+                    handlePlaybackError(error)
+                }
+            })
+        }
 
         mediaLibrarySessionCallback = MediaLibrarySessionCallback()
         mediaSession = MediaLibrarySession.Builder(this, player, mediaLibrarySessionCallback).build()
@@ -37,31 +46,10 @@ class PlaybackService : MediaLibraryService() {
         }
         super.onDestroy()
     }
-
-    fun setFilePath(pathNew:String)
-    {
-        path="file://"+pathNew
-    }
-
-    companion object {
-        /* val drawableUri: Uri = Uri.parse("android.resource://${BuildConfig.APPLICATION_ID}/${R.drawable.logo}")
-         fun testMediaItem() = MediaItem.Builder()
-             .setMediaId("id")
-             .setUri(File(
-                 App.Companion.context.filesDir.absolutePath
-                     + "/pdfAudio/audio.wav").absolutePath.toUri())
-             .setMediaMetadata(
-                 MediaMetadata.Builder()
-                     .setTitle("Oliveboard")
-                     .setArtist("Reading pdf.....")
-                     .setIsBrowsable(false)
-                     .setIsPlayable(true)
-                     .setArtworkUri(drawableUri)
-                     .setMediaType(MediaMetadata.MEDIA_TYPE_MUSIC)
-                     .build()
-             )
-             .build()
-
-         fun testMediaItems() = mutableListOf(testMediaItem())*/
+    private fun handlePlaybackError(error: PlaybackException) {
+        // Handle playback error
+        // You can log the error or notify the user
+        // For example:
+        android.util.Log.e("PlaybackService", "Playback error occurred: ${error.message}")
     }
 }

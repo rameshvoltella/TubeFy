@@ -21,63 +21,6 @@ class MediaLibrarySessionCallback: MediaLibraryService.MediaLibrarySession.Callb
         return Futures.immediateFuture(LibraryResult.ofItem(browsableItem(Root), params))
     }
 
-    /*    override fun onGetChildren(
-            session: MediaLibraryService.MediaLibrarySession,
-            browser: MediaSession.ControllerInfo,
-            parentId: String,
-            page: Int,
-            pageSize: Int,
-            params: MediaLibraryService.LibraryParams?
-        ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
-            val items = when(parentId) {
-                Root -> listOf(browsableItem(Playlist))
-                Playlist -> PlaybackService.testMediaItems()
-                else -> null
-            }
-
-            return if(items != null) {
-                Futures.immediateFuture(LibraryResult.ofItemList(items, params))
-            } else {
-                Futures.immediateFuture(LibraryResult.ofError(LibraryResult.RESULT_ERROR_BAD_VALUE))
-            }
-        }*/
-
-    /*   override fun onGetItem(
-           session: MediaLibraryService.MediaLibrarySession,
-           browser: MediaSession.ControllerInfo,
-           mediaId: String
-       ): ListenableFuture<LibraryResult<MediaItem>> {
-           val item = when(mediaId) {
-               Root -> browsableItem(Root)
-               Playlist -> PlaybackService.testMediaItem()
-               else -> null
-           }
-
-           return if(item != null) {
-               Futures.immediateFuture(LibraryResult.ofItem(item, null))
-           } else {
-               Futures.immediateFuture(LibraryResult.ofError(LibraryResult.RESULT_ERROR_BAD_VALUE))
-           }
-       }*/
-
-    /*  override fun onAddMediaItems(
-          mediaSession: MediaSession,
-          controller: MediaSession.ControllerInfo,
-          mediaItems: MutableList<MediaItem>
-      ): ListenableFuture<MutableList<MediaItem>> {
-          val items = mediaItems.map {
-              getItem(it.mediaId) ?: it
-          }.toMutableList()
-
-          return Futures.immediateFuture(items)
-      }*/
-
-    /* private fun getItem(mediaId: String): MediaItem? {
-         val playlist = PlaybackService.testMediaItems()
-         return playlist.firstOrNull { mediaItem ->
-             mediaItem.mediaId == mediaId
-         }
-     }*/
 
     private fun browsableItem(title: String): MediaItem {
         val metadata = MediaMetadata.Builder()
