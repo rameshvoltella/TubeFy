@@ -40,7 +40,6 @@ fun MediaPlayerScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
     var albumArt by remember { mutableStateOf("") }
 //Log.d("thiump url",videoThumpUrl)
     LaunchedEffect(Unit) {
-//        val videoId = navBackStackEntry?.arguments?.getString("videoId")
         val videoId = URLDecoder.decode(navBackStackEntry?.arguments?.getString("videoId"), StandardCharsets.UTF_8.toString())
         albumArt = URLDecoder.decode(navBackStackEntry?.arguments?.getString("videoUrl"), StandardCharsets.UTF_8.toString())
 //        "https://i3.ytimg.com/vi/${YoutubeCoreConstant.extractYoutubeVideoId(videoId)}/hqdefault.jpg

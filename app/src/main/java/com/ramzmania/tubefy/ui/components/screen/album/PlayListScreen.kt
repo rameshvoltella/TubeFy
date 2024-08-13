@@ -216,17 +216,18 @@ fun TrackItem(trackName: TubeFyCoreTypeData,viewModel: TubeFyViewModel = hiltVie
 //                val videoName = "Mere Khwabon Mein | Lyrical Song"
 
 // Encode videoName if it contains special characters
-                val encodedVideoUrl = URLEncoder.encode(
-                    decodeThumpUrl(trackName.videoBackupThump),
+                val encodedVideoThumpUrl = URLEncoder.encode(
+                    decodeThumpUrl(trackName.videoImage),
                     StandardCharsets.UTF_8.toString()
                 )
                 val encodedVideoId =
                     URLEncoder.encode(trackName.videoId, StandardCharsets.UTF_8.toString())
+               val videoTitle= URLEncoder.encode(trackName.videoTitle, StandardCharsets.UTF_8.toString())
 //                LocalNavController.current
                 newNav!!.navigate(
                     NavigationItem.AudioPlayer.createRoute(
                         encodedVideoId,
-                        encodedVideoUrl
+                        encodedVideoThumpUrl,videoTitle,videoTitle,videoTitle
                     )
                 ) {
                     newNav.graph.route?.let { route ->

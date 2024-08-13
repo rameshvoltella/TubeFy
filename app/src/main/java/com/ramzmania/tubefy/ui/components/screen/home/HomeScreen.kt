@@ -148,11 +148,16 @@ fun VerticalContentList(
                     )
                     val encodedVideoId =
                         URLEncoder.encode(selectedItem.videoId, StandardCharsets.UTF_8.toString())
+                    val encodedVideoTitle =
+                        URLEncoder.encode(selectedItem.title, StandardCharsets.UTF_8.toString())
 
                     navController!!.navigate(
                         NavigationItem.AudioPlayer.createRoute(
                             encodedVideoId,
-                            encodedVideoUrl
+                            encodedVideoUrl,
+                            encodedVideoTitle,
+                            encodedVideoTitle,
+                            encodedVideoTitle
                         )
                     ) {
                         navController.graph.startDestinationRoute?.let { route ->
@@ -199,11 +204,16 @@ fun GridContentList(
                         selectedItem.videoId,
                         StandardCharsets.UTF_8.toString()
                     )
+                    val encodedVideoTitle =
+                        URLEncoder.encode(selectedItem.title, StandardCharsets.UTF_8.toString())
 
                     navController!!.navigate(
                         NavigationItem.AudioPlayer.createRoute(
                             encodedVideoId,
-                            encodedVideoUrl
+                            encodedVideoUrl,
+                            encodedVideoTitle,
+                            encodedVideoTitle,
+                            encodedVideoTitle
                         )
                     ) {
                         navController.graph.startDestinationRoute?.let { route ->
