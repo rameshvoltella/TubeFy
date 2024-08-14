@@ -1,18 +1,13 @@
 package com.ramzmania.tubefy.ui.components.screen.player
 
 
-import android.net.Uri
-import androidx.core.net.toUri
 import androidx.media3.common.MediaItem
-import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
-
-import java.io.File
 
 @UnstableApi
 class PlaybackService : MediaLibraryService() {
@@ -27,7 +22,7 @@ class PlaybackService : MediaLibraryService() {
             // Adding the error listener to the ExoPlayer instance
             addListener(object : Player.Listener {
                 override fun onPlayerError(error: PlaybackException) {
-                    handlePlaybackError(error)
+                    handlePlaybackError(error,currentMediaItem)
                 }
             })
         }
@@ -46,10 +41,17 @@ class PlaybackService : MediaLibraryService() {
         }
         super.onDestroy()
     }
-    private fun handlePlaybackError(error: PlaybackException) {
+    private fun handlePlaybackError(error: PlaybackException, currentMediaItem: MediaItem?) {
         // Handle playback error
         // You can log the error or notify the user
         // For example:
+//        val currentMediaItem = playe.currentMediaItem
+        val currentUri = currentMediaItem?.localConfiguration?.uri
+        if (currentUri != null) {
+            android.util.Log.i("PlaybackService", "Current media URI: $currentUri")
+        } else {
+            android.util.Log.i("PlaybackService", "No current media URI found")
+        }
         android.util.Log.e("PlaybackService", "Playback error occurred: ${error.message}")
     }
 }

@@ -115,6 +115,7 @@ fun PlayerBaseView(
             StandardCharsets.UTF_8.toString()
         )
         if (isBulk.equals("true")) {
+            viewModel.getStreamUrl(videoId!!)
             viewModel.getBulkStreamUrl()
         } else {
             viewModel.getStreamUrl(videoId!!)
@@ -388,9 +389,17 @@ fun playAudioList(
             Log.d("click", "connected")
 
             // Set the media items to the MediaController
-            it.setMediaItems(mediaItems)
-            it.playWhenReady = true
-            it.prepare()
+            if(it.currentMediaItem==null) {
+                it.setMediaItems(mediaItems)
+                it.playWhenReady = true
+                it.prepare()
+            }else
+            {
+                val mutableMediaItems = mediaItems.toMutableList()
+                mutableMediaItems.removeAt(0)
+                it.addMediaItems(mutableMediaItems)
+
+            }
         }
     }
 }

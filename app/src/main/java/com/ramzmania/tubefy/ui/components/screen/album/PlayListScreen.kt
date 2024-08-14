@@ -64,42 +64,47 @@ fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
     val searchPlayListName by viewModel.youTubeSearchData.observeAsState()
     var isLoading by remember { mutableStateOf(true) }  // Track loading state
     var finalItems by remember { mutableStateOf<List<TubeFyCoreTypeData?>>(emptyList()) }
-    val navController= LocalNavController.current
+    val navController = LocalNavController.current
     val navBackStackEntry = navController.currentBackStackEntry
     val context = LocalContext.current
-    Log.d("sadakku",">>>>>")
+    Log.d("sadakku", ">>>>>")
 
 //    val playlistId = navBackStackEntry?.arguments?.getString("playlistId")
     LaunchedEffect(Unit) {
         val playlistId = navBackStackEntry?.arguments?.getString("playlistId")
-        Log.d("sadakku",">>2222>>>"+playlistId)
-        if(playlistId!!.startsWith("PLAYLIST-ID-")) {
-            if(playlistId!!.startsWith("PLAYLIST-ID-YT"))
-            {
-                Log.d("incomming<>","<>music_songs")
+        Log.d("sadakku", ">>2222>>>" + playlistId)
+        if (playlistId!!.startsWith("PLAYLIST-ID-")) {
+            if (playlistId!!.startsWith("PLAYLIST-ID-YT")) {
+                Log.d("incomming<>", "<>music_songs")
 
-                viewModel.searchNewPipePage(playlistId.replace("PLAYLIST-ID-","")+" songs of "+Calendar.getInstance().get(Calendar.YEAR),
+                viewModel.searchNewPipePage(
+                    playlistId.replace("PLAYLIST-ID-", "") + " songs of " + Calendar.getInstance()
+                        .get(Calendar.YEAR),
                     mutableListOf()
                 )
-            }else
-            {
-                viewModel.searchNewPipePage(playlistId.replace("PLAYLIST-ID-",""),
+            } else {
+                viewModel.searchNewPipePage(
+                    playlistId.replace("PLAYLIST-ID-", ""),
                     mutableListOf("music_songs")
                 )
             }
 
-        }else {
+        } else {
             viewModel.loadPlayList(playlistId!!)
         }
     }
-    Column(modifier = Modifier
-        .fillMaxSize()
-        .background(Color.Black)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+    ) {
         navBackStackEntry?.arguments?.getString("playlistName")?.let {
             AlbumHeader(
-                imageUrl = URLDecoder.decode(navBackStackEntry?.arguments?.getString("playlistImage"), StandardCharsets.UTF_8.toString())
-            , // Replace with your image URL
-                title = it,finalItems=finalItems
+                imageUrl = URLDecoder.decode(
+                    navBackStackEntry?.arguments?.getString("playlistImage"),
+                    StandardCharsets.UTF_8.toString()
+                ), // Replace with your image URL
+                title = it, finalItems = finalItems
 
             )
         }
@@ -121,9 +126,9 @@ fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
         if (playListData is Resource.Success) {
 //            val items = (streamUrlData as Resource.Success<StreamUrlData>).data
             // Prepend new data to the existing list
-            Log.d("datata", ">>VADAAA"+playListData!!.data!!.playListVideoList?.get(0)?.videoId)
-            finalItems=playListData!!.data!!.playListVideoList!!
-            isLoading=false
+            Log.d("datata", ">>VADAAA" + playListData!!.data!!.playListVideoList?.get(0)?.videoId)
+            finalItems = playListData!!.data!!.playListVideoList!!
+            isLoading = false
 //            if(playListData!!.data!!.playListVideoList?.get(0)?.videoId!=null)
 //            {
 //                viewModel.getStreamUrl(playListData!!.data!!.playListVideoList?.get(0)?.videoId!!)
@@ -153,9 +158,12 @@ fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
         if (searchPlayListName is Resource.Success) {
 //            val items = (streamUrlData as Resource.Success<StreamUrlData>).data
             // Prepend new data to the existing list
-            Log.d("datata","first")
-            Log.d("datata", ">>VADAAACAME"+searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!.size)
-            finalItems=searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!
+            Log.d("datata", "first")
+            Log.d(
+                "datata",
+                ">>VADAAACAME" + searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!.size
+            )
+            finalItems = searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!
             isLoading = false
             viewModel.setCurrentPlayListData(finalItems)
         }
@@ -164,75 +172,90 @@ fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
 }
 
 @Composable
-fun AlbumHeader(imageUrl: String, title: String,viewModel: TubeFyViewModel = hiltViewModel(),finalItems:List<TubeFyCoreTypeData?>) {
-    val newNav=  LocalNavController.current
+fun AlbumHeader(
+    imageUrl: String,
+    title: String,
+    viewModel: TubeFyViewModel = hiltViewModel(),
+    finalItems: List<TubeFyCoreTypeData?>
+) {
+    val newNav = LocalNavController.current
 
     Column(modifier = Modifier.fillMaxWidth()) {
-    AsyncImage(
-        model = ImageRequest.Builder(LocalContext.current)
-            .data(YoutubeCoreConstant.decodeThumpUrl(imageUrl))
-            .crossfade(true)
-            .placeholder(R.drawable.placeholder)
-            .error(R.drawable.placeholder)
-            .build(),
-        contentDescription = "Drawable Image",
-        modifier = Modifier
-            .padding(horizontal = 5.dp, vertical = 5.dp)
-            .width(200.dp)
-            .height(200.dp)
-            .align(Alignment.CenterHorizontally)
-            .fillMaxWidth(),
-        contentScale = ContentScale.Crop
-    )
-    Spacer(modifier = Modifier.height(8.dp))
-    Text(text = title,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 10.dp),
-        fontWeight = FontWeight.Medium,
-        color = colorResource(id = R.color.tubefyred),
-        textAlign = TextAlign.Left,
-        maxLines = 2,
-        fontSize = 16.sp)
+        AsyncImage(
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(YoutubeCoreConstant.decodeThumpUrl(imageUrl))
+                .crossfade(true)
+                .placeholder(R.drawable.placeholder)
+                .error(R.drawable.placeholder)
+                .build(),
+            contentDescription = "Drawable Image",
+            modifier = Modifier
+                .padding(horizontal = 5.dp, vertical = 5.dp)
+                .width(200.dp)
+                .height(200.dp)
+                .align(Alignment.CenterHorizontally)
+                .fillMaxWidth(),
+            contentScale = ContentScale.Crop
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = title,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            fontWeight = FontWeight.Medium,
+            color = colorResource(id = R.color.tubefyred),
+            textAlign = TextAlign.Left,
+            maxLines = 2,
+            fontSize = 16.sp
+        )
 
-        Button(onClick = {
-            if(finalItems.isNotEmpty()) {
-                val encodedVideoThumpUrl = URLEncoder.encode(
-                    decodeThumpUrl(finalItems.get(0)!!.videoImage),
-                    StandardCharsets.UTF_8.toString()
-                )
-                val encodedVideoId =
-                    URLEncoder.encode(finalItems.get(0)!!.videoId, StandardCharsets.UTF_8.toString())
-                val videoTitle =
-                    URLEncoder.encode(finalItems.get(0)!!.videoTitle, StandardCharsets.UTF_8.toString())
-//                LocalNavController.current
-                newNav!!.navigate(
-                    NavigationItem.AudioPlayer.createRoute(
-                        encodedVideoId,
-                        encodedVideoThumpUrl, videoTitle, videoTitle, videoTitle,true
+        Button(
+            onClick = {
+                if (finalItems.isNotEmpty()) {
+                    val encodedVideoThumpUrl = URLEncoder.encode(
+                        decodeThumpUrl(finalItems.get(0)!!.videoImage),
+                        StandardCharsets.UTF_8.toString()
                     )
-                ) {
-                    newNav.graph.route?.let { route ->
-                        popUpTo(route) {
-                            saveState = true
+                    val encodedVideoId =
+                        URLEncoder.encode(
+                            finalItems.get(0)!!.videoId,
+                            StandardCharsets.UTF_8.toString()
+                        )
+                    val videoTitle =
+                        URLEncoder.encode(
+                            finalItems.get(0)!!.videoTitle,
+                            StandardCharsets.UTF_8.toString()
+                        )
+//                LocalNavController.current
+                    newNav!!.navigate(
+                        NavigationItem.AudioPlayer.createRoute(
+                            encodedVideoId,
+                            encodedVideoThumpUrl, videoTitle, videoTitle, videoTitle, true
+                        )
+                    ) {
+                        newNav.graph.route?.let { route ->
+                            popUpTo(route) {
+                                saveState = true
+                            }
                         }
+                        launchSingleTop = true
+                        restoreState = true
                     }
-                    launchSingleTop = true
-                    restoreState = true
                 }
-            }
-        },
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 10.dp),
 
-           ){ Text(text = "Play All")}
+            ) { Text(text = "Play All") }
 
-}
+
+    }
 }
 
 @Composable
-fun AlbumTrackList(tracks:List<TubeFyCoreTypeData?>) {
+fun AlbumTrackList(tracks: List<TubeFyCoreTypeData?>) {
     LazyColumn {
         items(tracks!!) { track ->
             TrackItem(trackName = track!!)
@@ -241,8 +264,8 @@ fun AlbumTrackList(tracks:List<TubeFyCoreTypeData?>) {
 }
 
 @Composable
-fun TrackItem(trackName: TubeFyCoreTypeData,viewModel: TubeFyViewModel = hiltViewModel()) {
-    val newNav=  LocalNavController.current
+fun TrackItem(trackName: TubeFyCoreTypeData, viewModel: TubeFyViewModel = hiltViewModel()) {
+    val newNav = LocalNavController.current
 
     Column(
         modifier = Modifier

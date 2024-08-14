@@ -87,9 +87,7 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
             .background(Color.Black)
     ) {
         // Top TextField
-        Text(
-            text = "OLAKKA", color = Color.White,
-        )
+
         TextField(
             value = text,
             placeholder = { Text("Search songs") },
