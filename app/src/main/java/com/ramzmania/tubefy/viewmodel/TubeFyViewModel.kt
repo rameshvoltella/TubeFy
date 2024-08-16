@@ -155,12 +155,17 @@ class TubeFyViewModel @Inject constructor(
 //        Log.d("bulk calling","bulk"+youTubePlayListBulkData)
         Log.d("bulkmode","added 2222"+koko)
 
-        if(PlayListSingleton.getDataList()!=null) {
+        if(PlayListSingleton.getDataList()!=null&&PlayListSingleton.getDataList()?.playListData?.size!!>0) {
             viewModelScope.launch {
-                Log.d("bulkmode","added 4444444")
-
-                remoteRepositorySource.getStreamBulkUrl(PlayListSingleton.getDataList()!!).collect {
+                Log.d("bulkmode","new arra"+PlayListSingleton.getDataList()?.playListData?.size)
+                 var list=PlayListSingleton.getDataList()?.playListData?.take(2)
+                remoteRepositorySource.getStreamBulkUrl(YoutubePlayerPlaylistListModel(list!!)).collect {
                     youTubePlayListBulkPrivate.value = it
+                    if (youTubePlayListBulkPrivate.value is Resource.Success) {
+                        var list= PlayListSingleton.getDataList()?.playListData?.drop(2)
+                        PlayListSingleton.addData(list!!)
+                        getBulkStreamUrl()
+                    }
                 }
             }
         }else

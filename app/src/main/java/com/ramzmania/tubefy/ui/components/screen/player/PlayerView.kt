@@ -68,6 +68,7 @@ fun PlayerBaseView(
     var mediaController by remember { mutableStateOf<MediaController?>(null) }
     var isPlaying by remember { mutableStateOf(false) }
     var progress by remember { mutableStateOf(0f) }  // Track progress
+    var removedExistingPlayList by remember { mutableStateOf(false) }
     val streamUrlData by viewModel.streamUrlData.observeAsState()
     val youTubePlayListBulkData by viewModel.youTubePlayListBulkData.observeAsState()
     val navController = LocalNavController.current
@@ -114,19 +115,14 @@ fun PlayerBaseView(
             navBackStackEntry?.arguments?.getString("playerBottomSub"),
             StandardCharsets.UTF_8.toString()
         )
-        if (isBulk.equals("true")) {
-            viewModel.getStreamUrl(videoId!!)
-            viewModel.getBulkStreamUrl()
-        } else {
-            viewModel.getStreamUrl(videoId!!)
-        }
+
 
     }
     LaunchedEffect(key1 = youTubePlayListBulkData) {
         if (youTubePlayListBulkData is Resource.Success) {
-
-            playAudioList(mediaController!!, youTubePlayListBulkData?.data!!)
-
+Log.d("kkkkk","i got it")
+            playAudioList(mediaController!!, youTubePlayListBulkData?.data!!,removedExistingPlayList)
+            removedExistingPlayList=true
         }
     }
 
@@ -215,17 +211,34 @@ fun PlayerBaseView(
         onMediaControllerInitialized = { controller ->
             mediaController = controller
             isPlaying = mediaController!!.isPlaying
-            if (mediaController!!.currentMediaItem != null && mediaController!!.currentMediaItem?.mediaMetadata?.title!!.equals(
-                    playerHeader
-                )
-            ) {
-                isLoading = false
+            if (!isBulk.equals("true")) {
+                if (mediaController!!.currentMediaItem != null && mediaController!!.currentMediaItem?.mediaMetadata?.title!!.equals(
+                        playerHeader
+                    )
+                ) {
+                    isLoading = false
+                } else {
+                    isLoading = true
+
+
+                }
+            }
+            if (isBulk.equals("true")) {
+//            viewModel.getStreamUrl(videoId!!)
+                viewModel.getBulkStreamUrl()
             } else {
-                isLoading = true
-
-
+                viewModel.getStreamUrl(videoId!!)
             }
 
+        }, onMetaDataChangedValue = {
+            albumArt =
+                it.artworkUri?.toString()!!
+
+            playerHeader =it.title.toString()
+
+            playerBottomHeader = it.title.toString()
+            playerBottomSub = it.title.toString()
+            Log.d("album",albumArt+"<>")
         }
     )
 
@@ -382,7 +395,7 @@ fun PlayerPreview() {
 
 fun playAudioList(
     mediaController: MediaController?,
-    mediaItems: List<MediaItem>
+    mediaItems: List<MediaItem>,removedExistingPlayList:Boolean
 ) {
     mediaController?.let {
         if (it.isConnected) {
@@ -396,8 +409,14 @@ fun playAudioList(
             }else
             {
                 val mutableMediaItems = mediaItems.toMutableList()
-                mutableMediaItems.removeAt(0)
-                it.addMediaItems(mutableMediaItems)
+//                mutableMediaItems.removeAt(0)
+                if(removedExistingPlayList) {
+                    it.addMediaItems(mutableMediaItems)
+                }else
+                {
+                    it.setMediaItems(mutableMediaItems)
+
+                }
 
             }
         }

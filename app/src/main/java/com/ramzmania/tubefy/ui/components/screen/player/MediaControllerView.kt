@@ -1,9 +1,12 @@
 package com.ramzmania.tubefy.ui.components.screen.player
 
 import android.content.ComponentName
+import android.util.Log
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
+import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
+import androidx.media3.common.Tracks
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
@@ -15,7 +18,8 @@ import kotlinx.coroutines.withContext
 @Composable
 fun MediaControllerComposable(
     onPlayingChanged: (Boolean) -> Unit,
-    onMediaControllerInitialized: (MediaController) -> Unit
+    onMediaControllerInitialized: (MediaController) -> Unit,
+    onMetaDataChangedValue: (MediaMetadata) -> Unit,
 ) {
     val context = LocalContext.current
     var mediaController by remember { mutableStateOf<MediaController?>(null) }
@@ -36,6 +40,18 @@ fun MediaControllerComposable(
                                     override fun onIsPlayingChanged(isPlaying: Boolean) {
                                         onPlayingChanged(isPlaying)
                                     }
+
+                                    override fun onTracksChanged(tracks: Tracks) {
+                                        super.onTracksChanged(tracks)
+                                    }
+
+                                    override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
+                                        super.onMediaMetadataChanged(mediaMetadata)
+                                        Log.d("tagggg","chagessss")
+                                        onMetaDataChangedValue(mediaMetadata)
+
+                                    }
+
                                 })
                                 onMediaControllerInitialized(this)
                             }
