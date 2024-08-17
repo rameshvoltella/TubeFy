@@ -31,7 +31,6 @@ class MediaLibrarySessionCallback: MediaLibraryService.MediaLibrarySession.Callb
         controllerInfo: MediaSession.ControllerInfo,
         mediaButtonEvent: Intent
     ): Boolean {
-        Log.d("caller","RECEVED")
         val keyEvent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             mediaButtonEvent.getParcelableExtra(Intent.EXTRA_KEY_EVENT, KeyEvent::class.java)
         } else {
@@ -39,7 +38,6 @@ class MediaLibrarySessionCallback: MediaLibraryService.MediaLibrarySession.Callb
             mediaButtonEvent.getParcelableExtra(Intent.EXTRA_KEY_EVENT) as? KeyEvent
         }
         if (keyEvent != null && keyEvent.action == KeyEvent.ACTION_DOWN) {
-            Log.d("caller","RECEVED"+keyEvent.keyCode)
 
             when (keyEvent.keyCode) {
                 KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE -> {
