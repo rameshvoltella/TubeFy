@@ -39,7 +39,7 @@ class DefaultHomePlayListDataFormatter @Inject constructor()  :
 //                    )
 //                }
             }
-            videoSortedList.add(HomePageResponse(CellType.PLAYLIST_ONLY,videoSortedListWithPlaylist))
+            videoSortedList.add(HomePageResponse("Trending",CellType.PLAYLIST_ONLY,videoSortedListWithPlaylist))
             if(input?.composersList!=null)
             {
                 input.composersList.forEach {
@@ -48,7 +48,7 @@ class DefaultHomePlayListDataFormatter @Inject constructor()  :
                     it?.composers?.forEach {
                         composerSortedListWithPlaylist.add(BaseContentData("","PLAYLIST-ID-${it.name}",""+it.image,it.name))
                     }
-                    videoSortedList.add(HomePageResponse(CellType.PLAYLIST_ONLY,composerSortedListWithPlaylist))
+                    videoSortedList.add(HomePageResponse(it?.heading!!,CellType.PLAYLIST_ONLY,composerSortedListWithPlaylist))
 
                 }
             }

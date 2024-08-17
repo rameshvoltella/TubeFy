@@ -13,5 +13,6 @@ data class Composer(
 
 @JsonClass(generateAdapter = true)
 data class LocalHomeData(
-    @Json(name = "data") val composers: List<Composer>?
+    @Json(name = "data") val composers: List<Composer>?,
+    @Json(name = "heading")val heading:String
 )

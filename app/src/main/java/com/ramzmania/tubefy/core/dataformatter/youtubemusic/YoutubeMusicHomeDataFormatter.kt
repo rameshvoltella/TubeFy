@@ -105,12 +105,12 @@ class YoutubeMusicHomeDataFormatter @Inject constructor()  :
             Log.d("what size","videoSortedListWithPlaylist>>>"+videoSortedListWithPlaylist.size)
 
             if (videoSortedListWithoutPlaylist.size > 0) {
-            videoSortedList.add(HomePageResponse(CellType.LIST, videoSortedListWithoutPlaylist))
+            videoSortedList.add(HomePageResponse("Most Played",CellType.LIST, videoSortedListWithoutPlaylist))
         }
         if (videoSortedListWithPlaylist.size > 0) {
 
             videoSortedList.add(
-                HomePageResponse(
+                HomePageResponse("Top Albums",
                     CellType.HORIZONTAL_LIST,
                     videoSortedListWithPlaylist
                 )

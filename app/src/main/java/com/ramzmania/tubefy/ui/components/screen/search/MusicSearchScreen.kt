@@ -155,7 +155,7 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
 
             // Display the current state
             Text(
-                text = if (isChecked) "Audio from youtube is enabled" else "Search from music only",
+                text = if (isChecked) "Audio from youtube video is enabled" else "Turn on to search from youtube videos",
                 fontWeight = FontWeight.Thin,
                 color = Color.White,
                 modifier = Modifier

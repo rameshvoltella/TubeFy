@@ -71,22 +71,25 @@ fun HomePageContentList(
             response?.let {
                 when (it.cellType) {
                     CellType.LIST -> GridContentList(
+                        heading = it.heading,
                         contentData = it.contentData,
                         navController = navController
                     )
 
-                    CellType.HORIZONTAL_LIST -> HorizontalContentList(
+                    CellType.HORIZONTAL_LIST -> HorizontalContentList(heading = it.heading,
                         contentData = it.contentData,
                         navController = navController
                     )
 
                     CellType.THREE_TYPE_CELL -> VerticalContentList(
+                        heading = it.heading,
                         contentData = it.contentData,
                         navController = navController
                     )
 
-                    CellType.SINGLE_CELL -> SingleContentCell(contentData = it.contentData)
+                    CellType.SINGLE_CELL -> SingleContentCell(contentData = it.contentData,heading = it.heading,)
                     CellType.PLAYLIST_ONLY -> HorizontalContentList(
+                        heading = it.heading,
                         contentData = it.contentData,
                         navController = navController
                     )
@@ -130,6 +133,7 @@ fun HomePageContentList(
 
 @Composable
 fun VerticalContentList(
+    heading:String?,
     navController: NavController?,
     contentData: List<BaseContentData>?,
     viewModel: TubeFyViewModel = hiltViewModel()
@@ -177,6 +181,7 @@ fun VerticalContentList(
 
 @Composable
 fun GridContentList(
+    heading:String?,
     navController: NavController?,
     contentData: List<BaseContentData>?,
     viewModel: TubeFyViewModel = hiltViewModel()
@@ -184,45 +189,57 @@ fun GridContentList(
     val gridContent = contentData?.size?.div(2)
     val newheight = 70 * gridContent!!
     contentData?.let {
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2), modifier = Modifier
-                .fillMaxSize()
-                .height(newheight.dp)
-                .padding(vertical = 10.dp)
-        ) {
-            items(it) { data ->
-                ContentItemList(data = data) { selectedItem ->
-                    // Handle item click here
-                    Log.d("ItemClicked", "Clicked item: ${selectedItem.videoId}")
+        Column (Modifier.background(Color.Black)) {
 
-                    val encodedVideoUrl = URLEncoder.encode(
-                        YoutubeCoreConstant.decodeThumpUrl(
-                            selectedItem.thumbnail!!
-                        ), StandardCharsets.UTF_8.toString()
-                    )
-                    val encodedVideoId = URLEncoder.encode(
-                        selectedItem.videoId,
-                        StandardCharsets.UTF_8.toString()
-                    )
-                    val encodedVideoTitle =
-                        URLEncoder.encode(selectedItem.title, StandardCharsets.UTF_8.toString())
+            Text(
+                text = heading ?: "Top Mix",
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                modifier = Modifier.padding(10.dp, 30.dp, 10.dp),
+                textAlign = TextAlign.Left,
+                maxLines = 2,
+                fontSize = 20.sp
+            )
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2), modifier = Modifier
+                    .fillMaxSize()
+                    .height(newheight.dp)
+                    .padding(vertical = 10.dp)
+            ) {
+                items(it) { data ->
+                    ContentItemList(data = data) { selectedItem ->
+                        // Handle item click here
+                        Log.d("ItemClicked", "Clicked item: ${selectedItem.videoId}")
 
-                    navController!!.navigate(
-                        NavigationItem.AudioPlayer.createRoute(
-                            encodedVideoId,
-                            encodedVideoUrl,
-                            encodedVideoTitle,
-                            encodedVideoTitle,
-                            encodedVideoTitle
+                        val encodedVideoUrl = URLEncoder.encode(
+                            YoutubeCoreConstant.decodeThumpUrl(
+                                selectedItem.thumbnail!!
+                            ), StandardCharsets.UTF_8.toString()
                         )
-                    ) {
-                        navController.graph.startDestinationRoute?.let { route ->
-                            popUpTo(route) {
-                                saveState = true
+                        val encodedVideoId = URLEncoder.encode(
+                            selectedItem.videoId,
+                            StandardCharsets.UTF_8.toString()
+                        )
+                        val encodedVideoTitle =
+                            URLEncoder.encode(selectedItem.title, StandardCharsets.UTF_8.toString())
+
+                        navController!!.navigate(
+                            NavigationItem.AudioPlayer.createRoute(
+                                encodedVideoId,
+                                encodedVideoUrl,
+                                encodedVideoTitle,
+                                encodedVideoTitle,
+                                encodedVideoTitle
+                            )
+                        ) {
+                            navController.graph.startDestinationRoute?.let { route ->
+                                popUpTo(route) {
+                                    saveState = true
+                                }
                             }
+                            launchSingleTop = true
+                            restoreState = true
                         }
-                        launchSingleTop = true
-                        restoreState = true
                     }
                 }
             }
@@ -232,6 +249,7 @@ fun GridContentList(
 
 @Composable
 fun HorizontalContentList(
+    heading:String?,
     navController: NavController?,
     contentData: List<BaseContentData>?,
     viewModel: TubeFyViewModel = hiltViewModel()
@@ -239,7 +257,7 @@ fun HorizontalContentList(
     contentData?.let {
         Column (Modifier.background(Color.Black)){
 
-            Text(  text = "TOP MIX",
+            Text(  text = heading ?: "Top Mix",
                 fontWeight = FontWeight.Bold,
                 color = Color.White,
                 modifier = Modifier.padding(10.dp,30.dp,10.dp),
@@ -310,6 +328,7 @@ fun HorizontalContentList(
 
 @Composable
 fun SingleContentCell(
+    heading:String?,
     contentData: List<BaseContentData>?,
     viewModel: TubeFyViewModel = hiltViewModel()
 ) {
@@ -512,8 +531,8 @@ fun HomePageContentListPreview() {
             thumbnail = "https://via.placeholder.com/150"
         )
     )
-    videoSortedList.add(HomePageResponse(CellType.HORIZONTAL_LIST, mockContentData))
-    videoSortedList.add(HomePageResponse(CellType.HORIZONTAL_LIST, mockContentData))
+//    videoSortedList.add(HomePageResponse(CellType.HORIZONTAL_LIST, mockContentData))
+//    videoSortedList.add(HomePageResponse(CellType.HORIZONTAL_LIST, mockContentData))
 
 //    HomePageContentList(homePageResponses = videoSortedList)
 }
@@ -553,6 +572,7 @@ fun HorizontalContentListPreview() {
     )
 
     HorizontalContentList(
+        heading = "it.heading",
         navController = navController,
         contentData = mockData,
 //        viewModel = mockViewModel
