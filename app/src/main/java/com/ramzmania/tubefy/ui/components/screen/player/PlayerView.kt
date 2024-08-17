@@ -1,7 +1,10 @@
 package com.ramzmania.tubefy.ui.components.screen.player
 
+import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.util.Log
+import androidx.annotation.OptIn
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -49,6 +52,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
@@ -69,8 +73,8 @@ fun PlayerBaseView(
     var isPlaying by remember { mutableStateOf(false) }
     var progress by remember { mutableStateOf(0f) }  // Track progress
     var removedExistingPlayList by remember { mutableStateOf(false) }
-    val streamUrlData by viewModel.streamUrlData.observeAsState()
-    val youTubePlayListBulkData by viewModel.youTubePlayListBulkData.observeAsState()
+//    val streamUrlData by viewModel.streamUrlData.observeAsState()
+//    val youTubePlayListBulkData by viewModel.youTubePlayListBulkData.observeAsState()
     val navController = LocalNavController.current
     val context = LocalContext.current
     var currentTime by remember { mutableStateOf("00:00") }
@@ -118,45 +122,45 @@ fun PlayerBaseView(
 
 
     }
-    LaunchedEffect(key1 = youTubePlayListBulkData) {
-        if (youTubePlayListBulkData is Resource.Success) {
-Log.d("kkkkk","i got it")
-            playAudioList(mediaController!!, youTubePlayListBulkData?.data!!,removedExistingPlayList)
-            removedExistingPlayList=true
-        }
-    }
+//    LaunchedEffect(key1 = youTubePlayListBulkData) {
+////        if (youTubePlayListBulkData is Resource.Success) {
+////Log.d("kkkkk","i got it")
+////            playAudioList(mediaController!!, youTubePlayListBulkData?.data!!,removedExistingPlayList)
+////            removedExistingPlayList=true
+////        }
+//    }
 
-    LaunchedEffect(key1 = streamUrlData) {
-        if (streamUrlData is Resource.Success) {
-//            val items = (streamUrlData as Resource.Success<StreamUrlData>).data
-
-            if (mediaController != null && mediaController!!.isConnected) {
-                Log.d("checker", "connected")
-
-                if (mediaController!!.currentMediaItem != null && mediaController!!.currentMediaItem?.mediaMetadata?.title!!.equals(
-                        playerHeader
-                    )
-                ) {
-                    Log.d("checker", "onsucessexisting video is playing")
-                } else {
-                    Log.d("checker", "playinggg iffff")
-
-                    if (streamUrlData!!.data!!.streamUrl.isNotEmpty()) {
-                        mediaUri = streamUrlData!!.data!!.streamUrl
-                        playAudio(mediaController!!, mediaUri, albumArt, playerHeader)
-                    }
-                }
-            } else {
-                Log.d("checker", "playinggg else")
-
-                if (streamUrlData!!.data!!.streamUrl.isNotEmpty()) {
-                    mediaUri = streamUrlData!!.data!!.streamUrl
-                    playAudio(mediaController!!, mediaUri, albumArt, playerHeader)
-                }
-            }
-
-        }
-    }
+//    LaunchedEffect(key1 = streamUrlData) {
+//        if (streamUrlData is Resource.Success) {
+////            val items = (streamUrlData as Resource.Success<StreamUrlData>).data
+//
+//            if (mediaController != null && mediaController!!.isConnected) {
+//                Log.d("checker", "connected")
+//
+//                if (mediaController!!.currentMediaItem != null && mediaController!!.currentMediaItem?.mediaMetadata?.title!!.equals(
+//                        playerHeader
+//                    )
+//                ) {
+//                    Log.d("checker", "onsucessexisting video is playing")
+//                } else {
+//                    Log.d("checker", "playinggg iffff")
+//
+//                    if (streamUrlData!!.data!!.streamUrl.isNotEmpty()) {
+//                        mediaUri = streamUrlData!!.data!!.streamUrl
+//                        playAudio(mediaController!!, mediaUri, albumArt, playerHeader)
+//                    }
+//                }
+//            } else {
+//                Log.d("checker", "playinggg else")
+//
+//                if (streamUrlData!!.data!!.streamUrl.isNotEmpty()) {
+//                    mediaUri = streamUrlData!!.data!!.streamUrl
+//                    playAudio(mediaController!!, mediaUri, albumArt, playerHeader)
+//                }
+//            }
+//
+//        }
+//    }
 
     LaunchedEffect(!isLoading) {
         while (true) {
@@ -225,20 +229,25 @@ Log.d("kkkkk","i got it")
             }
             if (isBulk.equals("true")) {
 //            viewModel.getStreamUrl(videoId!!)
-                viewModel.getBulkStreamUrl()
+//                viewModel.getBulkStreamUrl()
+                startFetchPlayListService(context)
             } else {
-                viewModel.getStreamUrl(videoId!!)
+                startFetchSongService(context,videoId,albumArt,playerHeader!!)
+//                viewModel.getStreamUrl(videoId!!)
             }
 
         }, onMetaDataChangedValue = {
-            albumArt =
-                it.artworkUri?.toString()!!
 
-            playerHeader =it.title.toString()
+            if(it!=null) {
+                albumArt =
+                    it.artworkUri?.toString()!!
 
-            playerBottomHeader = it.title.toString()
-            playerBottomSub = it.title.toString()
-            Log.d("album",albumArt+"<>")
+                playerHeader = it.title.toString()
+
+                playerBottomHeader = it.title.toString()
+                playerBottomSub = it.title.toString()
+                Log.d("album", albumArt + "<>"+ it.artworkUri?.path+"<>"+it.artworkUri?.scheme+"<>"+it.artworkUri?.host)
+            }
         }
     )
 
@@ -459,6 +468,24 @@ fun playAudio(
     }
 }
 
+@OptIn(UnstableApi::class)
+fun startFetchPlayListService(context: Context) {
+    val intent = Intent(context, PlaybackService::class.java).apply {
+        action = PlaybackService.ACTION_FETCH_PLAYLIST
+    }
+    context.startService(intent)
+}
+
+@OptIn(UnstableApi::class)
+fun startFetchSongService(context: Context,videoId:String,albumArt:String,title:String) {
+    val intent = Intent(context, PlaybackService::class.java).apply {
+        action = PlaybackService.ACTION_FETCH_SONG
+        putExtra("videoId",videoId)
+        putExtra("albumart",albumArt)
+        putExtra("title",title)
+    }
+    context.startService(intent)
+}
 
 
 
