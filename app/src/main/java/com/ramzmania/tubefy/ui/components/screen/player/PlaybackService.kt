@@ -71,8 +71,9 @@ class PlaybackService(
                 }
 
                 ACTION_FETCH_SONG -> {
-                    it.extras?.getString("videoId")?.let { it1 -> getStreamUrl(it1,
-                        it.extras?.getString("albumart")!!, it.extras?.getString("title")!!
+                    removeExistingPlayList=true
+                    it.extras?.getString(VIDEO_ID)?.let { it1 -> getStreamUrl(it1,
+                        it.extras?.getString(ALBUM_ART)!!, it.extras?.getString(VIDEO_TITLE)!!
                     ) }
                 }
 
@@ -157,10 +158,8 @@ class PlaybackService(
                                         .build()
                                 )
                                 .build()
+                            playAudioList(listOf(mediaItemData()).toMutableList())
 
-                            it.setMediaItem(mediaItemData())
-                            it.playWhenReady = true
-                            it.prepare()
                         }
                     }
                 }
@@ -191,53 +190,14 @@ class PlaybackService(
         }
     }
 
-    /*    fun fetchPlayList()
-        {
-            serviceScope.launch {
-                Log.d("bulkmode","new arra"+ PlayListSingleton.getDataList()?.playListData?.size)
-                var list= PlayListSingleton.getDataList()?.playListData?.take(2)
-                remoteRepositorySource.getStreamBulkUrl(YoutubePlayerPlaylistListModel(list!!)).collect {
-                    if (it is Resource.Success) {
-                        playAudioList(it.data!!)
-                        var list= PlayListSingleton.getDataList()?.playListData?.drop(2)
-                        PlayListSingleton.addData(list!!)
-                        fetchPlayList()
-                    }
-                }
-            }
-        }
 
-        fun playAudioList(
-            mediaItems: List<MediaItem>
-        ) {
-            mediaSession?.player?.let {
-
-                    Log.d("click", "connected")
-
-                    // Set the media items to the MediaController
-                    if(it.currentMediaItem==null) {
-                        mediaSession?.player?.setMediaItems(mediaItems)
-                        it.playWhenReady = true
-                        it.prepare()
-                    }else
-                    {
-                        val mutableMediaItems = mediaItems.toMutableList()
-    //                mutableMediaItems.removeAt(0)
-                        if(removedExistingPlayList) {
-                            it.addMediaItems(mutableMediaItems)
-                        }else
-                        {
-                            it.setMediaItems(mutableMediaItems)
-                            removedExistingPlayList=false
-                        }
-
-                    }
-                }
-
-        }*/
     companion object {
         const val ACTION_FETCH_PLAYLIST = "com.ramzmania.tubefy.ACTION_FETCH_PLAYLIST"
         const val ACTION_FETCH_SONG = "com.ramzmania.tubefy.ACTION_FETCH_SONG"
+        const val VIDEO_ID = "com.ramzmania.tubefy.VIDEO_ID"
+        const val ALBUM_ART = "com.ramzmania.tubefy.ALBUM_ART"
+        const val VIDEO_TITLE = "com.ramzmania.tubefy.VIDEO_TITLE"
+
 
     }
 }

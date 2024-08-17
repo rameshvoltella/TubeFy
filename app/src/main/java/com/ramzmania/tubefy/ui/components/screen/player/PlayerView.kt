@@ -232,13 +232,13 @@ fun PlayerBaseView(
 //                viewModel.getBulkStreamUrl()
                 startFetchPlayListService(context)
             } else {
-                startFetchSongService(context,videoId,albumArt,playerHeader!!)
+                startFetchSongService(context, videoId, albumArt, playerHeader!!)
 //                viewModel.getStreamUrl(videoId!!)
             }
 
         }, onMetaDataChangedValue = {
 
-            if(it!=null) {
+            if (it != null) {
                 albumArt =
                     it.artworkUri?.toString()!!
 
@@ -246,7 +246,10 @@ fun PlayerBaseView(
 
                 playerBottomHeader = it.title.toString()
                 playerBottomSub = it.title.toString()
-                Log.d("album", albumArt + "<>"+ it.artworkUri?.path+"<>"+it.artworkUri?.scheme+"<>"+it.artworkUri?.host)
+                Log.d(
+                    "album",
+                    albumArt + "<>" + it.artworkUri?.path + "<>" + it.artworkUri?.scheme + "<>" + it.artworkUri?.host
+                )
             }
         }
     )
@@ -359,7 +362,17 @@ fun PlayerBaseView(
                 Image(
                     painter = painterResource(id = R.drawable.ic_player_previous),
                     contentDescription = "Previous",
-                    modifier = Modifier.size(30.dp)
+                    modifier = Modifier
+                        .size(30.dp)
+                        .clickable {
+                            mediaController?.let {
+                                if (it.hasPreviousMediaItem()) {
+                                    it.seekToPreviousMediaItem()
+                                } else {
+                                    Log.d("PlaybackService", "No prev media item available")
+                                }
+                            } ?: Log.d("PlaybackService", "MediaController is null")
+                        }
                 )
                 Spacer(modifier = Modifier.width(40.dp))
                 if (isLoading) {
@@ -388,7 +401,13 @@ fun PlayerBaseView(
                 Image(
                     painter = painterResource(id = R.drawable.ic_player_next),
                     contentDescription = "Next",
-                    modifier = Modifier.size(30.dp)
+                    modifier = Modifier.size(30.dp).clickable { mediaController?.let {
+                        if (it.hasNextMediaItem()) {
+                            it.seekToNextMediaItem()
+                        } else {
+                            Log.d("PlaybackService", "No next media item available")
+                        }
+                    } ?: Log.d("PlaybackService", "MediaController is null") }
                 )
             }
         }
@@ -402,71 +421,6 @@ fun PlayerPreview() {
     PlayerBaseView()
 }
 
-fun playAudioList(
-    mediaController: MediaController?,
-    mediaItems: List<MediaItem>,removedExistingPlayList:Boolean
-) {
-    mediaController?.let {
-        if (it.isConnected) {
-            Log.d("click", "connected")
-
-            // Set the media items to the MediaController
-            if(it.currentMediaItem==null) {
-                it.setMediaItems(mediaItems)
-                it.playWhenReady = true
-                it.prepare()
-            }else
-            {
-                val mutableMediaItems = mediaItems.toMutableList()
-//                mutableMediaItems.removeAt(0)
-                if(removedExistingPlayList) {
-                    it.addMediaItems(mutableMediaItems)
-                }else
-                {
-                    it.setMediaItems(mutableMediaItems)
-
-                }
-
-            }
-        }
-    }
-}
-
-fun playAudio(
-    mediaController: MediaController,
-    mediaUri: String,
-    videoThumpUrl: String,
-    videoTitle: String
-) {
-    if (mediaController?.isConnected!!) {
-        Log.d("click", "connected")
-
-//                val drawableUri: Uri =
-//                    Uri.parse("android.resource://${BuildConfig.APPLICATION_ID}/${com.ramzmania.tubefy.R.drawable.tubefy_icon}")
-
-        fun mediaItemData() = MediaItem.Builder()
-            .setMediaId("TubeFy")
-            .setUri(
-                Uri.parse(mediaUri)
-            )
-            .setMediaMetadata(
-                MediaMetadata.Builder()
-                    .setTitle(videoTitle)
-                    .setArtist("Artist :${videoTitle}")
-                    .setIsBrowsable(false)
-                    .setIsPlayable(true)
-                    .setArtworkUri(Uri.parse(videoThumpUrl))
-                    .setMediaType(MediaMetadata.MEDIA_TYPE_MUSIC)
-                    .build()
-            )
-            .build()
-
-        mediaController?.setMediaItem(mediaItemData())
-        mediaController?.playWhenReady = true
-        mediaController?.prepare()
-
-    }
-}
 
 @OptIn(UnstableApi::class)
 fun startFetchPlayListService(context: Context) {
@@ -477,12 +431,12 @@ fun startFetchPlayListService(context: Context) {
 }
 
 @OptIn(UnstableApi::class)
-fun startFetchSongService(context: Context,videoId:String,albumArt:String,title:String) {
+fun startFetchSongService(context: Context, videoId: String, albumArt: String, title: String) {
     val intent = Intent(context, PlaybackService::class.java).apply {
         action = PlaybackService.ACTION_FETCH_SONG
-        putExtra("videoId",videoId)
-        putExtra("albumart",albumArt)
-        putExtra("title",title)
+        putExtra(PlaybackService.VIDEO_ID, videoId)
+        putExtra(PlaybackService.ALBUM_ART, albumArt)
+        putExtra(PlaybackService.VIDEO_TITLE, title)
     }
     context.startService(intent)
 }
