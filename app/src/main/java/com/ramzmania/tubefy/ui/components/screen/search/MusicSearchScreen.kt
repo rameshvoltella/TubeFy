@@ -51,6 +51,7 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
                 ">>VADAAACAME" + searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!.size
             )
             if (isFreshSearch) {
+                lazyListState.scrollToItem(0) // Scroll to top without animation
                 isFreshSearch = false
                 videoListItems = searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!
             } else {

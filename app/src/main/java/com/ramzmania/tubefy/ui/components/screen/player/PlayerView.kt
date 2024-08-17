@@ -1,5 +1,6 @@
 package com.ramzmania.tubefy.ui.components.screen.player
 
+import VideoPlayerView
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -9,6 +10,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -85,7 +87,8 @@ fun PlayerBaseView(
     var albumArt by remember { mutableStateOf("") }
     var videoId by remember { mutableStateOf("") }
     var isBulk by remember { mutableStateOf("false") }  // Track loading state
-
+    var videoUrl by remember { mutableStateOf("") }
+    var showVideoPlayer by remember { mutableStateOf(false) }
 
     var mediaUri = ""
     val navBackStackEntry = navController.currentBackStackEntry
@@ -162,8 +165,10 @@ fun PlayerBaseView(
 //        }
 //    }
 
-    LaunchedEffect(!isLoading) {
+    LaunchedEffect(mediaController?.isPlaying) {
+        Log.d("corortine","loading called"+isLoading)
         while (true) {
+            Log.d("timer","yessssss")
             if (mediaController?.isConnected == true && isPlaying) {
                 progress =
                     (mediaController!!.currentPosition * 1.0f / mediaController!!.duration).coerceIn(
@@ -288,8 +293,38 @@ fun PlayerBaseView(
                 maxLines = 2,
                 fontSize = 16.sp
             )
-
-            AsyncImage(
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(horizontal = 30.dp, vertical = 10.dp)
+            ) {
+                AsyncImage(
+                    model = ImageRequest.Builder(context)
+                        .data(YoutubeCoreConstant.decodeThumpUrl(albumArt))
+                        .crossfade(true)
+                        .placeholder(R.drawable.placeholder)
+                        .error(R.drawable.placeholder)
+                        .build(),
+                    contentDescription = "Drawable Image",
+                    modifier = Modifier
+                        .fillMaxSize() // Match the size of the Box
+                        .clip(RoundedCornerShape(16.dp))
+                        .clickable {
+                            mediaController?.pause()
+                            val currentMediaItem = mediaController?.currentMediaItem
+//                             currentMediaItem?.playbackProperties?.uri?.toString()
+                            videoUrl =
+                                currentMediaItem?.localConfiguration?.uri?.toString().toString() // Replace with actual video URL
+                            showVideoPlayer = true
+                        },
+                    contentScale = ContentScale.Crop
+                )
+                if (showVideoPlayer) {
+                    VideoPlayerView(videoUrl)
+                }
+            }
+           /* AsyncImage(
                 model = ImageRequest.Builder(context)
                     .data(YoutubeCoreConstant.decodeThumpUrl(albumArt))
                     .crossfade(true)
@@ -304,7 +339,7 @@ fun PlayerBaseView(
                     .align(Alignment.CenterHorizontally)
                     .clip(RoundedCornerShape(16.dp)), // Add this line to apply rounded corners,
                 contentScale = ContentScale.Crop
-            )
+            )*/
         }
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -381,18 +416,25 @@ fun PlayerBaseView(
                         modifier = Modifier.size(30.dp)
                     )
                 } else {
+
                     Image(
                         painter = painterResource(id = if (isPlaying) R.drawable.ic_player_pause else R.drawable.ic_player_play),
                         contentDescription = "Play/Pause",
                         modifier = Modifier
                             .size(30.dp)
                             .clickable {
+
                                 if (mediaController != null && mediaController!!.isConnected) {
                                     if (isPlaying) {
                                         mediaController?.pause()
                                     } else {
                                         mediaController?.play()
                                     }
+                                }
+                                if(showVideoPlayer)
+                                {
+                                    showVideoPlayer=false
+                                    Log.d("loading","<<<<"+isLoading+"<>")
                                 }
                             }
                     )

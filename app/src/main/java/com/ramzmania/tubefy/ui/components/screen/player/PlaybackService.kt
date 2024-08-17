@@ -1,6 +1,7 @@
 package com.ramzmania.tubefy.ui.components.screen.player
 
 
+import android.app.PendingIntent
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
@@ -20,6 +21,7 @@ import com.ramzmania.tubefy.data.local.LocalRepositorySource
 import com.ramzmania.tubefy.data.remote.RemoteRepositorySource
 import com.ramzmania.tubefy.player.PlayListSingleton
 import com.ramzmania.tubefy.player.YoutubePlayerPlaylistListModel
+import com.ramzmania.tubefy.ui.components.HomeActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -55,10 +57,15 @@ class PlaybackService(
                 }
             })
         }
+        val activityIntent = Intent(this, HomeActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        val pendingIntent = PendingIntent.getActivity(this, 0, activityIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+
 
         mediaLibrarySessionCallback = MediaLibrarySessionCallback()
         mediaSession =
-            MediaLibrarySession.Builder(this, player, mediaLibrarySessionCallback).build()
+            MediaLibrarySession.Builder(this, player, mediaLibrarySessionCallback).setSessionActivity(pendingIntent).build()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -169,20 +176,29 @@ class PlaybackService(
 
     fun playAudioList(mediaItems: List<MediaItem>) {
         mediaSession?.player?.let {
-            Log.d("click", "connected")
+            Log.d("click", "connected11111")
 
             if (it.currentMediaItem == null) {
+                Log.d("click", "connected222222")
+
                 removeExistingPlayList = false
                 it.setMediaItems(mediaItems)
                 it.playWhenReady = true
                 it.prepare()
             } else {
+                Log.d("click", "connected3333333")
+
                 val mutableMediaItems = mediaItems.toMutableList()
                 if (removeExistingPlayList) {
+                    Log.d("click", "connected44444")
+
                     removeExistingPlayList = false
                     it.setMediaItems(mutableMediaItems)
-
+                    it.playWhenReady = true
+                    it.prepare()
                 } else {
+                    Log.d("click", "connected55555555")
+
                     it.addMediaItems(mutableMediaItems)
 
                 }
