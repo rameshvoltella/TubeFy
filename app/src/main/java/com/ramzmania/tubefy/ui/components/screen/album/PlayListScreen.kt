@@ -28,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -68,29 +69,35 @@ fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
     val navBackStackEntry = navController.currentBackStackEntry
     val context = LocalContext.current
     Log.d("sadakku", ">>>>>")
+    var isDefaultDataLoaded by rememberSaveable { mutableStateOf(false) }
 
 //    val playlistId = navBackStackEntry?.arguments?.getString("playlistId")
     LaunchedEffect(Unit) {
         val playlistId = navBackStackEntry?.arguments?.getString("playlistId")
         Log.d("sadakku", ">>2222>>>" + playlistId)
-        if (playlistId!!.startsWith("PLAYLIST-ID-")) {
-            if (playlistId!!.startsWith("PLAYLIST-ID-YT")) {
-                Log.d("incomming<>", "<>music_songs")
+        if(!isDefaultDataLoaded) {
+            if (playlistId!!.startsWith("PLAYLIST-ID-")) {
+                if (playlistId!!.startsWith("PLAYLIST-ID-YT")) {
+                    Log.d("incomming<>", "<>music_songs")
 
-                viewModel.searchNewPipePage(
-                    playlistId.replace("PLAYLIST-ID-", "") + " songs of " + Calendar.getInstance()
-                        .get(Calendar.YEAR),
-                    mutableListOf()
-                )
+                    viewModel.searchNewPipePage(
+                        playlistId.replace(
+                            "PLAYLIST-ID-",
+                            ""
+                        ) + " songs of " + Calendar.getInstance()
+                            .get(Calendar.YEAR),
+                        mutableListOf()
+                    )
+                } else {
+                    viewModel.searchNewPipePage(
+                        playlistId.replace("PLAYLIST-ID-", ""),
+                        mutableListOf("music_songs")
+                    )
+                }
+
             } else {
-                viewModel.searchNewPipePage(
-                    playlistId.replace("PLAYLIST-ID-", ""),
-                    mutableListOf("music_songs")
-                )
+                viewModel.loadPlayList(playlistId!!)
             }
-
-        } else {
-            viewModel.loadPlayList(playlistId!!)
         }
     }
     Column(
@@ -129,6 +136,7 @@ fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
             Log.d("datata", ">>VADAAA" + playListData!!.data!!.playListVideoList?.get(0)?.videoId)
             finalItems = playListData!!.data!!.playListVideoList!!
             isLoading = false
+            isDefaultDataLoaded=true
 //            if(playListData!!.data!!.playListVideoList?.get(0)?.videoId!=null)
 //            {
 //                viewModel.getStreamUrl(playListData!!.data!!.playListVideoList?.get(0)?.videoId!!)

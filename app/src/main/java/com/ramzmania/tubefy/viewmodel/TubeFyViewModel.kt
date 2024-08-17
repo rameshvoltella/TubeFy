@@ -297,14 +297,14 @@ Log.d("incomming<>","<>"+contentFilter)
         }
     }
 
-    fun searchNewPipeNextPage(page: Page) {
-        val contentFilter = arrayOf<String>("music_songs")
+    fun searchNewPipeNextPage(page: Page,contentFilter: MutableList<String>,searchString:String) {
+//        val contentFilter = arrayOf<String>("all")
 
         viewModelScope.launch {
             remoteRepositorySource.getNewPipePageNextSearch(
                 0,
-                "",
-                listOf(*contentFilter),
+                searchString,
+                contentFilter,
                 "",
                 page
             ).collect {

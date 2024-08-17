@@ -54,7 +54,7 @@ private var nextPage: Page? = null
 //        viewModel.startScrapping("wwe")
         binding.next.setOnClickListener {
             if (Page.isValid(nextPage)) {
-                viewModel.searchNewPipeNextPage(nextPage!!)
+                viewModel.searchNewPipeNextPage(nextPage!!,mutableListOf<String>("music_songs"),"aavesham")
             }
         }
 
