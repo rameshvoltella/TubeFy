@@ -64,7 +64,7 @@ fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
     val streamUrlData by viewModel.streamUrlData.observeAsState()
     val searchPlayListName by viewModel.youTubeSearchData.observeAsState()
     var isLoading by remember { mutableStateOf(true) }  // Track loading state
-    var finalItems by remember { mutableStateOf<List<TubeFyCoreTypeData?>>(emptyList()) }
+    var videoAudioItems by remember { mutableStateOf<List<TubeFyCoreTypeData?>>(emptyList()) }
     val navController = LocalNavController.current
     val navBackStackEntry = navController.currentBackStackEntry
     val context = LocalContext.current
@@ -111,7 +111,7 @@ fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
                     navBackStackEntry?.arguments?.getString("playlistImage"),
                     StandardCharsets.UTF_8.toString()
                 ), // Replace with your image URL
-                title = it, finalItems = finalItems
+                title = it, finalItems = videoAudioItems
 
             )
         }
@@ -125,7 +125,7 @@ fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
             }
         } else {
             // Show track list when data is loaded
-            AlbumTrackList(tracks = finalItems)
+            AlbumTrackList(tracks = videoAudioItems)
         }
 //        AlbumTrackList(tracks =finalItems)
     }
@@ -134,9 +134,11 @@ fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
 //            val items = (streamUrlData as Resource.Success<StreamUrlData>).data
             // Prepend new data to the existing list
             Log.d("datata", ">>VADAAA" + playListData!!.data!!.playListVideoList?.get(0)?.videoId)
-            finalItems = playListData!!.data!!.playListVideoList!!
+            videoAudioItems = playListData!!.data!!.playListVideoList!!
             isLoading = false
             isDefaultDataLoaded=true
+            viewModel.setCurrentPlayListData(videoAudioItems)
+
 //            if(playListData!!.data!!.playListVideoList?.get(0)?.videoId!=null)
 //            {
 //                viewModel.getStreamUrl(playListData!!.data!!.playListVideoList?.get(0)?.videoId!!)
@@ -171,9 +173,9 @@ fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
                 "datata",
                 ">>VADAAACAME" + searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!.size
             )
-            finalItems = searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!
+            videoAudioItems = searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!
             isLoading = false
-            viewModel.setCurrentPlayListData(finalItems)
+            viewModel.setCurrentPlayListData(videoAudioItems)
         }
     }
 
