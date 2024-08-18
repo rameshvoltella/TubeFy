@@ -7,6 +7,6 @@ inline fun <reified T> parseJson(jsonString: String): T? {
     val moshi = Moshi.Builder()
         .add(KotlinJsonAdapterFactory())
         .build()
-    val jsonAdapter = moshi.adapter(T::class.java)
+    val jsonAdapter = moshi.adapter(T::class.java).lenient()
     return jsonAdapter.fromJson(jsonString)
 }

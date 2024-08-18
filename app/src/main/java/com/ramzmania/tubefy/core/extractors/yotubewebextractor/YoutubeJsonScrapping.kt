@@ -7,6 +7,7 @@ import android.util.Log
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import com.ramzmania.tubefy.core.YoutubeCoreConstant
+import com.ramzmania.tubefy.data.dto.youtubemusic.category.YtMusicCategoryBase
 import com.ramzmania.tubefy.data.dto.youtubemusic.category.YtMusicCategoryContent
 import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.YoutubeMusicPlayListContent
 import com.ramzmania.tubefy.data.dto.youtubestripper.ApiResponse
@@ -26,8 +27,8 @@ class YoutubeJsonScrapping constructor(val webView: WebView,val context : Contex
     val sharedJsonMusicHomeContent:SharedFlow<MusicHomeResponse2?>  = sharedJsonMusicHomeContentPrivate
     private val sharedJsonMusicHomePlayListContentPrivate= MutableSharedFlow<YoutubeMusicPlayListContent?>()
     val sharedJsonMusicHomePlayListContent:SharedFlow<YoutubeMusicPlayListContent?>  = sharedJsonMusicHomePlayListContentPrivate
-    private val sharedJsonMusicCategoryPlayListContentPrivate= MutableSharedFlow<YtMusicCategoryContent?>()
-    val sharedJsonMusicCategoryPlayListContent:SharedFlow<YtMusicCategoryContent?>  = sharedJsonMusicCategoryPlayListContentPrivate
+    private val sharedJsonMusicCategoryPlayListContentPrivate= MutableSharedFlow<YtMusicCategoryBase?>()
+    val sharedJsonMusicCategoryPlayListContent:SharedFlow<YtMusicCategoryBase?>  = sharedJsonMusicCategoryPlayListContentPrivate
 
     var alreadyEvaluated = false;
 
@@ -244,6 +245,7 @@ class YoutubeJsonScrapping constructor(val webView: WebView,val context : Contex
 //                getDataSubstring
                 result = result.replaceFirst("= '{", "{").replaceFirst("';", "")
                     .replace("\\\\\\\\\"", "")
+                result=decodeHexString(result)
 //                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
 //                val clip = ClipData.newPlainText("label", result)
 //                clipboard.setPrimaryClip(clip)
@@ -316,7 +318,7 @@ class YoutubeJsonScrapping constructor(val webView: WebView,val context : Contex
         sharedJsonMusicHomePlayListContentPrivate.emit(data)
     }
 
-    private suspend fun passYTMusicPlayCategory(data: YtMusicCategoryContent?) {
+    private suspend fun passYTMusicPlayCategory(data: YtMusicCategoryBase?) {
         Log.d("passing home data","yaaa")
         sharedJsonMusicCategoryPlayListContentPrivate.emit(data)
     }

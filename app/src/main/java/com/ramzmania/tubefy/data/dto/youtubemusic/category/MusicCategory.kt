@@ -4,6 +4,10 @@ import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
 @JsonClass(generateAdapter = true)
+data class YtMusicCategoryBase(
+    @Json(name = "contents") val YtMusicCategoryContent: YtMusicCategoryContent?
+)
+@JsonClass(generateAdapter = true)
 data class YtMusicCategoryContent(
     @Json(name = "singleColumnBrowseResultsRenderer") val singleColumnBrowseResultsRenderer: SingleColumnBrowseResultsRenderer?
 )

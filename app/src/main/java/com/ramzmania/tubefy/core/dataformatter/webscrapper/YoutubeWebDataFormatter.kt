@@ -4,9 +4,9 @@ import android.util.Log
 import com.ramzmania.tubefy.core.dataformatter.FormattingResult
 import com.ramzmania.tubefy.core.dataformatter.UniversalYoutubeDataFormatter
 import com.ramzmania.tubefy.core.dataformatter.YoutubeApiType
-import com.ramzmania.tubefy.data.dto.searchformat.TubeFyCoreFormattedData
-import com.ramzmania.tubefy.data.dto.searchformat.TubeFyCoreTypeData
-import com.ramzmania.tubefy.data.dto.searchformat.TubeFyCoreUniversalData
+import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreFormattedData
+import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
+import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreUniversalData
 import com.ramzmania.tubefy.data.dto.youtubestripper.ApiResponse
 import javax.inject.Inject
 import javax.inject.Singleton

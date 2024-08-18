@@ -48,7 +48,7 @@ import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.base.BaseContentData
 import com.ramzmania.tubefy.data.dto.home.CellType
 import com.ramzmania.tubefy.data.dto.home.HomePageResponse
-import com.ramzmania.tubefy.data.dto.searchformat.StreamUrlData
+import com.ramzmania.tubefy.data.dto.base.searchformat.StreamUrlData
 import com.ramzmania.tubefy.ui.components.NavigationItem
 import com.ramzmania.tubefy.utils.LocalNavController
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel

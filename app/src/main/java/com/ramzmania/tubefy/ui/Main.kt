@@ -8,12 +8,13 @@ import android.widget.Toast
 import com.ramzmania.tubefy.core.YoutubeCoreConstant.extractYoutubeVideoId
 import com.ramzmania.tubefy.core.dataformatter.YoutubeApiType
 import com.ramzmania.tubefy.core.extractors.yotubewebextractor.YoutubeScrapType
-import com.ramzmania.tubefy.data.dto.searchformat.StreamUrlData
-import com.ramzmania.tubefy.data.dto.searchformat.TubeFyCoreTypeData
-import com.ramzmania.tubefy.data.dto.searchformat.TubeFyCoreUniversalData
+import com.ramzmania.tubefy.data.dto.base.searchformat.StreamUrlData
+import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
+import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreUniversalData
 import com.ramzmania.tubefy.data.Resource
+import com.ramzmania.tubefy.data.dto.base.playlist.PlayListCategory
 import com.ramzmania.tubefy.data.dto.home.HomePageResponse
-import com.ramzmania.tubefy.data.dto.playlist.PlayListData
+import com.ramzmania.tubefy.data.dto.base.playlist.PlayListData
 import com.ramzmania.tubefy.data.dto.youtubestripper.ApiResponse
 import com.ramzmania.tubefy.data.observe
 import com.ramzmania.tubefy.databinding.KkBinding
@@ -42,6 +43,7 @@ private var nextPage: Page? = null
         observe(viewModel.youTubeMusicHomeData, ::HandleYtMusicHomeResponse)
         observe(viewModel.youTubeMusicHomeDefaultData, ::HandleDefaultHomeResponse)
         observe(viewModel.youTubePlayListData, ::HandleDefaultPlayListResponse)
+        observe(viewModel.youTubeMusicCategoryData,:: HandleCategoryResposne)
 
 
 
@@ -150,6 +152,31 @@ private var nextPage: Page? = null
                     Log.d("url", "<><><>" + it?.contentData?.get(0)?.playlistId)
 
                 }
+//                Log.d("url", "" + resource.data[1]!!.contentData?.get(0)?.playlistId)
+//                Log.d("url", "" + resource.data[2]!!.contentData?.get(0)?.playlistId)
+//                Log.d("url", "" + resource.data[3]!!.contentData?.get(0)?.playlistId)
+//                Log.d("url", "" + resource.data[4]!!.contentData?.get(0)?.playlistId)
+//                Log.d("url", "" + resource.data[5]!!.contentData?.get(0)?.playlistId)
+
+//                openUrlInBrowser( resource.data!!.streamUrl)
+            }
+
+            is Resource.DataError -> {
+            }
+
+            else -> {}
+        }
+    }
+    private fun HandleCategoryResposne(resource: Resource<List<PlayListCategory?>>) {
+        when (resource) {
+            is Resource.Loading -> {}
+            is Resource.Success -> {
+                Toast.makeText(applicationContext, "DAT FROM ASSERTS DATA>"+resource.data?.size, 1).show()
+
+//                resource.data?.playListVideoList?.forEach {
+//                    Log.d("url", "<><><>" + it?.videoId)
+//
+//                }
 //                Log.d("url", "" + resource.data[1]!!.contentData?.get(0)?.playlistId)
 //                Log.d("url", "" + resource.data[2]!!.contentData?.get(0)?.playlistId)
 //                Log.d("url", "" + resource.data[3]!!.contentData?.get(0)?.playlistId)

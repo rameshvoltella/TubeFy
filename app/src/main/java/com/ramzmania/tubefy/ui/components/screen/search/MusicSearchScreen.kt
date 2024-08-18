@@ -26,7 +26,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ramzmania.tubefy.data.Resource
-import com.ramzmania.tubefy.data.dto.searchformat.TubeFyCoreTypeData
+import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
 import com.ramzmania.tubefy.ui.components.screen.album.TrackItem
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
 import org.schabi.newpipe.extractor.Page

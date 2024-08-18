@@ -1,4 +1,4 @@
-package com.ramzmania.tubefy.data.dto.searchformat
+package com.ramzmania.tubefy.data.dto.base.searchformat
 
 import org.schabi.newpipe.extractor.Page
 

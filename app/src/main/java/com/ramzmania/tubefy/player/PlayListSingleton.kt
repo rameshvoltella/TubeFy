@@ -1,6 +1,6 @@
 package com.ramzmania.tubefy.player
 
-import com.ramzmania.tubefy.data.dto.searchformat.TubeFyCoreTypeData
+import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
 
 object PlayListSingleton {
         private var myDataList: YoutubePlayerPlaylistListModel?= null

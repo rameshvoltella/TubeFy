@@ -7,15 +7,17 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
 import com.ramzmania.tubefy.core.YoutubeCoreConstant.extractYoutubeVideoId
-import com.ramzmania.tubefy.data.dto.searchformat.StreamUrlData
-import com.ramzmania.tubefy.data.dto.searchformat.TubeFyCoreUniversalData
+import com.ramzmania.tubefy.data.dto.base.searchformat.StreamUrlData
+import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreUniversalData
 import com.ramzmania.tubefy.core.extractors.yotubewebextractor.YoutubeJsonScrapping
 import com.ramzmania.tubefy.core.extractors.yotubewebextractor.YoutubeScrapType
 import com.ramzmania.tubefy.data.ContextModule
 import com.ramzmania.tubefy.data.Resource
+import com.ramzmania.tubefy.data.dto.base.playlist.PlayListCategory
 import com.ramzmania.tubefy.data.dto.home.HomePageResponse
-import com.ramzmania.tubefy.data.dto.playlist.PlayListData
-import com.ramzmania.tubefy.data.dto.searchformat.TubeFyCoreTypeData
+import com.ramzmania.tubefy.data.dto.base.playlist.PlayListData
+import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
+import com.ramzmania.tubefy.data.dto.youtubemusic.category.YtMusicCategoryBase
 import com.ramzmania.tubefy.data.dto.youtubemusic.category.YtMusicCategoryContent
 import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.YoutubeMusicPlayListContent
 import com.ramzmania.tubefy.data.dto.youtubestripper.ApiResponse
@@ -94,6 +96,9 @@ class TubeFyViewModel @Inject constructor(
 
     private val youTubePlayListBulkPrivate = MutableLiveData<Resource<List<MediaItem>>>()
     val youTubePlayListBulkData: LiveData<Resource<List<MediaItem>>> get() = youTubePlayListBulkPrivate
+
+    private val youTubeMusicCategoryDataPrivate = MutableLiveData<Resource<List<PlayListCategory?>>>()
+    val youTubeMusicCategoryData: LiveData<Resource<List<PlayListCategory?>>> get() = youTubeMusicCategoryDataPrivate
 
     fun setHtmlContent(content: ApiResponse?) {
 //        htmlContentPrivate.value = content
@@ -192,7 +197,14 @@ class TubeFyViewModel @Inject constructor(
         Log.d("bulkmode","added 111"+koko)
 
     }
-    private fun setHtmlMusicCategoryContent(result: YtMusicCategoryContent?) {
+    private fun setHtmlMusicCategoryContent(result: YtMusicCategoryBase?) {
+
+        viewModelScope.launch {
+            localRepositorySource.manipulateYoutubeMusicCategorySearchStripData(result!!).collect {
+
+                youTubeMusicCategoryDataPrivate.value = it
+            }
+        }
 
     }
     fun setHtmlMusicPlayListContent(content: YoutubeMusicPlayListContent?) {
