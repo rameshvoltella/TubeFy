@@ -195,12 +195,12 @@ constructor(
                         val ppoa=
                             (response as CategoryPlayListRoot).contents?.singleColumnBrowseResultsRenderer?.tabs!![0].tabRenderer?.content?.sectionListRenderer?.contents!![0].musicCarouselShelfRenderer?.contents?.get(0)!!.musicTwoRowItemRenderer?.menu?.menuRenderer?.items?.get(0)?.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint?.playlistId
                         val image=
-                            (response as CategoryPlayListRoot).contents?.singleColumnBrowseResultsRenderer?.tabs!![0].tabRenderer?.content?.sectionListRenderer?.contents!![0].musicCarouselShelfRenderer?.contents?.get(0)!!.musicTwoRowItemRenderer?.menu?.menuRenderer?.items?.get(0)?.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint?.playlistId
+                            (response as CategoryPlayListRoot).contents?.singleColumnBrowseResultsRenderer?.tabs!![0].tabRenderer?.content?.sectionListRenderer?.contents!![0].musicCarouselShelfRenderer?.contents?.get(0)!!.musicTwoRowItemRenderer?.thumbnailRenderer?.musicThumbnailRenderer?.thumbnail?.thumbnails?.get(0)?.url
 
                         val txtx=
-                            (response as CategoryPlayListRoot).contents?.singleColumnBrowseResultsRenderer?.tabs!![0].tabRenderer?.content?.sectionListRenderer?.contents!![0].musicCarouselShelfRenderer?.contents?.get(0)!!.musicTwoRowItemRenderer?.menu?.menuRenderer?.items?.get(0)?.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint?.playlistId
+                            (response as CategoryPlayListRoot).contents?.singleColumnBrowseResultsRenderer?.tabs!![0].tabRenderer?.content?.sectionListRenderer?.contents!![0].musicCarouselShelfRenderer?.contents?.get(0)!!.musicTwoRowItemRenderer?.title?.runs?.get(0)?.text
 
-                        Log.d("yezzz","eod"+ppo+"<><>"+ppoa)
+                        Log.d("yezzz","eod"+ppo+"<><>"+ppoa+"<><"+image+"<>title<"+txtx)
 
 //                        val result=youtubeV3Formatter.run(response as CategoryPlayListRoot)
 //                        Log.d("checl",(response as CategoryPlayListRoot).contents.)
