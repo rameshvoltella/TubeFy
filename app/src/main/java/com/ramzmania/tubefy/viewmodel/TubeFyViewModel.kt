@@ -16,6 +16,7 @@ import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.home.HomePageResponse
 import com.ramzmania.tubefy.data.dto.playlist.PlayListData
 import com.ramzmania.tubefy.data.dto.searchformat.TubeFyCoreTypeData
+import com.ramzmania.tubefy.data.dto.youtubemusic.category.YtMusicCategoryContent
 import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.YoutubeMusicPlayListContent
 import com.ramzmania.tubefy.data.dto.youtubestripper.ApiResponse
 import com.ramzmania.tubefy.data.dto.youtubestripper.MusicHomeResponse2
@@ -61,7 +62,15 @@ class TubeFyViewModel @Inject constructor(
                 setHtmlMusicPlayListContent(result)
             }
         }
+
+        viewModelScope.launch {
+            scrapping.sharedJsonMusicCategoryPlayListContent.collect { result ->
+                setHtmlMusicCategoryContent(result)
+            }
+        }
     }
+
+
 
     private val htmlContentPrivate = MutableLiveData<String>()
     val htmlContent: LiveData<String> get() = htmlContentPrivate
@@ -183,7 +192,9 @@ class TubeFyViewModel @Inject constructor(
         Log.d("bulkmode","added 111"+koko)
 
     }
+    private fun setHtmlMusicCategoryContent(result: YtMusicCategoryContent?) {
 
+    }
     fun setHtmlMusicPlayListContent(content: YoutubeMusicPlayListContent?) {
         if (content != null) {
 //            Log.d("dad",""+ content.contents?.twoColumnBrowseResultsRenderer?.contents?.sectionListRenderer?.contents?.get(0)?.musicPlaylistShelfRenderer!!.contents?.get(0)?.musicResponsiveListItemRenderer?.flexColumns?.get(0)?.musicResponsiveListItemFlexColumnRenderer!!.text!!.runs?.get(0)!!.text)

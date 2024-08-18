@@ -4,5 +4,6 @@ enum class YoutubeScrapType {
 
     YOUTUBE_HOME,
     YOUTUBE_MUSIC,
-    YOUTUBE_PLAYLIST
+    YOUTUBE_PLAYLIST,
+    YOUTUBE_MUSIC_CATEGORY
 }

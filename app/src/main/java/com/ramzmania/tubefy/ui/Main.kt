@@ -62,8 +62,9 @@ private var nextPage: Page? = null
             viewModel.loadPlayList("https://music.youtube.com/playlist?list=RDCLAK5uy_kmPRjHDECIcuVwnKsx2Ng7fyNgFKWNJFs")
 
         }
-        binding.lasttype.setOnClickListener { viewModel.loadDefaultHomeData()
-            viewModel.startWebScrapping("aavesham", YoutubeScrapType.YOUTUBE_MUSIC) }
+        binding.lasttype.setOnClickListener {
+//            viewModel.loadDefaultHomeData()
+            viewModel.startWebScrapping("https://music.youtube.com/moods_and_genres", YoutubeScrapType.YOUTUBE_MUSIC_CATEGORY) }
 
         binding.newpipehome.setOnClickListener { viewModel.searchNewPipePage("aavesham",mutableListOf<String>("music_songs")) }
     }

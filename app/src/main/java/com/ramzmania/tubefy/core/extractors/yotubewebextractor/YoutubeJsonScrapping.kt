@@ -7,12 +7,11 @@ import android.util.Log
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import com.ramzmania.tubefy.core.YoutubeCoreConstant
+import com.ramzmania.tubefy.data.dto.youtubemusic.category.YtMusicCategoryContent
 import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.YoutubeMusicPlayListContent
 import com.ramzmania.tubefy.data.dto.youtubestripper.ApiResponse
 import com.ramzmania.tubefy.data.dto.youtubestripper.MusicHomeResponse2
 import com.ramzmania.tubefy.utils.parseJson
-import com.squareup.moshi.Moshi
-import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -27,6 +26,9 @@ class YoutubeJsonScrapping constructor(val webView: WebView,val context : Contex
     val sharedJsonMusicHomeContent:SharedFlow<MusicHomeResponse2?>  = sharedJsonMusicHomeContentPrivate
     private val sharedJsonMusicHomePlayListContentPrivate= MutableSharedFlow<YoutubeMusicPlayListContent?>()
     val sharedJsonMusicHomePlayListContent:SharedFlow<YoutubeMusicPlayListContent?>  = sharedJsonMusicHomePlayListContentPrivate
+    private val sharedJsonMusicCategoryPlayListContentPrivate= MutableSharedFlow<YtMusicCategoryContent?>()
+    val sharedJsonMusicCategoryPlayListContent:SharedFlow<YtMusicCategoryContent?>  = sharedJsonMusicCategoryPlayListContentPrivate
+
     var alreadyEvaluated = false;
 
     fun fetchPageSource(url: String,type: YoutubeScrapType) {
@@ -48,6 +50,9 @@ class YoutubeJsonScrapping constructor(val webView: WebView,val context : Contex
                                 getMusicPlayListHtmlContent(webView)
                             }else if(type== YoutubeScrapType.YOUTUBE_HOME){
                                 getYoutubeContent(webView)
+                            }else if(type==YoutubeScrapType.YOUTUBE_MUSIC_CATEGORY)
+                            {
+                                getMusicCategoryHtmlContent(webView)
                             }
 //                            }
                         }
@@ -221,7 +226,7 @@ class YoutubeJsonScrapping constructor(val webView: WebView,val context : Contex
     }*/
 
 
-    private  fun getMusicGenresHtmlContent(webView: WebView) {
+    private  fun getMusicCategoryHtmlContent(webView: WebView) {
         if (!alreadyEvaluated) {
             alreadyEvaluated = true
             webView.evaluateJavascript("(function() { return document.documentElement.outerHTML; })();") { html ->
@@ -235,12 +240,19 @@ class YoutubeJsonScrapping constructor(val webView: WebView,val context : Contex
                 )
                 result=getDataSubstring(result)
                 result=result.replace("\\\\\\\\\"", "")
-                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                val clip = ClipData.newPlainText("label", result)
-                clipboard.setPrimaryClip(clip)
+
 //                getDataSubstring
                 result = result.replaceFirst("= '{", "{").replaceFirst("';", "")
                     .replace("\\\\\\\\\"", "")
+//                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+//                val clip = ClipData.newPlainText("label", result)
+//                clipboard.setPrimaryClip(clip)
+                CoroutineScope(Dispatchers.IO).launch {
+                    Log.d("passing home data","yaaa1111")
+
+                    passYTMusicPlayCategory(parseJson(result))
+
+                }
 ////                webViewModel.setHtmlContent(result)
 //                CoroutineScope(Dispatchers.IO).launch {
 //
@@ -277,6 +289,7 @@ class YoutubeJsonScrapping constructor(val webView: WebView,val context : Contex
             .replace("\\\\x7d", "}")
             .replace("\\\\x5b", "[")
             .replace("\\\\x5d", "]")
+            .replace("\\x3d","=")
 
     }
 
@@ -301,6 +314,11 @@ class YoutubeJsonScrapping constructor(val webView: WebView,val context : Contex
     private suspend fun passYTMusicPlayListData(data: YoutubeMusicPlayListContent?) {
         Log.d("passing home data","yaaa")
         sharedJsonMusicHomePlayListContentPrivate.emit(data)
+    }
+
+    private suspend fun passYTMusicPlayCategory(data: YtMusicCategoryContent?) {
+        Log.d("passing home data","yaaa")
+        sharedJsonMusicCategoryPlayListContentPrivate.emit(data)
     }
 
 
