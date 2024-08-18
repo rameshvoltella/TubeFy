@@ -20,6 +20,7 @@ import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
 import com.ramzmania.tubefy.data.dto.youtubemusic.category.YtMusicCategoryBase
 import com.ramzmania.tubefy.data.dto.youtubemusic.category.YtMusicCategoryContent
 import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.YoutubeMusicPlayListContent
+import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.categoryplaylist.CategoryPlayListRoot
 import com.ramzmania.tubefy.data.dto.youtubestripper.ApiResponse
 import com.ramzmania.tubefy.data.dto.youtubestripper.MusicHomeResponse2
 import com.ramzmania.tubefy.data.local.LocalRepositorySource
@@ -99,6 +100,10 @@ class TubeFyViewModel @Inject constructor(
 
     private val youTubeMusicCategoryDataPrivate = MutableLiveData<Resource<List<PlayListCategory?>>>()
     val youTubeMusicCategoryData: LiveData<Resource<List<PlayListCategory?>>> get() = youTubeMusicCategoryDataPrivate
+
+
+    private val youTubeCategoryPlayListPrivate = MutableLiveData<Resource<CategoryPlayListRoot>>()
+    val youTubeCategoryPlayList: LiveData<Resource<CategoryPlayListRoot>> get() = youTubeCategoryPlayListPrivate
 
     fun setHtmlContent(content: ApiResponse?) {
 //        htmlContentPrivate.value = content
@@ -187,6 +192,20 @@ class TubeFyViewModel @Inject constructor(
             Log.d("bulkmode","added 3333333")
 
         }
+    }
+
+    fun callCatogyplayList()
+    {
+//        Log.d("bulk calling","bulk"+youTubePlayListBulkData)
+
+            viewModelScope.launch {
+
+                remoteRepositorySource.getCategoryPlayList("FEmusic_moods_and_genres_category","ggMPOg1uX1JOQWZFeDByc2Jm").collect {
+                    youTubeCategoryPlayListPrivate.value = it
+
+                }
+            }
+
     }
 
     fun setCurrentPlayListData(playListItems: List<TubeFyCoreTypeData?>)

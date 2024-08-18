@@ -18,6 +18,9 @@ import com.ramzmania.tubefy.data.NetworkConnectivity
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.base.playlist.PlayListData
 import com.ramzmania.tubefy.data.dto.youtubeV3.YoutubeSearchResponse
+import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.categoryplaylist.BrowseRequest
+import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.categoryplaylist.CategoryPlayListRoot
+import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.categoryplaylist.Client
 import com.ramzmania.tubefy.data.remote.api.ApiServices
 import com.ramzmania.tubefy.data.remote.api.ServiceGenerator
 import com.ramzmania.tubefy.errors.NETWORK_ERROR
@@ -58,18 +61,21 @@ constructor(
 
         return when (val response = processCall {
             youtubeV3Service.getVideo(
-               part,searchQuery,pageToken,YOUTUBE_V3_MAX_RESULT
+                part, searchQuery, pageToken, YOUTUBE_V3_MAX_RESULT
             )
         }) {
             is Any -> {
                 try {
                     (response is YoutubeSearchResponse).let {
-                        val result=youtubeV3Formatter.run(response as YoutubeSearchResponse)
-                        return when(result)
-                        {
-                            is FormattingResult.SUCCESS->{  Resource.Success(result.data)
+                        val result = youtubeV3Formatter.run(response as YoutubeSearchResponse)
+                        return when (result) {
+                            is FormattingResult.SUCCESS -> {
+                                Resource.Success(result.data)
                             }
-                            is FormattingResult.FAILURE->{Resource.DataError(YOUTUBE_V3_SEARCH_ERROR)}
+
+                            is FormattingResult.FAILURE -> {
+                                Resource.DataError(YOUTUBE_V3_SEARCH_ERROR)
+                            }
 
                         }
 //                        Resource.Success(result)
@@ -82,10 +88,12 @@ constructor(
                     Resource.DataError(YOUTUBE_V3_SEARCH_ERROR)
                 }
             }
+
             else -> {
                 Resource.DataError(errorCode = response as Int)
             }
-        }    }
+        }
+    }
 
 
     override suspend fun getStreamUrl(videoId: String): Resource<StreamUrlData> {
@@ -153,6 +161,65 @@ constructor(
             Resource.DataError(404)
         }
     }
+
+    override suspend fun getCategoryPlayList(
+        browseId: String,
+        playerId: String
+    ): Resource<CategoryPlayListRoot> {
+
+        val categoryPlaylistService = serviceGenerator.createService(ApiServices::class.java)
+        val client = Client(
+            clientName = "WEB_REMIX",
+            clientVersion = "1.20240729.01.00"
+//            originalUrl = "https://music.youtube.com/moods_and_genres"
+        )
+
+        val context = com.ramzmania.tubefy.data.dto.youtubemusic.playlist.categoryplaylist.Context(client = client)
+
+        val request = BrowseRequest(
+            context = context,
+            browseId = browseId,
+            params = playerId
+        )
+        return when (val response = processCall {
+            categoryPlaylistService.getCategoryPlaylistInfo(
+                request,"https://music.youtube.com/youtubei/v1/browse?prettyPrint=false"
+            )
+        }) {
+            is Any -> {
+                try {
+                    (response is CategoryPlayListRoot).let {
+                        Log.d("yezzz","eod")
+                        val ppo=
+                            (response as CategoryPlayListRoot).contents?.singleColumnBrowseResultsRenderer?.tabs!![0].tabRenderer?.content?.sectionListRenderer?.contents!![0].musicCarouselShelfRenderer?.header?.musicCarouselShelfBasicHeaderRenderer?.accessibilityData?.accessibilityData?.label
+                        val ppoa=
+                            (response as CategoryPlayListRoot).contents?.singleColumnBrowseResultsRenderer?.tabs!![0].tabRenderer?.content?.sectionListRenderer?.contents!![0].musicCarouselShelfRenderer?.contents?.get(0)!!.musicTwoRowItemRenderer?.menu?.menuRenderer?.items?.get(0)?.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint?.playlistId
+                        val image=
+                            (response as CategoryPlayListRoot).contents?.singleColumnBrowseResultsRenderer?.tabs!![0].tabRenderer?.content?.sectionListRenderer?.contents!![0].musicCarouselShelfRenderer?.contents?.get(0)!!.musicTwoRowItemRenderer?.menu?.menuRenderer?.items?.get(0)?.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint?.playlistId
+
+                        val txtx=
+                            (response as CategoryPlayListRoot).contents?.singleColumnBrowseResultsRenderer?.tabs!![0].tabRenderer?.content?.sectionListRenderer?.contents!![0].musicCarouselShelfRenderer?.contents?.get(0)!!.musicTwoRowItemRenderer?.menu?.menuRenderer?.items?.get(0)?.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint?.playlistId
+
+                        Log.d("yezzz","eod"+ppo+"<><>"+ppoa)
+
+//                        val result=youtubeV3Formatter.run(response as CategoryPlayListRoot)
+//                        Log.d("checl",(response as CategoryPlayListRoot).contents.)
+                       Resource.DataError(YOUTUBE_V3_SEARCH_ERROR)
+
+//                        Resource.Success(result)
+//                        Resource.DataError(YOUTUBE_V3_SEARCH_ERROR)
+                    }
+//                    Resource.DataError(YOUTUBE_V3_SEARCH_ERROR)
+
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    Resource.DataError(YOUTUBE_V3_SEARCH_ERROR)
+                }
+            }
+            else -> {
+                Resource.DataError(errorCode = response as Int)
+            }
+        }    }
 
     override suspend fun getNewPipePageSearch(
         serviceId: Int,

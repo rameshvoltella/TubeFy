@@ -5,6 +5,7 @@ import com.ramzmania.tubefy.data.dto.base.searchformat.StreamUrlData
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreUniversalData
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.base.playlist.PlayListData
+import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.categoryplaylist.CategoryPlayListRoot
 import com.ramzmania.tubefy.player.YoutubePlayerPlaylistListModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -28,6 +29,13 @@ class RemoteRepository @Inject constructor(
 
     override suspend fun getStreamBulkUrl(youtubePlayerPlaylistListModel: YoutubePlayerPlaylistListModel): Flow<Resource<List<MediaItem>>> {
         return flow {emit(remoteRepository.getStreamBulkUrl(youtubePlayerPlaylistListModel))  }
+    }
+
+    override suspend fun getCategoryPlayList(
+        browseId: String,
+        playerId: String
+    ): Flow<Resource<CategoryPlayListRoot>> {
+        return flow {emit(remoteRepository.getCategoryPlayList(browseId,playerId))  }
     }
 
 
