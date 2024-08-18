@@ -174,6 +174,10 @@ private var nextPage: Page? = null
             is Resource.Loading -> {}
             is Resource.Success -> {
                 Toast.makeText(applicationContext, "DAT FROM ASSERTS DATA>"+resource.data?.size, 1).show()
+                Log.d("pada", "playListCategoryId"+resource.data?.get(1)?.playListCategoryId!!)
+                Log.d("pada", "playListBrowserId"+resource.data?.get(1)?.playListBrowserId!!)
+                Log.d("pada", "playListName"+resource.data?.get(1)?.playListName!!)
+
 
 //                resource.data?.playListVideoList?.forEach {
 //                    Log.d("url", "<><><>" + it?.videoId)
