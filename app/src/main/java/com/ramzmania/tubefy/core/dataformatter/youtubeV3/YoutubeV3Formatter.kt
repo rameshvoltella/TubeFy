@@ -36,7 +36,7 @@ class YoutubeV3Formatter@Inject constructor() :
                     TubeFyCoreUniversalData(
                         TubeFyCoreFormattedData(
                             sortedVideoList,
-                            youtubeV3NextToken = input.nextPageToken!!
+                            youtubeV3NextToken = input.nextPageToken
                         ), YoutubeApiType.YOUTUBE_V3_API
                     )
                 )

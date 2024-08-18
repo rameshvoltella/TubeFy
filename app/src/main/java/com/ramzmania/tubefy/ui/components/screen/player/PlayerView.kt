@@ -3,7 +3,6 @@ package com.ramzmania.tubefy.ui.components.screen.player
 import VideoPlayerView
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.util.Log
 import androidx.annotation.OptIn
 import androidx.compose.foundation.Image
@@ -14,7 +13,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -22,19 +20,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Place
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -52,15 +44,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.media3.common.MediaItem
-import androidx.media3.common.MediaMetadata
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.ramzmania.tubefy.R
 import com.ramzmania.tubefy.core.YoutubeCoreConstant
-import com.ramzmania.tubefy.data.Resource
+import com.ramzmania.tubefy.player.PlaybackService
 import com.ramzmania.tubefy.utils.LocalNavController
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
 import java.net.URLDecoder
@@ -68,15 +58,11 @@ import java.nio.charset.StandardCharsets
 
 @Composable
 fun PlayerBaseView(
-    viewModel: TubeFyViewModel = hiltViewModel()
 ) {
     var isLoading by remember { mutableStateOf(true) }  // Track loading state
     var mediaController by remember { mutableStateOf<MediaController?>(null) }
     var isPlaying by remember { mutableStateOf(false) }
     var progress by remember { mutableStateOf(0f) }  // Track progress
-    var removedExistingPlayList by remember { mutableStateOf(false) }
-//    val streamUrlData by viewModel.streamUrlData.observeAsState()
-//    val youTubePlayListBulkData by viewModel.youTubePlayListBulkData.observeAsState()
     val navController = LocalNavController.current
     val context = LocalContext.current
     var currentTime by remember { mutableStateOf("00:00") }
@@ -125,45 +111,6 @@ fun PlayerBaseView(
 
 
     }
-//    LaunchedEffect(key1 = youTubePlayListBulkData) {
-////        if (youTubePlayListBulkData is Resource.Success) {
-////Log.d("kkkkk","i got it")
-////            playAudioList(mediaController!!, youTubePlayListBulkData?.data!!,removedExistingPlayList)
-////            removedExistingPlayList=true
-////        }
-//    }
-
-//    LaunchedEffect(key1 = streamUrlData) {
-//        if (streamUrlData is Resource.Success) {
-////            val items = (streamUrlData as Resource.Success<StreamUrlData>).data
-//
-//            if (mediaController != null && mediaController!!.isConnected) {
-//                Log.d("checker", "connected")
-//
-//                if (mediaController!!.currentMediaItem != null && mediaController!!.currentMediaItem?.mediaMetadata?.title!!.equals(
-//                        playerHeader
-//                    )
-//                ) {
-//                    Log.d("checker", "onsucessexisting video is playing")
-//                } else {
-//                    Log.d("checker", "playinggg iffff")
-//
-//                    if (streamUrlData!!.data!!.streamUrl.isNotEmpty()) {
-//                        mediaUri = streamUrlData!!.data!!.streamUrl
-//                        playAudio(mediaController!!, mediaUri, albumArt, playerHeader)
-//                    }
-//                }
-//            } else {
-//                Log.d("checker", "playinggg else")
-//
-//                if (streamUrlData!!.data!!.streamUrl.isNotEmpty()) {
-//                    mediaUri = streamUrlData!!.data!!.streamUrl
-//                    playAudio(mediaController!!, mediaUri, albumArt, playerHeader)
-//                }
-//            }
-//
-//        }
-//    }
 
     LaunchedEffect(mediaController?.isPlaying) {
         Log.d("corortine","loading called"+isLoading)

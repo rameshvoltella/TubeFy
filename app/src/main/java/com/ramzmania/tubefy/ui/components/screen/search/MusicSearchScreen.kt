@@ -86,26 +86,30 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
                         if (isChecked) {
                             if (videoListItems.size >= 10) {
                                 isLoading = true
-                                if (page != null && Page.isValid(page)) {
-                                    Log.d("unda", "yessssss" + page?.url)
-                                    viewModel.searchNewPipeNextPage(
-                                        page!!,
-                                        if (isChecked) mutableListOf("all") else mutableListOf("music_songs"),
-                                        text.text
-                                    ) // Implement this function in your ViewModel
+                                page?.let {
+                                    if (Page.isValid(page)) {
+                                        viewModel.searchNewPipeNextPage(
+                                            page,
+                                            if (isChecked) mutableListOf("all") else mutableListOf("music_songs"),
+                                            text.text
+                                        ) // Implement this function in your ViewModel
+                                    }
                                 }
+
                             }
                         } else {
                             if (videoListItems.size >= 20) {
                                 isLoading = true
-                                if (page != null && Page.isValid(page)) {
-                                    Log.d("unda", "yessssss" + page?.url)
-                                    viewModel.searchNewPipeNextPage(
-                                        page!!,
-                                        if (isChecked) mutableListOf("all") else mutableListOf("music_songs"),
-                                        text.text
-                                    ) // Implement this function in your ViewModel
+                                page?.let {
+                                    if (Page.isValid(page)) {
+                                        viewModel.searchNewPipeNextPage(
+                                            page,
+                                            if (isChecked) mutableListOf("all") else mutableListOf("music_songs"),
+                                            text.text
+                                        ) // Implement this function in your ViewModel
+                                    }
                                 }
+
                             }
                         }
                     }

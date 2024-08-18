@@ -11,6 +11,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.MoreExecutors
+import com.ramzmania.tubefy.player.PlaybackService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

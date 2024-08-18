@@ -163,7 +163,7 @@ class TubeFyViewModel @Inject constructor(
                     youTubePlayListBulkPrivate.value = it
                     if (youTubePlayListBulkPrivate.value is Resource.Success) {
                         var list= PlayListSingleton.getDataList()?.playListData?.drop(2)
-                        PlayListSingleton.addData(list!!)
+                        list?.let { data -> PlayListSingleton.addData(data) }
                         getBulkStreamUrl()
                     }
                 }
@@ -297,18 +297,20 @@ Log.d("incomming<>","<>"+contentFilter)
         }
     }
 
-    fun searchNewPipeNextPage(page: Page,contentFilter: MutableList<String>,searchString:String) {
+    fun searchNewPipeNextPage(page: Page?,contentFilter: MutableList<String>,searchString:String) {
 //        val contentFilter = arrayOf<String>("all")
 
         viewModelScope.launch {
-            remoteRepositorySource.getNewPipePageNextSearch(
-                0,
-                searchString,
-                contentFilter,
-                "",
-                page
-            ).collect {
-                youTubeSearchDataPrivate.value = it
+            page?.let {
+                remoteRepositorySource.getNewPipePageNextSearch(
+                    0,
+                    searchString,
+                    contentFilter,
+                    "",
+                    it
+                ).collect {
+                    youTubeSearchDataPrivate.value = it
+                }
             }
         }
     }

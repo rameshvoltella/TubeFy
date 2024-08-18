@@ -62,7 +62,6 @@ fun HomePageContentList(
 ) {
     val streamUrlData by viewModel.streamUrlData.observeAsState()
     val playListData by viewModel.youTubePlayListData.observeAsState()
-//    val navController = rememberNavController()
     val context = LocalContext.current
 
     LazyColumn {

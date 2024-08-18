@@ -75,28 +75,30 @@ fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
     LaunchedEffect(Unit) {
         val playlistId = navBackStackEntry?.arguments?.getString("playlistId")
         Log.d("sadakku", ">>2222>>>" + playlistId)
-        if(!isDefaultDataLoaded) {
-            if (playlistId!!.startsWith("PLAYLIST-ID-")) {
-                if (playlistId!!.startsWith("PLAYLIST-ID-YT")) {
-                    Log.d("incomming<>", "<>music_songs")
+        if (!isDefaultDataLoaded) {
+            playlistId?.let {
+                if (playlistId.startsWith("PLAYLIST-ID-")) {
+                    if (playlistId.startsWith("PLAYLIST-ID-YT")) {
+                        Log.d("incomming<>", "<>music_songs")
 
-                    viewModel.searchNewPipePage(
-                        playlistId.replace(
-                            "PLAYLIST-ID-",
-                            ""
-                        ) + " songs of " + Calendar.getInstance()
-                            .get(Calendar.YEAR),
-                        mutableListOf()
-                    )
+                        viewModel.searchNewPipePage(
+                            playlistId.replace(
+                                "PLAYLIST-ID-",
+                                ""
+                            ) + " songs of " + Calendar.getInstance()
+                                .get(Calendar.YEAR),
+                            mutableListOf()
+                        )
+                    } else {
+                        viewModel.searchNewPipePage(
+                            playlistId.replace("PLAYLIST-ID-", ""),
+                            mutableListOf("music_songs")
+                        )
+                    }
+
                 } else {
-                    viewModel.searchNewPipePage(
-                        playlistId.replace("PLAYLIST-ID-", ""),
-                        mutableListOf("music_songs")
-                    )
+                    viewModel.loadPlayList(playlistId!!)
                 }
-
-            } else {
-                viewModel.loadPlayList(playlistId!!)
             }
         }
     }
@@ -136,7 +138,7 @@ fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
             Log.d("datata", ">>VADAAA" + playListData!!.data!!.playListVideoList?.get(0)?.videoId)
             videoAudioItems = playListData!!.data!!.playListVideoList!!
             isLoading = false
-            isDefaultDataLoaded=true
+            isDefaultDataLoaded = true
             viewModel.setCurrentPlayListData(videoAudioItems)
 
 //            if(playListData!!.data!!.playListVideoList?.get(0)?.videoId!=null)

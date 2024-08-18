@@ -1,9 +1,8 @@
-package com.ramzmania.tubefy.ui.components.screen.player
+package com.ramzmania.tubefy.player
 
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
-import android.util.Log
 import android.view.KeyEvent
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
