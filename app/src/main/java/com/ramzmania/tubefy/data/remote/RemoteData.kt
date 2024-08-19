@@ -16,8 +16,10 @@ import com.ramzmania.tubefy.core.extractors.newpipeextractor.newPipeSearchFor
 import com.ramzmania.tubefy.core.extractors.newpipeextractor.newPipeSearchNextPageFor
 import com.ramzmania.tubefy.data.NetworkConnectivity
 import com.ramzmania.tubefy.data.Resource
+import com.ramzmania.tubefy.data.dto.base.playlist.PlayListCategory
 import com.ramzmania.tubefy.data.dto.base.playlist.PlayListData
 import com.ramzmania.tubefy.data.dto.youtubeV3.YoutubeSearchResponse
+import com.ramzmania.tubefy.data.dto.youtubemusic.category.MusicCategoryPlayListBase
 import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.categoryplaylist.BrowseRequest
 import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.categoryplaylist.CategoryPlayListRoot
 import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.categoryplaylist.Client
@@ -189,6 +191,29 @@ constructor(
             is Any -> {
                 try {
                     (response is CategoryPlayListRoot).let {
+                        val musicCategoryPlayList = mutableListOf<PlayListCategory>()
+                        val data = (response as CategoryPlayListRoot)
+                        for(plaListTabData in data.contents?.singleColumnBrowseResultsRenderer?.tabs!!)
+                        {
+                            var categoryPlayListBaseName:String?=""
+                            var plaListId:String?=""
+
+                            for(tabContents in plaListTabData.tabRenderer?.content?.sectionListRenderer?.contents!!)
+                            {
+                                categoryPlayListBaseName= tabContents.musicCarouselShelfRenderer?.header?.musicCarouselShelfBasicHeaderRenderer?.accessibilityData?.accessibilityData?.label!!
+
+                                for(shelfContent in tabContents.musicCarouselShelfRenderer?.contents!!)
+                                {
+
+                                    for(menuItem in shelfContent.musicTwoRowItemRenderer?.menu?.menuRenderer?.items!!)
+                                    {
+                                        plaListId=menuItem.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint?.playlistId
+                                    }
+                                }
+                            }
+
+                        }
+
                         Log.d("yezzz","eod")
                         val ppo=
                             (response as CategoryPlayListRoot).contents?.singleColumnBrowseResultsRenderer?.tabs!![0].tabRenderer?.content?.sectionListRenderer?.contents!![0].musicCarouselShelfRenderer?.header?.musicCarouselShelfBasicHeaderRenderer?.accessibilityData?.accessibilityData?.label
