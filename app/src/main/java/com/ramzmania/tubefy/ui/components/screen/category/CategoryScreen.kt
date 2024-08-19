@@ -91,6 +91,10 @@ fun CategoryScreenMain(viewModel: TubeFyViewModel = hiltViewModel()) {
                     }
                 }
             }
+            // Add a Spacer to create additional space at the bottom of the grid
+            item {
+                Spacer(modifier = Modifier.height(100.dp))
+            }
         }
     }
 }

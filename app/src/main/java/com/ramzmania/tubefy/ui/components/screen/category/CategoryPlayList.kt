@@ -91,7 +91,11 @@ fun CategoryPlaylistView(viewModel: TubeFyViewModel = hiltViewModel()) {
         ) {
             if (musicCategoryPlayListBaseList.isNotEmpty()) {
 
-                LazyColumn {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(bottom = 16.dp) // Padding for the whole LazyColumn
+                )  {
                     items(musicCategoryPlayListBaseList.size) { rowIndex ->
                         val rowData = musicCategoryPlayListBaseList[rowIndex]
 
@@ -110,6 +114,10 @@ fun CategoryPlaylistView(viewModel: TubeFyViewModel = hiltViewModel()) {
                         }
 
 
+                    }
+                    // Add extra padding at the bottom of the last item
+                    item {
+                        Spacer(modifier = Modifier.height(55.dp))
                     }
                 }
 
