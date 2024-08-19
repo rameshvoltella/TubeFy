@@ -1,0 +1,65 @@
+{
+  "heading": "International",
+  "data": [
+    {
+      "name": "John Williams",
+      "notable_works": ["Star Wars", "Jurassic Park", "Harry Potter"],
+      "academy_awards": 5,
+      "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSbddXV9oVfqxw5Wax7q8-qrirdJ02aWC29tg&s"
+    },
+    {
+      "name": "Hans Zimmer",
+      "notable_works": ["Inception", "The Lion King", "Gladiator"],
+      "academy_awards": 1,
+      "image": "https://i.scdn.co/image/ab6761610000e5eb371632043a8c12bb7eeeaf9d"
+    },
+    {
+      "name": "Ennio Morricone",
+      "notable_works": ["The Good, the Bad and the Ugly", "Once Upon a Time in the West", "The Mission"],
+      "academy_awards": 2,
+      "image": "https://m.media-amazon.com/images/I/61qiMDUDzkL._UF1000,1000_QL80_.jpg"
+    },
+    {
+      "name": "Alan Silvestri",
+      "notable_works": ["Back to the Future", "Forrest Gump", "The Avengers"],
+      "academy_awards": 0,
+      "image": "https://m.media-amazon.com/images/M/MV5BODU3NjY2ODU5N15BMl5BanBnXkFtZTcwNTg3OTAxOQ@@._V1_.jpg"
+    },
+    {
+      "name": "James Horner",
+      "notable_works": ["Titanic", "Avatar", "Braveheart"],
+      "academy_awards": 2,
+      "image": "https://m.media-amazon.com/images/M/MV5BNTI1MDI5MTM3Nl5BMl5BanBnXkFtZTgwOTk4OTUwNjE@._V1_.jpg"
+    },
+    {
+      "name": "Danny Elfman",
+      "notable_works": ["Batman", "The Nightmare Before Christmas", "Edward Scissorhands"],
+      "academy_awards": 0,
+      "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSe4efryJjtohQkgeL27jmqLcNrEx3GA5K28w&s"
+    },
+    {
+      "name": "Gustavo Santaolalla",
+      "notable_works": ["Brokeback Mountain", "The Motorcycle Diaries", "The Last of Us"],
+      "academy_awards": 2,
+      "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/Gustavo_Santaolalla.jpg/640px-Gustavo_Santaolalla.jpg"
+    },
+    {
+      "name": "Thomas Newman",
+      "notable_works": ["American Beauty", "Finding Nemo", "Skyfall"],
+      "academy_awards": 0,
+      "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSYUAimJCUV6M-LWRo0XNvW1Co49Y5PDzcVBQ&s"
+    },
+    {
+      "name": "Carter Burwell",
+      "notable_works": ["Fargo", "Twilight", "Three Billboards Outside Ebbing, Missouri"],
+      "academy_awards": 0,
+      "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT0w_jWN-bQhaG2vksFZ-FA56A2SjQgei8GKQ&s"
+    },
+    {
+      "name": "Alexandre Desplat",
+      "notable_works": ["The Grand Budapest Hotel", "The King's Speech", "The Shape of Water"],
+      "academy_awards": 2,
+      "image": "https://m.media-amazon.com/images/M/MV5BOTczMTMwOTIwMV5BMl5BanBnXkFtZTgwMzQyMjU0MjE@._V1_.jpg"
+    }
+  ]
+}

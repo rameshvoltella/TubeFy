@@ -15,6 +15,8 @@ moshiKotlin = "1.15.1"
 moshiKotlinCodegen = "1.15.1"
 navigationRuntimeKtx = "2.7.7"
 workRuntimeKtx = "2.9.0"
+runtimeLivedata = "1.6.8"
+uiTooling = "1.6.8"
 
 
 [libraries]
@@ -39,6 +41,8 @@ androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-man
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 moshi-kotlin = { module = "com.squareup.moshi:moshi-kotlin", version.ref = "moshiKotlin" }
 moshi-kotlin-codegen = { module = "com.squareup.moshi:moshi-kotlin-codegen", version.ref = "moshiKotlinCodegen" }
+androidx-runtime-livedata = { group = "androidx.compose.runtime", name = "runtime-livedata", version.ref = "runtimeLivedata" }
+ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling", version.ref = "uiTooling" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

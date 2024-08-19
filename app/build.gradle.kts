@@ -4,6 +4,7 @@ plugins {
 //    id("com.google.devtools.ksp")
 //    id("com.google.dagger.hilt.android")
     id("kotlin-kapt")
+    id ("kotlin-parcelize")
     id("com.google.dagger.hilt.android")
     kotlin("kapt")
 
@@ -61,6 +62,15 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation("androidx.activity:activity-compose:1.8.2")
+    implementation(platform("androidx.compose:compose-bom:2024.02.01"))
+    implementation ("androidx.navigation:navigation-compose:2.7.7")
+
+    implementation("androidx.compose.ui:ui")
+    implementation("androidx.compose.ui:ui-graphics")
+    implementation("androidx.compose.ui:ui-tooling-preview")
+    implementation("androidx.compose.material3:material3")
+    implementation(libs.androidx.runtime.livedata)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -73,6 +83,7 @@ dependencies {
     implementation ("com.squareup.okhttp3:okhttp:4.9.3")
     implementation ("com.squareup.okhttp3:logging-interceptor:4.9.3")
     implementation(libs.hilt.android)
+    debugImplementation(libs.ui.tooling)
     kapt(libs.hilt.android.compiler)
     implementation(libs.androidx.navigation.runtime.ktx)
     implementation(libs.androidx.work.runtime.ktx)
@@ -83,6 +94,11 @@ dependencies {
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
+    // retrofit
+    implementation ("com.squareup.retrofit2:converter-moshi:2.11.0")
+    implementation ("com.squareup.retrofit2:converter-gson:2.11.0")
+    implementation ("com.squareup.retrofit2:converter-scalars:2.11.0")
+    implementation ("io.coil-kt:coil-compose:2.6.0")
     // Hiltsa
   /*  implementation("com.google.dagger:hilt-android:2.50")
     implementation("androidx.navigation:navigation-runtime-ktx:2.7.7")
@@ -90,6 +106,16 @@ dependencies {
     implementation("androidx.hilt:hilt-common:1.2.0")
     implementation("androidx.hilt:hilt-work:1.2.0")
     ksp("com.google.dagger:hilt-android-compiler:2.50")*/
+
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+    implementation("androidx.hilt:hilt-common:1.2.0")
+    implementation("androidx.hilt:hilt-work:1.2.0")
+    implementation ("androidx.hilt:hilt-navigation-compose:1.2.0")
+    implementation ("androidx.media3:media3-session:1.3.1")
+    implementation ("androidx.media3:media3-exoplayer:1.3.1")
+    implementation ("androidx.media3:media3-exoplayer-dash:1.3.1")
+    implementation ("androidx.media3:media3-exoplayer-hls:1.3.1")
+    implementation ("androidx.media3:media3-ui:1.3.1")
 }
 kapt {
     correctErrorTypes = true

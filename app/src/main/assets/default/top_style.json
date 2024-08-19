@@ -1,0 +1,55 @@
+{
+  "heading": "Mood",
+  "data": [
+    {
+      "name": "Lo-fi",
+      "description": "Relaxing and chill music with a vintage feel, often used as background music for studying or working.",
+      "image":"https://i.scdn.co/image/ab67616d0000b273a85675ff3462843edfffb2a1"
+    },
+    {
+      "name": "Sad",
+      "description": "Music that evokes feelings of melancholy or sorrow, often characterized by slow tempos and somber melodies.",
+      "image":"https://image-cdn-ak.spotifycdn.com/image/ab67706c0000da8444ae2930a6c0bd3175128d18"
+    },
+    {
+      "name": "Happy",
+      "description": "Upbeat and joyful music that promotes a positive and energetic mood, often featuring lively rhythms and melodies.",
+      "image":"https://i.scdn.co/image/ab67616d0000b2739996293f25b802d704e4634f"
+    },
+    {
+      "name": "Romantic",
+      "description": "Music that expresses love and affection, often characterized by soft melodies and emotional lyrics.",
+      "image":"https://i.scdn.co/image/ab67706c0000da849f737552d8b55bd7b57bda82"
+    },
+    {
+      "name": "Energetic",
+      "description": "High-tempo music that stimulates activity and excitement, typically featuring fast beats and powerful rhythms.",
+      "image":"https://seed-mix-image.spotifycdn.com/v6/img/desc/Energetic/en/default"
+    },
+    {
+      "name": "Chill",
+      "description": "Relaxed and soothing music that helps to create a calm and serene atmosphere, often with mellow beats and smooth sounds.",
+      "image":"https://i.scdn.co/image/ab67706c0000da8490d15e653f39b776575d6da5"
+    },
+    {
+      "name": "Epic",
+      "description": "Grand and dramatic music that builds intensity and creates a sense of awe, often used in film scores and trailers.",
+      "image":"https://i.scdn.co/image/ab67616d00001e0257f349cadd503d500afca227"
+    },
+    {
+      "name": "Dance",
+      "description": "Music designed to get people moving, characterized by rhythmic beats and catchy melodies, often used in clubs and parties.",
+      "image":"https://i.scdn.co/image/ab67616d0000b2733aa83b4795e58c5b50d0e937"
+    },
+    {
+      "name": "Meditative",
+      "description": "Music intended to aid in relaxation and meditation, often featuring gentle, repetitive sounds and minimalistic arrangements.",
+      "image":"https://i.scdn.co/image/4514ca814660f983cdb29e0220c57486e3124bdf"
+    },
+    {
+      "name": "Ambient",
+      "description": "Music that focuses on creating atmospheric soundscapes, often with minimal rhythmic elements and a focus on texture and tone.",
+      "image":"https://i.scdn.co/image/ab67706c0000da849db2eb3c1d762950b77f7d3b"
+    }
+  ]
+}

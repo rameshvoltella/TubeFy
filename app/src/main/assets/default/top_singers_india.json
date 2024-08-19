@@ -1,0 +1,65 @@
+{
+  "heading": "Bollywood",
+  "data": [
+    {
+      "name": "Arijit Singh",
+      "notable_works": ["Slumdog Millionaire", "Lagaan", "Taal"],
+      "academy_awards": 2,
+      "image": "https://i.scdn.co/image/ab67706f0000000285c716247c24f66ef40f011e"
+    },
+    {
+      "name": "Sonu Nigam",
+      "notable_works": ["Sholay", "Khatta Meetha", "Chupke Chupke"],
+      "filmfare_awards": 5,
+      "image": "https://i.scdn.co/image/ab6761610000e5ebbc959d7569618ec2af2210f5"
+    },
+    {
+      "name": "Shreya Ghoshal",
+      "notable_works": ["Amar Akbar Anthony", "Hamaare Tumhare", "Khatta Meetha"],
+      "filmfare_awards": 7,
+      "image": "https://i.scdn.co/image/ab6761610000e5eb36a7262247318ff0f1ad00da"
+    },
+    {
+      "name": "Salim-Sulaiman",
+      "notable_works": ["Dil Chahta Hai", "Kal Ho Na Ho", "Zindagi Na Milegi Dobara"],
+      "filmfare_awards": 3,
+      "image": "https://a10.gaanacdn.com/gn_img/artists/jBr3gybR1m/Br3gNGnQKR/size_m_1558507830.jpg"
+    },
+    {
+      "name": "Pritam",
+      "notable_works": ["Thalapathi", "Sindhu Bhairavi", "Annakkili"],
+      "national_awards": 4,
+      "image": "https://m.media-amazon.com/images/M/MV5BMDgzNWU3NTMtYTE0NS00MmJjLWJjZTItYzdhOWQ5NGU5MTk1XkEyXkFqcGdeQXVyMTExNDQ2MTI@._V1_.jpg"
+    },
+    {
+      "name": "Mohammed Rafi",
+      "notable_works": ["Dilwale Dulhania Le Jayenge", "Kabhi Haan Kabhi Naa", "Pardes"],
+      "filmfare_awards": 2,
+      "image": "https://img.wynk.in/unsafe/200x200/filters:no_upscale():strip_exif():format(jpg)/http://s3.ap-south-1.amazonaws.com/discovery-prod-zion/zion/1696453064404-Mohammed_Rafi.png"
+    },
+    {
+      "name": "Kumar Sanu",
+      "notable_works": ["Disco Dancer", "Chalte Chalte", "Namak Halaal"],
+      "filmfare_awards": 2,
+      "image": "https://cdns-images.dzcdn.net/images/cover/8d266b44c7703312357a28e581a4c119/1900x1900-000000-80-0-0.jpg"
+    },
+    {
+      "name": "Kishore Kumar",
+      "notable_works": ["Baazigar", "Hama", "Chameli"],
+      "filmfare_awards": 2,
+      "image": "https://m.media-amazon.com/images/M/MV5BYTFkMTMzZjYtMDgyNS00MmMzLTg0ZDctNDEzYWE5MzdjNjkzXkEyXkFqcGdeQXVyMTExNDQ2MTI@._V1_FMjpg_UX1000_.jpg"
+    },
+    {
+      "name": "Javed Ali",
+      "notable_works": ["Chakde! India", "Kurbaan", "Band Baaja Baaraat"],
+      "filmfare_awards": 2,
+      "image": "https://upload.wikimedia.org/wikipedia/commons/e/e2/Javed_Ali_graces_musical_concert_%E2%80%98Rehmatein-3%E2%80%99.jpg"
+    },
+    {
+      "name": "Ilaiyaraaja",
+      "notable_works": ["Jab We Met", "Barfi!", "Dangal"],
+      "filmfare_awards": 3,
+      "image": "https://m.media-amazon.com/images/M/MV5BNmIwODYzZDctZDMxNy00ZGY5LWIzMGYtMDNlZDFlYjdiMDNkXkEyXkFqcGdeQXVyMjYwMDk5NjE@._V1_.jpg"
+    }
+  ]
+}
