@@ -14,4 +14,8 @@ sealed class NavigationItem(var route: String, var icon: Int, var title: String)
     data object AudioPlayer : NavigationItem("audioPlayer/{videoId}/{encodedVideoThumpUrl}/{playerHeader}/{playerBottomHeader}/{playerBottomSub}/{isBulk}", R.drawable.ic_profile, "AudioPlayer") {
         fun createRoute(videoId: String, encodedVideoThumpUrl: String, playerHeader: String, playerBottomHeader: String, playerBottomSub: String,isBulk:Boolean=false) = "audioPlayer/$videoId/$encodedVideoThumpUrl/$playerHeader/$playerBottomHeader/$playerBottomSub/$isBulk"
     }
+
+    data object CategoryPlayList : NavigationItem("categoryPlayList/{browserId}/{playerListId}/{categoryName}", R.drawable.ic_profile, "CategoryPlayList") {
+        fun createRoute(browserId: String, playerListId: String,categoryName:String) = "categoryPlayList/$browserId/$playerListId/$categoryName"
+    }
 }

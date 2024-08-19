@@ -45,14 +45,21 @@ import java.nio.charset.StandardCharsets
 
 @Composable
 fun CategoryPlaylistView(viewModel: TubeFyViewModel = hiltViewModel()) {
+    val navController = LocalNavController.current
     val youTubeCategoryPlayListData by viewModel.youTubeCategoryPlayList.observeAsState()
     var isDefaultDataLoaded by rememberSaveable { mutableStateOf(false) }
+    var categoryName by rememberSaveable { mutableStateOf("Category") }
     var musicCategoryPlayListBaseList by remember { mutableStateOf<List<MusicCategoryPlayListBase?>>(emptyList()) }
+    val navBackStackEntry = navController.currentBackStackEntry
 
     LaunchedEffect(Unit) {
         if(!isDefaultDataLoaded)
         {
-            viewModel.callCategoryPlayList("FEmusic_moods_and_genres_category","ggMPOg1uX1JOQWZFeDByc2Jm")
+            val browserId = navBackStackEntry?.arguments?.getString("browserId")!!
+            val playListId = navBackStackEntry?.arguments?.getString("playerListId")!!
+             categoryName = navBackStackEntry?.arguments?.getString("categoryName")!!
+
+            viewModel.callCategoryPlayList(browserId,playListId)
         }
 
     }
@@ -63,40 +70,57 @@ fun CategoryPlaylistView(viewModel: TubeFyViewModel = hiltViewModel()) {
             isDefaultDataLoaded=true
         }
     }
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
-            .padding(16.dp)
     ) {
-        if (musicCategoryPlayListBaseList.isNotEmpty()) {
+        Text(
+            text = categoryName,
+            fontWeight = FontWeight.Bold,
+            color = Color.White,
+            modifier = Modifier.padding(10.dp, 30.dp, 10.dp,10.dp),
+            textAlign = TextAlign.Left,
+            maxLines = 2,
+            fontSize = 40.sp
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black)
+        ) {
+            if (musicCategoryPlayListBaseList.isNotEmpty()) {
 
-            LazyColumn {
-                items(musicCategoryPlayListBaseList.size) { rowIndex ->
-                    val rowData = musicCategoryPlayListBaseList[rowIndex]
+                LazyColumn {
+                    items(musicCategoryPlayListBaseList.size) { rowIndex ->
+                        val rowData = musicCategoryPlayListBaseList[rowIndex]
 
-                    rowData?.let {
-                        Text(
-                            text = it.plaListBaseName,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-                        HorizontalPlayList(it.musicCategoryPlayList)
+                        rowData?.let {
+
+                            Text(
+                                text = it.plaListBaseName,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                modifier = Modifier.padding(10.dp, 30.dp, 10.dp),
+                                textAlign = TextAlign.Left,
+                                maxLines = 2,
+                                fontSize = 20.sp
+                            )
+                            HorizontalPlayList(it.musicCategoryPlayList)
+                        }
+
+
                     }
-
-
                 }
-            }
 
-        } else {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
             }
         }
     }
@@ -122,7 +146,7 @@ fun HorizontalPlayList(playLists: List<MusicCategoryPlayList>) {
                         )
                     )
                 ) {
-                    navController.graph.startDestinationRoute?.let { route ->
+                    navController.graph.route?.let { route ->
                         popUpTo(route) {
                             saveState = true
                         }

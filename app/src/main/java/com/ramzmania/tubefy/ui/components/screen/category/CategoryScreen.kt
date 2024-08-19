@@ -1,6 +1,7 @@
 package com.ramzmania.tubefy.ui.components.screen.category
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -33,11 +34,19 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberImagePainter
+import com.ramzmania.tubefy.core.YoutubeCoreConstant
+import com.ramzmania.tubefy.data.dto.youtubemusic.category.MusicCategoryPlayList
+import com.ramzmania.tubefy.ui.components.NavigationItem
+import com.ramzmania.tubefy.utils.LocalNavController
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
+
 @Composable
 fun CategoryScreenMain(viewModel: TubeFyViewModel = hiltViewModel()) {
     val categoryData by viewModel.youTubeMusicCategoryData.observeAsState()
     var isDefaultDataLoaded by rememberSaveable { mutableStateOf(false) }
     var categoryItemsList by remember { mutableStateOf<List<PlayListCategory?>>(emptyList()) }
+    val navController = LocalNavController.current
 
     LaunchedEffect(Unit) {
         if(!isDefaultDataLoaded)
@@ -63,21 +72,39 @@ fun CategoryScreenMain(viewModel: TubeFyViewModel = hiltViewModel()) {
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(categoryItemsList) { categoryItem ->
-                CategoryItemCard(categoryItem)
+                CategoryItemCard(categoryItem){ selectedItem ->
+                    navController!!.navigate(
+                        NavigationItem.CategoryPlayList.createRoute(
+                            selectedItem.playListBrowserId!!,
+                            selectedItem.playListCategoryId!!,
+                            selectedItem.playListName!!
+
+                        )
+                    ) {
+                        navController.graph.route?.let { route ->
+                            popUpTo(route) {
+                                saveState = true
+                            }
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-fun CategoryItemCard(categoryItem: PlayListCategory?) {
+fun CategoryItemCard(categoryItem: PlayListCategory?,onClick: (PlayListCategory) -> Unit) {
     Card(
         modifier = Modifier
 //                .padding(8.dp)
-            .fillMaxWidth(),
+            .fillMaxWidth() .clickable { onClick(categoryItem!!) },
         elevation = CardDefaults.cardElevation(4.dp), // Use CardDefaults.cardElevation for elevation
         colors = CardDefaults.cardColors(containerColor = Color.DarkGray), // Set background color
         shape = RoundedCornerShape(8.dp) // Adjust the corner radius for a rounded effect
+
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
 

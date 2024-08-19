@@ -195,13 +195,13 @@ class TubeFyViewModel @Inject constructor(
         }
     }
 
-    fun callCategoryPlayList(browserId:String,playerId:String)
+    fun callCategoryPlayList(browserId:String,playerListId:String)
     {
 //        Log.d("bulk calling","bulk"+youTubePlayListBulkData)
 
             viewModelScope.launch {
 
-                remoteRepositorySource.getCategoryPlayList(browserId,playerId).collect {
+                remoteRepositorySource.getCategoryPlayList(browserId,playerListId).collect {
                     youTubeCategoryPlayListPrivate.value = it
 
                 }

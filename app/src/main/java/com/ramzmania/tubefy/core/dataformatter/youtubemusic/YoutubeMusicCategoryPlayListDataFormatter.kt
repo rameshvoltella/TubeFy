@@ -29,36 +29,44 @@ class YoutubeMusicCategoryPlayListDataFormatter @Inject constructor() :
                     tabContents.musicCarouselShelfRenderer?.header?.musicCarouselShelfBasicHeaderRenderer?.accessibilityData?.accessibilityData?.label!!
                 val musicCategoryPlayListContentList = mutableListOf<MusicCategoryPlayList>()
                 for (shelfContent in tabContents.musicCarouselShelfRenderer?.contents!!) {
-                    for (thumpNail in shelfContent.musicTwoRowItemRenderer?.thumbnailRenderer?.musicThumbnailRenderer?.thumbnail?.thumbnails!!) {
-                        plaListThumpNail = thumpNail.url
-                        break
-                    }
-                    if(shelfContent.musicTwoRowItemRenderer.title?.runs!!.isNotEmpty())
-                    {
-                        plaListName=shelfContent.musicTwoRowItemRenderer.title?.runs[0].text
-                    }
-                    try {
-                        checkingPlayerId =
-                            shelfContent.musicTwoRowItemRenderer.thumbnailOverlay?.musicItemThumbnailOverlayRenderer?.content?.musicPlayButtonRenderer?.playNavigationEndpoint?.watchPlaylistEndpoint?.playlistId!!
-                    }catch (ex:Exception)
-                    {
-                        checkingPlayerId="exception"
-                    }
-                    for (menuItem in shelfContent.musicTwoRowItemRenderer?.menu?.menuRenderer?.items!!) {
+                    if(shelfContent.musicTwoRowItemRenderer!=null) {
 
-
-                        if (checkingPlayerId.equals("exception"))
-                        {
-                            plaListId =
-                                menuItem.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint?.playlistId
-                            break
-                        }else if(checkingPlayerId.contains(menuItem.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint?.playlistId!!)){
-                            plaListId =
-                                menuItem.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint?.playlistId
+                        for (thumpNail in shelfContent.musicTwoRowItemRenderer?.thumbnailRenderer?.musicThumbnailRenderer?.thumbnail?.thumbnails!!) {
+                            plaListThumpNail = thumpNail.url
                             break
                         }
+                        if (shelfContent.musicTwoRowItemRenderer.title?.runs!!.isNotEmpty()) {
+                            plaListName = shelfContent.musicTwoRowItemRenderer.title?.runs[0].text
+                        }
+                        try {
+                            checkingPlayerId =
+                                shelfContent.musicTwoRowItemRenderer.thumbnailOverlay?.musicItemThumbnailOverlayRenderer?.content?.musicPlayButtonRenderer?.playNavigationEndpoint?.watchPlaylistEndpoint?.playlistId!!
+                        } catch (ex: Exception) {
+                            checkingPlayerId = "exception"
+                        }
+                        for (menuItem in shelfContent.musicTwoRowItemRenderer?.menu?.menuRenderer?.items!!) {
+
+
+                            if (checkingPlayerId.equals("exception")) {
+                                plaListId =
+                                    menuItem.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint?.playlistId
+                                break
+                            } else if (checkingPlayerId.contains(menuItem.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint?.playlistId!!)) {
+                                plaListId =
+                                    menuItem.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint?.playlistId
+                                break
+                            }
+                        }
+                        if(plaListId!=null) {
+                            musicCategoryPlayListContentList.add(
+                                MusicCategoryPlayList(
+                                    playListId = plaListId!!,
+                                    playListName = plaListName!!,
+                                    playListThump = plaListThumpNail!!
+                                )
+                            )
+                        }
                     }
-                    musicCategoryPlayListContentList.add( MusicCategoryPlayList(playListId = plaListId!!, playListName = plaListName!!, playListThump = plaListThumpNail!!))
                 }
                 Log.d("DETAILS","---------------------------------------")
 //                musicCategoryPlayList.add(MusicCategoryPlayListBase(plaListBaseName = categoryPlayListBaseName!!,musicCategoryPlayListContentList)

@@ -20,19 +20,24 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class YoutubeJsonScrapping constructor(val webView: WebView,val context : Context) {
- private val sharedJsonContentPrivate= MutableSharedFlow<ApiResponse?>()
-    val sharedJsonContent:SharedFlow<ApiResponse?>  = sharedJsonContentPrivate
-    private val sharedJsonMusicHomeContentPrivate= MutableSharedFlow<MusicHomeResponse2?>()
-    val sharedJsonMusicHomeContent:SharedFlow<MusicHomeResponse2?>  = sharedJsonMusicHomeContentPrivate
-    private val sharedJsonMusicHomePlayListContentPrivate= MutableSharedFlow<YoutubeMusicPlayListContent?>()
-    val sharedJsonMusicHomePlayListContent:SharedFlow<YoutubeMusicPlayListContent?>  = sharedJsonMusicHomePlayListContentPrivate
-    private val sharedJsonMusicCategoryPlayListContentPrivate= MutableSharedFlow<YtMusicCategoryBase?>()
-    val sharedJsonMusicCategoryPlayListContent:SharedFlow<YtMusicCategoryBase?>  = sharedJsonMusicCategoryPlayListContentPrivate
+class YoutubeJsonScrapping constructor(val webView: WebView, val context: Context) {
+    private val sharedJsonContentPrivate = MutableSharedFlow<ApiResponse?>()
+    val sharedJsonContent: SharedFlow<ApiResponse?> = sharedJsonContentPrivate
+    private val sharedJsonMusicHomeContentPrivate = MutableSharedFlow<MusicHomeResponse2?>()
+    val sharedJsonMusicHomeContent: SharedFlow<MusicHomeResponse2?> =
+        sharedJsonMusicHomeContentPrivate
+    private val sharedJsonMusicHomePlayListContentPrivate =
+        MutableSharedFlow<YoutubeMusicPlayListContent?>()
+    val sharedJsonMusicHomePlayListContent: SharedFlow<YoutubeMusicPlayListContent?> =
+        sharedJsonMusicHomePlayListContentPrivate
+    private val sharedJsonMusicCategoryPlayListContentPrivate =
+        MutableSharedFlow<YtMusicCategoryBase?>()
+    val sharedJsonMusicCategoryPlayListContent: SharedFlow<YtMusicCategoryBase?> =
+        sharedJsonMusicCategoryPlayListContentPrivate
 
     var alreadyEvaluated = false;
 
-    fun fetchPageSource(url: String,type: YoutubeScrapType) {
+    fun fetchPageSource(url: String, type: YoutubeScrapType) {
 //        val webView=WebView(context)
 //        var url="https://music.youtube.com"
         CoroutineScope(Dispatchers.IO).launch {
@@ -44,15 +49,13 @@ class YoutubeJsonScrapping constructor(val webView: WebView,val context : Contex
                         override fun onPageFinished(view: WebView?, url: String?) {
                             super.onPageFinished(view, url)
 //                            CoroutineScope(Dispatchers.IO).launch {
-                            if(type== YoutubeScrapType.YOUTUBE_MUSIC) {
+                            if (type == YoutubeScrapType.YOUTUBE_MUSIC) {
                                 getMusicHomeHtmlContent(webView)
-                            }else if(type== YoutubeScrapType.YOUTUBE_PLAYLIST)
-                            {
+                            } else if (type == YoutubeScrapType.YOUTUBE_PLAYLIST) {
                                 getMusicPlayListHtmlContent(webView)
-                            }else if(type== YoutubeScrapType.YOUTUBE_HOME){
+                            } else if (type == YoutubeScrapType.YOUTUBE_HOME) {
                                 getYoutubeContent(webView)
-                            }else if(type==YoutubeScrapType.YOUTUBE_MUSIC_CATEGORY)
-                            {
+                            } else if (type == YoutubeScrapType.YOUTUBE_MUSIC_CATEGORY) {
                                 getMusicCategoryHtmlContent(webView)
                             }
 //                            }
@@ -66,7 +69,7 @@ class YoutubeJsonScrapping constructor(val webView: WebView,val context : Contex
         }
     }
 
-    private  fun getYoutubeContent(webView: WebView) {
+    private fun getYoutubeContent(webView: WebView) {
         if (!alreadyEvaluated) {
             alreadyEvaluated = true
             webView.evaluateJavascript("(function() { return document.documentElement.outerHTML; })();") { html ->
@@ -82,8 +85,10 @@ class YoutubeJsonScrapping constructor(val webView: WebView,val context : Contex
                     .replace("\\\\\\\\\"", "")
 //                webViewModel.setHtmlContent(result)
                 CoroutineScope(Dispatchers.IO).launch {
+                    if (result.startsWith("{")&&result.endsWith("}")) {
 
-                    passYtVideoHomeData(parseJson(result))
+                        passYtVideoHomeData(parseJson(result))
+                    }
 
                 }
             }
@@ -92,7 +97,8 @@ class YoutubeJsonScrapping constructor(val webView: WebView,val context : Contex
         }
 
     }
-    private  fun getMusicSearchHtmlContent(webView: WebView) {
+
+    private fun getMusicSearchHtmlContent(webView: WebView) {
         if (!alreadyEvaluated) {
             alreadyEvaluated = true
             webView.evaluateJavascript("(function() { return document.documentElement.outerHTML; })();") { html ->
@@ -104,9 +110,10 @@ class YoutubeJsonScrapping constructor(val webView: WebView,val context : Contex
                         "'});ytcfg.set"
                     ) + ""
                 )
-                result=getDataSubstring(result)
-                result=result.replace("\\\\\\\\\"", "")
-                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                result = getDataSubstring(result)
+                result = result.replace("\\\\\\\\\"", "")
+                val clipboard =
+                    context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                 val clip = ClipData.newPlainText("label", result)
                 clipboard.setPrimaryClip(clip)
 //                getDataSubstring
@@ -125,7 +132,7 @@ class YoutubeJsonScrapping constructor(val webView: WebView,val context : Contex
 
     }
 
-    private  fun getMusicHomeHtmlContent(webView: WebView) {
+    private fun getMusicHomeHtmlContent(webView: WebView) {
         if (!alreadyEvaluated) {
             alreadyEvaluated = true
             webView.evaluateJavascript("(function() { return document.documentElement.outerHTML; })();") { html ->
@@ -137,8 +144,8 @@ class YoutubeJsonScrapping constructor(val webView: WebView,val context : Contex
                         "'});ytcfg.set"
                     ) + ""
                 )
-                result=getDataSubstring(result)
-                result=result.replace("\\\\\\\\\"", "")
+                result = getDataSubstring(result)
+                result = result.replace("\\\\\\\\\"", "")
 //                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
 //                val clip = ClipData.newPlainText("label", result)
 //                clipboard.setPrimaryClip(clip)
@@ -147,9 +154,11 @@ class YoutubeJsonScrapping constructor(val webView: WebView,val context : Contex
 //                    .replace("\\\\\\\\\"", "")
 ////                webViewModel.setHtmlContent(result)
                 CoroutineScope(Dispatchers.IO).launch {
-                    Log.d("passing home data","yaaa1111")
+                    Log.d("passing home data", "yaaa1111")
+                    if (result.startsWith("{")&&result.endsWith("}")) {
 
-                    passYtMusicHomeData(parseJson(result))
+                        passYtMusicHomeData(parseJson(result))
+                    }
 
                 }
             }
@@ -159,20 +168,21 @@ class YoutubeJsonScrapping constructor(val webView: WebView,val context : Contex
 
     }
 
-    private  fun getMusicPlayListHtmlContent(webView: WebView) {
-        if (!alreadyEvaluated) {
-            alreadyEvaluated = true
-            webView.evaluateJavascript("(function() { return document.documentElement.outerHTML; })();") { html ->
-                val cleanHtml = html.replace("\\u003C", "<").replace("\\u003E", ">")
-                var result = decodeHexString(
-                    extractDataBetween(
-                        cleanHtml,
-                        "initialData.push({path: '\\\\/browse', params",
-                        "'});ytcfg.set"
-                    ) + ""
-                )
-                result=getDataSubstring(result)
-                result=result.replace("\\\\\\\\\"", "")
+    private fun getMusicPlayListHtmlContent(webView: WebView) {
+        try {
+            if (!alreadyEvaluated) {
+                alreadyEvaluated = true
+                webView.evaluateJavascript("(function() { return document.documentElement.outerHTML; })();") { html ->
+                    val cleanHtml = html.replace("\\u003C", "<").replace("\\u003E", ">")
+                    var result = decodeHexString(
+                        extractDataBetween(
+                            cleanHtml,
+                            "initialData.push({path: '\\\\/browse', params",
+                            "'});ytcfg.set"
+                        ) + ""
+                    )
+                    result = getDataSubstring(result)
+                    result = result.replace("\\\\\\\\\"", "")
 //                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
 //                val clip = ClipData.newPlainText("label", result)
 //                clipboard.setPrimaryClip(clip)
@@ -180,90 +190,101 @@ class YoutubeJsonScrapping constructor(val webView: WebView,val context : Contex
 //                result = result.replaceFirst("= '{", "{").replaceFirst("';", "")
 //                    .replace("\\\\\\\\\"", "")
 ////                webViewModel.setHtmlContent(result)
-                CoroutineScope(Dispatchers.IO).launch {
-                    Log.d("passing home data","yaaa1111")
+                    CoroutineScope(Dispatchers.IO).launch {
+                        Log.d("passing home data", "yaaa1111")
+                        if (result.startsWith("{")&&result.endsWith("}")) {
+                            passYTMusicPlayListData(parseJson(result))
+                        }
 
-                    passYTMusicPlayListData(parseJson(result))
-
+                    }
                 }
+            } else {
+                alreadyEvaluated = false
             }
-        } else {
-            alreadyEvaluated = false
-        }
+        }catch (ex:Exception)
+        {
 
+        }
     }
 
-   /* private  fun getMusicPlayListHtmlContent(webView: WebView) {
-        if (!alreadyEvaluated) {
-            alreadyEvaluated = true
-            webView.evaluateJavascript("(function() { return document.documentElement.outerHTML; })();") { html ->
-                val cleanHtml = html.replace("\\u003C", "<").replace("\\u003E", ">")
-                var result = decodeHexString(
-                    extractDataBetween(
-                        cleanHtml,
-                        "initialData.push({path: '\\\\/browse', params",
-                        "'});ytcfg.set"
-                    ) + ""
-                )
-                result=getDataSubstring(result)
-                result=result.replace("\\\\\\\\\"", "")
-                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                val clip = ClipData.newPlainText("label", result)
-                clipboard.setPrimaryClip(clip)
+    /* private  fun getMusicPlayListHtmlContent(webView: WebView) {
+         if (!alreadyEvaluated) {
+             alreadyEvaluated = true
+             webView.evaluateJavascript("(function() { return document.documentElement.outerHTML; })();") { html ->
+                 val cleanHtml = html.replace("\\u003C", "<").replace("\\u003E", ">")
+                 var result = decodeHexString(
+                     extractDataBetween(
+                         cleanHtml,
+                         "initialData.push({path: '\\\\/browse', params",
+                         "'});ytcfg.set"
+                     ) + ""
+                 )
+                 result=getDataSubstring(result)
+                 result=result.replace("\\\\\\\\\"", "")
+                 val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                 val clip = ClipData.newPlainText("label", result)
+                 clipboard.setPrimaryClip(clip)
+ //                getDataSubstring
+                 result = result.replaceFirst("= '{", "{").replaceFirst("';", "")
+                     .replace("\\\\\\\\\"", "")
+ ////                webViewModel.setHtmlContent(result)
+ //                CoroutineScope(Dispatchers.IO).launch {
+ //
+ //                    passDatas(parseJson(result))
+ //
+ //                }
+             }
+         } else {
+             alreadyEvaluated = false
+         }
+
+     }*/
+
+
+    private fun getMusicCategoryHtmlContent(webView: WebView) {
+        try {
+            if (!alreadyEvaluated) {
+                alreadyEvaluated = true
+                webView.evaluateJavascript("(function() { return document.documentElement.outerHTML; })();") { html ->
+                    val cleanHtml = html.replace("\\u003C", "<").replace("\\u003E", ">")
+                    var result = decodeHexString(
+                        extractDataBetween(
+                            cleanHtml,
+                            "initialData.push({path: '\\\\/browse', params",
+                            "'});ytcfg.set"
+                        ) + ""
+                    )
+                    result = getDataSubstring(result)
+                    result = result.replace("\\\\\\\\\"", "")
+
 //                getDataSubstring
-                result = result.replaceFirst("= '{", "{").replaceFirst("';", "")
-                    .replace("\\\\\\\\\"", "")
-////                webViewModel.setHtmlContent(result)
-//                CoroutineScope(Dispatchers.IO).launch {
-//
-//                    passDatas(parseJson(result))
-//
-//                }
-            }
-        } else {
-            alreadyEvaluated = false
-        }
-
-    }*/
-
-
-    private  fun getMusicCategoryHtmlContent(webView: WebView) {
-        if (!alreadyEvaluated) {
-            alreadyEvaluated = true
-            webView.evaluateJavascript("(function() { return document.documentElement.outerHTML; })();") { html ->
-                val cleanHtml = html.replace("\\u003C", "<").replace("\\u003E", ">")
-                var result = decodeHexString(
-                    extractDataBetween(
-                        cleanHtml,
-                        "initialData.push({path: '\\\\/browse', params",
-                        "'});ytcfg.set"
-                    ) + ""
-                )
-                result=getDataSubstring(result)
-                result=result.replace("\\\\\\\\\"", "")
-
-//                getDataSubstring
-                result = result.replaceFirst("= '{", "{").replaceFirst("';", "")
-                    .replace("\\\\\\\\\"", "")
-                result=decodeHexString(result)
+                    result = result.replaceFirst("= '{", "{").replaceFirst("';", "")
+                        .replace("\\\\\\\\\"", "")
+                    result = decodeHexString(result)
 //                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
 //                val clip = ClipData.newPlainText("label", result)
 //                clipboard.setPrimaryClip(clip)
-                CoroutineScope(Dispatchers.IO).launch {
-                    Log.d("passing home data","yaaa1111")
+                    CoroutineScope(Dispatchers.IO).launch {
+                        Log.d("passing home data", "yaaa1111")
+                            if (result.startsWith("{")&&result.endsWith("}")) {
 
-                    passYTMusicPlayCategory(parseJson(result))
+                                passYTMusicPlayCategory(parseJson(result))
+                            }
 
-                }
+
+                    }
 ////                webViewModel.setHtmlContent(result)
 //                CoroutineScope(Dispatchers.IO).launch {
 //
 //                    passDatas(parseJson(result))
 //
 //                }
+                }
+            } else {
+                alreadyEvaluated = false
             }
-        } else {
-            alreadyEvaluated = false
+        } catch (ex: Exception) {
+
         }
 
     }
@@ -291,7 +312,7 @@ class YoutubeJsonScrapping constructor(val webView: WebView,val context : Contex
             .replace("\\\\x7d", "}")
             .replace("\\\\x5b", "[")
             .replace("\\\\x5d", "]")
-            .replace("\\x3d","=")
+            .replace("\\x3d", "=")
 
     }
 
@@ -305,32 +326,34 @@ class YoutubeJsonScrapping constructor(val webView: WebView,val context : Contex
             null
         }
     }
-    private suspend fun passYtVideoHomeData(data:ApiResponse?) {
+
+    private suspend fun passYtVideoHomeData(data: ApiResponse?) {
         sharedJsonContentPrivate.emit(data)
     }
-    private suspend fun passYtMusicHomeData(data:MusicHomeResponse2?) {
-        Log.d("passing home data","yaaa")
+
+    private suspend fun passYtMusicHomeData(data: MusicHomeResponse2?) {
+        Log.d("passing home data", "yaaa")
         sharedJsonMusicHomeContentPrivate.emit(data)
     }
 
     private suspend fun passYTMusicPlayListData(data: YoutubeMusicPlayListContent?) {
-        Log.d("passing home data","yaaa")
+        Log.d("passing home data", "yaaa")
         sharedJsonMusicHomePlayListContentPrivate.emit(data)
     }
 
     private suspend fun passYTMusicPlayCategory(data: YtMusicCategoryBase?) {
-        Log.d("passing home data","yaaa")
+        Log.d("passing home data", "yaaa")
         sharedJsonMusicCategoryPlayListContentPrivate.emit(data)
     }
 
 
-/*    inline fun <reified T> parseJsons(jsonString: String): T? {
-        val moshi = Moshi.Builder()
-            .add(KotlinJsonAdapterFactory())
-            .build()
-        val jsonAdapter = moshi.adapter(T::class.java)
-        return jsonAdapter.fromJson(jsonString)
-    }*/
+    /*    inline fun <reified T> parseJsons(jsonString: String): T? {
+            val moshi = Moshi.Builder()
+                .add(KotlinJsonAdapterFactory())
+                .build()
+            val jsonAdapter = moshi.adapter(T::class.java)
+            return jsonAdapter.fromJson(jsonString)
+        }*/
     fun getDataSubstring(jsonString: String): String {
         val key = "data: '"
         val startIndex = jsonString.indexOf(key)

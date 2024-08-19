@@ -29,18 +29,27 @@ class YoutubeMusicCategoryDataFormatter @Inject constructor()  :
                     var playlistName=""
                     tabs.tabRenderer.let {tabRenderer ->
                         for (sectionListContents in tabRenderer?.content?.sectionListRenderer?.contents!!) {
-                            for (gridRendererItems in  sectionListContents.gridRenderer?.items!!) {
-                               if(gridRendererItems.musicNavigationButtonRenderer?.buttonText?.runs?.size!!>0)
-                               {
-                                   playlistName=gridRendererItems.musicNavigationButtonRenderer?.buttonText?.runs[0].text!!
-                               }
-                                playListBrowserId=gridRendererItems.musicNavigationButtonRenderer.clickCommand?.browseEndpoint?.browseId!!
-                                playListCategoryId=gridRendererItems.musicNavigationButtonRenderer.clickCommand?.browseEndpoint?.params!!
-                                musicCategoryList.add(PlayListCategory(playListCategoryId,playlistName,playListBrowserId))
+                            if(sectionListContents.gridRenderer!=null) {
+                                for (gridRendererItems in sectionListContents.gridRenderer?.items!!) {
+                                    if (gridRendererItems.musicNavigationButtonRenderer?.buttonText?.runs?.size!! > 0) {
+                                        playlistName =
+                                            gridRendererItems.musicNavigationButtonRenderer?.buttonText?.runs[0].text!!
+                                    }
+                                    playListBrowserId =
+                                        gridRendererItems.musicNavigationButtonRenderer.clickCommand?.browseEndpoint?.browseId!!
+                                    playListCategoryId =
+                                        gridRendererItems.musicNavigationButtonRenderer.clickCommand?.browseEndpoint?.params!!
+                                    musicCategoryList.add(
+                                        PlayListCategory(
+                                            playListCategoryId,
+                                            playlistName,
+                                            playListBrowserId
+                                        )
+                                    )
+
+                                }
 
                             }
-
-
 
                         }
 

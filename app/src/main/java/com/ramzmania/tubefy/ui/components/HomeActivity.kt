@@ -202,7 +202,7 @@ fun Navigation(navController: NavHostController) {
         }
 
         composable(NavigationItem.Books.route) {
-            CategoryPlaylistView()
+            BooksScreen()
         }
         composable(NavigationItem.Profile.route) {
             ProfileScreen()
@@ -212,6 +212,9 @@ fun Navigation(navController: NavHostController) {
         }
         composable(NavigationItem.AudioPlayer.route) { backStackEntry ->
             PlayerBaseView()
+        }
+        composable(NavigationItem.CategoryPlayList.route) { backStackEntry ->
+            CategoryPlaylistView()
         }
     }
 }
