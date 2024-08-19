@@ -19,6 +19,7 @@ import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.base.playlist.PlayListCategory
 import com.ramzmania.tubefy.data.dto.base.playlist.PlayListData
 import com.ramzmania.tubefy.data.dto.youtubeV3.YoutubeSearchResponse
+import com.ramzmania.tubefy.data.dto.youtubemusic.category.MusicCategoryPlayList
 import com.ramzmania.tubefy.data.dto.youtubemusic.category.MusicCategoryPlayListBase
 import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.categoryplaylist.BrowseRequest
 import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.categoryplaylist.CategoryPlayListRoot
@@ -48,12 +49,13 @@ import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import javax.inject.Inject
 
-class RemoteData@Inject
+class RemoteData @Inject
 constructor(
     private val serviceGenerator: ServiceGenerator,
     private val networkConnectivity: NetworkConnectivity,
-    private val newPipeFormatterFactory: NewPipeDataFormatterFactory, private val youtubeV3Formatter: YoutubeV3Formatter
-) :RemoteDataSource {
+    private val newPipeFormatterFactory: NewPipeDataFormatterFactory,
+    private val youtubeV3Formatter: YoutubeV3Formatter
+) : RemoteDataSource {
     override suspend fun requestYoutubeV3(
         part: String,
         searchQuery: String,
@@ -115,20 +117,19 @@ constructor(
                 e.printStackTrace()
             }
         }
-        return if(streamUrl.length>0) {
+        return if (streamUrl.length > 0) {
             Resource.Success(StreamUrlData(streamUrl))
-        }else{
+        } else {
             Resource.DataError(404)
         }
     }
 
 
-
-     override suspend fun getStreamBulkUrl(youtubePlayerPlaylistListModel: YoutubePlayerPlaylistListModel): Resource<List<MediaItem>> {
+    override suspend fun getStreamBulkUrl(youtubePlayerPlaylistListModel: YoutubePlayerPlaylistListModel): Resource<List<MediaItem>> {
         var streamUrlArray: ArrayList<String> = ArrayList()
-         var videoThumpUrls: ArrayList<String> = ArrayList()
-         var videoTitles: ArrayList<String> = ArrayList()
-         var mediaItems:List<MediaItem>?=null
+        var videoThumpUrls: ArrayList<String> = ArrayList()
+        var videoTitles: ArrayList<String> = ArrayList()
+        var mediaItems: List<MediaItem>? = null
 
 //         var mediaUris:Array<String> = listOf("http://example.com/audio1.mp3", "http://example.com/audio2.mp3")
 //         val videoThumpUrls = listOf("http://example.com/thumb1.jpg", "http://example.com/thumb2.jpg")
@@ -137,29 +138,37 @@ constructor(
         {
             try {
 //                var currentIndex=0;
-                for(videoIds in youtubePlayerPlaylistListModel.playListData) {
+                for (videoIds in youtubePlayerPlaylistListModel.playListData) {
                     val extractor =
-                        YoutubeService(0).getStreamExtractor("${YoutubeCoreConstant.YOUTUBE_WATCH_URL}${YoutubeCoreConstant.extractYoutubeVideoId(videoIds!!.videoId)}") as YoutubeStreamExtractor
+                        YoutubeService(0).getStreamExtractor(
+                            "${YoutubeCoreConstant.YOUTUBE_WATCH_URL}${
+                                YoutubeCoreConstant.extractYoutubeVideoId(
+                                    videoIds!!.videoId
+                                )
+                            }"
+                        ) as YoutubeStreamExtractor
                     extractor.fetchPage()
 
                     if (extractor.videoStreams.isNotEmpty()) {
                         streamUrlArray?.add(extractor.videoStreams.first().content ?: "")
                         videoTitles.add(videoIds.videoTitle)
-                        videoThumpUrls.add("https://i.ytimg.com/vi/${
-                            YoutubeCoreConstant.extractYoutubeVideoId(
-                                videoIds.videoId
-                            )
-                        }/hq720.jpg")
+                        videoThumpUrls.add(
+                            "https://i.ytimg.com/vi/${
+                                YoutubeCoreConstant.extractYoutubeVideoId(
+                                    videoIds.videoId
+                                )
+                            }/hq720.jpg"
+                        )
                     }
                 }
-                 mediaItems= createMediaItems(streamUrlArray, videoThumpUrls, videoTitles)
+                mediaItems = createMediaItems(streamUrlArray, videoThumpUrls, videoTitles)
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
-        return if(mediaItems!=null) {
+        return if (mediaItems != null) {
             Resource.Success(mediaItems!!)
-        }else{
+        } else {
             Resource.DataError(404)
         }
     }
@@ -176,7 +185,8 @@ constructor(
 //            originalUrl = "https://music.youtube.com/moods_and_genres"
         )
 
-        val context = com.ramzmania.tubefy.data.dto.youtubemusic.playlist.categoryplaylist.Context(client = client)
+        val context =
+            com.ramzmania.tubefy.data.dto.youtubemusic.playlist.categoryplaylist.Context(client = client)
 
         val request = BrowseRequest(
             context = context,
@@ -185,51 +195,95 @@ constructor(
         )
         return when (val response = processCall {
             categoryPlaylistService.getCategoryPlaylistInfo(
-                request,"https://music.youtube.com/youtubei/v1/browse?prettyPrint=false"
+                request, "https://music.youtube.com/youtubei/v1/browse?prettyPrint=false"
             )
         }) {
             is Any -> {
                 try {
                     (response is CategoryPlayListRoot).let {
-                        val musicCategoryPlayList = mutableListOf<PlayListCategory>()
+                        val musicCategoryPlayList = mutableListOf<MusicCategoryPlayListBase>()
                         val data = (response as CategoryPlayListRoot)
-                        for(plaListTabData in data.contents?.singleColumnBrowseResultsRenderer?.tabs!!)
-                        {
-                            var categoryPlayListBaseName:String?=""
-                            var plaListId:String?=""
+                        for (plaListTabData in data.contents?.singleColumnBrowseResultsRenderer?.tabs!!) {
+                            var categoryPlayListBaseName: String? = ""
+                            var plaListId: String? = ""
+                            var plaListThumpNail: String? = ""
+                            var plaListName: String? = ""
+                            var checkingPlayerId=""
+                            for (tabContents in plaListTabData.tabRenderer?.content?.sectionListRenderer?.contents!!) {
+//                                tabContents.musicCarouselShelfRenderer.contents[0].musicTwoRowItemRenderer.thumbnailRenderer.musicThumbnailRenderer.thumbnail.thumbnails[0].url
+                                categoryPlayListBaseName =
+                                    tabContents.musicCarouselShelfRenderer?.header?.musicCarouselShelfBasicHeaderRenderer?.accessibilityData?.accessibilityData?.label!!
 
-                            for(tabContents in plaListTabData.tabRenderer?.content?.sectionListRenderer?.contents!!)
-                            {
-                                categoryPlayListBaseName= tabContents.musicCarouselShelfRenderer?.header?.musicCarouselShelfBasicHeaderRenderer?.accessibilityData?.accessibilityData?.label!!
-
-                                for(shelfContent in tabContents.musicCarouselShelfRenderer?.contents!!)
-                                {
-
-                                    for(menuItem in shelfContent.musicTwoRowItemRenderer?.menu?.menuRenderer?.items!!)
+                                for (shelfContent in tabContents.musicCarouselShelfRenderer?.contents!!) {
+                                    for (thumpNail in shelfContent.musicTwoRowItemRenderer?.thumbnailRenderer?.musicThumbnailRenderer?.thumbnail?.thumbnails!!) {
+                                        plaListThumpNail = thumpNail.url
+                                        break
+                                    }
+                                    if(shelfContent.musicTwoRowItemRenderer.title?.runs!!.isNotEmpty())
                                     {
-                                        plaListId=menuItem.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint?.playlistId
+                                        plaListName=shelfContent.musicTwoRowItemRenderer.title?.runs[0].text
+                                    }
+                                    try {
+                                        checkingPlayerId =
+                                            shelfContent.musicTwoRowItemRenderer.thumbnailOverlay?.musicItemThumbnailOverlayRenderer?.content?.musicPlayButtonRenderer?.playNavigationEndpoint?.watchPlaylistEndpoint?.playlistId!!
+                                    }catch (ex:Exception)
+                                    {
+                                        checkingPlayerId="exception"
+                                    }
+                                    for (menuItem in shelfContent.musicTwoRowItemRenderer?.menu?.menuRenderer?.items!!) {
+
+
+                                        if (checkingPlayerId.equals("exception"))
+                                        {
+                                            plaListId =
+                                                menuItem.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint?.playlistId
+                                            break
+                                        }else if(checkingPlayerId.contains(menuItem.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint?.playlistId!!)){
+                                            plaListId =
+                                                menuItem.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint?.playlistId
+                                            break
+                                        }
                                     }
                                 }
                             }
 
+                            Log.d("DETAILS","---------------------------------------")
+                            musicCategoryPlayList.add(MusicCategoryPlayListBase(plaListBaseName = categoryPlayListBaseName!!,
+                                MusicCategoryPlayList(playListId = plaListId!!, playListName = plaListName!!, playListThump = plaListThumpNail!!),))
+
+                            Log.d("DETAILS","<categoryPlayListBaseName>"+categoryPlayListBaseName+"<plaListId>"+plaListId+"<plaListName>"+plaListName+"<plaListThumpNail>"+plaListThumpNail)
+
+                            Log.d("DETAILS","---------------ENDED------------------------")
+
                         }
 
-                        Log.d("yezzz","eod")
-                        val ppo=
+                        Log.d("yezzz", "eod")
+                       /* val ppo =
                             (response as CategoryPlayListRoot).contents?.singleColumnBrowseResultsRenderer?.tabs!![0].tabRenderer?.content?.sectionListRenderer?.contents!![0].musicCarouselShelfRenderer?.header?.musicCarouselShelfBasicHeaderRenderer?.accessibilityData?.accessibilityData?.label
-                        val ppoa=
-                            (response as CategoryPlayListRoot).contents?.singleColumnBrowseResultsRenderer?.tabs!![0].tabRenderer?.content?.sectionListRenderer?.contents!![0].musicCarouselShelfRenderer?.contents?.get(0)!!.musicTwoRowItemRenderer?.menu?.menuRenderer?.items?.get(0)?.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint?.playlistId
-                        val image=
-                            (response as CategoryPlayListRoot).contents?.singleColumnBrowseResultsRenderer?.tabs!![0].tabRenderer?.content?.sectionListRenderer?.contents!![0].musicCarouselShelfRenderer?.contents?.get(0)!!.musicTwoRowItemRenderer?.thumbnailRenderer?.musicThumbnailRenderer?.thumbnail?.thumbnails?.get(0)?.url
+                        val ppoa =
+                            (response as CategoryPlayListRoot).contents?.singleColumnBrowseResultsRenderer?.tabs!![0].tabRenderer?.content?.sectionListRenderer?.contents!![0].musicCarouselShelfRenderer?.contents?.get(
+                                0
+                            )!!.musicTwoRowItemRenderer?.menu?.menuRenderer?.items?.get(0)?.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint?.playlistId
+                        val image =
+                            (response as CategoryPlayListRoot).contents?.singleColumnBrowseResultsRenderer?.tabs!![0].tabRenderer?.content?.sectionListRenderer?.contents!![0].musicCarouselShelfRenderer?.contents?.get(
+                                0
+                            )!!.musicTwoRowItemRenderer?.thumbnailRenderer?.musicThumbnailRenderer?.thumbnail?.thumbnails?.get(
+                                0
+                            )?.url
 
-                        val txtx=
-                            (response as CategoryPlayListRoot).contents?.singleColumnBrowseResultsRenderer?.tabs!![0].tabRenderer?.content?.sectionListRenderer?.contents!![0].musicCarouselShelfRenderer?.contents?.get(0)!!.musicTwoRowItemRenderer?.title?.runs?.get(0)?.text
+                        val txtx =
+                            (response as CategoryPlayListRoot).contents?.singleColumnBrowseResultsRenderer?.tabs!![0].tabRenderer?.content?.sectionListRenderer?.contents!![0].musicCarouselShelfRenderer?.contents?.get(
+                                0
+                            )!!.musicTwoRowItemRenderer?.title?.runs?.get(0)?.text
 
-                        Log.d("yezzz","eod"+ppo+"<><>"+ppoa+"<><"+image+"<>title<"+txtx)
+                        Log.d(
+                            "yezzz",
+                            "eod" + ppo + "<><>" + ppoa + "<><" + image + "<>title<" + txtx
+                        )*/
 
 //                        val result=youtubeV3Formatter.run(response as CategoryPlayListRoot)
 //                        Log.d("checl",(response as CategoryPlayListRoot).contents.)
-                       Resource.DataError(YOUTUBE_V3_SEARCH_ERROR)
+                        Resource.DataError(YOUTUBE_V3_SEARCH_ERROR)
 
 //                        Resource.Success(result)
 //                        Resource.DataError(YOUTUBE_V3_SEARCH_ERROR)
@@ -241,10 +295,12 @@ constructor(
                     Resource.DataError(YOUTUBE_V3_SEARCH_ERROR)
                 }
             }
+
             else -> {
                 Resource.DataError(errorCode = response as Int)
             }
-        }    }
+        }
+    }
 
     override suspend fun getNewPipePageSearch(
         serviceId: Int,
@@ -252,8 +308,8 @@ constructor(
         contentFilter: List<String?>,
         sortFilter: String
     ): Resource<TubeFyCoreUniversalData> {
-        var searchInfo: SearchInfo?=null
-        var searchInfo2: SearchInfo?=null
+        var searchInfo: SearchInfo? = null
+        var searchInfo2: SearchInfo? = null
 
         withContext(Dispatchers.IO)
         {
@@ -270,18 +326,24 @@ constructor(
 //               Log.d("data", ff.url)
 //            }
 
-            searchInfo= newPipeSearchFor(serviceId, searchString, contentFilter, sortFilter)
-            val newPipeFormatter: NewPipeDataFormatter<InfoItem> = newPipeFormatterFactory.createForInfoItem()
-            val result = newPipeFormatter.run(NewPipeSortingData(searchInfo!!.relatedItems,searchInfo!!.nextPage))
-            when(result)
-            {
-                is FormattingResult.SUCCESS ->{
-                    Log.d("TAGGIZ",""+result.data.youtubeSortedData.youtubeSortedList!!.size)
+            searchInfo = newPipeSearchFor(serviceId, searchString, contentFilter, sortFilter)
+            val newPipeFormatter: NewPipeDataFormatter<InfoItem> =
+                newPipeFormatterFactory.createForInfoItem()
+            val result = newPipeFormatter.run(
+                NewPipeSortingData(
+                    searchInfo!!.relatedItems,
+                    searchInfo!!.nextPage
+                )
+            )
+            when (result) {
+                is FormattingResult.SUCCESS -> {
+                    Log.d("TAGGIZ", "" + result.data.youtubeSortedData.youtubeSortedList!!.size)
 
                     Resource.Success(result)
 
                 }
-                is FormattingResult.FAILURE ->{
+
+                is FormattingResult.FAILURE -> {
                     Resource.DataError(NEW_PIPE_SEARCH_ERROR)
 
                 }
@@ -289,17 +351,24 @@ constructor(
 
         }
         return withContext(Dispatchers.IO) {
-            val pageSearchInfo = newPipeSearchFor(serviceId, searchString, contentFilter, sortFilter)
-            val newPipeFormatter: NewPipeDataFormatter<InfoItem> = newPipeFormatterFactory.createForInfoItem()
-            val result = newPipeFormatter.run(NewPipeSortingData(pageSearchInfo.relatedItems,pageSearchInfo.nextPage))
-            when(result)
-            {
-                is FormattingResult.SUCCESS ->{
+            val pageSearchInfo =
+                newPipeSearchFor(serviceId, searchString, contentFilter, sortFilter)
+            val newPipeFormatter: NewPipeDataFormatter<InfoItem> =
+                newPipeFormatterFactory.createForInfoItem()
+            val result = newPipeFormatter.run(
+                NewPipeSortingData(
+                    pageSearchInfo.relatedItems,
+                    pageSearchInfo.nextPage
+                )
+            )
+            when (result) {
+                is FormattingResult.SUCCESS -> {
 //                    Log.d("TAGGIZ",""+result.data.youtubeSortedData.youtubeSortedList!!.size)
                     Resource.Success(result.data)
 
                 }
-                is FormattingResult.FAILURE ->{
+
+                is FormattingResult.FAILURE -> {
                     Resource.DataError(NEW_PIPE_SEARCH_ERROR)
 
                 }
@@ -315,26 +384,36 @@ constructor(
 //        }
     }
 
-    override suspend fun getPlayListInfo( playListUrl: String):Resource<PlayListData>
-    {
+    override suspend fun getPlayListInfo(playListUrl: String): Resource<PlayListData> {
         return withContext(Dispatchers.IO) {
-             val newPipeFormatter: NewPipeDataFormatter<StreamInfoItem?> = newPipeFormatterFactory.createForPlayListItem()
-             val newPipePlayList = newPipePlayListData(playListUrl)
-             val result = newPipeFormatter.run(NewPipeSortingData(newPipePlayList.relatedItems,newPipePlayList.nextPage))
-            when(result)
-            {
-                is FormattingResult.SUCCESS ->{
+            val newPipeFormatter: NewPipeDataFormatter<StreamInfoItem?> =
+                newPipeFormatterFactory.createForPlayListItem()
+            val newPipePlayList = newPipePlayListData(playListUrl)
+            val result = newPipeFormatter.run(
+                NewPipeSortingData(
+                    newPipePlayList.relatedItems,
+                    newPipePlayList.nextPage
+                )
+            )
+            when (result) {
+                is FormattingResult.SUCCESS -> {
 //                    Log.d("TAGGIZ",""+result.data.youtubeSortedData.youtubeSortedList!!.size)
-                    Resource.Success(PlayListData(newPipePlayList.thumbnails[0].url,result.data.youtubeSortedData.youtubeSortedList))
+                    Resource.Success(
+                        PlayListData(
+                            newPipePlayList.thumbnails[0].url,
+                            result.data.youtubeSortedData.youtubeSortedList
+                        )
+                    )
 
                 }
-                is FormattingResult.FAILURE ->{
+
+                is FormattingResult.FAILURE -> {
                     Resource.DataError(NEW_PIPE_SEARCH_ERROR)
 
                 }
             }
 
-         }
+        }
 
     }
 
@@ -358,18 +437,28 @@ constructor(
                  Resource.DataError(NEW_PIPE_SEARCH_MORE_ERROR)
              }*/
         return withContext(Dispatchers.IO) {
-            val newPipeFormatter: NewPipeDataFormatter<InfoItem> = newPipeFormatterFactory.createForInfoItem()
-            val nextPageSearchInfo = newPipeSearchNextPageFor(serviceId, searchString, contentFilter, sortFilter, page)
-            val result = newPipeFormatter.run(NewPipeSortingData(nextPageSearchInfo.items,nextPageSearchInfo.nextPage))
+            val newPipeFormatter: NewPipeDataFormatter<InfoItem> =
+                newPipeFormatterFactory.createForInfoItem()
+            val nextPageSearchInfo =
+                newPipeSearchNextPageFor(serviceId, searchString, contentFilter, sortFilter, page)
+            val result = newPipeFormatter.run(
+                NewPipeSortingData(
+                    nextPageSearchInfo.items,
+                    nextPageSearchInfo.nextPage
+                )
+            )
 //            val baseDataModel= TubeFyCoreUniversalData(NewPipeSortingInput(result,nextPageSearchInfo.nextPage))
-            when(result)
-            {
-                is FormattingResult.SUCCESS ->{
-                    Log.d("TAGGIZNEXTPAGE",""+result.data.youtubeSortedData.youtubeSortedList!!.size)
+            when (result) {
+                is FormattingResult.SUCCESS -> {
+                    Log.d(
+                        "TAGGIZNEXTPAGE",
+                        "" + result.data.youtubeSortedData.youtubeSortedList!!.size
+                    )
                     Resource.Success(result.data)
 
                 }
-                is FormattingResult.FAILURE ->{
+
+                is FormattingResult.FAILURE -> {
                     Resource.DataError(NEW_PIPE_SEARCH_ERROR)
 
                 }
