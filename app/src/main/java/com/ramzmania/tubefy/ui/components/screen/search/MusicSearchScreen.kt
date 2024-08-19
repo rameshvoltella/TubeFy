@@ -28,6 +28,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
 import com.ramzmania.tubefy.ui.components.screen.album.TrackItem
+import com.ramzmania.tubefy.ui.components.screen.category.CategoryScreenMain
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
 import org.schabi.newpipe.extractor.Page
 
@@ -169,6 +170,10 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
                 fontSize = 16.sp
             )
 
+        }
+        if(text.text.isEmpty())
+        {
+            CategoryScreenMain()
         }
         if (isFreshSearch) {
             Box(
