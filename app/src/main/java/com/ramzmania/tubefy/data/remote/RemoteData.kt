@@ -11,6 +11,7 @@ import com.ramzmania.tubefy.core.dataformatter.newpipe.NewPipeDataFormatterFacto
 import com.ramzmania.tubefy.data.dto.base.searchformat.StreamUrlData
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreUniversalData
 import com.ramzmania.tubefy.core.dataformatter.youtubeV3.YoutubeV3Formatter
+import com.ramzmania.tubefy.core.dataformatter.youtubemusic.YoutubeMusicDataFormatterFactory
 import com.ramzmania.tubefy.core.extractors.newpipeextractor.newPipePlayListData
 import com.ramzmania.tubefy.core.extractors.newpipeextractor.newPipeSearchFor
 import com.ramzmania.tubefy.core.extractors.newpipeextractor.newPipeSearchNextPageFor
@@ -30,6 +31,7 @@ import com.ramzmania.tubefy.errors.NETWORK_ERROR
 import com.ramzmania.tubefy.errors.NEW_PIPE_SEARCH_ERROR
 import com.ramzmania.tubefy.errors.NO_INTERNET_CONNECTION
 import com.ramzmania.tubefy.errors.SERVER_ERROR
+import com.ramzmania.tubefy.errors.YOUTUBE_SCRAP_ERROR
 import com.ramzmania.tubefy.errors.YOUTUBE_V3_SEARCH_ERROR
 import com.ramzmania.tubefy.player.YoutubePlayerPlaylistListModel
 import com.ramzmania.tubefy.player.createMediaItems
@@ -54,7 +56,7 @@ constructor(
     private val serviceGenerator: ServiceGenerator,
     private val networkConnectivity: NetworkConnectivity,
     private val newPipeFormatterFactory: NewPipeDataFormatterFactory,
-    private val youtubeV3Formatter: YoutubeV3Formatter
+    private val youtubeV3Formatter: YoutubeV3Formatter, private val youtubeMusicDataFormatterFactory: YoutubeMusicDataFormatterFactory
 ) : RemoteDataSource {
     override suspend fun requestYoutubeV3(
         part: String,
@@ -176,7 +178,7 @@ constructor(
     override suspend fun getCategoryPlayList(
         browseId: String,
         playerId: String
-    ): Resource<CategoryPlayListRoot> {
+    ): Resource<List<MusicCategoryPlayListBase?>> {
 
         val categoryPlaylistService = serviceGenerator.createService(ApiServices::class.java)
         val client = Client(
@@ -201,98 +203,22 @@ constructor(
             is Any -> {
                 try {
                     (response is CategoryPlayListRoot).let {
-                        val musicCategoryPlayList = mutableListOf<MusicCategoryPlayListBase>()
-                        val data = (response as CategoryPlayListRoot)
-                        for (plaListTabData in data.contents?.singleColumnBrowseResultsRenderer?.tabs!!) {
-                            var categoryPlayListBaseName: String? = ""
-                            var plaListId: String? = ""
-                            var plaListThumpNail: String? = ""
-                            var plaListName: String? = ""
-                            var checkingPlayerId=""
-                            for (tabContents in plaListTabData.tabRenderer?.content?.sectionListRenderer?.contents!!) {
-//                                tabContents.musicCarouselShelfRenderer.contents[0].musicTwoRowItemRenderer.thumbnailRenderer.musicThumbnailRenderer.thumbnail.thumbnails[0].url
-                                categoryPlayListBaseName =
-                                    tabContents.musicCarouselShelfRenderer?.header?.musicCarouselShelfBasicHeaderRenderer?.accessibilityData?.accessibilityData?.label!!
 
-                                for (shelfContent in tabContents.musicCarouselShelfRenderer?.contents!!) {
-                                    for (thumpNail in shelfContent.musicTwoRowItemRenderer?.thumbnailRenderer?.musicThumbnailRenderer?.thumbnail?.thumbnails!!) {
-                                        plaListThumpNail = thumpNail.url
-                                        break
-                                    }
-                                    if(shelfContent.musicTwoRowItemRenderer.title?.runs!!.isNotEmpty())
-                                    {
-                                        plaListName=shelfContent.musicTwoRowItemRenderer.title?.runs[0].text
-                                    }
-                                    try {
-                                        checkingPlayerId =
-                                            shelfContent.musicTwoRowItemRenderer.thumbnailOverlay?.musicItemThumbnailOverlayRenderer?.content?.musicPlayButtonRenderer?.playNavigationEndpoint?.watchPlaylistEndpoint?.playlistId!!
-                                    }catch (ex:Exception)
-                                    {
-                                        checkingPlayerId="exception"
-                                    }
-                                    for (menuItem in shelfContent.musicTwoRowItemRenderer?.menu?.menuRenderer?.items!!) {
-
-
-                                        if (checkingPlayerId.equals("exception"))
-                                        {
-                                            plaListId =
-                                                menuItem.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint?.playlistId
-                                            break
-                                        }else if(checkingPlayerId.contains(menuItem.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint?.playlistId!!)){
-                                            plaListId =
-                                                menuItem.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint?.playlistId
-                                            break
-                                        }
-                                    }
-                                }
+                        val result=youtubeMusicDataFormatterFactory.createForYoutubeMusicCategoryPlayListDataFormatter().run( (response as CategoryPlayListRoot))
+                        when(result)
+                        {
+                            is FormattingResult.SUCCESS->{  Resource.Success(result.data)
                             }
+                            is FormattingResult.FAILURE->{Resource.DataError(YOUTUBE_SCRAP_ERROR)}
 
-                            Log.d("DETAILS","---------------------------------------")
-                            musicCategoryPlayList.add(MusicCategoryPlayListBase(plaListBaseName = categoryPlayListBaseName!!,
-                                MusicCategoryPlayList(playListId = plaListId!!, playListName = plaListName!!, playListThump = plaListThumpNail!!),))
-
-                            Log.d("DETAILS","<categoryPlayListBaseName>"+categoryPlayListBaseName+"<plaListId>"+plaListId+"<plaListName>"+plaListName+"<plaListThumpNail>"+plaListThumpNail)
-
-                            Log.d("DETAILS","---------------ENDED------------------------")
 
                         }
 
-                        Log.d("yezzz", "eod")
-                       /* val ppo =
-                            (response as CategoryPlayListRoot).contents?.singleColumnBrowseResultsRenderer?.tabs!![0].tabRenderer?.content?.sectionListRenderer?.contents!![0].musicCarouselShelfRenderer?.header?.musicCarouselShelfBasicHeaderRenderer?.accessibilityData?.accessibilityData?.label
-                        val ppoa =
-                            (response as CategoryPlayListRoot).contents?.singleColumnBrowseResultsRenderer?.tabs!![0].tabRenderer?.content?.sectionListRenderer?.contents!![0].musicCarouselShelfRenderer?.contents?.get(
-                                0
-                            )!!.musicTwoRowItemRenderer?.menu?.menuRenderer?.items?.get(0)?.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint?.playlistId
-                        val image =
-                            (response as CategoryPlayListRoot).contents?.singleColumnBrowseResultsRenderer?.tabs!![0].tabRenderer?.content?.sectionListRenderer?.contents!![0].musicCarouselShelfRenderer?.contents?.get(
-                                0
-                            )!!.musicTwoRowItemRenderer?.thumbnailRenderer?.musicThumbnailRenderer?.thumbnail?.thumbnails?.get(
-                                0
-                            )?.url
-
-                        val txtx =
-                            (response as CategoryPlayListRoot).contents?.singleColumnBrowseResultsRenderer?.tabs!![0].tabRenderer?.content?.sectionListRenderer?.contents!![0].musicCarouselShelfRenderer?.contents?.get(
-                                0
-                            )!!.musicTwoRowItemRenderer?.title?.runs?.get(0)?.text
-
-                        Log.d(
-                            "yezzz",
-                            "eod" + ppo + "<><>" + ppoa + "<><" + image + "<>title<" + txtx
-                        )*/
-
-//                        val result=youtubeV3Formatter.run(response as CategoryPlayListRoot)
-//                        Log.d("checl",(response as CategoryPlayListRoot).contents.)
-                        Resource.DataError(YOUTUBE_V3_SEARCH_ERROR)
-
-//                        Resource.Success(result)
-//                        Resource.DataError(YOUTUBE_V3_SEARCH_ERROR)
                     }
-//                    Resource.DataError(YOUTUBE_V3_SEARCH_ERROR)
 
                 } catch (e: Exception) {
                     e.printStackTrace()
-                    Resource.DataError(YOUTUBE_V3_SEARCH_ERROR)
+                    Resource.DataError(YOUTUBE_SCRAP_ERROR)
                 }
             }
 
