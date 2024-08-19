@@ -1,7 +1,8 @@
-/*
 package com.ramzmania.tubefy.ui.components.screen.category
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -16,80 +17,173 @@ import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.base.playlist.PlayListCategory
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.rememberImagePainter
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import com.ramzmania.tubefy.R
+import com.ramzmania.tubefy.core.YoutubeCoreConstant
+import com.ramzmania.tubefy.data.dto.base.BaseContentData
+import com.ramzmania.tubefy.data.dto.youtubemusic.category.MusicCategoryPlayList
+import com.ramzmania.tubefy.data.dto.youtubemusic.category.MusicCategoryPlayListBase
+import com.ramzmania.tubefy.ui.components.NavigationItem
+import com.ramzmania.tubefy.utils.LocalNavController
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
+
 @Composable
-fun CategoryPlayListMain(viewModel: TubeFyViewModel = hiltViewModel()) {
-    val categoryPlayListData by viewModel.youTubeCategoryPlayList.observeAsState()
+fun CategoryPlaylistView(viewModel: TubeFyViewModel = hiltViewModel()) {
+    val youTubeCategoryPlayListData by viewModel.youTubeCategoryPlayList.observeAsState()
     var isDefaultDataLoaded by rememberSaveable { mutableStateOf(false) }
-    var categoryPlayListItemsList by remember { mutableStateOf<List<PlayListCategory?>>(emptyList()) }
+    var musicCategoryPlayListBaseList by remember { mutableStateOf<List<MusicCategoryPlayListBase?>>(emptyList()) }
 
     LaunchedEffect(Unit) {
         if(!isDefaultDataLoaded)
         {
-            viewModel.startWebScrapping("https://music.youtube.com/moods_and_genres", YoutubeScrapType.YOUTUBE_MUSIC_CATEGORY)
+            viewModel.callCategoryPlayList("FEmusic_moods_and_genres_category","ggMPOg1uX1JOQWZFeDByc2Jm")
         }
 
     }
 
-    LaunchedEffect(key1 = categoryData) {
-        if (categoryData is Resource.Success) {
-            categoryItemsList = categoryData?.data!!
+    LaunchedEffect(key1 = youTubeCategoryPlayListData) {
+        if (youTubeCategoryPlayListData is Resource.Success) {
+            musicCategoryPlayListBaseList = youTubeCategoryPlayListData?.data!!
+            isDefaultDataLoaded=true
         }
     }
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+            .padding(16.dp)
+    ) {
+        if (musicCategoryPlayListBaseList.isNotEmpty()) {
 
-    if (categoryItemsList.isNotEmpty()) {
-        LazyVerticalGrid(
-            columns = GridCells.Adaptive(minSize = 150.dp),
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(categoryItemsList) { categoryItem ->
-                CategoryItemCard(categoryItem)
+            LazyColumn {
+                items(musicCategoryPlayListBaseList.size) { rowIndex ->
+                    val rowData = musicCategoryPlayListBaseList[rowIndex]
+
+                    rowData?.let {
+                        Text(
+                            text = it.plaListBaseName,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        HorizontalPlayList(it.musicCategoryPlayList)
+                    }
+
+
+                }
+            }
+
+        } else {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
             }
         }
     }
 }
-
 @Composable
-fun CategoryItemCard(categoryItem: PlayListCategory?) {
-    Card(
-        modifier = Modifier
-//                .padding(8.dp)
-            .fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(4.dp), // Use CardDefaults.cardElevation for elevation
-        colors = CardDefaults.cardColors(containerColor = Color.DarkGray), // Set background color
-        shape = RoundedCornerShape(8.dp) // Adjust the corner radius for a rounded effect
-    ) {
-        Column(modifier = Modifier.fillMaxSize()) {
+fun HorizontalPlayList(playLists: List<MusicCategoryPlayList>) {
+    val navController = LocalNavController.current
 
-            Text(
-                text = categoryItem?.playListName.orEmpty(),
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
-                modifier = Modifier.align(Alignment.CenterHorizontally).padding(8.dp),
-                textAlign = TextAlign.Center,
-                fontSize = 25.sp
-            )
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(playLists.size) { rowIndex ->
+            val rowData = playLists[rowIndex]
+
+            ContentPlayListItem(rowData) { selectedItem ->
+                navController!!.navigate(
+                    NavigationItem.PlayList.createRoute(
+                        selectedItem.playListId!!,
+                        selectedItem.playListName!!, URLEncoder.encode(
+                            YoutubeCoreConstant.decodeThumpUrl(selectedItem.playListThump?.takeIf { it.isNotEmpty() } ?: "nourl"),
+                            StandardCharsets.UTF_8.toString()
+                        )
+                    )
+                ) {
+                    navController.graph.startDestinationRoute?.let { route ->
+                        popUpTo(route) {
+                            saveState = true
+                        }
+                    }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            }
         }
     }
 }
-*/
+@Composable
+fun ContentPlayListItem(data: MusicCategoryPlayList, onClick: (MusicCategoryPlayList) -> Unit) {
+    Column(
+        modifier = Modifier
+            .padding(2.dp)
+            .wrapContentWidth()
+            .clickable { onClick(data) }
+    ) {
+//        Log.d("incoming", "" + data.thumbnail)
+
+        data.playListThump?.let { thumbnailUrl ->
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(YoutubeCoreConstant.decodeThumpUrl(thumbnailUrl))
+                    .crossfade(true)
+                    .placeholder(R.drawable.placeholder)
+                    .error(R.drawable.placeholder)
+                    .build(),
+                contentDescription = "Drawable Image",
+                modifier = Modifier
+                    .padding(10.dp)
+                    .height(200.dp)
+                    .width(200.dp),
+                contentScale = ContentScale.Crop
+            )
+        } ?: AsyncImage(
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(R.drawable.images)
+                .crossfade(true)
+                .placeholder(R.drawable.placeholder)
+                .error(R.drawable.placeholder)
+                .build(),
+            contentDescription = "Placeholder Image",
+            modifier = Modifier
+                .padding(20.dp)
+                .height(200.dp)
+                .width(200.dp),
+            contentScale = ContentScale.Crop
+        )
+        Text(
+            text = data.playListName!!,
+            fontWeight = FontWeight.Thin,
+            color = Color.White,
+            modifier = Modifier
+                .padding(horizontal = 10.dp)
+                .width(200.dp),
+            textAlign = TextAlign.Left,
+            maxLines = 2,
+            fontSize = 16.sp
+        )
+
+    }
+}

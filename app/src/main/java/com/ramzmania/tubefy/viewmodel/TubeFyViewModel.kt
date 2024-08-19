@@ -195,17 +195,30 @@ class TubeFyViewModel @Inject constructor(
         }
     }
 
-    fun callCatogyplayList()
+    fun callCategoryPlayList(browserId:String,playerId:String)
     {
 //        Log.d("bulk calling","bulk"+youTubePlayListBulkData)
 
             viewModelScope.launch {
 
-                remoteRepositorySource.getCategoryPlayList("FEmusic_moods_and_genres_category","ggMPOg1uX1JOQWZFeDByc2Jm").collect {
+                remoteRepositorySource.getCategoryPlayList(browserId,playerId).collect {
                     youTubeCategoryPlayListPrivate.value = it
 
                 }
             }
+
+    }
+    fun callCategoryPlayList()
+    {
+//        Log.d("bulk calling","bulk"+youTubePlayListBulkData)
+
+        viewModelScope.launch {
+
+            remoteRepositorySource.getCategoryPlayList("FEmusic_moods_and_genres_category","ggMPOg1uX1JOQWZFeDByc2Jm").collect {
+                youTubeCategoryPlayListPrivate.value = it
+
+            }
+        }
 
     }
 

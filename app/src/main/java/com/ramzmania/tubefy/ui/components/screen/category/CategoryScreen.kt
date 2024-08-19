@@ -49,6 +49,7 @@ fun CategoryScreenMain(viewModel: TubeFyViewModel = hiltViewModel()) {
 
     LaunchedEffect(key1 = categoryData) {
         if (categoryData is Resource.Success) {
+            isDefaultDataLoaded=true
             categoryItemsList = categoryData?.data!!
         }
     }

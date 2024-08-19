@@ -27,7 +27,7 @@ class YoutubeMusicCategoryPlayListDataFormatter @Inject constructor() :
 //                                tabContents.musicCarouselShelfRenderer.contents[0].musicTwoRowItemRenderer.thumbnailRenderer.musicThumbnailRenderer.thumbnail.thumbnails[0].url
                 categoryPlayListBaseName =
                     tabContents.musicCarouselShelfRenderer?.header?.musicCarouselShelfBasicHeaderRenderer?.accessibilityData?.accessibilityData?.label!!
-
+                val musicCategoryPlayListContentList = mutableListOf<MusicCategoryPlayList>()
                 for (shelfContent in tabContents.musicCarouselShelfRenderer?.contents!!) {
                     for (thumpNail in shelfContent.musicTwoRowItemRenderer?.thumbnailRenderer?.musicThumbnailRenderer?.thumbnail?.thumbnails!!) {
                         plaListThumpNail = thumpNail.url
@@ -58,10 +58,11 @@ class YoutubeMusicCategoryPlayListDataFormatter @Inject constructor() :
                             break
                         }
                     }
+                    musicCategoryPlayListContentList.add( MusicCategoryPlayList(playListId = plaListId!!, playListName = plaListName!!, playListThump = plaListThumpNail!!))
                 }
                 Log.d("DETAILS","---------------------------------------")
-                musicCategoryPlayList.add(MusicCategoryPlayListBase(plaListBaseName = categoryPlayListBaseName!!,
-                    MusicCategoryPlayList(playListId = plaListId!!, playListName = plaListName!!, playListThump = plaListThumpNail!!),))
+//                musicCategoryPlayList.add(MusicCategoryPlayListBase(plaListBaseName = categoryPlayListBaseName!!,musicCategoryPlayListContentList)
+                musicCategoryPlayList.add(MusicCategoryPlayListBase(plaListBaseName = categoryPlayListBaseName!!,musicCategoryPlayListContentList))
 
                 Log.d("DETAILS","<categoryPlayListBaseName>"+categoryPlayListBaseName+"<plaListId>"+plaListId+"<plaListName>"+plaListName+"<plaListThumpNail>"+plaListThumpNail)
 

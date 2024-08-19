@@ -49,6 +49,7 @@ import com.ramzmania.tubefy.ui.components.screen.BooksScreen
 import com.ramzmania.tubefy.ui.components.screen.home.HomeInitialScreen
 import com.ramzmania.tubefy.ui.components.screen.ProfileScreen
 import com.ramzmania.tubefy.ui.components.screen.album.AlbumScreen
+import com.ramzmania.tubefy.ui.components.screen.category.CategoryPlaylistView
 import com.ramzmania.tubefy.ui.components.screen.player.PlayerBaseView
 import com.ramzmania.tubefy.ui.components.screen.search.AudioSearchScreen
 import com.ramzmania.tubefy.utils.LocalNavController
@@ -201,7 +202,7 @@ fun Navigation(navController: NavHostController) {
         }
 
         composable(NavigationItem.Books.route) {
-            BooksScreen()
+            CategoryPlaylistView()
         }
         composable(NavigationItem.Profile.route) {
             ProfileScreen()

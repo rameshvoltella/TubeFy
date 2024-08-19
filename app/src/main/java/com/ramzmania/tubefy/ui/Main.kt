@@ -65,7 +65,7 @@ private var nextPage: Page? = null
 
         }
         binding.lasttype.setOnClickListener {
-            viewModel.callCatogyplayList()
+            viewModel.callCategoryPlayList()
 //            viewModel.loadDefaultHomeData()
 //            viewModel.startWebScrapping("https://music.youtube.com/moods_and_genres", YoutubeScrapType.YOUTUBE_MUSIC_CATEGORY)
                     }
