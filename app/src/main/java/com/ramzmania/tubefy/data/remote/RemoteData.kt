@@ -17,18 +17,19 @@ import com.ramzmania.tubefy.core.extractors.newpipeextractor.newPipeSearchFor
 import com.ramzmania.tubefy.core.extractors.newpipeextractor.newPipeSearchNextPageFor
 import com.ramzmania.tubefy.data.NetworkConnectivity
 import com.ramzmania.tubefy.data.Resource
-import com.ramzmania.tubefy.data.dto.base.playlist.PlayListCategory
 import com.ramzmania.tubefy.data.dto.base.playlist.PlayListData
-import com.ramzmania.tubefy.data.dto.home.HomePageResponse
-import com.ramzmania.tubefy.data.dto.home.youtubei.YoutubeiHomeFirstResponse
+import com.ramzmania.tubefy.data.dto.home.youtubei.YoutubeiHomeBaseResponse
 import com.ramzmania.tubefy.data.dto.home.youtubei.YoutubeiMusicHomeApiResponse
+import com.ramzmania.tubefy.data.dto.home.youtubei.next.ContinuationContents
 import com.ramzmania.tubefy.data.dto.youtubeV3.YoutubeSearchResponse
-import com.ramzmania.tubefy.data.dto.youtubemusic.category.MusicCategoryPlayList
 import com.ramzmania.tubefy.data.dto.youtubemusic.category.MusicCategoryPlayListBase
+import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.categoryplaylist.BrowseHomePaginationRequest
 import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.categoryplaylist.BrowseHomeRequest
 import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.categoryplaylist.BrowseRequest
 import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.categoryplaylist.CategoryPlayListRoot
 import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.categoryplaylist.Client
+import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.categoryplaylist.ClientPagination
+import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.categoryplaylist.ContextPagination
 import com.ramzmania.tubefy.data.remote.api.ApiServices
 import com.ramzmania.tubefy.data.remote.api.ServiceGenerator
 import com.ramzmania.tubefy.errors.NETWORK_ERROR
@@ -42,17 +43,13 @@ import com.ramzmania.tubefy.player.createMediaItems
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.schabi.newpipe.extractor.InfoItem
-import org.schabi.newpipe.extractor.NewPipe
 import org.schabi.newpipe.extractor.Page
-import org.schabi.newpipe.extractor.playlist.PlaylistInfo
 import org.schabi.newpipe.extractor.search.SearchInfo
 import org.schabi.newpipe.extractor.services.youtube.YoutubeService
 import org.schabi.newpipe.extractor.services.youtube.extractors.YoutubeStreamExtractor
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
 import retrofit2.Response
 import java.io.IOException
-import java.net.URLDecoder
-import java.nio.charset.StandardCharsets
 import javax.inject.Inject
 
 class RemoteData @Inject
@@ -238,7 +235,7 @@ constructor(
         }
     }
 
-    override suspend fun getMusicHomeYoutubei(): Resource<YoutubeiHomeFirstResponse> {
+    override suspend fun getMusicHomeYoutubei(): Resource<YoutubeiHomeBaseResponse> {
         val categoryPlaylistService = serviceGenerator.createService(ApiServices::class.java)
         val client = Client(
             clientName = "WEB_REMIX",
@@ -295,6 +292,68 @@ constructor(
             }
         }
     }
+
+    override suspend fun getMusicHomePaginationYoutubei(
+        paginationHex: String,
+        paginationId: String,
+        visitorData: String
+    ): Resource<YoutubeiHomeBaseResponse> {
+        val categoryPlaylistService = serviceGenerator.createService(ApiServices::class.java)
+        val client = ClientPagination(
+            clientName = "WEB_REMIX",
+            clientVersion = "1.20240729.01.00",
+            visitorData=visitorData
+//            originalUrl = "https://music.youtube.com/moods_and_genres"
+        )
+
+        val context =
+            ContextPagination(client = client)
+
+        val request = BrowseHomePaginationRequest(
+            context = context
+        )
+        return when (val response = processCall {
+            categoryPlaylistService.getMusicHomeYoutubeiPaginationInfo(
+                request, "https://music.youtube.com/youtubei/v1/browse?continuation="+paginationId+"&type=next&itct="+paginationHex+"&prettyPrint=false"
+            )
+        }) {
+            is Any -> {
+                try {
+                    (response is YoutubeiMusicHomeApiResponse).let {
+                        Log.d("kiiii", "yooo")
+                        val result =
+                            youtubeMusicDataFormatterFactory.createForYoutubeMusicYoutubeiDataHomePaginationFormatter()
+                                .run((response as ContinuationContents))
+                        when (result) {
+                            is FormattingResult.SUCCESS -> {
+                                if (result.data.homePageContentDataList != null) {
+                                    Resource.Success(result.data)
+                                } else {
+                                    Resource.DataError(YOUTUBE_SCRAP_ERROR)
+                                }
+                            }
+
+                            is FormattingResult.FAILURE -> {
+                                Resource.DataError(YOUTUBE_SCRAP_ERROR)
+                            }
+
+
+                        }
+//                        Resource.DataError(YOUTUBE_SCRAP_ERROR)
+
+
+                    }
+
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    Resource.DataError(YOUTUBE_SCRAP_ERROR)
+                }
+            }
+
+            else -> {
+                Resource.DataError(errorCode = response as Int)
+            }
+        }    }
 
     override suspend fun getNewPipePageSearch(
         serviceId: Int,

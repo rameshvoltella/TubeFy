@@ -17,12 +17,10 @@ import com.ramzmania.tubefy.data.dto.base.playlist.PlayListCategory
 import com.ramzmania.tubefy.data.dto.home.HomePageResponse
 import com.ramzmania.tubefy.data.dto.base.playlist.PlayListData
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
-import com.ramzmania.tubefy.data.dto.home.youtubei.YoutubeiHomeFirstResponse
+import com.ramzmania.tubefy.data.dto.home.youtubei.YoutubeiHomeBaseResponse
 import com.ramzmania.tubefy.data.dto.youtubemusic.category.MusicCategoryPlayListBase
 import com.ramzmania.tubefy.data.dto.youtubemusic.category.YtMusicCategoryBase
-import com.ramzmania.tubefy.data.dto.youtubemusic.category.YtMusicCategoryContent
 import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.YoutubeMusicPlayListContent
-import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.categoryplaylist.CategoryPlayListRoot
 import com.ramzmania.tubefy.data.dto.youtubestripper.ApiResponse
 import com.ramzmania.tubefy.data.dto.youtubestripper.MusicHomeResponse2
 import com.ramzmania.tubefy.data.local.LocalRepositorySource
@@ -108,8 +106,11 @@ class TubeFyViewModel @Inject constructor(
     val youTubeCategoryPlayList: LiveData<Resource<List<MusicCategoryPlayListBase?>>> get() = youTubeCategoryPlayListPrivate
 
 
-    private val youTubeiMusicHomePrivate = MutableLiveData<Resource<YoutubeiHomeFirstResponse>>()
-    val youTubeiMusicHomeData: LiveData<Resource<YoutubeiHomeFirstResponse>> get() = youTubeiMusicHomePrivate
+    private val youTubeiMusicHomePrivate = MutableLiveData<Resource<YoutubeiHomeBaseResponse>>()
+    val youTubeiMusicHomeData: LiveData<Resource<YoutubeiHomeBaseResponse>> get() = youTubeiMusicHomePrivate
+
+    private val youTubeiMusicHomePaginationPrivate = MutableLiveData<Resource<YoutubeiHomeBaseResponse>>()
+    val youTubeiMusicHomePaginationData: LiveData<Resource<YoutubeiHomeBaseResponse>> get() = youTubeiMusicHomePaginationPrivate
 
     fun setHtmlContent(content: ApiResponse?) {
 //        htmlContentPrivate.value = content
@@ -236,6 +237,20 @@ class TubeFyViewModel @Inject constructor(
 
             remoteRepositorySource.getMusicHomeYoutubei().collect {
                 youTubeiMusicHomePrivate.value = it
+
+            }
+        }
+
+    }
+
+    fun callYoutubeiHomePagination(paginationHex:String,paginationId:String,visitorData:String)
+    {
+//        Log.d("bulk calling","bulk"+youTubePlayListBulkData)
+
+        viewModelScope.launch {
+
+            remoteRepositorySource.getMusicHomePaginationYoutubei(paginationHex,paginationId,visitorData).collect {
+                youTubeiMusicHomePaginationPrivate.value = it
 
             }
         }

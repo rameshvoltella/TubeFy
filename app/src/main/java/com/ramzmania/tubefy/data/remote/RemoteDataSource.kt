@@ -5,10 +5,8 @@ import com.ramzmania.tubefy.data.dto.base.searchformat.StreamUrlData
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreUniversalData
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.base.playlist.PlayListData
-import com.ramzmania.tubefy.data.dto.home.HomePageResponse
-import com.ramzmania.tubefy.data.dto.home.youtubei.YoutubeiHomeFirstResponse
+import com.ramzmania.tubefy.data.dto.home.youtubei.YoutubeiHomeBaseResponse
 import com.ramzmania.tubefy.data.dto.youtubemusic.category.MusicCategoryPlayListBase
-import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.categoryplaylist.CategoryPlayListRoot
 import com.ramzmania.tubefy.player.YoutubePlayerPlaylistListModel
 import org.schabi.newpipe.extractor.Page
 
@@ -39,7 +37,9 @@ interface RemoteDataSource {
     suspend fun  getCategoryPlayList(browseId:String,playerId:String):Resource<List<MusicCategoryPlayListBase?>>
 
 
-    suspend fun  getMusicHomeYoutubei():Resource<YoutubeiHomeFirstResponse>
+    suspend fun  getMusicHomeYoutubei():Resource<YoutubeiHomeBaseResponse>
+    suspend fun  getMusicHomePaginationYoutubei(paginationHex:String,paginationId:String,visitorData:String):Resource<YoutubeiHomeBaseResponse>
+
 
 
 }

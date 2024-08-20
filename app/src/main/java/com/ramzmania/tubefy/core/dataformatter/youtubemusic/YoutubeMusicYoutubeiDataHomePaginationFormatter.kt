@@ -5,18 +5,16 @@ import android.util.Log
 import com.ramzmania.tubefy.core.dataformatter.FormattingResult
 import com.ramzmania.tubefy.core.dataformatter.UniversalYoutubeDataFormatter
 import com.ramzmania.tubefy.data.dto.base.BaseContentData
-import com.ramzmania.tubefy.data.dto.home.CellType
 import com.ramzmania.tubefy.data.dto.home.HomePageResponse
 import com.ramzmania.tubefy.data.dto.home.youtubei.PaginationContent
-import com.ramzmania.tubefy.data.dto.home.youtubei.YoutubeiHomeFirstResponse
-import com.ramzmania.tubefy.data.dto.home.youtubei.YoutubeiMusicHomeApiResponse
+import com.ramzmania.tubefy.data.dto.home.youtubei.YoutubeiHomeBaseResponse
 import com.ramzmania.tubefy.data.dto.home.youtubei.next.ContinuationContents
 
 import javax.inject.Inject
 
 class YoutubeMusicYoutubeiDataHomePaginationFormatter @Inject constructor() :
-    UniversalYoutubeDataFormatter<ContinuationContents, FormattingResult<YoutubeiHomeFirstResponse, Exception>>() {
-    override suspend fun runFormatting(inputData: ContinuationContents): FormattingResult<YoutubeiHomeFirstResponse, Exception> {
+    UniversalYoutubeDataFormatter<ContinuationContents, FormattingResult<YoutubeiHomeBaseResponse, Exception>>() {
+    override suspend fun runFormatting(inputData: ContinuationContents): FormattingResult<YoutubeiHomeBaseResponse, Exception> {
 
 //        if (musicCategoryPlayList.size > 0) {
 //            return FormattingResult.SUCCESS(musicCategoryPlayList)
@@ -26,7 +24,7 @@ class YoutubeMusicYoutubeiDataHomePaginationFormatter @Inject constructor() :
         try {
 //        }
             val youtubeMusicHomeDataList = mutableListOf<HomePageResponse>()
-            var youtubeiHomeFirstResponse: YoutubeiHomeFirstResponse? = null
+            var youtubeiHomeFirstResponse: YoutubeiHomeBaseResponse? = null
             var paginationHex: String? = ""
             var paginationId: String? = ""
             var visitorData: String? = ""
@@ -164,7 +162,7 @@ class YoutubeMusicYoutubeiDataHomePaginationFormatter @Inject constructor() :
 
             Log.d("Tagger", "before")
                 if (paginationHex != null && paginationHex.length > 0) {
-                    youtubeiHomeFirstResponse = YoutubeiHomeFirstResponse(
+                    youtubeiHomeFirstResponse = YoutubeiHomeBaseResponse(
                         PaginationContent(
                             paginationId,
                             paginationHex,
@@ -175,7 +173,7 @@ class YoutubeMusicYoutubeiDataHomePaginationFormatter @Inject constructor() :
 
                 } else {
                     youtubeiHomeFirstResponse =
-                        YoutubeiHomeFirstResponse(null, youtubeMusicHomeDataList)
+                        YoutubeiHomeBaseResponse(null, youtubeMusicHomeDataList)
                     Log.d("Tagger", "innn222" + youtubeiHomeFirstResponse)
 
                 }
