@@ -15,6 +15,7 @@ import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.base.playlist.PlayListCategory
 import com.ramzmania.tubefy.data.dto.home.HomePageResponse
 import com.ramzmania.tubefy.data.dto.base.playlist.PlayListData
+import com.ramzmania.tubefy.data.dto.home.youtubei.YoutubeiHomeFirstResponse
 import com.ramzmania.tubefy.data.dto.youtubestripper.ApiResponse
 import com.ramzmania.tubefy.data.observe
 import com.ramzmania.tubefy.databinding.KkBinding
@@ -44,6 +45,7 @@ private var nextPage: Page? = null
         observe(viewModel.youTubeMusicHomeDefaultData, ::HandleDefaultHomeResponse)
         observe(viewModel.youTubePlayListData, ::HandleDefaultPlayListResponse)
         observe(viewModel.youTubeMusicCategoryData,:: HandleCategoryResposne)
+        observe(viewModel.youTubeiMusicHomeData,::HandleYoutubeii)
 
 
 
@@ -168,6 +170,38 @@ private var nextPage: Page? = null
 
             else -> {}
         }
+    }
+
+    private fun HandleYoutubeii(resource: Resource<YoutubeiHomeFirstResponse>) {
+        when (resource) {
+            is Resource.Loading -> {}
+            is Resource.Success -> {
+                Toast.makeText(applicationContext, "DAT FROM ASSERTS DATA>"+resource.data?.homePageContentDataList?.size, 1).show()
+
+                Log.d("url", "paginationId" + resource.data?.paginationContent?.paginationId)
+                Log.d("url", "paginationHEX" + resource.data?.paginationContent?.paginationHex)
+                Log.d("url", "vister" + resource.data?.paginationContent?.visitorData)
+
+
+//                resource.data?.playListVideoList?.forEach {
+//                    Log.d("url", "<><><>" + it?.videoId)
+//
+//                }
+//                Log.d("url", "" + resource.data[1]!!.contentData?.get(0)?.playlistId)
+//                Log.d("url", "" + resource.data[2]!!.contentData?.get(0)?.playlistId)
+//                Log.d("url", "" + resource.data[3]!!.contentData?.get(0)?.playlistId)
+//                Log.d("url", "" + resource.data[4]!!.contentData?.get(0)?.playlistId)
+//                Log.d("url", "" + resource.data[5]!!.contentData?.get(0)?.playlistId)
+
+//                openUrlInBrowser( resource.data!!.streamUrl)
+            }
+
+            is Resource.DataError -> {
+            }
+
+            else -> {}
+        }
+
     }
     private fun HandleCategoryResposne(resource: Resource<List<PlayListCategory?>>) {
         when (resource) {

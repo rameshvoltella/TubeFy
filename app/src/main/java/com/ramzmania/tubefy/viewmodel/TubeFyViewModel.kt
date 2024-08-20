@@ -17,6 +17,7 @@ import com.ramzmania.tubefy.data.dto.base.playlist.PlayListCategory
 import com.ramzmania.tubefy.data.dto.home.HomePageResponse
 import com.ramzmania.tubefy.data.dto.base.playlist.PlayListData
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
+import com.ramzmania.tubefy.data.dto.home.youtubei.YoutubeiHomeFirstResponse
 import com.ramzmania.tubefy.data.dto.youtubemusic.category.MusicCategoryPlayListBase
 import com.ramzmania.tubefy.data.dto.youtubemusic.category.YtMusicCategoryBase
 import com.ramzmania.tubefy.data.dto.youtubemusic.category.YtMusicCategoryContent
@@ -107,8 +108,8 @@ class TubeFyViewModel @Inject constructor(
     val youTubeCategoryPlayList: LiveData<Resource<List<MusicCategoryPlayListBase?>>> get() = youTubeCategoryPlayListPrivate
 
 
-    private val youTubeiMusicHomePrivate = MutableLiveData<Resource<List<HomePageResponse?>>>()
-    val youTubeiMusicHomeData: LiveData<Resource<List<HomePageResponse?>>> get() = youTubeiMusicHomePrivate
+    private val youTubeiMusicHomePrivate = MutableLiveData<Resource<YoutubeiHomeFirstResponse>>()
+    val youTubeiMusicHomeData: LiveData<Resource<YoutubeiHomeFirstResponse>> get() = youTubeiMusicHomePrivate
 
     fun setHtmlContent(content: ApiResponse?) {
 //        htmlContentPrivate.value = content

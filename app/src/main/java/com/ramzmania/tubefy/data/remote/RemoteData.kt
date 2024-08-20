@@ -20,6 +20,7 @@ import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.base.playlist.PlayListCategory
 import com.ramzmania.tubefy.data.dto.base.playlist.PlayListData
 import com.ramzmania.tubefy.data.dto.home.HomePageResponse
+import com.ramzmania.tubefy.data.dto.home.youtubei.YoutubeiHomeFirstResponse
 import com.ramzmania.tubefy.data.dto.home.youtubei.YoutubeiMusicHomeApiResponse
 import com.ramzmania.tubefy.data.dto.youtubeV3.YoutubeSearchResponse
 import com.ramzmania.tubefy.data.dto.youtubemusic.category.MusicCategoryPlayList
@@ -237,7 +238,7 @@ constructor(
         }
     }
 
-    override suspend fun getMusicHomeYoutubei(): Resource<List<HomePageResponse?>> {
+    override suspend fun getMusicHomeYoutubei(): Resource<YoutubeiHomeFirstResponse> {
         val categoryPlaylistService = serviceGenerator.createService(ApiServices::class.java)
         val client = Client(
             clientName = "WEB_REMIX",
@@ -266,7 +267,7 @@ constructor(
                         when (result) {
                             is FormattingResult.SUCCESS -> {
                                 if (result.data.homePageContentDataList != null) {
-                                    Resource.Success(result.data.homePageContentDataList)
+                                    Resource.Success(result.data)
                                 } else {
                                     Resource.DataError(YOUTUBE_SCRAP_ERROR)
                                 }
