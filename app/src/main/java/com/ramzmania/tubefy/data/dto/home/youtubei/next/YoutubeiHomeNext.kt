@@ -61,10 +61,22 @@ data class MusicTwoRowItemRenderer(
     @Json(name = "title") val title: Title?,
     @Json(name = "thumbnailOverlay") val thumbnailOverlay: MusicItemThumbnailOverlayRenderer?
 )
+@JsonClass(generateAdapter = true)
+data class MusicItemThumbnailOverlayRenderer(
+    @Json(name = "musicItemThumbnailOverlayRenderer") val musicItemThumbnailOverlayRenderer: MusicItemThumbnailOverlayRendererContent? = null
+)
 
 @JsonClass(generateAdapter = true)
 data class MusicThumbnailRenderer(
-    @Json(name = "musicThumbnailRenderer") val musicThumbnailRenderer: Thumbnail?
+    @Json(name = "musicThumbnailRenderer") val musicThumbnailRenderer: MusicThumbnailRenderer2?
+)
+
+@JsonClass(generateAdapter = true)
+data class MusicThumbnailRenderer2(
+    @Json(name = "thumbnail") val thumbnail: Thumbnail? = null,
+    @Json(name = "thumbnailCrop") val thumbnailCrop: String? = null,
+    @Json(name = "thumbnailScale") val thumbnailScale: String? = null,
+    @Json(name = "trackingParams") val trackingParams: String? = null
 )
 
 @JsonClass(generateAdapter = true)
@@ -143,13 +155,17 @@ data class WatchEndpointMusicConfig(
 )
 
 @JsonClass(generateAdapter = true)
-data class MusicItemThumbnailOverlayRenderer(
+data class MusicItemThumbnailOverlayRendererContent(
     @Json(name = "background") val background: VerticalGradient?,
-    @Json(name = "content") val content: MusicPlayButtonRenderer?,
+    @Json(name = "content") val content: MusicPlayButtonRendererWrapper? = null,
     @Json(name = "contentPosition") val contentPosition: String?,
     @Json(name = "displayStyle") val displayStyle: String?
 )
 
+@JsonClass(generateAdapter = true)
+data class MusicPlayButtonRendererWrapper(
+    @Json(name = "musicPlayButtonRenderer") val musicPlayButtonRenderer: MusicPlayButtonRenderer? = null
+)
 @JsonClass(generateAdapter = true)
 data class VerticalGradient(
     @Json(name = "verticalGradient") val verticalGradient: GradientLayerColors?
