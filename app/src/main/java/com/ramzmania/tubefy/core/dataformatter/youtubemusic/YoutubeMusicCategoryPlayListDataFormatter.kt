@@ -1,11 +1,14 @@
 package com.ramzmania.tubefy.core.dataformatter.youtubemusic
 
 import android.util.Log
+import com.ramzmania.tubefy.core.YoutubeCoreConstant
 import com.ramzmania.tubefy.core.dataformatter.FormattingResult
 import com.ramzmania.tubefy.core.dataformatter.UniversalYoutubeDataFormatter
 import com.ramzmania.tubefy.data.dto.youtubemusic.category.MusicCategoryPlayList
 import com.ramzmania.tubefy.data.dto.youtubemusic.category.MusicCategoryPlayListBase
 import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.categoryplaylist.CategoryPlayListRoot
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -68,13 +71,13 @@ class YoutubeMusicCategoryPlayListDataFormatter @Inject constructor() :
                             )
                         }
                     }else if(shelfContent.musicResponsiveListItemRenderer!=null) {
-                        for (thumpNail in shelfContent.musicResponsiveListItemRenderer?.thumbnail?.musicThumbnailRenderer?.thumbnail?.thumbnails!!) {
+                       /* for (thumpNail in shelfContent.musicResponsiveListItemRenderer?.thumbnail?.musicThumbnailRenderer?.thumbnail?.thumbnails!!) {
                             plaListThumpNail = thumpNail.url
                             break
-                        }
+                        }*/
                         if(shelfContent.musicResponsiveListItemRenderer.flexColumns!=null) {
                             for (flexColum in shelfContent.musicResponsiveListItemRenderer.flexColumns!!) {
-                               if( flexColum.musicResponsiveListItemFlexColumnRenderer?.text?.runs!!.isNotEmpty())
+                               if( flexColum.musicResponsiveListItemFlexColumnRenderer?.text?.runs!=null)
                                {
                                    for(playListNameData in flexColum.musicResponsiveListItemFlexColumnRenderer?.text?.runs) {
                                        if(playListNameData.text!=null) {
@@ -99,7 +102,14 @@ class YoutubeMusicCategoryPlayListDataFormatter @Inject constructor() :
                                 MusicCategoryPlayList(
                                     videoId = videoId,
                                     playListName = plaListName!!,
-                                    playListThump = plaListThumpNail!!
+                                    playListThump = "https://i.ytimg.com/vi/${
+                                        YoutubeCoreConstant.extractYoutubeVideoId(
+                                            URLDecoder.decode(
+                                                videoId,
+                                                StandardCharsets.UTF_8.toString()
+                                            )
+                                        )
+                                    }/hq720.jpg"
                                 )
                             )
                         }

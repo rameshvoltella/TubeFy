@@ -113,7 +113,7 @@ class PlaybackService(
     fun fetchPlayList() {
         serviceScope.launch {
             Log.d("bulkmode", "new array" + PlayListSingleton.getDataList()?.playListData?.size)
-            if (PlayListSingleton.getDataList()?.playListData?.size!! > 0) {
+            if (PlayListSingleton.getDataList()!=null&&PlayListSingleton.getDataList()?.playListData?.size!! > 0) {
                 val list = PlayListSingleton.getDataList()?.playListData?.take(2)
                 remoteRepositorySource.getStreamBulkUrl(YoutubePlayerPlaylistListModel(list!!))
                     .collect {

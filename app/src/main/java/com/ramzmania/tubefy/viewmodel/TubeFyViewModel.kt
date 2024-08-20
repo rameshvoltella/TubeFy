@@ -224,7 +224,6 @@ class TubeFyViewModel @Inject constructor(
 
     fun setCurrentPlayListData(playListItems: List<TubeFyCoreTypeData?>)
     {
-        koko="poda"
         youtubePlayerPlaylistListModel=YoutubePlayerPlaylistListModel(playListItems)
         PlayListSingleton.addData(playListItems)
         Log.d("bulkmode","added 111"+koko)
