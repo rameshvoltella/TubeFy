@@ -94,6 +94,8 @@ data class MusicTwoRowItemRenderer(
     @Json(name = "thumbnailOverlay") val thumbnailOverlay: MusicItemThumbnailOverlayRenderer? = null
 )
 
+
+
 @JsonClass(generateAdapter = true)
 data class MusicResponsiveListItemFlexColumnRendererWrapper(
     @Json(name = "musicResponsiveListItemFlexColumnRenderer") val musicResponsiveListItemFlexColumnRenderer: MusicResponsiveListItemFlexColumnRenderer? = null
@@ -201,6 +203,11 @@ data class TitleWrapper(
 
 @JsonClass(generateAdapter = true)
 data class MusicItemThumbnailOverlayRenderer(
+    @Json(name = "musicItemThumbnailOverlayRenderer") val musicItemThumbnailOverlayRenderer: MusicItemThumbnailOverlayRendererContent? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class MusicItemThumbnailOverlayRendererContent(
     @Json(name = "background") val background: VerticalGradientWrapper? = null,
     @Json(name = "content") val content: MusicPlayButtonRendererWrapper? = null,
     @Json(name = "contentPosition") val contentPosition: String? = null,

@@ -59,7 +59,8 @@ constructor(
     private val serviceGenerator: ServiceGenerator,
     private val networkConnectivity: NetworkConnectivity,
     private val newPipeFormatterFactory: NewPipeDataFormatterFactory,
-    private val youtubeV3Formatter: YoutubeV3Formatter, private val youtubeMusicDataFormatterFactory: YoutubeMusicDataFormatterFactory
+    private val youtubeV3Formatter: YoutubeV3Formatter,
+    private val youtubeMusicDataFormatterFactory: YoutubeMusicDataFormatterFactory
 ) : RemoteDataSource {
     override suspend fun requestYoutubeV3(
         part: String,
@@ -207,12 +208,17 @@ constructor(
                 try {
                     (response is CategoryPlayListRoot).let {
 
-                        val result=youtubeMusicDataFormatterFactory.createForYoutubeMusicCategoryPlayListDataFormatter().run( (response as CategoryPlayListRoot))
-                        when(result)
-                        {
-                            is FormattingResult.SUCCESS->{  Resource.Success(result.data)
+                        val result =
+                            youtubeMusicDataFormatterFactory.createForYoutubeMusicCategoryPlayListDataFormatter()
+                                .run((response as CategoryPlayListRoot))
+                        when (result) {
+                            is FormattingResult.SUCCESS -> {
+                                Resource.Success(result.data)
                             }
-                            is FormattingResult.FAILURE->{Resource.DataError(YOUTUBE_SCRAP_ERROR)}
+
+                            is FormattingResult.FAILURE -> {
+                                Resource.DataError(YOUTUBE_SCRAP_ERROR)
+                            }
 
 
                         }
@@ -253,10 +259,26 @@ constructor(
             is Any -> {
                 try {
                     (response is YoutubeiMusicHomeApiResponse).let {
-Log.d("kiiii","yooo")
-                        val result=youtubeMusicDataFormatterFactory.createForYoutubeMusicHomeYoutubeiDataFormatter().run( (response as YoutubeiMusicHomeApiResponse))
+                        Log.d("kiiii", "yooo")
+                        val result =
+                            youtubeMusicDataFormatterFactory.createForYoutubeMusicHomeYoutubeiDataFormatter()
+                                .run((response as YoutubeiMusicHomeApiResponse))
+                        when (result) {
+                            is FormattingResult.SUCCESS -> {
+                                if (result.data.homePageContentDataList != null) {
+                                    Resource.Success(result.data.homePageContentDataList)
+                                } else {
+                                    Resource.DataError(YOUTUBE_SCRAP_ERROR)
+                                }
+                            }
 
-                        Resource.DataError(YOUTUBE_SCRAP_ERROR)
+                            is FormattingResult.FAILURE -> {
+                                Resource.DataError(YOUTUBE_SCRAP_ERROR)
+                            }
+
+
+                        }
+//                        Resource.DataError(YOUTUBE_SCRAP_ERROR)
 
 
                     }
