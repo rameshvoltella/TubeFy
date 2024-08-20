@@ -21,6 +21,7 @@ class YoutubeMusicCategoryPlayListDataFormatter @Inject constructor() :
             for (tabContents in plaListTabData.tabRenderer?.content?.sectionListRenderer?.contents!!) {
                 var categoryPlayListBaseName: String? = ""
                 var plaListId: String? = ""
+                var videoId: String? = ""
                 var plaListThumpNail: String? = ""
                 var plaListName: String? = ""
                 var checkingPlayerId=""
@@ -66,6 +67,26 @@ class YoutubeMusicCategoryPlayListDataFormatter @Inject constructor() :
                                 )
                             )
                         }
+                    }else if(shelfContent.musicResponsiveListItemRenderer!=null) {
+                        for (thumpNail in shelfContent.musicResponsiveListItemRenderer?.thumbnail?.musicThumbnailRenderer?.thumbnail?.thumbnails!!) {
+                            plaListThumpNail = thumpNail.url
+                            break
+                        }
+                        if(shelfContent.musicResponsiveListItemRenderer.flexColumns!=null) {
+                            for (flexColum in shelfContent.musicResponsiveListItemRenderer.flexColumns!!) {
+                               if( flexColum.musicResponsiveListItemFlexColumnRenderer?.text?.runs!!.isNotEmpty())
+                               {
+                                   for(playListNameData in flexColum.musicResponsiveListItemFlexColumnRenderer?.text?.runs) {
+                                       if(playListNameData.text!=null) {
+                                           plaListName = playListNameData.text + "\n"
+                                       }
+                                   }
+                               }
+
+                            }
+                        }
+                        shelfContent.musicResponsiveListItemRenderer.flexColumns[0].musicResponsiveListItemFlexColumnRenderer.text.runs[0].text
+
                     }
                 }
                 Log.d("DETAILS","---------------------------------------")
