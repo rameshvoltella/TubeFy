@@ -89,7 +89,7 @@ data class LabelData(
 data class MusicContent(
     @Json(name = "musicTwoRowItemRenderer")
     val musicTwoRowItemRenderer: MusicTwoRowItemRenderer?,
-    @Json(name = "musicTwoRowItemRenderer")
+    @Json(name = "musicResponsiveListItemRenderer")
     val musicResponsiveListItemRenderer: MusicResponsiveListItemRenderer?
 )
 

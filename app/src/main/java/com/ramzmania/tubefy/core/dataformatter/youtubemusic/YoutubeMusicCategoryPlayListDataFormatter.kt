@@ -80,18 +80,42 @@ class YoutubeMusicCategoryPlayListDataFormatter @Inject constructor() :
                                        if(playListNameData.text!=null) {
                                            plaListName = playListNameData.text + "\n"
                                        }
+                                       if(playListNameData.navigationEndpoint!=null)
+                                       {
+                                           if(playListNameData.navigationEndpoint.watchEndpoint!=null) {
+                                               if( playListNameData.navigationEndpoint.watchEndpoint.videoId!=null) {
+                                                   videoId=playListNameData.navigationEndpoint.watchEndpoint.videoId
+                                               }
+                                           }
+                                       }
                                    }
+
                                }
 
                             }
                         }
-                        shelfContent.musicResponsiveListItemRenderer.flexColumns[0].musicResponsiveListItemFlexColumnRenderer.text.runs[0].text
+                        if(videoId!=null) {
+                            musicCategoryPlayListContentList.add(
+                                MusicCategoryPlayList(
+                                    videoId = videoId,
+                                    playListName = plaListName!!,
+                                    playListThump = plaListThumpNail!!
+                                )
+                            )
+                        }
 
                     }
                 }
                 Log.d("DETAILS","---------------------------------------")
 //                musicCategoryPlayList.add(MusicCategoryPlayListBase(plaListBaseName = categoryPlayListBaseName!!,musicCategoryPlayListContentList)
-                musicCategoryPlayList.add(MusicCategoryPlayListBase(plaListBaseName = categoryPlayListBaseName!!,musicCategoryPlayListContentList))
+                if(musicCategoryPlayListContentList.size>0) {
+                    musicCategoryPlayList.add(
+                        MusicCategoryPlayListBase(
+                            plaListBaseName = categoryPlayListBaseName!!,
+                            musicCategoryPlayListContentList
+                        )
+                    )
+                }
 
                 Log.d("DETAILS","<categoryPlayListBaseName>"+categoryPlayListBaseName+"<plaListId>"+plaListId+"<plaListName>"+plaListName+"<plaListThumpNail>"+plaListThumpNail)
 
