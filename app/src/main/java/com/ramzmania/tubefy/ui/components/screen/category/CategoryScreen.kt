@@ -1,6 +1,8 @@
 package com.ramzmania.tubefy.ui.components.screen.category
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.foundation.clickable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -35,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberImagePainter
 import com.ramzmania.tubefy.core.YoutubeCoreConstant
+import com.ramzmania.tubefy.core.YoutubeCoreConstant.decodeTitle
 import com.ramzmania.tubefy.data.dto.youtubemusic.category.MusicCategoryPlayList
 import com.ramzmania.tubefy.ui.components.NavigationItem
 import com.ramzmania.tubefy.utils.LocalNavController
@@ -110,16 +113,79 @@ fun CategoryItemCard(categoryItem: PlayListCategory?,onClick: (PlayListCategory)
         shape = RoundedCornerShape(8.dp) // Adjust the corner radius for a rounded effect
 
     ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-
-            Text(
-                text = categoryItem?.playListName.orEmpty(),
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
-                modifier = Modifier.align(Alignment.CenterHorizontally).padding(8.dp),
-                textAlign = TextAlign.Center,
-                fontSize = 25.sp
+        Box {
+            // This is the strip at the beginning of the content
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(4.dp) // Height of the strip
+                    .background(Color.Red) // Change the color as needed
             )
+            Column(modifier = Modifier.fillMaxSize()) {
+
+                Text(
+                    text = decodeTitle(categoryItem?.playListName.orEmpty()),
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    maxLines = 1,
+                    modifier = Modifier.align(Alignment.CenterHorizontally).padding(8.dp),
+                    textAlign = TextAlign.Center,
+                    fontSize = 25.sp
+                )
+            }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun PreviewCategoryScreenMain() {
+    // Sample data to preview the UI
+    val sampleCategoryItemsList = listOf(
+        PlayListCategory(
+            playListName = "Pop",
+            playListBrowserId = "1",
+            playListCategoryId = "pop"
+        ),
+        PlayListCategory(
+            playListName = "Rock \\u0026 hhh",
+            playListBrowserId = "2",
+            playListCategoryId = "rockakjdnvkmsadnvkm.ns"
+        )
+    )
+
+    // Composable function to preview
+    LazyVerticalGrid(
+        columns = GridCells.Adaptive(minSize = 150.dp),
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(sampleCategoryItemsList) { categoryItem ->
+            CategoryItemCard(categoryItem) { selectedItem ->
+                // Mock navigation or other logic here
+            }
+        }
+        // Add a Spacer to create additional space at the bottom of the grid
+        item {
+            Spacer(modifier = Modifier.height(100.dp))
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun PreviewCategoryItemCard() {
+    // Sample data for the preview
+    val sampleCategoryItem = PlayListCategory(
+        playListName = "Jazz",
+        playListBrowserId = "3",
+        playListCategoryId = "jazznsdlkjnajsnvljs"
+    )
+
+    // Preview the CategoryItemCard with sample data
+    CategoryItemCard(sampleCategoryItem) {
+        // Handle onClick if needed
     }
 }

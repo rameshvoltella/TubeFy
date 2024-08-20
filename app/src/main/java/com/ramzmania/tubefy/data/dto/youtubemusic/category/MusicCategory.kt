@@ -55,12 +55,18 @@ data class GridItem(
 @JsonClass(generateAdapter = true)
 data class MusicNavigationButtonRenderer(
     @Json(name = "clickCommand") val clickCommand: ClickCommand?,
-    @Json(name = "buttonText") val buttonText: ButtonText?
-)
+    @Json(name = "buttonText") val buttonText: ButtonText?,
+    @Json(name = "solid") val solid: Solid?,
+
+    )
 
 @JsonClass(generateAdapter = true)
 data class ClickCommand(
     @Json(name = "browseEndpoint") val browseEndpoint: BrowseEndpoint?
+)
+@JsonClass(generateAdapter = true)
+data class Solid(
+    @Json(name = "leftStripeColor") val leftStripeColor: Long
 )
 
 @JsonClass(generateAdapter = true)
