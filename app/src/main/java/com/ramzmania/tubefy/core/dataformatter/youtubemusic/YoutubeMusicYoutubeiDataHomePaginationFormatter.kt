@@ -5,6 +5,7 @@ import android.util.Log
 import com.ramzmania.tubefy.core.dataformatter.FormattingResult
 import com.ramzmania.tubefy.core.dataformatter.UniversalYoutubeDataFormatter
 import com.ramzmania.tubefy.data.dto.base.BaseContentData
+import com.ramzmania.tubefy.data.dto.home.CellType
 import com.ramzmania.tubefy.data.dto.home.HomePageResponse
 import com.ramzmania.tubefy.data.dto.home.youtubei.PaginationContent
 import com.ramzmania.tubefy.data.dto.home.youtubei.YoutubeiHomeBaseResponse
@@ -116,7 +117,10 @@ class YoutubeMusicYoutubeiDataHomePaginationFormatter @Inject constructor() :
                                             break
                                         }
                                     }
-
+                                    Log.d(
+                                        "kko",
+                                        "" + musicCarouselShelfRendererContents.musicTwoRowItemRenderer.thumbnailRenderer
+                                    )
                                     for (thumpNailData in musicCarouselShelfRendererContents.musicTwoRowItemRenderer.thumbnailRenderer?.musicThumbnailRenderer?.thumbnail?.thumbnails!!) {
                                         if (videoThump.isEmpty()) {
                                             videoThump = thumpNailData?.url!!
@@ -149,11 +153,18 @@ class YoutubeMusicYoutubeiDataHomePaginationFormatter @Inject constructor() :
                                 }
 
                             }
-
+                            youtubeMusicHomeDataList.add(
+                                HomePageResponse(
+                                    headingData ?: "Top",
+                                    if (isList == true) CellType.LIST else CellType.HORIZONTAL_LIST,
+                                    listOfBaseContent
+                                )
+                            )
                         }
 
 
                     }
+
 
                 }
 
@@ -161,22 +172,22 @@ class YoutubeMusicYoutubeiDataHomePaginationFormatter @Inject constructor() :
 
 
             Log.d("Tagger", "before")
-                if (paginationHex != null && paginationHex.length > 0) {
-                    youtubeiHomeFirstResponse = YoutubeiHomeBaseResponse(
-                        PaginationContent(
-                            paginationId,
-                            paginationHex,
-                            null
-                        ), youtubeMusicHomeDataList
-                    )
-                    Log.d("Tagger", "innn" + youtubeiHomeFirstResponse)
+            if (paginationHex != null && paginationHex.length > 0) {
+                youtubeiHomeFirstResponse = YoutubeiHomeBaseResponse(
+                    PaginationContent(
+                        paginationId,
+                        paginationHex,
+                        null
+                    ), youtubeMusicHomeDataList
+                )
+                Log.d("Tagger", "innn" + youtubeiHomeFirstResponse)
 
-                } else {
-                    youtubeiHomeFirstResponse =
-                        YoutubeiHomeBaseResponse(null, youtubeMusicHomeDataList)
-                    Log.d("Tagger", "innn222" + youtubeiHomeFirstResponse)
+            } else {
+                youtubeiHomeFirstResponse =
+                    YoutubeiHomeBaseResponse(null, youtubeMusicHomeDataList)
+                Log.d("Tagger", "innn222" + youtubeiHomeFirstResponse)
 
-                }
+            }
 
             if (youtubeiHomeFirstResponse != null) {
                 Log.d(

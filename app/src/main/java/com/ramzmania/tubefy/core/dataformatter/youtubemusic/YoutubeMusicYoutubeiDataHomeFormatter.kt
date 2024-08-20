@@ -79,8 +79,7 @@ class YoutubeMusicYoutubeiDataHomeFormatter @Inject constructor() :
                                             if (runsData.navigationEndpoint != null && runsData.navigationEndpoint.watchEndpoint != null) {
                                                 videoId =
                                                     runsData.navigationEndpoint.watchEndpoint.videoId!!
-                                                if(videoId.length>=11)
-                                                {
+                                                if (videoId.length >= 11) {
                                                     break
                                                 }
                                             }
@@ -90,7 +89,10 @@ class YoutubeMusicYoutubeiDataHomeFormatter @Inject constructor() :
 
                                 }
 
-                                Log.d("masscheck","AMLIST videoId ->"+videoId+"<videoName>"+videoName+"<videoThump>"+videoThump+"<videoPlayList>"+videoPlayList)
+                                Log.d(
+                                    "masscheck",
+                                    "AMLIST videoId ->" + videoId + "<videoName>" + videoName + "<videoThump>" + videoThump + "<videoPlayList>" + videoPlayList
+                                )
                                 if (videoId != null && videoId.length > 1) {
                                     listOfBaseContent.add(
                                         BaseContentData(
@@ -109,8 +111,7 @@ class YoutubeMusicYoutubeiDataHomeFormatter @Inject constructor() :
                                 isList = false
                                 for (runsData in musicCarouselShelfRendererContents.musicTwoRowItemRenderer.title?.runs!!) {
                                     videoName = videoName + "\n" + runsData.text
-                                    if(videoName.length>1)
-                                    {
+                                    if (videoName.length > 1) {
                                         break
                                     }
                                 }
@@ -121,12 +122,18 @@ class YoutubeMusicYoutubeiDataHomeFormatter @Inject constructor() :
                                         break
                                     }
                                 }
-Log.d("vaaapa",""+musicCarouselShelfRendererContents.musicTwoRowItemRenderer.thumbnailOverlay?.musicItemThumbnailOverlayRenderer?.content?.musicPlayButtonRenderer?.playNavigationEndpoint?.watchPlaylistEndpoint)
+                                Log.d(
+                                    "vaaapa",
+                                    "" + musicCarouselShelfRendererContents.musicTwoRowItemRenderer.thumbnailOverlay?.musicItemThumbnailOverlayRenderer?.content?.musicPlayButtonRenderer?.playNavigationEndpoint?.watchPlaylistEndpoint
+                                )
                                 if (musicCarouselShelfRendererContents.musicTwoRowItemRenderer.thumbnailOverlay?.musicItemThumbnailOverlayRenderer?.content?.musicPlayButtonRenderer?.playNavigationEndpoint?.watchPlaylistEndpoint?.playlistId != null) {
                                     videoPlayList =
                                         musicCarouselShelfRendererContents.musicTwoRowItemRenderer.thumbnailOverlay?.musicItemThumbnailOverlayRenderer?.content?.musicPlayButtonRenderer?.playNavigationEndpoint?.watchPlaylistEndpoint?.playlistId!!
                                 }
-                                Log.d("masscheck","AMGRID videoId ->"+videoId+"<videoName>"+videoName+"<videoThump>"+videoThump+"<videoPlayList>"+videoPlayList)
+                                Log.d(
+                                    "masscheck",
+                                    "AMGRID videoId ->" + videoId + "<videoName>" + videoName + "<videoThump>" + videoThump + "<videoPlayList>" + videoPlayList
+                                )
 
                                 if (videoPlayList != null && videoPlayList.length > 1) {
                                     listOfBaseContent.add(
@@ -142,7 +149,7 @@ Log.d("vaaapa",""+musicCarouselShelfRendererContents.musicTwoRowItemRenderer.thu
 
 
                         }
-                        Log.d("masscheck","GOING TO ADD "+isList)
+                        Log.d("masscheck", "GOING TO ADD " + isList)
 
                         youtubeMusicHomeDataList.add(
                             HomePageResponse(
@@ -152,8 +159,6 @@ Log.d("vaaapa",""+musicCarouselShelfRendererContents.musicTwoRowItemRenderer.thu
                             )
                         )
                     }
-
-
 
 
                 }
@@ -186,7 +191,10 @@ Log.d("vaaapa",""+musicCarouselShelfRendererContents.musicTwoRowItemRenderer.thu
 
             }
             if (youtubeiHomeFirstResponse != null) {
-                Log.d("Tagger", "innnsuccc" + youtubeiHomeFirstResponse.homePageContentDataList!!.size)
+                Log.d(
+                    "Tagger",
+                    "innnsuccc" + youtubeiHomeFirstResponse.homePageContentDataList!!.size
+                )
 
                 return FormattingResult.SUCCESS(youtubeiHomeFirstResponse)
 

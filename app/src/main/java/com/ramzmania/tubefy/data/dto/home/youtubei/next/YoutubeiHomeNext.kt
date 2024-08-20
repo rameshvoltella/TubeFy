@@ -73,15 +73,15 @@ data class MusicThumbnailRenderer(
 
 @JsonClass(generateAdapter = true)
 data class MusicThumbnailRenderer2(
-    @Json(name = "thumbnail") val thumbnail: Thumbnail? = null,
-    @Json(name = "thumbnailCrop") val thumbnailCrop: String? = null,
-    @Json(name = "thumbnailScale") val thumbnailScale: String? = null,
-    @Json(name = "trackingParams") val trackingParams: String? = null
+    @Json(name = "thumbnail") val thumbnail: Thumbnail? = null
+//    @Json(name = "thumbnailCrop") val thumbnailCrop: String? = null,
+//    @Json(name = "thumbnailScale") val thumbnailScale: String? = null,
+//    @Json(name = "trackingParams") val trackingParams: String? = null
 )
 
 @JsonClass(generateAdapter = true)
 data class Thumbnail(
-    @Json(name = "thumbnail") val thumbnails: List<ThumbnailData?>?
+    @Json(name = "thumbnails") val thumbnails: List<ThumbnailData?>?
 )
 
 @JsonClass(generateAdapter = true)
@@ -179,20 +179,20 @@ data class GradientLayerColors(
 @JsonClass(generateAdapter = true)
 data class MusicPlayButtonRenderer(
     @Json(name = "playNavigationEndpoint") val playNavigationEndpoint: PlayNavigationEndpoint?,
-    @Json(name = "trackingParams") val trackingParams: String?,
-    @Json(name = "playIcon") val playIcon: Icon?,
-    @Json(name = "pauseIcon") val pauseIcon: Icon?,
-    @Json(name = "iconColor") val iconColor: Int?,
-    @Json(name = "backgroundColor") val backgroundColor: Int?,
-    @Json(name = "activeBackgroundColor") val activeBackgroundColor: Int?,
-    @Json(name = "loadingIndicatorColor") val loadingIndicatorColor: Int?,
-    @Json(name = "playingIcon") val playingIcon: Icon?,
-    @Json(name = "iconLoadingColor") val iconLoadingColor: Int?,
-    @Json(name = "activeScaleFactor") val activeScaleFactor: Double?,
-    @Json(name = "buttonSize") val buttonSize: String?,
-    @Json(name = "rippleTarget") val rippleTarget: String?,
-    @Json(name = "accessibilityPlayData") val accessibilityPlayData: AccessibilityData?,
-    @Json(name = "accessibilityPauseData") val accessibilityPauseData: AccessibilityData?
+//    @Json(name = "trackingParams") val trackingParams: String?,
+//    @Json(name = "playIcon") val playIcon: Icon?,
+//    @Json(name = "pauseIcon") val pauseIcon: Icon?,
+//    @Json(name = "iconColor") val iconColor: Long?,
+//    @Json(name = "backgroundColor") val backgroundColor: Int?,
+//    @Json(name = "activeBackgroundColor") val activeBackgroundColor: Int?,
+//    @Json(name = "loadingIndicatorColor") val loadingIndicatorColor: Int?,
+//    @Json(name = "playingIcon") val playingIcon: Icon?,
+//    @Json(name = "iconLoadingColor") val iconLoadingColor: Int?,
+//    @Json(name = "activeScaleFactor") val activeScaleFactor: Double?,
+//    @Json(name = "buttonSize") val buttonSize: String?,
+//    @Json(name = "rippleTarget") val rippleTarget: String?,
+//    @Json(name = "accessibilityPlayData") val accessibilityPlayData: AccessibilityData?,
+//    @Json(name = "accessibilityPauseData") val accessibilityPauseData: AccessibilityData?
 )
 
 @JsonClass(generateAdapter = true)
