@@ -272,6 +272,9 @@ fun AlbumTrackList(tracks: List<TubeFyCoreTypeData?>) {
         items(tracks!!) { track ->
             TrackItem(trackName = track!!)
         }
+        item {
+            Spacer(modifier = Modifier.height(90.dp))
+        }
     }
 }
 

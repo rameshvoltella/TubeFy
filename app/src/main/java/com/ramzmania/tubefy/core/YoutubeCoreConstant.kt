@@ -45,7 +45,7 @@ object YoutubeCoreConstant {
     fun decodeTitle(encodedUrl: String): String {
         // Replace encoded characters with their actual representations
         return encodedUrl
-            .replace("\\u0026", "&")
+            .replace("\\u0026", "&").replace("\\","")
 
         // Add more replacements as needed for other encoded characters
     }

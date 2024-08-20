@@ -95,6 +95,9 @@ fun HomePageContentList(
                 }
             }
         }
+        item {
+            Spacer(modifier = Modifier.height(90.dp))
+        }
     }
 
     LaunchedEffect(key1 = playListData) {

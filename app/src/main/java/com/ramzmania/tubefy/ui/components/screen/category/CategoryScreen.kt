@@ -24,6 +24,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -31,11 +32,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberImagePainter
+import com.ramzmania.tubefy.R
 import com.ramzmania.tubefy.core.YoutubeCoreConstant
 import com.ramzmania.tubefy.core.YoutubeCoreConstant.decodeTitle
 import com.ramzmania.tubefy.data.dto.youtubemusic.category.MusicCategoryPlayList
@@ -52,16 +55,18 @@ fun CategoryScreenMain(viewModel: TubeFyViewModel = hiltViewModel()) {
     val navController = LocalNavController.current
 
     LaunchedEffect(Unit) {
-        if(!isDefaultDataLoaded)
-        {
-            viewModel.startWebScrapping("https://music.youtube.com/moods_and_genres", YoutubeScrapType.YOUTUBE_MUSIC_CATEGORY)
+        if (!isDefaultDataLoaded) {
+            viewModel.startWebScrapping(
+                "https://music.youtube.com/moods_and_genres",
+                YoutubeScrapType.YOUTUBE_MUSIC_CATEGORY
+            )
         }
 
     }
 
     LaunchedEffect(key1 = categoryData) {
         if (categoryData is Resource.Success) {
-            isDefaultDataLoaded=true
+            isDefaultDataLoaded = true
             categoryItemsList = categoryData?.data!!
         }
     }
@@ -75,7 +80,7 @@ fun CategoryScreenMain(viewModel: TubeFyViewModel = hiltViewModel()) {
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(categoryItemsList) { categoryItem ->
-                CategoryItemCard(categoryItem){ selectedItem ->
+                CategoryItemCard(categoryItem) { selectedItem ->
                     navController!!.navigate(
                         NavigationItem.CategoryPlayList.createRoute(
                             selectedItem.playListBrowserId!!,
@@ -96,41 +101,61 @@ fun CategoryScreenMain(viewModel: TubeFyViewModel = hiltViewModel()) {
             }
             // Add a Spacer to create additional space at the bottom of the grid
             item {
-                Spacer(modifier = Modifier.height(100.dp))
+                Spacer(modifier = Modifier.height(190.dp))
             }
+        }
+    }else{
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(color = colorResource(id = R.color.tubefyred))
         }
     }
 }
 
 @Composable
-fun CategoryItemCard(categoryItem: PlayListCategory?,onClick: (PlayListCategory) -> Unit) {
+fun CategoryItemCard(categoryItem: PlayListCategory?, onClick: (PlayListCategory) -> Unit) {
     Card(
         modifier = Modifier
 //                .padding(8.dp)
-            .fillMaxWidth() .clickable { onClick(categoryItem!!) },
+            .fillMaxWidth()
+            .clickable { onClick(categoryItem!!) },
         elevation = CardDefaults.cardElevation(4.dp), // Use CardDefaults.cardElevation for elevation
         colors = CardDefaults.cardColors(containerColor = Color.DarkGray), // Set background color
         shape = RoundedCornerShape(8.dp) // Adjust the corner radius for a rounded effect
 
     ) {
-        Box {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(90.dp)
+        ) {
             // This is the strip at the beginning of the content
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(4.dp) // Height of the strip
-                    .background(Color.Red) // Change the color as needed
+                    .background(Color(categoryItem!!.stripColorCode)) // Change the color as needed
             )
-            Column(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(categoryItem!!.stripColorCode)),
+                verticalArrangement = Arrangement.Center, // Center content vertically
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
 
                 Text(
                     text = decodeTitle(categoryItem?.playListName.orEmpty()),
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.Medium,
                     color = Color.White,
-                    maxLines = 1,
-                    modifier = Modifier.align(Alignment.CenterHorizontally).padding(8.dp),
+                    maxLines = 2,
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .padding(horizontal = 8.dp),
                     textAlign = TextAlign.Center,
-                    fontSize = 25.sp
+                    fontSize = 16.sp
                 )
             }
         }
@@ -145,10 +170,12 @@ fun PreviewCategoryScreenMain() {
         PlayListCategory(
             playListName = "Pop",
             playListBrowserId = "1",
-            playListCategoryId = "pop"
+            playListCategoryId = "pop",
+            stripColorCode = 4278232339
+
         ),
         PlayListCategory(
-            playListName = "Rock \\u0026 hhh",
+            playListName = "Rock \\\u0026 hhhefdasdfasdfdsfvzdfvdad",
             playListBrowserId = "2",
             playListCategoryId = "rockakjdnvkmsadnvkm.ns"
         )

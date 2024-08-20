@@ -197,6 +197,9 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
                     TrackItem(item)
                 }
             }
+            item {
+                Spacer(modifier = Modifier.height(90.dp))
+            }
             if (isLoading) {
                 item {
                     Box(
