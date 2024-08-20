@@ -5,6 +5,7 @@ import com.ramzmania.tubefy.data.dto.base.searchformat.StreamUrlData
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreUniversalData
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.base.playlist.PlayListData
+import com.ramzmania.tubefy.data.dto.home.HomePageResponse
 import com.ramzmania.tubefy.data.dto.youtubemusic.category.MusicCategoryPlayListBase
 import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.categoryplaylist.CategoryPlayListRoot
 import com.ramzmania.tubefy.player.YoutubePlayerPlaylistListModel
@@ -37,6 +38,10 @@ class RemoteRepository @Inject constructor(
         playerId: String
     ): Flow<Resource<List<MusicCategoryPlayListBase?>>> {
         return flow {emit(remoteRepository.getCategoryPlayList(browseId,playerId))  }
+    }
+
+    override suspend fun getMusicHomeYoutubei(): Flow<Resource<List<HomePageResponse?>>> {
+        return flow {emit(remoteRepository.getMusicHomeYoutubei())  }
     }
 
 

@@ -17,3 +17,7 @@ data class BrowseRequest(
     val browseId: String,
     val params: String
 )
+
+data class BrowseHomeRequest(
+    val context: Context
+)

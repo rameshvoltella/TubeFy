@@ -106,6 +106,10 @@ class TubeFyViewModel @Inject constructor(
     private val youTubeCategoryPlayListPrivate = MutableLiveData<Resource<List<MusicCategoryPlayListBase?>>>()
     val youTubeCategoryPlayList: LiveData<Resource<List<MusicCategoryPlayListBase?>>> get() = youTubeCategoryPlayListPrivate
 
+
+    private val youTubeiMusicHomePrivate = MutableLiveData<Resource<List<HomePageResponse?>>>()
+    val youTubeiMusicHomeData: LiveData<Resource<List<HomePageResponse?>>> get() = youTubeiMusicHomePrivate
+
     fun setHtmlContent(content: ApiResponse?) {
 //        htmlContentPrivate.value = content
         viewModelScope.launch {
@@ -216,6 +220,21 @@ class TubeFyViewModel @Inject constructor(
 
             remoteRepositorySource.getCategoryPlayList("FEmusic_moods_and_genres_category","ggMPOg1uX1JOQWZFeDByc2Jm").collect {
                 youTubeCategoryPlayListPrivate.value = it
+
+            }
+        }
+
+    }
+
+
+    fun callYoutubeiHome()
+    {
+//        Log.d("bulk calling","bulk"+youTubePlayListBulkData)
+
+        viewModelScope.launch {
+
+            remoteRepositorySource.getMusicHomeYoutubei().collect {
+                youTubeiMusicHomePrivate.value = it
 
             }
         }

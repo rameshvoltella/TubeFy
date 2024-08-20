@@ -19,9 +19,12 @@ import com.ramzmania.tubefy.data.NetworkConnectivity
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.base.playlist.PlayListCategory
 import com.ramzmania.tubefy.data.dto.base.playlist.PlayListData
+import com.ramzmania.tubefy.data.dto.home.HomePageResponse
+import com.ramzmania.tubefy.data.dto.home.youtubei.YoutubeiMusicHomeApiResponse
 import com.ramzmania.tubefy.data.dto.youtubeV3.YoutubeSearchResponse
 import com.ramzmania.tubefy.data.dto.youtubemusic.category.MusicCategoryPlayList
 import com.ramzmania.tubefy.data.dto.youtubemusic.category.MusicCategoryPlayListBase
+import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.categoryplaylist.BrowseHomeRequest
 import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.categoryplaylist.BrowseRequest
 import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.categoryplaylist.CategoryPlayListRoot
 import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.categoryplaylist.Client
@@ -213,6 +216,48 @@ constructor(
 
 
                         }
+
+                    }
+
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    Resource.DataError(YOUTUBE_SCRAP_ERROR)
+                }
+            }
+
+            else -> {
+                Resource.DataError(errorCode = response as Int)
+            }
+        }
+    }
+
+    override suspend fun getMusicHomeYoutubei(): Resource<List<HomePageResponse?>> {
+        val categoryPlaylistService = serviceGenerator.createService(ApiServices::class.java)
+        val client = Client(
+            clientName = "WEB_REMIX",
+            clientVersion = "1.20240729.01.00"
+//            originalUrl = "https://music.youtube.com/moods_and_genres"
+        )
+
+        val context =
+            com.ramzmania.tubefy.data.dto.youtubemusic.playlist.categoryplaylist.Context(client = client)
+
+        val request = BrowseHomeRequest(
+            context = context
+        )
+        return when (val response = processCall {
+            categoryPlaylistService.getMusicHomeYoutubeiInfo(
+                request, "https://music.youtube.com/youtubei/v1/browse?prettyPrint=false"
+            )
+        }) {
+            is Any -> {
+                try {
+                    (response is YoutubeiMusicHomeApiResponse).let {
+Log.d("kiiii","yooo")
+                        val result=youtubeMusicDataFormatterFactory.createForYoutubeMusicHomeYoutubeiDataFormatter().run( (response as YoutubeiMusicHomeApiResponse))
+
+                        Resource.DataError(YOUTUBE_SCRAP_ERROR)
+
 
                     }
 
