@@ -85,7 +85,7 @@ fun CategoryScreenMain(viewModel: TubeFyViewModel = hiltViewModel()) {
                         NavigationItem.CategoryPlayList.createRoute(
                             selectedItem.playListBrowserId!!,
                             selectedItem.playListCategoryId!!,
-                            selectedItem.playListName!!
+                            URLEncoder.encode(decodeTitle(selectedItem.playListName!!), StandardCharsets.UTF_8.toString())
 
                         )
                     ) {

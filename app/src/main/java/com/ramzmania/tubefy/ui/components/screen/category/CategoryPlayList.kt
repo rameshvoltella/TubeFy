@@ -41,6 +41,7 @@ import com.ramzmania.tubefy.data.dto.youtubemusic.category.MusicCategoryPlayList
 import com.ramzmania.tubefy.data.dto.youtubemusic.category.MusicCategoryPlayListBase
 import com.ramzmania.tubefy.ui.components.NavigationItem
 import com.ramzmania.tubefy.utils.LocalNavController
+import java.net.URLDecoder
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
@@ -77,7 +78,10 @@ fun CategoryPlaylistView(viewModel: TubeFyViewModel = hiltViewModel()) {
             .background(Color.Black)
     ) {
         Text(
-            text = categoryName,
+            text = URLDecoder.decode(
+                categoryName,
+                StandardCharsets.UTF_8.toString()
+            ),
             fontWeight = FontWeight.Bold,
             color = Color.White,
             modifier = Modifier.padding(10.dp, 30.dp, 10.dp,10.dp),
