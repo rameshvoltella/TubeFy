@@ -498,9 +498,9 @@ Log.d("incomming<>","<>"+contentFilter)
         loadMoreHomePagePrivate.value=isLoading
     }
 
-    fun homePagePaginationEnded()
+    fun homePagePaginationEnded(value: Boolean)
     {
-        loadMoreHomePageEndedPrivate.value=true
+        loadMoreHomePageEndedPrivate.value=value
     }
 
 }

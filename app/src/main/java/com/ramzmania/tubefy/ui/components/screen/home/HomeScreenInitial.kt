@@ -123,6 +123,7 @@ fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel(), navControlle
                     paginationId = data?.paginationContent?.paginationId!!
                     paginationHex = data?.paginationContent?.paginationHex!!
                     // Prepend new data to the existing list
+                    finalItems= emptyList()
                     finalItems = data.homePageContentDataList + finalItems
 //                    Log.d("datat", "<unda>" + finalItems[0]?.contentData?.get(0)?.title?.trim())
 //                    viewModel.callYoutubeiHomePagination(data?.paginationContent?.paginationHex!!,data?.paginationContent?.paginationId!!,data?.paginationContent?.visitorData!!)
@@ -131,10 +132,11 @@ fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel(), navControlle
 
                 }
                 viewModel.setHomePageLoadMoreState(false)
+                viewModel.homePagePaginationEnded(false)
 
             } else if (homeTubeiData is Resource.DataError) {
 //                viewModel.l
-                viewModel.homePagePaginationEnded()
+                viewModel.homePagePaginationEnded(true)
                 if (!isScrapDataLoaded) {
 
                     viewModel.startWebScrapping(
@@ -162,7 +164,7 @@ fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel(), navControlle
                     } else {
                         paginationId = ""
                         paginationHex = "null"
-                        viewModel.homePagePaginationEnded()
+                        viewModel.homePagePaginationEnded(true)
                     }
                     // Prepend new data to the existing list
                     finalItems = finalItems + data.homePageContentDataList
@@ -239,11 +241,18 @@ fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel(), navControlle
         }
 
         // Show loading indicators or error messages
+        val onRefresh: () -> Unit = {
 
+//            Log.d("tadadad","REFRESH CALLED")
+
+            isDefaultDataLoaded=false
+            viewModel.callYoutubeiHome()
+
+        }
 
         // Display the updated list
         if (finalItems.isNotEmpty()) {
-            HomePageContentList(homePageResponses = finalItems, navController = navController)
+            HomePageContentList(homePageResponses = finalItems, navController = navController,onRefresh=onRefresh)
         }
     }
 }
