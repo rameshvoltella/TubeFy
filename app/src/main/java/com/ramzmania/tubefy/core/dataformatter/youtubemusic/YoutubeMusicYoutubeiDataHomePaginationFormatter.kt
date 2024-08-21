@@ -180,20 +180,20 @@ class YoutubeMusicYoutubeiDataHomePaginationFormatter @Inject constructor() :
                         null
                     ), youtubeMusicHomeDataList
                 )
-                Log.d("Tagger", "innn" + youtubeiHomeFirstResponse)
+//                Log.d("Tagger", "innn" + youtubeiHomeFirstResponse)
 
             } else {
                 youtubeiHomeFirstResponse =
                     YoutubeiHomeBaseResponse(null, youtubeMusicHomeDataList)
-                Log.d("Tagger", "innn222" + youtubeiHomeFirstResponse)
+//                Log.d("Tagger", "innn222" + youtubeiHomeFirstResponse)
 
             }
 
             if (youtubeiHomeFirstResponse != null) {
-                Log.d(
-                    "Tagger",
-                    "innnsuccc" + youtubeiHomeFirstResponse.homePageContentDataList!!.size
-                )
+//                Log.d(
+//                    "Tagger",
+//                    "innnsuccc" + youtubeiHomeFirstResponse.homePageContentDataList!!.size
+//                )
 
                 return FormattingResult.SUCCESS(youtubeiHomeFirstResponse)
 

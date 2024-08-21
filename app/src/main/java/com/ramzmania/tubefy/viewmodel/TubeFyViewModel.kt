@@ -29,6 +29,8 @@ import com.ramzmania.tubefy.player.PlayListSingleton
 import com.ramzmania.tubefy.player.YoutubePlayerPlaylistListModel
 import com.ramzmania.tubefy.ui.base.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.schabi.newpipe.extractor.Page
 import javax.inject.Inject
@@ -112,6 +114,12 @@ class TubeFyViewModel @Inject constructor(
     private val youTubeiMusicHomePaginationPrivate = MutableLiveData<Resource<YoutubeiHomeBaseResponse>>()
     val youTubeiMusicHomePaginationData: LiveData<Resource<YoutubeiHomeBaseResponse>> get() = youTubeiMusicHomePaginationPrivate
 
+
+    private val loadMoreHomePagePrivate = MutableStateFlow(false)
+    val loadMoreHomeData = loadMoreHomePagePrivate.asStateFlow()
+
+    private val loadMoreHomePageEndedPrivate = MutableStateFlow(false)
+    val loadMoreHomePageEnded = loadMoreHomePageEndedPrivate.asStateFlow()
     fun setHtmlContent(content: ApiResponse?) {
 //        htmlContentPrivate.value = content
         viewModelScope.launch {
@@ -482,6 +490,17 @@ Log.d("incomming<>","<>"+contentFilter)
     fun getHomeScreenReloadStatus():Boolean
     {
         return reloadHomeScreen
+    }
+
+    fun setHomePageLoadMoreState(isLoading: Boolean)
+    {
+        Log.d("laaaa","settttt")
+        loadMoreHomePagePrivate.value=isLoading
+    }
+
+    fun homePagePaginationEnded()
+    {
+        loadMoreHomePageEndedPrivate.value=true
     }
 
 }

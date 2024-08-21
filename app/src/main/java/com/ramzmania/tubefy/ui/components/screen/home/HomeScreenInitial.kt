@@ -3,6 +3,7 @@ package com.ramzmania.tubefy.ui.components.screen.home
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
@@ -24,6 +25,7 @@ import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
 import com.ramzmania.tubefy.data.dto.home.HomePageResponse
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.home.youtubei.YoutubeiHomeBaseResponse
+import org.schabi.newpipe.extractor.Page
 
 
 @Composable
@@ -31,14 +33,37 @@ fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel(),navController
 //    var isDataLoaded by rememberSaveable { mutableStateOf(false) }
     var isDefaultDataLoaded by rememberSaveable { mutableStateOf(false) }
     var isInitialPaginationDataLoaded by rememberSaveable { mutableStateOf(false) }
-    var isInitialPaginationDataLoaded2 by rememberSaveable { mutableStateOf(false) }
+//    var isInitialPaginationDataLoaded2 by rememberSaveable { mutableStateOf(false) }
+    var loadPagination=viewModel.loadMoreHomeData.collectAsState()
 
 
     var visiterData by rememberSaveable {
         mutableStateOf("")
     }
+    var paginationId by rememberSaveable {
+        mutableStateOf("")
+    }
+    var paginationHex by rememberSaveable {
+        mutableStateOf("")
+    }
 
     var isScrapDataLoaded by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(key1 = loadPagination.value) {
+        Log.d("laaaa","came to home"+loadPagination.value)
+
+        if(loadPagination.value)
+        {
+            Log.d("laaaa","came to home")
+            if(visiterData!=null&&paginationId!=null&&paginationHex!=null) {
+                Log.d("laaaa","call happed")
+
+                viewModel.callYoutubeiHomePagination(paginationHex, paginationId, visiterData)
+            }
+
+        }
+
+    }
 
     // Trigger loading of default home data
     LaunchedEffect(Unit) {
@@ -72,6 +97,9 @@ fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel(),navController
     // Mutable state for the final list to display
     var finalItems by rememberSaveable { mutableStateOf<List<HomePageResponse?>>(emptyList()) }
 
+
+
+
     // Update finalItems based on homeData
     LaunchedEffect(homeData) {
         if(!isDefaultDataLoaded) {
@@ -93,14 +121,18 @@ fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel(),navController
                 val data = (homeTubeiData as Resource.Success<YoutubeiHomeBaseResponse>).data
                 if (data != null && data.homePageContentDataList?.isNotEmpty()!!) {
                     visiterData=data?.paginationContent?.visitorData!!
+                    paginationId=data?.paginationContent?.paginationId!!
+                    paginationHex=data?.paginationContent?.paginationHex!!
                     // Prepend new data to the existing list
                     finalItems = data.homePageContentDataList + finalItems
                     Log.d("datat","<unda>"+ finalItems[0]?.contentData?.get(0)?.title?.trim())
-                    viewModel.callYoutubeiHomePagination(data?.paginationContent?.paginationHex!!,data?.paginationContent?.paginationId!!,data?.paginationContent?.visitorData!!)
+//                    viewModel.callYoutubeiHomePagination(data?.paginationContent?.paginationHex!!,data?.paginationContent?.paginationId!!,data?.paginationContent?.visitorData!!)
 
                     isDefaultDataLoaded = true
 
                 }
+                viewModel.setHomePageLoadMoreState(false)
+
             }
         }
     }
@@ -110,22 +142,24 @@ fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel(),navController
             if (homeTubeiPaginationData is Resource.Success) {
                 val data = (homeTubeiPaginationData as Resource.Success<YoutubeiHomeBaseResponse>).data
                 if (data != null && data.homePageContentDataList?.isNotEmpty()!!) {
+                    if(data?.paginationContent?.paginationId!=null)
+                    {
+                        paginationId = data?.paginationContent?.paginationId!!
+                        paginationHex = data?.paginationContent?.paginationHex!!
+                    }else{
+                        viewModel.homePagePaginationEnded()
+                    }
                     // Prepend new data to the existing list
                     finalItems = finalItems+data.homePageContentDataList
+
 //                    viewModel.callYoutubeiHomePagination(data?.paginationContent?.paginationHex!!,data?.paginationContent?.paginationId!!,data?.paginationContent?.visitorData!!)
 
-                    if(!isInitialPaginationDataLoaded2)
-                    {
-                        isInitialPaginationDataLoaded2=true
-                        viewModel.callYoutubeiHomePagination(data?.paginationContent?.paginationHex!!,data?.paginationContent?.paginationId!!,visiterData)
+//                    isInitialPaginationDataLoaded = true
+//                    viewModel.callYoutubeiHomePagination(data?.paginationContent?.paginationHex!!,data?.paginationContent?.paginationId!!,visiterData)
 
-                    }else
-                    {
-                        isInitialPaginationDataLoaded = true
-
-                    }
 
                 }
+                viewModel.setHomePageLoadMoreState(false)
             }
         }
     }

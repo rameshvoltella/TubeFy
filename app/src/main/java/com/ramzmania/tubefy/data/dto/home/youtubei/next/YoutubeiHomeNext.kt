@@ -220,9 +220,11 @@ data class MusicResponsiveListItemRenderer(
 
 @JsonClass(generateAdapter = true)
 data class MusicResponsiveListItemFlexColumnRenderer(
-    @Json(name = "musicResponsiveListItemFlexColumnRenderer") val text: Text?,
-    @Json(name = "displayPriority") val displayPriority: String?
-)
+//    @Json(name = "musicResponsiveListItemFlexColumnRenderer") val text: Text?,
+//    @Json(name = "displayPriority") val displayPriority: String?
+    @Json(name = "musicResponsiveListItemFlexColumnRendererddd") val text: Text?,
+
+    )
 
 @JsonClass(generateAdapter = true)
 data class Text(
