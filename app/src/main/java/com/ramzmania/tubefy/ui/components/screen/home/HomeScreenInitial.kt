@@ -32,9 +32,10 @@ import org.schabi.newpipe.extractor.Page
 fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel(),navController: NavController?) {
 //    var isDataLoaded by rememberSaveable { mutableStateOf(false) }
     var isDefaultDataLoaded by rememberSaveable { mutableStateOf(false) }
-    var isInitialPaginationDataLoaded by rememberSaveable { mutableStateOf(false) }
+//    var isInitialPaginationDataLoaded by rememberSaveable { mutableStateOf(false) }
 //    var isInitialPaginationDataLoaded2 by rememberSaveable { mutableStateOf(false) }
     var loadPagination=viewModel.loadMoreHomeData.collectAsState()
+    var loadMoreHomePageEnded=viewModel.loadMoreHomePageEnded.collectAsState()
 
 
     var visiterData by rememberSaveable {
@@ -55,7 +56,7 @@ fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel(),navController
         if(loadPagination.value)
         {
             Log.d("laaaa","came to home")
-            if(visiterData!=null&&paginationId!=null&&paginationHex!=null) {
+            if(visiterData.isNotEmpty()&&paginationId.isNotEmpty()&&paginationHex.isNotEmpty()&&!loadMoreHomePageEnded.value) {
                 Log.d("laaaa","call happed")
 
                 viewModel.callYoutubeiHomePagination(paginationHex, paginationId, visiterData)
@@ -138,7 +139,7 @@ fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel(),navController
     }
 
     LaunchedEffect(homeTubeiPaginationData) {
-        if(!isInitialPaginationDataLoaded) {
+        if(!loadMoreHomePageEnded.value) {
             if (homeTubeiPaginationData is Resource.Success) {
                 val data = (homeTubeiPaginationData as Resource.Success<YoutubeiHomeBaseResponse>).data
                 if (data != null && data.homePageContentDataList?.isNotEmpty()!!) {
@@ -147,6 +148,8 @@ fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel(),navController
                         paginationId = data?.paginationContent?.paginationId!!
                         paginationHex = data?.paginationContent?.paginationHex!!
                     }else{
+                        paginationId=""
+                        paginationHex="null"
                         viewModel.homePagePaginationEnded()
                     }
                     // Prepend new data to the existing list
