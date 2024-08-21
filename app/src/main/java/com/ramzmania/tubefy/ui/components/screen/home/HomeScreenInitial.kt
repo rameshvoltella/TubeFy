@@ -151,7 +151,7 @@ fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel(), navControlle
     }
 
     LaunchedEffect(homeTubeiPaginationData) {
-        if (!loadMoreHomePageEnded.value) {
+        if (!loadMoreHomePageEnded.value&&loadPagination.value) {
             if (homeTubeiPaginationData is Resource.Success) {
                 val data =
                     (homeTubeiPaginationData as Resource.Success<YoutubeiHomeBaseResponse>).data
