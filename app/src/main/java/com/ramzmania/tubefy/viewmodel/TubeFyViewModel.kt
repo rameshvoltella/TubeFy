@@ -13,6 +13,7 @@ import com.ramzmania.tubefy.core.extractors.yotubewebextractor.YoutubeJsonScrapp
 import com.ramzmania.tubefy.core.extractors.yotubewebextractor.YoutubeScrapType
 import com.ramzmania.tubefy.data.ContextModule
 import com.ramzmania.tubefy.data.Resource
+import com.ramzmania.tubefy.data.database.PlaylistDatabaseRepository
 import com.ramzmania.tubefy.data.dto.base.playlist.PlayListCategory
 import com.ramzmania.tubefy.data.dto.home.HomePageResponse
 import com.ramzmania.tubefy.data.dto.base.playlist.PlayListData
@@ -40,7 +41,8 @@ class TubeFyViewModel @Inject constructor(
     val contextModule: ContextModule,
     val scrapping: YoutubeJsonScrapping,
     private val localRepositorySource: LocalRepositorySource,
-    private val remoteRepositorySource: RemoteRepositorySource
+    private val remoteRepositorySource: RemoteRepositorySource,
+    private val playlistDatabaseRepository: PlaylistDatabaseRepository
 ) : BaseViewModel() {
 
     private var nextYoutubeV3PageToken: String? = null
