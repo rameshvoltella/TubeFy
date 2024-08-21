@@ -80,15 +80,14 @@ fun HomePageContentList(
     var loadMoreHomePageEnded=viewModel.loadMoreHomePageEnded.collectAsState()
 
 
-    var isRefreshing by remember { mutableStateOf(false) }
+   var isRefreshing =viewModel.pullToRefreshPage.collectAsState()
 
     // Create a PullRefreshState
     val pullRefreshState = rememberPullRefreshState(
-        refreshing = isRefreshing,
+        refreshing = isRefreshing.value,
         onRefresh = {
-            isRefreshing = true
+           viewModel.pullToRefreshHome(true)
             onRefresh()
-            isRefreshing = false
         }
     )
     LaunchedEffect(lazyListState) {
@@ -174,7 +173,7 @@ fun HomePageContentList(
             }
         }
         PullRefreshIndicator(
-            refreshing = isRefreshing,
+            refreshing = isRefreshing.value,
             state = pullRefreshState,
             modifier = Modifier.align(Alignment.TopCenter)
         )

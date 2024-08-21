@@ -117,8 +117,10 @@ fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel(), navControlle
     LaunchedEffect(homeTubeiData) {
         if (!isDefaultDataLoaded) {
             if (homeTubeiData is Resource.Success) {
+                viewModel.pullToRefreshHome(false)
                 val data = (homeTubeiData as Resource.Success<YoutubeiHomeBaseResponse>).data
                 if (data != null && data.homePageContentDataList?.isNotEmpty()!!) {
+                    isDefaultDataLoaded = true
                     visiterData = data?.paginationContent?.visitorData!!
                     paginationId = data?.paginationContent?.paginationId!!
                     paginationHex = data?.paginationContent?.paginationHex!!
@@ -128,7 +130,6 @@ fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel(), navControlle
 //                    Log.d("datat", "<unda>" + finalItems[0]?.contentData?.get(0)?.title?.trim())
 //                    viewModel.callYoutubeiHomePagination(data?.paginationContent?.paginationHex!!,data?.paginationContent?.paginationId!!,data?.paginationContent?.visitorData!!)
 
-                    isDefaultDataLoaded = true
 
                 }
                 viewModel.setHomePageLoadMoreState(false)
@@ -137,6 +138,8 @@ fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel(), navControlle
             } else if (homeTubeiData is Resource.DataError) {
 //                viewModel.l
                 viewModel.homePagePaginationEnded(true)
+                viewModel.pullToRefreshHome(false)
+
                 if (!isScrapDataLoaded) {
 
                     viewModel.startWebScrapping(
@@ -212,30 +215,31 @@ fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel(), navControlle
 
           Spacer(modifier = Modifier.height(16.dp))*/
         if (!isDefaultDataLoaded) {
-            if(errorMode)
-            {
+            if(finalItems.isEmpty()) {
+                if (errorMode) {
 
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Error loading data",
-                        color = Color.Red,
-                        fontSize = 18.sp,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                }
-            }else {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Error loading data",
+                            color = Color.Red,
+                            fontSize = 18.sp,
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
                 }
             }
         }

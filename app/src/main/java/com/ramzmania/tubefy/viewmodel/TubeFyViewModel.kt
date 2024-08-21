@@ -118,6 +118,9 @@ class TubeFyViewModel @Inject constructor(
     private val loadMoreHomePagePrivate = MutableStateFlow(false)
     val loadMoreHomeData = loadMoreHomePagePrivate.asStateFlow()
 
+    private val pullToRefreshPagePrivate = MutableStateFlow(false)
+    val pullToRefreshPage = pullToRefreshPagePrivate.asStateFlow()
+
     private val loadMoreHomePageEndedPrivate = MutableStateFlow(false)
     val loadMoreHomePageEnded = loadMoreHomePageEndedPrivate.asStateFlow()
     fun setHtmlContent(content: ApiResponse?) {
@@ -128,6 +131,11 @@ class TubeFyViewModel @Inject constructor(
                 youTubeSearchDataPrivate.value = it
             }
         }
+    }
+
+    fun pullToRefreshHome(refresh:Boolean)
+    {
+        pullToRefreshPagePrivate.value=refresh
     }
 
     fun setHtmlMusicContent(content: MusicHomeResponse2?) {
