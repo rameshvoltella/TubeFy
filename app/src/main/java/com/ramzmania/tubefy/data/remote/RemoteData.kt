@@ -258,22 +258,24 @@ constructor(
                 try {
                     (response is YoutubeiMusicHomeApiResponse).let {
                         Log.d("kiiii", "yooo")
-                        val result =
-                            youtubeMusicDataFormatterFactory.createForYoutubeMusicHomeYoutubeiDataFormatter()
-                                .run((response as YoutubeiMusicHomeApiResponse))
-                        when (result) {
-                            is FormattingResult.SUCCESS -> {
-                                if (result.data.homePageContentDataList != null) {
-                                    Resource.Success(result.data)
-                                } else {
+                        return withContext(Dispatchers.IO)
+                        {
+                            val result =
+                                youtubeMusicDataFormatterFactory.createForYoutubeMusicHomeYoutubeiDataFormatter()
+                                    .run((response as YoutubeiMusicHomeApiResponse))
+                            when (result) {
+                                is FormattingResult.SUCCESS -> {
+                                    if (result.data.homePageContentDataList != null) {
+                                        Resource.Success(result.data)
+                                    } else {
+                                        Resource.DataError(YOUTUBE_SCRAP_ERROR)
+                                    }
+                                }
+
+                                is FormattingResult.FAILURE -> {
                                     Resource.DataError(YOUTUBE_SCRAP_ERROR)
                                 }
                             }
-
-                            is FormattingResult.FAILURE -> {
-                                Resource.DataError(YOUTUBE_SCRAP_ERROR)
-                            }
-
 
                         }
 //                        Resource.DataError(YOUTUBE_SCRAP_ERROR)
@@ -302,7 +304,7 @@ constructor(
         val client = ClientPagination(
             clientName = "WEB_REMIX",
             clientVersion = "1.20240729.01.00",
-            visitorData=visitorData
+            visitorData = visitorData
 //            originalUrl = "https://music.youtube.com/moods_and_genres"
         )
 
@@ -314,13 +316,16 @@ constructor(
         )
         return when (val response = processCall {
             categoryPlaylistService.getMusicHomeYoutubeiPaginationInfo(
-                request, "https://music.youtube.com/youtubei/v1/browse?continuation="+paginationId+"&type=next&itct="+paginationHex+"&prettyPrint=false"
+                request,
+                "https://music.youtube.com/youtubei/v1/browse?continuation=" + paginationId + "&type=next&itct=" + paginationHex + "&prettyPrint=false"
             )
         }) {
             is Any -> {
                 try {
                     (response is YoutubeiMusicHomeApiResponse).let {
                         Log.d("kiiii", "yooo")
+                        return withContext(Dispatchers.IO)
+                        {
                         val result =
                             youtubeMusicDataFormatterFactory.createForYoutubeMusicYoutubeiDataHomePaginationFormatter()
                                 .run((response as ContinuationContents))
@@ -337,7 +342,7 @@ constructor(
                                 Resource.DataError(YOUTUBE_SCRAP_ERROR)
                             }
 
-
+                        }
                         }
 //                        Resource.DataError(YOUTUBE_SCRAP_ERROR)
 
@@ -353,7 +358,8 @@ constructor(
             else -> {
                 Resource.DataError(errorCode = response as Int)
             }
-        }    }
+        }
+    }
 
     override suspend fun getNewPipePageSearch(
         serviceId: Int,

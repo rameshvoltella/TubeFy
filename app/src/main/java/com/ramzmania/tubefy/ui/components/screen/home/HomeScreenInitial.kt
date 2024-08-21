@@ -124,7 +124,7 @@ fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel(), navControlle
                     paginationHex = data?.paginationContent?.paginationHex!!
                     // Prepend new data to the existing list
                     finalItems = data.homePageContentDataList + finalItems
-                    Log.d("datat", "<unda>" + finalItems[0]?.contentData?.get(0)?.title?.trim())
+//                    Log.d("datat", "<unda>" + finalItems[0]?.contentData?.get(0)?.title?.trim())
 //                    viewModel.callYoutubeiHomePagination(data?.paginationContent?.paginationHex!!,data?.paginationContent?.paginationId!!,data?.paginationContent?.visitorData!!)
 
                     isDefaultDataLoaded = true
@@ -134,6 +134,7 @@ fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel(), navControlle
 
             } else if (homeTubeiData is Resource.DataError) {
 //                viewModel.l
+                viewModel.homePagePaginationEnded()
                 if (!isScrapDataLoaded) {
 
                     viewModel.startWebScrapping(
