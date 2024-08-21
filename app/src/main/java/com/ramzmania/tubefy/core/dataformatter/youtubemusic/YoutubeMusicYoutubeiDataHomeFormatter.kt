@@ -75,7 +75,7 @@ class YoutubeMusicYoutubeiDataHomeFormatter @Inject constructor() :
 
                                     if (flexColumData.musicResponsiveListItemFlexColumnRenderer?.text?.runs != null) {
                                         for (runsData in flexColumData.musicResponsiveListItemFlexColumnRenderer?.text?.runs!!) {
-                                            videoName = videoName + "\n" + runsData.text
+                                            videoName = runsData.text+"\n"+videoName
                                             if (runsData.navigationEndpoint != null && runsData.navigationEndpoint.watchEndpoint != null) {
                                                 videoId =
                                                     runsData.navigationEndpoint.watchEndpoint.videoId!!

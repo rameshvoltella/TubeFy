@@ -23,20 +23,28 @@ import com.ramzmania.tubefy.core.extractors.yotubewebextractor.YoutubeScrapType
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
 import com.ramzmania.tubefy.data.dto.home.HomePageResponse
 import com.ramzmania.tubefy.data.Resource
-
+import com.ramzmania.tubefy.data.dto.home.youtubei.YoutubeiHomeBaseResponse
 
 
 @Composable
 fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel(),navController: NavController?) {
 //    var isDataLoaded by rememberSaveable { mutableStateOf(false) }
     var isDefaultDataLoaded by rememberSaveable { mutableStateOf(false) }
+    var isInitialPaginationDataLoaded by rememberSaveable { mutableStateOf(false) }
+    var isInitialPaginationDataLoaded2 by rememberSaveable { mutableStateOf(false) }
+
+
+    var visiterData by rememberSaveable {
+        mutableStateOf("")
+    }
+
     var isScrapDataLoaded by rememberSaveable { mutableStateOf(false) }
 
     // Trigger loading of default home data
     LaunchedEffect(Unit) {
 
         Log.d("poda","isloaded"+isDefaultDataLoaded)
-        if(!isScrapDataLoaded) {
+       /* if(!isScrapDataLoaded) {
 
             viewModel.startWebScrapping(
                 "https://music.youtube.com/",
@@ -46,12 +54,20 @@ fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel(),navController
         if(!isDefaultDataLoaded) {
 
             viewModel.loadDefaultHomeData()
+        }*/
+        if(!isDefaultDataLoaded) {
+
+            viewModel.callYoutubeiHome()
         }
     }
 
     // Observe the data from the ViewModel
     val homeData by viewModel.youTubeMusicHomeDefaultData.observeAsState()
     val scrapData by viewModel.youTubeMusicHomeData.observeAsState()
+    val homeTubeiData by viewModel.youTubeiMusicHomeData.observeAsState()
+    val homeTubeiPaginationData by viewModel.youTubeiMusicHomePaginationData.observeAsState()
+
+
 
     // Mutable state for the final list to display
     var finalItems by rememberSaveable { mutableStateOf<List<HomePageResponse?>>(emptyList()) }
@@ -65,6 +81,49 @@ fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel(),navController
                     // Prepend new data to the existing list
                     finalItems = items + finalItems
                     isDefaultDataLoaded = true
+
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(homeTubeiData) {
+        if(!isDefaultDataLoaded) {
+            if (homeTubeiData is Resource.Success) {
+                val data = (homeTubeiData as Resource.Success<YoutubeiHomeBaseResponse>).data
+                if (data != null && data.homePageContentDataList?.isNotEmpty()!!) {
+                    visiterData=data?.paginationContent?.visitorData!!
+                    // Prepend new data to the existing list
+                    finalItems = data.homePageContentDataList + finalItems
+                    Log.d("datat","<unda>"+ finalItems[0]?.contentData?.get(0)?.title?.trim())
+                    viewModel.callYoutubeiHomePagination(data?.paginationContent?.paginationHex!!,data?.paginationContent?.paginationId!!,data?.paginationContent?.visitorData!!)
+
+                    isDefaultDataLoaded = true
+
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(homeTubeiPaginationData) {
+        if(!isInitialPaginationDataLoaded) {
+            if (homeTubeiPaginationData is Resource.Success) {
+                val data = (homeTubeiPaginationData as Resource.Success<YoutubeiHomeBaseResponse>).data
+                if (data != null && data.homePageContentDataList?.isNotEmpty()!!) {
+                    // Prepend new data to the existing list
+                    finalItems = finalItems+data.homePageContentDataList
+//                    viewModel.callYoutubeiHomePagination(data?.paginationContent?.paginationHex!!,data?.paginationContent?.paginationId!!,data?.paginationContent?.visitorData!!)
+
+                    if(!isInitialPaginationDataLoaded2)
+                    {
+                        isInitialPaginationDataLoaded2=true
+                        viewModel.callYoutubeiHomePagination(data?.paginationContent?.paginationHex!!,data?.paginationContent?.paginationId!!,visiterData)
+
+                    }else
+                    {
+                        isInitialPaginationDataLoaded = true
+
+                    }
 
                 }
             }
