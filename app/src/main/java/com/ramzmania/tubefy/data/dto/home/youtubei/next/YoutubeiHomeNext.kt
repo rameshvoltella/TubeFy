@@ -198,12 +198,17 @@ data class MusicPlayButtonRenderer(
 @JsonClass(generateAdapter = true)
 data class PlayNavigationEndpoint(
     @Json(name = "clickTrackingParams") val clickTrackingParams: String?,
-    @Json(name = "watchPlaylistEndpoint") val watchPlaylistEndpoint: WatchPlaylistEndpoint?
+    @Json(name = "watchPlaylistEndpoint") val watchPlaylistEndpoint: WatchPlaylistEndpoint?,
+    @Json(name = "watchEndpoint") val watchEndpoint: WatchEndpointGrid?
 )
-
+@JsonClass(generateAdapter = true)
+data class WatchEndpointGrid(
+    @Json(name = "videoId") val videoId: String?
+)
 @JsonClass(generateAdapter = true)
 data class WatchPlaylistEndpoint(
     @Json(name = "playlistId") val playlistId: String?,
+    @Json(name = "videoId") val videoId: String?,
     @Json(name = "params") val params: String?
 )
 
@@ -217,18 +222,24 @@ data class MusicResponsiveListItemRenderer(
     @Json(name = "thumbnail") val thumbnail: MusicThumbnailRenderer?,
     @Json(name = "flexColumns") val flexColumns: List<MusicResponsiveListItemFlexColumnRenderer?>?
 )
-
+//this one
 @JsonClass(generateAdapter = true)
 data class MusicResponsiveListItemFlexColumnRenderer(
-//    @Json(name = "musicResponsiveListItemFlexColumnRenderer") val text: Text?,
+    @Json(name = "musicResponsiveListItemFlexColumnRenderer") val text: Text?,
 //    @Json(name = "displayPriority") val displayPriority: String?
-    @Json(name = "musicResponsiveListItemFlexColumnRendererddd") val text: Text?,
+//    @Json(name = "musicResponsiveListItemFlexColumnRendererddd") val text: Text?,
 
     )
 
 @JsonClass(generateAdapter = true)
 data class Text(
-    @Json(name = "text") val text: String?,
+    @Json(name = "text") val text: Run?,
+//    @Json(name = "runs") val runs: List<RunData?>?
+)
+
+@JsonClass(generateAdapter = true)
+data class Run(
+//    @Json(name = "text") val text: Any?,
     @Json(name = "runs") val runs: List<RunData?>?
 )
 

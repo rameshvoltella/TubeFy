@@ -55,18 +55,41 @@ class YoutubeMusicYoutubeiDataHomePaginationFormatter @Inject constructor() :
                         } else {
                             headingData = "TOP"
                         }
+                        Log.d("videotestyy >>", "---------------------")
+
+                        Log.d("videotestyy >>", "" + headingData)
                         var isList = false
                         val listOfBaseContent = mutableListOf<BaseContentData>()
 //                        contentData.musicCarouselShelfRenderer.contents[0].
                         if (contentData?.musicCarouselShelfRenderer != null) {
+                            Log.d(
+                                "videotestyy >>",
+                                headingData + "-----------musicCarouselShelfRenderer not null----------" + contentData
+                            )
+
                             for (musicCarouselShelfRendererContents in contentData.musicCarouselShelfRenderer?.contents!!) {
+                                Log.d(
+                                    "videotestyy >>",
+                                    headingData + "-----------musicCarouselShelfRendererContents not null----------"
+                                )
+
                                 if (musicCarouselShelfRendererContents?.musicResponsiveListItemRenderer != null) {
+                                    Log.d(
+                                        "videotestyy >>",
+                                        headingData + "-----------musicResponsiveListItemRenderer not null----------"
+                                    )
+
                                     var videoName = ""
                                     var videoId = ""
                                     var videoPlayList = ""
                                     var videoThump = ""
                                     isList = true
                                     for (thumpNailData in musicCarouselShelfRendererContents.musicResponsiveListItemRenderer.thumbnail?.musicThumbnailRenderer?.thumbnail?.thumbnails!!) {
+                                        Log.d(
+                                            "videotestyy >>",
+                                            headingData + "-----------thump not null----------"
+                                        )
+
                                         if (videoThump.isEmpty()) {
                                             videoThump = thumpNailData?.url!!
                                             break
@@ -74,13 +97,34 @@ class YoutubeMusicYoutubeiDataHomePaginationFormatter @Inject constructor() :
                                     }
 
                                     for (flexColumData in musicCarouselShelfRendererContents.musicResponsiveListItemRenderer.flexColumns!!) {
+                                        Log.d(
+                                            "videotestyy >>",
+                                            headingData + "-----------flexcol not null----------" + flexColumData?.text?.text
+                                        )
 
-                                        if (flexColumData?.text?.runs != null) {
-                                            for (runsData in flexColumData?.text?.runs!!) {
-                                                videoName = videoName + "\n" + runsData?.text
+                                        if (flexColumData?.text?.text?.runs != null) {
+                                            Log.d(
+                                                "videotestyy >>",
+                                                headingData + "-----------flexcol not nul222l----------"
+                                            )
+
+                                            for (runsData in flexColumData?.text?.text?.runs!!) {
+                                                if (videoName.length == 0) {
+                                                    videoName = runsData?.text + "" + videoName
+                                                }
+                                                Log.d(
+                                                    "videotestyy >>",
+                                                    headingData + "-----------flexcol not null3333----------"
+                                                )
+
                                                 if (runsData?.navigationEndpoint != null && runsData.navigationEndpoint.watchEndpoint != null) {
                                                     videoId =
                                                         runsData.navigationEndpoint.watchEndpoint.videoId!!
+                                                    Log.d(
+                                                        "videotestyy >>",
+                                                        headingData + "-----------flexcol not null4444----------"
+                                                    )
+
                                                     if (videoId.length >= 11) {
                                                         break
                                                     }
@@ -92,9 +136,10 @@ class YoutubeMusicYoutubeiDataHomePaginationFormatter @Inject constructor() :
                                     }
 
                                     Log.d(
-                                        "masscheck",
-                                        "AMLIST videoId ->" + videoId + "<videoName>" + videoName + "<videoThump>" + videoThump + "<videoPlayList>" + videoPlayList
+                                        "videotestyy >>",
+                                        headingData + "-----------settingggg----------"
                                     )
+
                                     if (videoId != null && videoId.length > 1) {
                                         listOfBaseContent.add(
                                             BaseContentData(
@@ -112,35 +157,49 @@ class YoutubeMusicYoutubeiDataHomePaginationFormatter @Inject constructor() :
                                     var videoThump = ""
                                     isList = false
                                     for (runsData in musicCarouselShelfRendererContents.musicTwoRowItemRenderer.title?.runs!!) {
-                                        videoName = videoName + "\n" + runsData?.text
+                                        videoName =  runsData?.text+" "+videoName
+
                                         if (videoName.length > 1) {
                                             break
                                         }
                                     }
-                                    Log.d(
-                                        "kko",
-                                        "" + musicCarouselShelfRendererContents.musicTwoRowItemRenderer.thumbnailRenderer
-                                    )
+
                                     for (thumpNailData in musicCarouselShelfRendererContents.musicTwoRowItemRenderer.thumbnailRenderer?.musicThumbnailRenderer?.thumbnail?.thumbnails!!) {
                                         if (videoThump.isEmpty()) {
                                             videoThump = thumpNailData?.url!!
                                             break
                                         }
                                     }
-                                    Log.d(
-                                        "vaaapa",
-                                        "" + musicCarouselShelfRendererContents.musicTwoRowItemRenderer.thumbnailOverlay?.musicItemThumbnailOverlayRenderer?.content?.musicPlayButtonRenderer?.playNavigationEndpoint?.watchPlaylistEndpoint
-                                    )
+
                                     if (musicCarouselShelfRendererContents.musicTwoRowItemRenderer.thumbnailOverlay?.musicItemThumbnailOverlayRenderer?.content?.musicPlayButtonRenderer?.playNavigationEndpoint?.watchPlaylistEndpoint?.playlistId != null) {
                                         videoPlayList =
                                             musicCarouselShelfRendererContents.musicTwoRowItemRenderer.thumbnailOverlay?.musicItemThumbnailOverlayRenderer?.content?.musicPlayButtonRenderer?.playNavigationEndpoint?.watchPlaylistEndpoint?.playlistId!!
                                     }
-                                    Log.d(
-                                        "masscheck",
-                                        "AMGRID videoId ->" + videoId + "<videoName>" + videoName + "<videoThump>" + videoThump + "<videoPlayList>" + videoPlayList
-                                    )
+                                    if(videoPlayList.length<3)
+                                    {
+//                                        Log.d("undzi",headingData+"<>"+musicCarouselShelfRendererContents.musicTwoRowItemRenderer.thumbnailOverlay)
+                                        isList=true
+                                      if(musicCarouselShelfRendererContents.musicTwoRowItemRenderer.thumbnailOverlay?.musicItemThumbnailOverlayRenderer?.content?.musicPlayButtonRenderer?.playNavigationEndpoint?.watchEndpoint?.videoId!=null)
+                                      {
+                                          videoId=musicCarouselShelfRendererContents.musicTwoRowItemRenderer.thumbnailOverlay?.musicItemThumbnailOverlayRenderer?.content?.musicPlayButtonRenderer?.playNavigationEndpoint?.watchEndpoint?.videoId
+                                      }
+                                    }
 
-                                    if (videoPlayList != null && videoPlayList.length > 1) {
+//                                    if(videoPlayList.length<2)
+//                                    {
+//                                        for (runsData in musicCarouselShelfRendererContents.musicTwoRowItemRenderer.title?.runs!!) {
+//                                            if(runsData?.navigationEndpoint?.watchEndpoint?.videoId!=null)
+//                                            {
+//                                                videoId=runsData?.navigationEndpoint?.watchEndpoint?.videoId
+//                                            }
+//                                        }
+//                                    }
+                                    Log.d("finalcheck", "-------start-----")
+
+                                    Log.d("finalcheck", headingData + "<><><" + videoName+"<>"+videoId+"<><>"+videoPlayList)
+                                    Log.d("finalcheck", "-------ended-----")
+
+                                    if (videoPlayList != null && videoPlayList.length > 1 || videoId != null && videoId.length >= 11) {
                                         listOfBaseContent.add(
                                             BaseContentData(
                                                 videoId,
@@ -171,7 +230,6 @@ class YoutubeMusicYoutubeiDataHomePaginationFormatter @Inject constructor() :
             }
 
 
-            Log.d("Tagger", "before")
             if (paginationHex != null && paginationHex.length > 0) {
                 youtubeiHomeFirstResponse = YoutubeiHomeBaseResponse(
                     PaginationContent(
