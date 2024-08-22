@@ -17,6 +17,8 @@ import com.ramzmania.tubefy.data.dto.base.playlist.PlayListData
 import com.ramzmania.tubefy.data.dto.home.youtubei.YoutubeiHomeBaseResponse
 import com.ramzmania.tubefy.data.dto.youtubestripper.ApiResponse
 import com.ramzmania.tubefy.data.observe
+import com.ramzmania.tubefy.database.DatabaseResponse
+import com.ramzmania.tubefy.database.QuePlaylist
 import com.ramzmania.tubefy.databinding.KkBinding
 import com.ramzmania.tubefy.ui.base.BaseBinderActivity
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
@@ -47,6 +49,11 @@ private var nextPage: Page? = null
         observe(viewModel.youTubeiMusicHomeData,::HandleYoutubeii)
         observe(viewModel.youTubeiMusicHomePaginationData,::HandleYoutubeii2)
 
+        observe(viewModel.getPlayListFromDatabase,::getDbSong)
+        observe(viewModel.addSongToDatabase,::addSonf)
+
+
+
 
 
 
@@ -58,13 +65,24 @@ private var nextPage: Page? = null
     override fun observeActivity() {
 //        viewModel.startScrapping("wwe")
         binding.next.setOnClickListener {
-            if (Page.isValid(nextPage)) {
-                viewModel.searchNewPipeNextPage(nextPage,mutableListOf<String>("music_songs"),"aavesham")
-            }
+
+            val list= listOf(
+                QuePlaylist(videoId = "video_id_1223", videoName = "Example Video 1", videoThumbnail = "http://example.com/thumbnail1.jpg"),
+                QuePlaylist(videoId = "video_id_1244", videoName = "Example Video 2", videoThumbnail = "http://example.com/thumbnail2.jpg")
+            )
+            viewModel.insertSongTOData(list)
+//            if (Page.isValid(nextPage)) {
+//                viewModel.searchNewPipeNextPage(nextPage,mutableListOf<String>("music_songs"),"aavesham")
+//            }
         }
 
         binding.YOUtbev3.setOnClickListener {
-            viewModel.loadPlayList("https://music.youtube.com/playlist?list=RDCLAK5uy_kmPRjHDECIcuVwnKsx2Ng7fyNgFKWNJFs")
+           val list= listOf(
+                QuePlaylist(videoId = "video_id_123", videoName = "Example Video 1", videoThumbnail = "http://example.com/thumbnail1.jpg"),
+                QuePlaylist(videoId = "video_id_124", videoName = "Example Video 2", videoThumbnail = "http://example.com/thumbnail2.jpg")
+            )
+            viewModel.insertSongTOData(list)
+//            viewModel.loadPlayList("https://music.youtube.com/playlist?list=RDCLAK5uy_kmPRjHDECIcuVwnKsx2Ng7fyNgFKWNJFs")
 
         }
         binding.lasttype.setOnClickListener {
@@ -205,6 +223,48 @@ private var nextPage: Page? = null
             else -> {}
         }
 
+    }
+
+    private fun addSonf(resource: Resource<DatabaseResponse>) {
+        when (resource) {
+            is Resource.Loading -> {}
+            is Resource.Success -> {
+
+                Toast.makeText(applicationContext,"Added to db",1).show()
+                viewModel.getSongsList()
+
+            }
+
+            is Resource.DataError -> {
+                Toast.makeText(applicationContext,"ERROR",1).show()
+
+            }
+
+            else -> {}
+        }
+    }
+
+    private fun getDbSong(resource: Resource<List<QuePlaylist>>) {
+        when (resource) {
+            is Resource.Loading -> {}
+            is Resource.Success -> {
+                Toast.makeText(applicationContext,"size"+resource.data?.size,1).show()
+
+                for(data in resource.data!!)
+                {
+                    Log.d("rests",""+data.videoId)
+                }
+
+
+            }
+
+            is Resource.DataError -> {
+                Toast.makeText(applicationContext,"ERROR2222",1).show()
+
+            }
+
+            else -> {}
+        }
     }
 
     private fun HandleYoutubeii2(resource: Resource<YoutubeiHomeBaseResponse>) {

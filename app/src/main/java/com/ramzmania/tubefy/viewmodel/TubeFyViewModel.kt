@@ -13,7 +13,7 @@ import com.ramzmania.tubefy.core.extractors.yotubewebextractor.YoutubeJsonScrapp
 import com.ramzmania.tubefy.core.extractors.yotubewebextractor.YoutubeScrapType
 import com.ramzmania.tubefy.data.ContextModule
 import com.ramzmania.tubefy.data.Resource
-import com.ramzmania.tubefy.data.database.PlaylistDatabaseRepository
+import com.ramzmania.tubefy.data.database.DatabaseRepository
 import com.ramzmania.tubefy.data.dto.base.playlist.PlayListCategory
 import com.ramzmania.tubefy.data.dto.home.HomePageResponse
 import com.ramzmania.tubefy.data.dto.base.playlist.PlayListData
@@ -26,6 +26,8 @@ import com.ramzmania.tubefy.data.dto.youtubestripper.ApiResponse
 import com.ramzmania.tubefy.data.dto.youtubestripper.MusicHomeResponse2
 import com.ramzmania.tubefy.data.local.LocalRepositorySource
 import com.ramzmania.tubefy.data.remote.RemoteRepositorySource
+import com.ramzmania.tubefy.database.DatabaseResponse
+import com.ramzmania.tubefy.database.QuePlaylist
 import com.ramzmania.tubefy.player.PlayListSingleton
 import com.ramzmania.tubefy.player.YoutubePlayerPlaylistListModel
 import com.ramzmania.tubefy.ui.base.BaseViewModel
@@ -42,7 +44,7 @@ class TubeFyViewModel @Inject constructor(
     val scrapping: YoutubeJsonScrapping,
     private val localRepositorySource: LocalRepositorySource,
     private val remoteRepositorySource: RemoteRepositorySource,
-    private val playlistDatabaseRepository: PlaylistDatabaseRepository
+    private val playlistDatabaseRepository: DatabaseRepository
 ) : BaseViewModel() {
 
     private var nextYoutubeV3PageToken: String? = null
@@ -125,6 +127,15 @@ class TubeFyViewModel @Inject constructor(
 
     private val loadMoreHomePageEndedPrivate = MutableStateFlow(false)
     val loadMoreHomePageEnded = loadMoreHomePageEndedPrivate.asStateFlow()
+
+
+    private val getPlayListFromDatabasePrivate = MutableLiveData<Resource<List<QuePlaylist>>>()
+    val getPlayListFromDatabase: LiveData<Resource<List<QuePlaylist>>> get() = getPlayListFromDatabasePrivate
+
+
+    private val addSongToDatabasePrivate = MutableLiveData<Resource<DatabaseResponse>>()
+    val addSongToDatabase: LiveData<Resource<DatabaseResponse>> get() = addSongToDatabasePrivate
+
     fun setHtmlContent(content: ApiResponse?) {
 //        htmlContentPrivate.value = content
         viewModelScope.launch {
@@ -511,6 +522,30 @@ Log.d("incomming<>","<>"+contentFilter)
     fun homePagePaginationEnded(value: Boolean)
     {
         loadMoreHomePageEndedPrivate.value=value
+    }
+
+
+
+    fun insertSongTOData(playlists: List<QuePlaylist>)
+    {
+        viewModelScope.launch {
+
+            playlistDatabaseRepository.addPlayList(playlists).collect {
+                addSongToDatabasePrivate.value = it
+
+            }
+        }
+    }
+
+    fun getSongsList()
+    {
+        viewModelScope.launch {
+
+            playlistDatabaseRepository.getPlaylists().collect {
+                getPlayListFromDatabasePrivate.value = it
+
+            }
+        }
     }
 
 }

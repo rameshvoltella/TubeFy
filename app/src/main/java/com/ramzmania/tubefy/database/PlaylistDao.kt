@@ -27,7 +27,7 @@ interface PlaylistDao {
     suspend fun deleteOldestQuePlaylistEntries(limit: Int)
 
     @Transaction
-    suspend fun addQuePlaylists(playlists: List<QuePlaylist>) {
+    suspend fun addQuePlaylists(playlists: List<QuePlaylist>) :Boolean{
         val validPlaylists = playlists.filter { playlist ->
             isVideoIdPresent(playlist.videoId) == 0
         }
@@ -42,5 +42,6 @@ interface PlaylistDao {
         }
 
         insertQuePlaylists(validPlaylists)
+        return true
     }
 }
