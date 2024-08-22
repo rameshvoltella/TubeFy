@@ -44,4 +44,23 @@ interface PlaylistDao {
         insertQuePlaylists(validPlaylists)
         return true
     }
+
+    // Insert new list, replacing existing data
+    @Transaction
+    suspend fun replaceActivePlaylist(newPlaylist: List<ActivePlaylist>) {
+        clearActivePlaylist()
+        insertActivePlaylist(newPlaylist)
+    }
+
+    // Clear all entries from the ActivePlaylist table
+    @Query("DELETE FROM ActivePlaylist")
+    suspend fun clearActivePlaylist()
+
+    // Insert a list of ActivePlaylist entries
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertActivePlaylist(playlist: List<ActivePlaylist>)
+
+    // Get the entire active playlist
+    @Query("SELECT * FROM ActivePlaylist")
+    fun getActivePlaylist(): List<ActivePlaylist>
 }

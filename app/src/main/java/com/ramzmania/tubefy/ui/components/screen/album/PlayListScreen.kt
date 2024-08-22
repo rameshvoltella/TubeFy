@@ -3,6 +3,7 @@ package com.ramzmania.tubefy.ui.components.screen.album
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -36,6 +37,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -279,7 +281,7 @@ fun AlbumTrackList(tracks: List<TubeFyCoreTypeData?>) {
 }
 
 @Composable
-fun TrackItem(trackName: TubeFyCoreTypeData, viewModel: TubeFyViewModel = hiltViewModel()) {
+fun TrackItem(trackName: TubeFyCoreTypeData) {
     val newNav = LocalNavController.current
 
     Column(
@@ -295,25 +297,54 @@ fun TrackItem(trackName: TubeFyCoreTypeData, viewModel: TubeFyViewModel = hiltVi
                     decodeThumpUrl(trackName.videoImage),
                     StandardCharsets.UTF_8.toString()
                 )
-                val encodedVideoId =
-                    URLEncoder.encode(trackName.videoId, StandardCharsets.UTF_8.toString())
+
                 val videoTitle =
                     URLEncoder.encode(trackName.videoTitle, StandardCharsets.UTF_8.toString())
+
+                Log.d("Sound track","<><><"+trackName.videoId)
+                 if(trackName.videoId.length>10)
+                 {
+                     val encodedVideoId =
+                         URLEncoder.encode(trackName.videoId, StandardCharsets.UTF_8.toString())
+                     newNav!!.navigate(
+                         NavigationItem.AudioPlayer.createRoute(
+                             encodedVideoId,
+                             encodedVideoThumpUrl, videoTitle, videoTitle, videoTitle
+                         )
+                     ) {
+                         newNav.graph.route?.let { route ->
+                             popUpTo(route) {
+                                 saveState = true
+                             }
+                         }
+                         launchSingleTop = true
+                         restoreState = true
+                     }
+                 }
+                 else{
+                     newNav!!.navigate(
+                         NavigationItem.PlayList.createRoute(
+                             URLEncoder.encode(YoutubeCoreConstant.extractPlaylistId(trackName.plaListUrl!!), StandardCharsets.UTF_8.toString())
+                             ,
+                             videoTitle,
+                                 encodedVideoThumpUrl
+
+                         )
+                     ) {
+                         newNav.graph.route?.let { route ->
+                             popUpTo(route) {
+                                 saveState = true
+                             }
+                         }
+                         launchSingleTop = true
+                         restoreState = true
+                     }
+                 }
+
+
+
 //                LocalNavController.current
-                newNav!!.navigate(
-                    NavigationItem.AudioPlayer.createRoute(
-                        encodedVideoId,
-                        encodedVideoThumpUrl, videoTitle, videoTitle, videoTitle
-                    )
-                ) {
-                    newNav.graph.route?.let { route ->
-                        popUpTo(route) {
-                            saveState = true
-                        }
-                    }
-                    launchSingleTop = true
-                    restoreState = true
-                }
+
             }
     ) {
         Card(
@@ -357,7 +388,8 @@ fun TrackItem(trackName: TubeFyCoreTypeData, viewModel: TubeFyViewModel = hiltVi
                         .width(50.dp),
                     contentScale = ContentScale.Crop
                 )
-
+                // Spacer to push the text and right image apart
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = trackName.videoTitle!!,
                     fontWeight = FontWeight.Thin,
@@ -365,11 +397,24 @@ fun TrackItem(trackName: TubeFyCoreTypeData, viewModel: TubeFyViewModel = hiltVi
                     modifier = Modifier
                         .align(Alignment.CenterVertically)
                         .fillMaxWidth()
-                        .padding(horizontal = 5.dp),
+                        .padding(horizontal = 5.dp)
+                        .weight(2f),
                     textAlign = TextAlign.Left,
                     maxLines = 1,
                     fontSize = 16.sp
                 )
+                if(trackName.videoId.isEmpty()) {
+                    // Spacer to push the text and right image apart
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_playlist),
+                        contentDescription = "Right Image",
+                        modifier = Modifier
+                            .height(50.dp)
+                            .width(50.dp).padding(horizontal = 5.dp, vertical = 10.dp),
+                        contentScale = ContentScale.Crop
+                    )
+                }
             }
         }
 //        Text(text = trackName.videoTitle,  color = Color.Black)
@@ -380,5 +425,5 @@ fun TrackItem(trackName: TubeFyCoreTypeData, viewModel: TubeFyViewModel = hiltVi
 @Preview
 @Composable
 fun PreviewAlbumScreen() {
-//    AlbumScreen()
+    TrackItem(TubeFyCoreTypeData("","sbksdnbcjhsabdjcaskjncdkadsnkcnsdkndckdsnvkcsnjndkfjndsknvksdnkvnskdc","ascs","dcs"))
 }

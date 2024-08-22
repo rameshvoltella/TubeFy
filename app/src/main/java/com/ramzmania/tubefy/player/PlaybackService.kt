@@ -55,12 +55,18 @@ class PlaybackService(
         val activityIntent = Intent(this, HomeActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
-        val pendingIntent = PendingIntent.getActivity(this, 0, activityIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            0,
+            activityIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
 
 
         mediaLibrarySessionCallback = MediaLibrarySessionCallback()
         mediaSession =
-            MediaLibrarySession.Builder(this, player, mediaLibrarySessionCallback).setSessionActivity(pendingIntent).build()
+            MediaLibrarySession.Builder(this, player, mediaLibrarySessionCallback)
+                .setSessionActivity(pendingIntent).build()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -73,10 +79,13 @@ class PlaybackService(
                 }
 
                 ACTION_FETCH_SONG -> {
-                    removeExistingPlayList=true
-                    it.extras?.getString(VIDEO_ID)?.let { it1 -> getStreamUrl(it1,
-                        it.extras?.getString(ALBUM_ART)!!, it.extras?.getString(VIDEO_TITLE)!!
-                    ) }
+                    removeExistingPlayList = true
+                    it.extras?.getString(VIDEO_ID)?.let { it1 ->
+                        getStreamUrl(
+                            it1,
+                            it.extras?.getString(ALBUM_ART)!!, it.extras?.getString(VIDEO_TITLE)!!
+                        )
+                    }
                 }
 
                 else -> {}
@@ -113,7 +122,7 @@ class PlaybackService(
     fun fetchPlayList() {
         serviceScope.launch {
             Log.d("bulkmode", "new array" + PlayListSingleton.getDataList()?.playListData?.size)
-            if (PlayListSingleton.getDataList()!=null&&PlayListSingleton.getDataList()?.playListData?.size!! > 0) {
+            if (PlayListSingleton.getDataList() != null && PlayListSingleton.getDataList()?.playListData?.size!! > 0) {
                 val list = PlayListSingleton.getDataList()?.playListData?.take(2)
                 remoteRepositorySource.getStreamBulkUrl(YoutubePlayerPlaylistListModel(list!!))
                     .collect {
@@ -135,33 +144,35 @@ class PlaybackService(
     }
 
     fun getStreamUrl(videoId: String, albumArt: String, playerHeader: String) {
-        serviceScope.launch {
-            remoteRepositorySource.getStreamUrl(
-                YoutubeCoreConstant.extractYoutubeVideoId(
-                    videoId
-                )!!
-            ).collect { response ->
-                if (response is Resource.Success) {
-                    withContext(Dispatchers.Main) {
-                        mediaSession?.player?.let {
-                            fun mediaItemData() = MediaItem.Builder()
-                                .setMediaId("TubeFy")
-                                .setUri(
-                                    Uri.parse(response.data?.streamUrl)
-                                )
-                                .setMediaMetadata(
-                                    MediaMetadata.Builder()
-                                        .setTitle(playerHeader)
-                                        .setArtist("Artist :${playerHeader}")
-                                        .setIsBrowsable(false)
-                                        .setIsPlayable(true)
-                                        .setArtworkUri(Uri.parse(albumArt))
-                                        .setMediaType(MediaMetadata.MEDIA_TYPE_MUSIC)
-                                        .build()
-                                )
-                                .build()
-                            playAudioList(listOf(mediaItemData()).toMutableList())
+        if (videoId != null) {
+            serviceScope.launch {
+                remoteRepositorySource.getStreamUrl(
+                    YoutubeCoreConstant.extractYoutubeVideoId(
+                        videoId
+                    )!!
+                ).collect { response ->
+                    if (response is Resource.Success) {
+                        withContext(Dispatchers.Main) {
+                            mediaSession?.player?.let {
+                                fun mediaItemData() = MediaItem.Builder()
+                                    .setMediaId("TubeFy")
+                                    .setUri(
+                                        Uri.parse(response.data?.streamUrl)
+                                    )
+                                    .setMediaMetadata(
+                                        MediaMetadata.Builder()
+                                            .setTitle(playerHeader)
+                                            .setArtist("Artist :${playerHeader}")
+                                            .setIsBrowsable(false)
+                                            .setIsPlayable(true)
+                                            .setArtworkUri(Uri.parse(albumArt))
+                                            .setMediaType(MediaMetadata.MEDIA_TYPE_MUSIC)
+                                            .build()
+                                    )
+                                    .build()
+                                playAudioList(listOf(mediaItemData()).toMutableList())
 
+                            }
                         }
                     }
                 }

@@ -14,6 +14,7 @@ import androidx.compose.material3.TextField
 
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -34,39 +35,43 @@ import org.schabi.newpipe.extractor.Page
 
 @Composable
 fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
+
     var text by remember { mutableStateOf(TextFieldValue()) }
     val searchPlayListName by viewModel.youTubeSearchData.observeAsState()
-    var isLoading by remember { mutableStateOf(false) }  // Track loading state
-    var videoListItems by remember { mutableStateOf<List<TubeFyCoreTypeData?>>(emptyList()) }
-    var page by remember { mutableStateOf<Page?>(null) }
+    var isLoading by rememberSaveable { mutableStateOf(false) }  // Track loading state
+    var videoListItems by rememberSaveable { mutableStateOf<List<TubeFyCoreTypeData?>>(emptyList()) }
+    var page by rememberSaveable { mutableStateOf<Page?>(null) }
     val lazyListState = rememberLazyListState()
-    var isChecked by remember { mutableStateOf(false) }
-    var isFreshSearch by remember { mutableStateOf(false) }
+    var isChecked by rememberSaveable { mutableStateOf(false) }
+    var isFreshSearch by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(key1 = searchPlayListName) {
         if (searchPlayListName is Resource.Success) {
 //            val items = (streamUrlData as Resource.Success<StreamUrlData>).data
             // Prepend new data to the existing list
-            Log.d("datata", "first")
-            Log.d(
-                "datata",
-                ">>VADAAACAME" + searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!.size
-            )
-            if (isFreshSearch) {
-                lazyListState.scrollToItem(0) // Scroll to top without animation
-                isFreshSearch = false
-                videoListItems = searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!
-            } else {
-                if (videoListItems.size > 0) {
-                    videoListItems =
-                        videoListItems + searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!
-                } else {
+            if(isLoading||isFreshSearch) {
+                Log.d("datata", "first")
+                Log.d(
+                    "datata",
+                    ">>VADAAACAME" + searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!.size
+                )
+                if (isFreshSearch) {
+                    lazyListState.scrollToItem(0) // Scroll to top without animation
+                    isFreshSearch = false
                     videoListItems =
                         searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!
+                } else {
+                    if (videoListItems.size > 0) {
+                        videoListItems =
+                            videoListItems + searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!
+                    } else {
+                        videoListItems =
+                            searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!
 
+                    }
                 }
+                isLoading = false
+                page = searchPlayListName!!.data!!.youtubeSortedData.newPipePage
             }
-            isLoading = false
-            page = searchPlayListName!!.data!!.youtubeSortedData.newPipePage
 
         } else if (searchPlayListName is Resource.DataError) {
             isLoading = false

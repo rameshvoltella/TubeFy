@@ -1,5 +1,6 @@
 package com.ramzmania.tubefy.core.dataformatter.newpipe
 
+import android.util.Log
 import com.ramzmania.tubefy.core.dataformatter.FormattingResult
 import com.ramzmania.tubefy.core.dataformatter.UniversalYoutubeDataFormatter
 import com.ramzmania.tubefy.core.dataformatter.YoutubeApiType
@@ -22,24 +23,52 @@ class NewPipeDataFormatter <T> @Inject constructor():
             try {
                 val sortedVideoList: ArrayList<TubeFyCoreTypeData> = ArrayList()
                 for (newPipeSearchData in input.result) {
+//                    Log.d("daz",""+newPipeSearchData)
                     when (newPipeSearchData) {
                         is StreamInfoItem -> {
-                            sortedVideoList.add(
-                                TubeFyCoreTypeData(
-                                    newPipeSearchData.url,
-                                    newPipeSearchData.name,
-                                    newPipeSearchData.thumbnails[0].url
+                            if(newPipeSearchData.url.contains("playList?list"))
+                            {
+                                Log.d("Chekzzzop","yoooooplist>"+newPipeSearchData.url)
+                                sortedVideoList.add(
+                                    TubeFyCoreTypeData(
+                                        videoTitle = newPipeSearchData.name,
+                                        videoImage = newPipeSearchData.thumbnails[0].url, plaListUrl = newPipeSearchData.url
+                                    )
                                 )
-                            )
+                            }else {
+                                Log.d("Chekzzzop","yooooovideo"+newPipeSearchData.url)
+
+                                sortedVideoList.add(
+                                    TubeFyCoreTypeData(
+                                        videoTitle = newPipeSearchData.name,
+                                        videoImage = newPipeSearchData.thumbnails[0].url, videoId = newPipeSearchData.url
+                                    )
+                                )
+
+                            }
                         }
                         is InfoItem -> {
-                            sortedVideoList.add(
-                                TubeFyCoreTypeData(
-                                    newPipeSearchData.url,
-                                    newPipeSearchData.name,
-                                    newPipeSearchData.thumbnails[0].url
+                            if(newPipeSearchData.url.contains("playlist?list", ignoreCase = true))
+                            {
+                                Log.d("Chekzzzop","2yooooopPlalist>"+newPipeSearchData.url)
+
+                                sortedVideoList.add(
+                                    TubeFyCoreTypeData(
+                                        videoTitle = newPipeSearchData.name,
+                                        videoImage = newPipeSearchData.thumbnails[0].url, plaListUrl = newPipeSearchData.url
+                                    )
                                 )
-                            )
+                            }else {
+                                Log.d("Chekzzzop","2yooooopVideo>"+newPipeSearchData.url)
+
+                                sortedVideoList.add(
+                                    TubeFyCoreTypeData(
+                                        videoTitle = newPipeSearchData.name,
+                                        videoImage = newPipeSearchData.thumbnails[0].url, videoId = newPipeSearchData.url
+                                    )
+                                )
+
+                            }
                         }
 
                         // Handle other types if necessary

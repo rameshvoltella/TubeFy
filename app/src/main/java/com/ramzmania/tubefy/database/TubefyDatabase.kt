@@ -5,6 +5,6 @@ import androidx.room.RoomDatabase
 
 
 @Database(entities = [ActivePlaylist::class, QuePlaylist::class], version = 1)
-abstract class PlaylistDatabase : RoomDatabase() {
+abstract class TubefyDatabase : RoomDatabase() {
     abstract fun playlistDao(): PlaylistDao
 }
