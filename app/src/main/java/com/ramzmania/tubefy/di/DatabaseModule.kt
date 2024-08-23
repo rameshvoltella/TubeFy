@@ -3,6 +3,7 @@ import android.content.Context
 import androidx.room.Room
 import com.ramzmania.tubefy.database.PlaylistDao
 import com.ramzmania.tubefy.database.TubefyDatabase
+import com.ramzmania.tubefy.utils.PreferenceManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -29,5 +30,11 @@ object DatabaseModule {
         return database.playlistDao()
     }
 
-
+    @Provides
+    @Singleton
+    fun providePreferenceManager(
+        @ApplicationContext context: Context
+    ): PreferenceManager {
+        return PreferenceManager(context)
+    }
 }

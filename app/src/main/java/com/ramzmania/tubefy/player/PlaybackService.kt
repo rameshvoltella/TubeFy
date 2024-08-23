@@ -20,6 +20,7 @@ import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
 import com.ramzmania.tubefy.data.local.LocalRepositorySource
 import com.ramzmania.tubefy.data.remote.RemoteRepositorySource
 import com.ramzmania.tubefy.ui.components.HomeActivity
+import com.ramzmania.tubefy.utils.PreferenceManager
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -39,6 +40,9 @@ class PlaybackService(
     lateinit var remoteRepositorySource: RemoteRepositorySource
 
     @Inject
+    lateinit var preferenceManager: PreferenceManager
+
+    @Inject
     lateinit var dataBaseRepositorySource: DatabaseRepositorySource
     private lateinit var mediaLibrarySessionCallback: MediaLibrarySessionCallback
     private var mediaSession: MediaLibrarySession? = null
@@ -46,6 +50,8 @@ class PlaybackService(
     private var removeExistingPlayList: Boolean = false
     private var fetchRecentPlaylistQueue: Boolean = false
     var path: String = ""
+    private var apiPlaListBulkCallJob: Job? = null
+//    var currentPlayListQueue:Long=0L
 
     override fun onCreate() {
         super.onCreate()
@@ -148,6 +154,7 @@ class PlaybackService(
 
                                 if(listFromQueue.size>0)
                                 {
+                                    listFromQueue.shuffle()
                                     fetchFromQueue(listFromQueue.toMutableList())
                                 }
 
@@ -168,11 +175,18 @@ class PlaybackService(
         intent?.let {
             when (it.action) {
                 ACTION_FETCH_PLAYLIST -> {
+                    apiPlaListBulkCallJob?.cancel()
+                    preferenceManager.putLong("queue",System.currentTimeMillis())
                     removeExistingPlayList = true
-                    fetchPlayList()
+                    fetchPlayList(false)
+                    //currentPlayListQueue=System.currentTimeMillis()
+
                 }
 
                 ACTION_FETCH_SONG -> {
+                    apiPlaListBulkCallJob?.cancel()
+                    //currentPlayListQueue=System.currentTimeMillis()
+                    preferenceManager.putLong("queue",System.currentTimeMillis())
                     removeExistingPlayList = true
                     fetchRecentPlaylistQueue=true
                     it.extras?.getString(VIDEO_ID)?.let { it1 ->
@@ -231,7 +245,7 @@ class PlaybackService(
     {
         val listFromQueue =totalList.take(2)
         Log.d("PODSZ","REMAINLISY"+totalList.size)
-        serviceScope.launch {
+        apiPlaListBulkCallJob=  serviceScope.launch {
             remoteRepositorySource.getStreamBulkUrl(YoutubePlayerPlaylistListModel(listFromQueue!!))
                 .collect {
                     if (it is Resource.Success) {
@@ -247,21 +261,40 @@ class PlaybackService(
                 }
         }
     }
-    fun fetchPlayList() {
-        serviceScope.launch {
+    fun fetchPlayList(inseLoop:Boolean) {
+
+        val list = PlayListSingleton.getDataList()?.playListData?.take(2)
+
+//        apiPlaListBulkCallJob = serviceScope.launch {
+//            remoteRepositorySource.getStreamBulkUrl(YoutubePlayerPlaylistListModel(list!!))
+//                .collect { resource ->
+//                    if (resource is Resource.Success) {
+//                        withContext(Dispatchers.Main) {
+//                            playAudioList(resource.data!!)
+//                        }
+//                        val remainingList =
+//                            PlayListSingleton.getDataList()?.playListData?.drop(2)
+//                        PlayListSingleton.addData(remainingList!!)
+//                        fetchPlayList(true)
+//                    }
+//                }
+//        }
+        apiPlaListBulkCallJob= serviceScope.launch {
             Log.d("bulkmode", "new array" + PlayListSingleton.getDataList()?.playListData?.size)
             if (PlayListSingleton.getDataList() != null && PlayListSingleton.getDataList()?.playListData?.size!! > 0) {
                 val list = PlayListSingleton.getDataList()?.playListData?.take(2)
                 remoteRepositorySource.getStreamBulkUrl(YoutubePlayerPlaylistListModel(list!!))
                     .collect {
                         if (it is Resource.Success) {
-                            withContext(Dispatchers.Main) {
-                                playAudioList(it.data!!)
-                            }
-                            val remainingList =
-                                PlayListSingleton.getDataList()?.playListData?.drop(2)
-                            PlayListSingleton.addData(remainingList!!)
-                            fetchPlayList()
+
+                                withContext(Dispatchers.Main) {
+                                    playAudioList(it.data!!)
+                                }
+                                val remainingList =
+                                    PlayListSingleton.getDataList()?.playListData?.drop(2)
+                                PlayListSingleton.addData(remainingList!!)
+                                fetchPlayList(true)
+
                         }
                     }
             } else {
@@ -352,11 +385,11 @@ class PlaybackService(
                 } else {
 
                     it.addMediaItems(mutableMediaItems)
-                    if(!it.isPlaying)
-                    {
-                        it.playWhenReady = true
-                        it.prepare()
-                    }
+//                    if(!it.isPlaying)
+//                    {
+//                        it.playWhenReady = true
+//                        it.prepare()
+//                    }
 
                 }
             }

@@ -1,6 +1,7 @@
 package com.ramzmania.tubefy.data.database
 
 import com.ramzmania.tubefy.data.Resource
+import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
 import com.ramzmania.tubefy.database.DatabaseResponse
 import com.ramzmania.tubefy.database.PlaylistDao
 import com.ramzmania.tubefy.database.QuePlaylist
@@ -35,4 +36,14 @@ class DatabaseRepository @Inject constructor(
     override suspend fun addSongToQueue(playData: QuePlaylist): Flow<Resource<DatabaseResponse>> {
         return flow {emit(databaseData.addSongToQueue(playData))  }
     }
+
+    override suspend fun addActivePlayList(playlists: List<TubeFyCoreTypeData>): Flow<Resource<DatabaseResponse>> {
+        return flow { emit(databaseData.addActivePlayList(playlists)) }
+    }
+
+    override suspend fun getAllActivePlaylists(): Flow<Resource<List<TubeFyCoreTypeData>>> {
+       return flow { emit(databaseData.getAllActivePlaylists()) }
+    }
+
+
 }

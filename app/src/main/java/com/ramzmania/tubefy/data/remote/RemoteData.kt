@@ -41,6 +41,7 @@ import com.ramzmania.tubefy.errors.YOUTUBE_V3_SEARCH_ERROR
 import com.ramzmania.tubefy.player.YoutubePlayerPlaylistListModel
 import com.ramzmania.tubefy.player.createMediaItems
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import org.schabi.newpipe.extractor.InfoItem
 import org.schabi.newpipe.extractor.Page
@@ -51,6 +52,7 @@ import org.schabi.newpipe.extractor.stream.StreamInfoItem
 import retrofit2.Response
 import java.io.IOException
 import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
 
 class RemoteData @Inject
 constructor(
@@ -144,6 +146,7 @@ constructor(
             try {
                 var currentIndex=0;
                 for (videoIds in youtubePlayerPlaylistListModel.playListData) {
+                    ensureActive()
                     val extractor =
                         YoutubeService(0).getStreamExtractor(
                             "${YoutubeCoreConstant.YOUTUBE_WATCH_URL}${
@@ -155,7 +158,7 @@ constructor(
                     extractor.fetchPage()
 
                     if (extractor.videoStreams.isNotEmpty()) {
-                        Log.d("papa",videoIds!!.videoId+"")
+                        Log.d("9papa",videoIds!!.videoId+"")
                         videoIdArray.add(YoutubeCoreConstant.extractYoutubeVideoId(videoIds.videoId)!!)
 //                        if(videoIds.videoId.equals("https://www.youtube.com/watch?v=roz9sXFkTuE",ignoreCase = true)) {
 //                            streamUrlArray?.add("https://olakka"+extractor.videoStreams.first().content ?: "")
@@ -179,6 +182,10 @@ constructor(
                     }
                 }
                 mediaItems = createMediaItems(streamUrlArray, videoThumpUrls, videoTitles,videoIdArray)
+            }catch (e: CancellationException) {
+                // Handle the cancellation, e.g., clean up resources if needed
+                Log.d("getStreamBulkUrl", "Operation was canceled")
+                e.printStackTrace() // Re-throw the cancellation exception to properly handle coroutine cancellation
             } catch (e: Exception) {
                 e.printStackTrace()
             }

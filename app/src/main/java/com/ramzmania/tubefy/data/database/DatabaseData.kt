@@ -2,6 +2,7 @@ package com.ramzmania.tubefy.data.database
 
 import android.util.Log
 import com.ramzmania.tubefy.data.Resource
+import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
 import com.ramzmania.tubefy.database.DatabaseResponse
 import com.ramzmania.tubefy.database.PlaylistDao
 import com.ramzmania.tubefy.database.QuePlaylist
@@ -63,5 +64,13 @@ class DatabaseData @Inject constructor(private val playlistDao: PlaylistDao):Dat
             }
 
         }
+    }
+
+    override suspend fun addActivePlayList(playlists: List<TubeFyCoreTypeData>): Resource<DatabaseResponse> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getAllActivePlaylists(): Resource<List<TubeFyCoreTypeData>> {
+        TODO("Not yet implemented")
     }
 }

@@ -205,7 +205,7 @@ class TubeFyViewModel @Inject constructor(
     }
 
 
-    fun getBulkStreamUrl()
+  /*  fun getBulkStreamUrl()
     {
 //        Log.d("bulk calling","bulk"+youTubePlayListBulkData)
         Log.d("bulkmode","added 2222"+koko)
@@ -229,7 +229,7 @@ class TubeFyViewModel @Inject constructor(
 
         }
     }
-
+*/
     fun callCategoryPlayList(browserId:String,playerListId:String)
     {
 //        Log.d("bulk calling","bulk"+youTubePlayListBulkData)
@@ -291,6 +291,7 @@ class TubeFyViewModel @Inject constructor(
         youtubePlayerPlaylistListModel=YoutubePlayerPlaylistListModel(playListItems)
         PlayListSingleton.addData(playListItems)
         Log.d("bulkmode","added 111"+koko)
+
 
     }
     private fun setHtmlMusicCategoryContent(result: YtMusicCategoryBase?) {

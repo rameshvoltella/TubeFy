@@ -76,7 +76,7 @@ class NewPipeDataFormatter <T> @Inject constructor(private val playlistDao: Play
                                     )
                                 )
 Log.d("tadada","yaaaaaa")
-//                                playlistDao.addQueSingleSongPlaylists(QuePlaylist(videoId = newPipeSearchData.url, videoName = newPipeSearchData.name, videoThumbnail = newPipeSearchData.thumbnails[0].url))
+                                playlistDao.addQueSingleSongPlaylists(QuePlaylist(videoId = newPipeSearchData.url, videoName = newPipeSearchData.name, videoThumbnail = newPipeSearchData.thumbnails[0].url))
 
                             }
                         }
