@@ -4,6 +4,7 @@ import android.util.Log
 import com.ramzmania.tubefy.core.dataformatter.FormattingResult
 import com.ramzmania.tubefy.core.dataformatter.UniversalYoutubeDataFormatter
 import com.ramzmania.tubefy.core.dataformatter.YoutubeApiType
+import com.ramzmania.tubefy.data.database.DatabaseRepository
 import com.ramzmania.tubefy.data.dto.base.searchformat.NewPipeSortingData
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreFormattedData
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
@@ -48,7 +49,7 @@ class NewPipeDataFormatter <T> @Inject constructor(private val playlistDao: Play
                                         videoImage = newPipeSearchData.thumbnails[0].url, videoId = newPipeSearchData.url
                                     )
                                 )
-                                Log.d("tadada","yaaaassssssaa")
+                                Log.d("tadada","yaaaassssssaaadded")
 
                                 playlistDao.addQueSingleSongPlaylists(QuePlaylist(videoId = newPipeSearchData.url, videoName = newPipeSearchData.name, videoThumbnail = newPipeSearchData.thumbnails[0].url))
 

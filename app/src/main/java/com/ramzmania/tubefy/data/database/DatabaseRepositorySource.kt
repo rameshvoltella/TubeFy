@@ -12,5 +12,6 @@ interface DatabaseRepositorySource {
 
     suspend fun getPlaylists(): Flow<Resource<List<QuePlaylist>>>
 
+    suspend fun addSongToQueue(playData: QuePlaylist): Flow<Resource<DatabaseResponse>>
 
 }

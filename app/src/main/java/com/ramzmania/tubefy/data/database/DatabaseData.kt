@@ -1,5 +1,6 @@
 package com.ramzmania.tubefy.data.database
 
+import android.util.Log
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.database.DatabaseResponse
 import com.ramzmania.tubefy.database.PlaylistDao
@@ -31,13 +32,36 @@ class DatabaseData @Inject constructor(private val playlistDao: PlaylistDao):Dat
     override suspend fun getPlaylists(): Resource<List<QuePlaylist>> {
         return withContext(Dispatchers.IO)
         {
+            Log.d("handleMediaItemChange,","<><><><><><6666666")
+
             val result = playlistDao.getAllQuePlaylist()
 
             if (result != null && result.size > 0) {
-                 Resource.Success(result)
+                Log.d("handleMediaItemChange,","<><><><><><90909")
+
+                Resource.Success(result)
             } else {
-                 Resource.DataError(DATABASE_PLAYLIST_ERROR)
+                Log.d("handleMediaItemChange,","<><><><><><88888")
+
+                Resource.DataError(DATABASE_PLAYLIST_ERROR)
             }
+        }
+    }
+
+    override suspend fun addSongToQueue(songData: QuePlaylist): Resource<DatabaseResponse> {
+        return withContext(Dispatchers.IO)
+        {
+            Log.d("Tagger","yono")
+            val result=playlistDao.addQueSingleSongPlaylists(songData)
+            if(result)
+            {
+                Resource.Success(DatabaseResponse(200))
+            }else
+            {
+                Resource.DataError(DATABASE_INSERTION_ERROR)
+
+            }
+
         }
     }
 }

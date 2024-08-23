@@ -50,6 +50,8 @@ interface PlaylistDao {
     @Transaction
     suspend fun addQueSingleSongPlaylists(data: QuePlaylist): Boolean {
 //        val validPlaylists = playlists.filter { playlist ->
+        Log.d("Tagger","yono22222")
+
         val validPlaylists = isVideoIdPresent(data.videoId) == 0
         Log.d("kadapa","came"+validPlaylists)
 //        }

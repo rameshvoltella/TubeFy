@@ -8,5 +8,6 @@ import kotlinx.coroutines.flow.Flow
 interface DatabaseDataSource {
     suspend fun addPlayList(playlists: List<QuePlaylist>): Resource<DatabaseResponse>
     suspend fun getPlaylists(): Resource<List<QuePlaylist>>
+    suspend fun addSongToQueue(playData: QuePlaylist): Resource<DatabaseResponse>
 
 }

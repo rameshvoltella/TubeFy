@@ -26,7 +26,13 @@ class DatabaseRepository @Inject constructor(
         return flow {emit(databaseData.addPlayList(playlists))  }
     }
 
+
+
     override suspend fun getPlaylists(): Flow<Resource<List<QuePlaylist>>> {
         return flow { emit(databaseData.getPlaylists()) }
+    }
+
+    override suspend fun addSongToQueue(playData: QuePlaylist): Flow<Resource<DatabaseResponse>> {
+        return flow {emit(databaseData.addSongToQueue(playData))  }
     }
 }
