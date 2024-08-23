@@ -19,6 +19,7 @@ import com.ramzmania.tubefy.data.database.DatabaseRepositorySource
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
 import com.ramzmania.tubefy.data.local.LocalRepositorySource
 import com.ramzmania.tubefy.data.remote.RemoteRepositorySource
+import com.ramzmania.tubefy.database.QuePlaylist
 import com.ramzmania.tubefy.ui.components.HomeActivity
 import com.ramzmania.tubefy.utils.PreferenceManager
 import dagger.hilt.android.AndroidEntryPoint
@@ -105,7 +106,7 @@ class PlaybackService(
                 override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                     Log.d("mamama","ccccc")
 //                    mediaItem?.let {
-//                        handleMediaItemChange()
+                        handleMediaItemChange()
 //                    }
                 }
             })
@@ -154,8 +155,15 @@ class PlaybackService(
 
                                 if(listFromQueue.size>0)
                                 {
+                                    apiPlaListBulkCallJob?.cancel()
                                     listFromQueue.shuffle()
-                                    fetchFromQueue(listFromQueue.toMutableList())
+                                    if (listFromQueue.size > 50) {
+                                        fetchFromQueue(listFromQueue.toMutableList().take(50))
+                                    } else {
+                                        fetchFromQueue(listFromQueue.toMutableList())
+
+                                    }
+
                                 }
 
                             }
@@ -194,6 +202,9 @@ class PlaybackService(
                             it1,
                             it.extras?.getString(ALBUM_ART)!!, it.extras?.getString(VIDEO_TITLE)!!
                         )
+                        serviceScope.launch {
+                            dataBaseRepositorySource.addSongToQueue(QuePlaylist(videoId = it1, videoThumbnail = it.extras?.getString(ALBUM_ART)!!, videoName = it.extras?.getString(VIDEO_TITLE)!!))
+                        }
                     }
 
                 }
