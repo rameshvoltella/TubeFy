@@ -52,6 +52,8 @@ class PlaybackService(
                     val videoId = currentMediaItem?.mediaId // Assuming mediaId is the videoId
                     val albumArt = currentMediaItem?.mediaMetadata?.artworkUri.toString()
                     val playerHeader = currentMediaItem?.mediaMetadata?.title.toString()
+
+                    Log.d("retrying on fail","<ERRORretryCount>"+retryCount+"<maxRetries>"+maxRetries)
                     if(retryCount<=maxRetries) {
                         getStreamUrl(videoId!!, albumArt, playerHeader, currentMediaItemIndex)
                     }
@@ -64,7 +66,11 @@ class PlaybackService(
 
                     }else
                     {
+
                         retryCount++
+                        playWhenReady=true
+                        prepare()
+                        pause()
                     }
 
 //                    handlePlaybackError(error, currentMediaItem)
@@ -233,6 +239,11 @@ class PlaybackService(
                     if(mediaIndex<it.mediaItemCount) {
                         it.removeMediaItem(mediaIndex)
                         it.addMediaItems(mediaIndex, mutableMediaItems)
+                        if(it.mediaItemCount==1)
+                        {
+                            it.playWhenReady = true
+                            it.prepare()
+                        }
                     }else
                     {
                         it.setMediaItems(mutableMediaItems)
@@ -293,7 +304,7 @@ class PlaybackService(
         }
     }
 
-    private val maxRetries = 3
+    private val maxRetries = 20
     private var retryCount = 0
     private fun retryCurrentMediaItem(currentIndex: Int, currentMediaItem: MediaItem?) {
         if (retryCount < maxRetries) {
