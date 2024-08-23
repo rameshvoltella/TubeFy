@@ -14,6 +14,7 @@ import androidx.compose.material3.TextField
 
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,8 +36,17 @@ import org.schabi.newpipe.extractor.Page
 
 @Composable
 fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
+    val textFieldValueSaver = Saver<TextFieldValue, String>(
+        save = { it.text },  // Save only the text part
+        restore = { TextFieldValue(it) }  // Restore TextFieldValue from the text
+    )
 
-    var text by remember { mutableStateOf(TextFieldValue()) }
+    // Use rememberSaveable with the custom Saver
+    var textFieldValue by rememberSaveable(stateSaver = textFieldValueSaver) {
+        mutableStateOf(TextFieldValue())
+    }
+//    var text by remember { mutableStateOf(TextFieldValue()) }
+//    var text by rememberSaveable { mutableStateOf("") }
     val searchPlayListName by viewModel.youTubeSearchData.observeAsState()
     var isLoading by rememberSaveable { mutableStateOf(false) }  // Track loading state
     var videoListItems by rememberSaveable { mutableStateOf<List<TubeFyCoreTypeData?>>(emptyList()) }
@@ -48,7 +58,7 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
         if (searchPlayListName is Resource.Success) {
 //            val items = (streamUrlData as Resource.Success<StreamUrlData>).data
             // Prepend new data to the existing list
-            if(isLoading||isFreshSearch) {
+            if (isLoading || isFreshSearch) {
                 Log.d("datata", "first")
                 Log.d(
                     "datata",
@@ -97,7 +107,7 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
                                         viewModel.searchNewPipeNextPage(
                                             page,
                                             if (isChecked) mutableListOf("all") else mutableListOf("music_songs"),
-                                            text.text
+                                            textFieldValue.text
                                         ) // Implement this function in your ViewModel
                                     }
                                 }
@@ -111,7 +121,7 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
                                         viewModel.searchNewPipeNextPage(
                                             page,
                                             if (isChecked) mutableListOf("all") else mutableListOf("music_songs"),
-                                            text.text
+                                            textFieldValue.text
                                         ) // Implement this function in your ViewModel
                                     }
                                 }
@@ -131,9 +141,9 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
         // Top TextField
         val keyboardController = LocalSoftwareKeyboardController.current
         TextField(
-            value = text,
+            value = textFieldValue,
             placeholder = { Text("Search songs") },
-            onValueChange = { newText -> text = newText },
+            onValueChange = { newValue -> textFieldValue = newValue },
             keyboardOptions = KeyboardOptions.Default.copy(
                 imeAction = ImeAction.Done
             ),
@@ -142,7 +152,7 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
                 isFreshSearch = true
                 keyboardController?.hide() // Hide the keyboard
                 viewModel.searchNewPipePage(
-                    text.text,
+                    textFieldValue.text,
                     if (isChecked) mutableListOf("all") else mutableListOf("music_songs")
                 )
 
@@ -159,7 +169,18 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
         Row(modifier = Modifier.padding(20.dp)) {
             Switch(
                 checked = isChecked,
-                onCheckedChange = { checked -> isChecked = checked },
+                onCheckedChange = { checked ->
+                    run {
+                        isChecked = checked
+                        if (textFieldValue.text.isNotEmpty()) {
+                            isFreshSearch = true
+                            viewModel.searchNewPipePage(
+                                textFieldValue.text,
+                                if (isChecked) mutableListOf("all") else mutableListOf("music_songs")
+                            )
+                        }
+                    }
+                },
                 modifier = Modifier.padding(horizontal = 5.dp)
             )
 
@@ -176,8 +197,7 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
             )
 
         }
-        if(text.text.isEmpty())
-        {
+        if (textFieldValue.text.isEmpty()) {
             CategoryScreenMain()
         }
         if (isFreshSearch) {
