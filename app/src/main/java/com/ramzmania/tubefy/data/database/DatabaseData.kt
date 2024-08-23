@@ -52,7 +52,7 @@ class DatabaseData @Inject constructor(private val playlistDao: PlaylistDao):Dat
     override suspend fun addSongToQueue(songData: QuePlaylist): Resource<DatabaseResponse> {
         return withContext(Dispatchers.IO)
         {
-            Log.d("Tagger","yono")
+            Log.d("yono","yonopoda")
             val result=playlistDao.addQueSingleSongPlaylists(songData)
             if(result)
             {

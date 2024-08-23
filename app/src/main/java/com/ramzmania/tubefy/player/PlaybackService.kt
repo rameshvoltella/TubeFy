@@ -65,35 +65,38 @@ class PlaybackService(
                     if (playbackState == Player.STATE_READY && playWhenReady) {
                         // Playback has started
                         // Add your logic here for when playback starts
-                        if(fetchRecentPlaylistQueue) {
-                            Log.d("check,","<><><><><><")
-                            fetchRecentPlaylistQueue=false
+                        if (fetchRecentPlaylistQueue) {
+                            Log.d("check,", "<><><><><><")
+                            fetchRecentPlaylistQueue = false
                             handleMediaItemChange()
                         }
                     }
 
                 }
+
                 override fun onPlayerError(error: PlaybackException) {
                     val videoId = currentMediaItem?.mediaId // Assuming mediaId is the videoId
                     val albumArt = currentMediaItem?.mediaMetadata?.artworkUri.toString()
                     val playerHeader = currentMediaItem?.mediaMetadata?.title.toString()
 
-                    Log.d("retrying on fail","<ERRORretryCount>"+retryCount+"<maxRetries>"+maxRetries)
-                    if(retryCount<=maxRetries) {
+                    Log.d(
+                        "retrying on fail",
+                        "<ERRORretryCount>" + retryCount + "<maxRetries>" + maxRetries
+                    )
+                    if (retryCount <= maxRetries) {
                         getStreamUrl(videoId!!, albumArt, playerHeader, currentMediaItemIndex)
                     }
-                    if(hasNextMediaItem()) {
+                    if (hasNextMediaItem()) {
 
-                        retryCount=0
+                        retryCount = 0
                         seekToNextMediaItem()
                         playWhenReady = true
                         prepare()
 
-                    }else
-                    {
+                    } else {
 
                         retryCount++
-                        playWhenReady=true
+                        playWhenReady = true
                         prepare()
                         pause()
                     }
@@ -103,10 +106,11 @@ class PlaybackService(
 
 //                    mediaSession?.player?.seekToNextMediaItem()
                 }
+
                 override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-                    Log.d("mamama","ccccc")
+                    Log.d("mamama", "ccccc")
 //                    mediaItem?.let {
-                        handleMediaItemChange()
+                    handleMediaItemChange()
 //                    }
                 }
             })
@@ -130,31 +134,35 @@ class PlaybackService(
 
     private fun handleMediaItemChange() {
         val player = mediaSession?.player
-        Log.d("handleMediaItemChange,","<><><><><><1111")
+        Log.d("handleMediaItemChange,", "<><><><><><1111")
 
         if (player != null) {
-            Log.d("handleMediaItemChange,","<><><><><><22222")
+            Log.d("handleMediaItemChange,", "<><><><><><22222")
 
             if (!player.hasNextMediaItem()) {
-                Log.d("handleMediaItemChange,","<><><><><><33333")
+                Log.d("handleMediaItemChange,", "<><><><><><33333")
 
                 serviceScope.launch {
                     dataBaseRepositorySource.getPlaylists().collect {
                         if (it is Resource.Success) {
-                            Log.d("handleMediaItemChange,","<><><><><><4444444")
+                            Log.d("handleMediaItemChange,", "<><><><><><4444444")
 
                             withContext(Dispatchers.IO)
                             {
-                                Log.d("DATATATA","DATA SIZE"+it.data?.size)
-                               val listFromQueue: ArrayList<TubeFyCoreTypeData?> =ArrayList()
+                                Log.d("DATATATA", "DATA SIZE" + it.data?.size)
+                                val listFromQueue: ArrayList<TubeFyCoreTypeData?> = ArrayList()
 
-                                for(data in it.data!!)
-                                {
-                                    listFromQueue.add(TubeFyCoreTypeData(videoId =data.videoId, videoTitle = data.videoName, videoImage = data.videoThumbnail))
+                                for (data in it.data!!) {
+                                    listFromQueue.add(
+                                        TubeFyCoreTypeData(
+                                            videoId = data.videoId,
+                                            videoTitle = data.videoName,
+                                            videoImage = data.videoThumbnail
+                                        )
+                                    )
                                 }
 
-                                if(listFromQueue.size>0)
-                                {
+                                if (listFromQueue.size > 0) {
                                     apiPlaListBulkCallJob?.cancel()
                                     listFromQueue.shuffle()
                                     if (listFromQueue.size > 50) {
@@ -184,7 +192,7 @@ class PlaybackService(
             when (it.action) {
                 ACTION_FETCH_PLAYLIST -> {
                     apiPlaListBulkCallJob?.cancel()
-                    preferenceManager.putLong("queue",System.currentTimeMillis())
+                    preferenceManager.putLong("queue", System.currentTimeMillis())
                     removeExistingPlayList = true
                     fetchPlayList(false)
                     //currentPlayListQueue=System.currentTimeMillis()
@@ -194,16 +202,24 @@ class PlaybackService(
                 ACTION_FETCH_SONG -> {
                     apiPlaListBulkCallJob?.cancel()
                     //currentPlayListQueue=System.currentTimeMillis()
-                    preferenceManager.putLong("queue",System.currentTimeMillis())
+                    preferenceManager.putLong("queue", System.currentTimeMillis())
                     removeExistingPlayList = true
-                    fetchRecentPlaylistQueue=true
+                    fetchRecentPlaylistQueue = true
                     it.extras?.getString(VIDEO_ID)?.let { it1 ->
                         getStreamUrl(
                             it1,
                             it.extras?.getString(ALBUM_ART)!!, it.extras?.getString(VIDEO_TITLE)!!
                         )
+
                         serviceScope.launch {
-                            dataBaseRepositorySource.addSongToQueue(QuePlaylist(videoId = it1, videoThumbnail = it.extras?.getString(ALBUM_ART)!!, videoName = it.extras?.getString(VIDEO_TITLE)!!))
+                            dataBaseRepositorySource.addSongToQueue(
+                                QuePlaylist(
+                                    videoId = it1,
+                                    videoThumbnail = it.extras?.getString(ALBUM_ART)!!,
+                                    videoName = it.extras?.getString(VIDEO_TITLE)!!
+                                )
+                            ).collect {}
+
                         }
                     }
 
@@ -218,7 +234,7 @@ class PlaybackService(
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo) = mediaSession
 
     override fun onDestroy() {
-        Log.d("ondestry called","WHY???")
+        Log.d("ondestry called", "WHY???")
         mediaSession?.run {
             player.release()
             release()
@@ -232,7 +248,8 @@ class PlaybackService(
         // You can log the error or notify the user
         // For example:
 //        val currentMediaItem = playe.currentMediaItem
-        val currentIndex = mediaSession?.player?.currentMediaItemIndex ?: -1 // Get current media item index
+        val currentIndex =
+            mediaSession?.player?.currentMediaItemIndex ?: -1 // Get current media item index
 //        val currentUri = currentMediaItem?.localConfiguration?.uri
 //        if (currentUri != null) {
 //            Log.i("PlaybackServiceCKER", "Current media URI: $currentUri")
@@ -240,7 +257,7 @@ class PlaybackService(
 //            Log.i("PlaybackServiceCKER", "No current media URI found")
 //        }
 //        Log.e("PlaybackServiceCKER", "Playback error occurred: ${error.message}")
-        moveToNextMediaItem(currentIndex,currentMediaItem)
+        moveToNextMediaItem(currentIndex, currentMediaItem)
 
 //        if (isNetworkError(error)) {
 //            Log.e("PlaybackServiceCKER", "Network error occurred: ${error.message}")
@@ -252,11 +269,10 @@ class PlaybackService(
     }
 
 
-    fun fetchFromQueue(totalList: List<TubeFyCoreTypeData?>)
-    {
-        val listFromQueue =totalList.take(2)
-        Log.d("PODSZ","REMAINLISY"+totalList.size)
-        apiPlaListBulkCallJob=  serviceScope.launch {
+    fun fetchFromQueue(totalList: List<TubeFyCoreTypeData?>) {
+        val listFromQueue = totalList.take(2)
+        Log.d("PODSZ", "REMAINLISY" + totalList.size)
+        apiPlaListBulkCallJob = serviceScope.launch {
             remoteRepositorySource.getStreamBulkUrl(YoutubePlayerPlaylistListModel(listFromQueue!!))
                 .collect {
                     if (it is Resource.Success) {
@@ -265,14 +281,15 @@ class PlaybackService(
                         }
                         val remainingList =
                             totalList.drop(2)
-                        if(remainingList.size!=0) {
+                        if (remainingList.size != 0) {
                             fetchFromQueue(remainingList)
                         }
                     }
                 }
         }
     }
-    fun fetchPlayList(inseLoop:Boolean) {
+
+    fun fetchPlayList(inseLoop: Boolean) {
 
         val list = PlayListSingleton.getDataList()?.playListData?.take(2)
 
@@ -290,7 +307,7 @@ class PlaybackService(
 //                    }
 //                }
 //        }
-        apiPlaListBulkCallJob= serviceScope.launch {
+        apiPlaListBulkCallJob = serviceScope.launch {
             Log.d("bulkmode", "new array" + PlayListSingleton.getDataList()?.playListData?.size)
             if (PlayListSingleton.getDataList() != null && PlayListSingleton.getDataList()?.playListData?.size!! > 0) {
                 val list = PlayListSingleton.getDataList()?.playListData?.take(2)
@@ -298,13 +315,13 @@ class PlaybackService(
                     .collect {
                         if (it is Resource.Success) {
 
-                                withContext(Dispatchers.Main) {
-                                    playAudioList(it.data!!)
-                                }
-                                val remainingList =
-                                    PlayListSingleton.getDataList()?.playListData?.drop(2)
-                                PlayListSingleton.addData(remainingList!!)
-                                fetchPlayList(true)
+                            withContext(Dispatchers.Main) {
+                                playAudioList(it.data!!)
+                            }
+                            val remainingList =
+                                PlayListSingleton.getDataList()?.playListData?.drop(2)
+                            PlayListSingleton.addData(remainingList!!)
+                            fetchPlayList(true)
 
                         }
                     }
@@ -315,20 +332,29 @@ class PlaybackService(
         }
     }
 
-    fun getStreamUrl(videoId: String, albumArt: String, playerHeader: String,mediaIndex:Int=-1) {
+    fun getStreamUrl(
+        videoId: String,
+        albumArt: String,
+        playerHeader: String,
+        mediaIndex: Int = -1
+    ) {
         if (videoId != null) {
             serviceScope.launch {
                 remoteRepositorySource.getStreamUrl(
                     YoutubeCoreConstant.extractYoutubeVideoId(
                         videoId
-                    )!!,mediaIndex
+                    )!!, mediaIndex
                 ).collect { response ->
                     if (response is Resource.Success) {
                         withContext(Dispatchers.Main) {
                             mediaSession?.player?.let {
 
                                 fun mediaItemData() = MediaItem.Builder()
-                                    .setMediaId(""+YoutubeCoreConstant.extractYoutubeVideoId(videoId)!!)
+                                    .setMediaId(
+                                        "" + YoutubeCoreConstant.extractYoutubeVideoId(
+                                            videoId
+                                        )!!
+                                    )
                                     .setUri(
                                         Uri.parse(response.data?.streamUrl)
                                     )
@@ -343,7 +369,7 @@ class PlaybackService(
                                             .build()
                                     )
                                     .build()
-                                playAudioList(listOf(mediaItemData()).toMutableList(),mediaIndex)
+                                playAudioList(listOf(mediaItemData()).toMutableList(), mediaIndex)
 
                             }
                         }
@@ -355,47 +381,52 @@ class PlaybackService(
 
     }
 
-    fun playAudioList(mediaItems: List<MediaItem>,mediaIndex:Int=-1) {
+    fun playAudioList(mediaItems: List<MediaItem>, mediaIndex: Int = -1) {
 
-        Log.d("Poda","<><><><<<>>>"+mediaIndex)
-        mediaSession?.player?.let {
-
-            if (it.currentMediaItem == null) {
+        Log.d("Poda", "<><><><<<>>>" + mediaIndex)
+//        mediaSession?.player?.let {
+        if (mediaSession != null && mediaSession?.player != null) {
+            val it = mediaSession?.player
+            if (it!!.currentMediaItem == null) {
 
                 removeExistingPlayList = false
                 it.setMediaItems(mediaItems)
                 it.playWhenReady = true
                 it.prepare()
+                Log.d("UNDOO","!!!!!!!")
             } else {
 
                 val mutableMediaItems = mediaItems.toMutableList()
-                if(mediaIndex!=-1)
-                {
-                    if(mediaIndex<it.mediaItemCount) {
+                if (mediaIndex != -1) {
+                    if (mediaIndex < it.mediaItemCount) {
                         it.removeMediaItem(mediaIndex)
                         it.addMediaItems(mediaIndex, mutableMediaItems)
-                        if(it.mediaItemCount==1)
-                        {
+                        if (it.mediaItemCount == 1) {
                             it.playWhenReady = true
                             it.prepare()
                         }
-                    }else
-                    {
+                        Log.d("UNDOO","22222!!!!!!!")
+
+                    } else {
                         it.setMediaItems(mutableMediaItems)
                         it.playWhenReady = true
                         it.prepare()
+                        Log.d("UNDOO","33333!!!!!!!")
+
 
                     }
-                }
-                else if (removeExistingPlayList) {
+                } else if (removeExistingPlayList) {
 
                     removeExistingPlayList = false
                     it.setMediaItems(mutableMediaItems)
                     it.playWhenReady = true
                     it.prepare()
-                } else {
+                    Log.d("UNDOO","44444!!!!!!!")
 
+                } else {
                     it.addMediaItems(mutableMediaItems)
+                    Log.d("UNDOO","55555!!!!!!!")
+
 //                    if(!it.isPlaying)
 //                    {
 //                        it.playWhenReady = true
@@ -405,6 +436,7 @@ class PlaybackService(
                 }
             }
         }
+//        }
     }
 
 
@@ -424,7 +456,7 @@ class PlaybackService(
     }
 
 
-    private fun moveToNextMediaItem(currentIndex: Int,currentMediaItem: MediaItem?) {
+    private fun moveToNextMediaItem(currentIndex: Int, currentMediaItem: MediaItem?) {
         val player = mediaSession?.player
         if (player != null && currentIndex >= 0 && currentIndex < player.mediaItemCount - 1) {
             val videoId = currentMediaItem?.mediaId // Assuming mediaId is the videoId
@@ -432,7 +464,7 @@ class PlaybackService(
             val playerHeader = currentMediaItem?.mediaMetadata?.title.toString()
 
             // Fetch a new stream URL for the next media item
-            getStreamUrl(videoId!!, albumArt, playerHeader,currentIndex)
+            getStreamUrl(videoId!!, albumArt, playerHeader, currentIndex)
 //            player.seekToNextMediaItem()
 
             // Remove the problematic media item and move to the next
@@ -440,7 +472,7 @@ class PlaybackService(
 
         } else {
             Log.i("PlaybackServiceCKER", "No more media items to play or invalid index.")
-            retryCurrentMediaItem(currentIndex,currentMediaItem)
+            retryCurrentMediaItem(currentIndex, currentMediaItem)
         }
     }
 
@@ -455,18 +487,15 @@ class PlaybackService(
                 val videoId = it.mediaId // Assuming mediaId is the videoId
                 val albumArt = it.mediaMetadata.artworkUri.toString()
                 val playerHeader = it.mediaMetadata.title.toString()
-                getStreamUrl(videoId!!, albumArt, playerHeader,currentIndex)
+                getStreamUrl(videoId!!, albumArt, playerHeader, currentIndex)
 
             }
         } else {
             Log.e("PlaybackServiceCKER", "Max retries reached. Moving to the next media item.")
             retryCount = 0
-            moveToNextMediaItem(currentIndex,currentMediaItem)
+            moveToNextMediaItem(currentIndex, currentMediaItem)
         }
     }
-
-
-
 
 
 }
