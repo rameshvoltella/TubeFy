@@ -15,7 +15,7 @@ interface RemoteDataSource {
                                   searchQuery: String,
                                  pageToken: String?): Resource<TubeFyCoreUniversalData>
 
-    suspend fun getStreamUrl(videoId:String):Resource<StreamUrlData>
+    suspend fun getStreamUrl(videoId:String,mediaIndex:Int=-1):Resource<StreamUrlData>
 
     suspend fun getPlayListInfo(playListUrl:String):Resource<PlayListData>
 

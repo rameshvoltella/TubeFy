@@ -1,6 +1,7 @@
 package com.ramzmania.tubefy.data.remote
 
 import androidx.media3.common.MediaItem
+import androidx.room.Index
 import com.ramzmania.tubefy.data.dto.base.searchformat.StreamUrlData
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreUniversalData
 import com.ramzmania.tubefy.data.Resource
@@ -53,8 +54,8 @@ class RemoteRepository @Inject constructor(
     }
 
 
-    override suspend fun getStreamUrl(videoId: String): Flow<Resource<StreamUrlData>> {
-        return flow { emit(remoteRepository.getStreamUrl(videoId)) }
+    override suspend fun getStreamUrl(videoId: String,mediaIndex: Int): Flow<Resource<StreamUrlData>> {
+        return flow { emit(remoteRepository.getStreamUrl(videoId,mediaIndex)) }
     }
 
     override suspend fun getNewPipePageSearch(

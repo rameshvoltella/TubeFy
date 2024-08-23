@@ -4,10 +4,10 @@ import android.net.Uri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 
-fun createMediaItems(mediaUris: List<String>, videoThumpUrls: List<String>, videoTitles: List<String>): List<MediaItem> {
+fun createMediaItems(mediaUris: List<String>, videoThumpUrls: List<String>, videoTitles: List<String>,videoIdList: List<String>): List<MediaItem> {
     return mediaUris.indices.map { index ->
         MediaItem.Builder()
-            .setMediaId("TubeFy_${index}")
+            .setMediaId(videoIdList[index])
             .setUri(Uri.parse(mediaUris[index]))
             .setMediaMetadata(
                 MediaMetadata.Builder()

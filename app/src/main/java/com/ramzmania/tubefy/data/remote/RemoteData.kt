@@ -104,7 +104,7 @@ constructor(
     }
 
 
-    override suspend fun getStreamUrl(videoId: String): Resource<StreamUrlData> {
+    override suspend fun getStreamUrl(videoId: String,mediaIndex:Int): Resource<StreamUrlData> {
         var streamUrl: String = ""
 
         withContext(Dispatchers.IO)
@@ -122,7 +122,7 @@ constructor(
             }
         }
         return if (streamUrl.length > 0) {
-            Resource.Success(StreamUrlData(streamUrl))
+            Resource.Success(StreamUrlData(streamUrl,mediaIndex))
         } else {
             Resource.DataError(404)
         }
@@ -133,6 +133,7 @@ constructor(
         var streamUrlArray: ArrayList<String> = ArrayList()
         var videoThumpUrls: ArrayList<String> = ArrayList()
         var videoTitles: ArrayList<String> = ArrayList()
+        var videoIdArray: ArrayList<String> = ArrayList()
         var mediaItems: List<MediaItem>? = null
 
 //         var mediaUris:Array<String> = listOf("http://example.com/audio1.mp3", "http://example.com/audio2.mp3")
@@ -141,7 +142,7 @@ constructor(
         withContext(Dispatchers.IO)
         {
             try {
-//                var currentIndex=0;
+                var currentIndex=0;
                 for (videoIds in youtubePlayerPlaylistListModel.playListData) {
                     val extractor =
                         YoutubeService(0).getStreamExtractor(
@@ -154,7 +155,16 @@ constructor(
                     extractor.fetchPage()
 
                     if (extractor.videoStreams.isNotEmpty()) {
-                        streamUrlArray?.add(extractor.videoStreams.first().content ?: "")
+                        Log.d("papa",videoIds!!.videoId+"")
+                        videoIdArray.add(YoutubeCoreConstant.extractYoutubeVideoId(videoIds.videoId)!!)
+//                        if(videoIds.videoId.equals("https://www.youtube.com/watch?v=roz9sXFkTuE",ignoreCase = true)) {
+//                            streamUrlArray?.add("https://olakka"+extractor.videoStreams.first().content ?: "")
+//
+//                        }else
+//                        {
+                            streamUrlArray?.add(extractor.videoStreams.first().content ?: "")
+
+//                        }
                         videoTitles.add(videoIds.videoTitle)
                         videoThumpUrls.add(
                             "https://i.ytimg.com/vi/${
@@ -163,9 +173,12 @@ constructor(
                                 )
                             }/hq720.jpg"
                         )
+
+                        currentIndex++
+
                     }
                 }
-                mediaItems = createMediaItems(streamUrlArray, videoThumpUrls, videoTitles)
+                mediaItems = createMediaItems(streamUrlArray, videoThumpUrls, videoTitles,videoIdArray)
             } catch (e: Exception) {
                 e.printStackTrace()
             }

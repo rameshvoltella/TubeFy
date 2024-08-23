@@ -47,8 +47,30 @@ class PlaybackService(
         val player = ExoPlayer.Builder(this).build().apply {
             // Adding the error listener to the ExoPlayer instance
             addListener(object : Player.Listener {
+
                 override fun onPlayerError(error: PlaybackException) {
-                    handlePlaybackError(error, currentMediaItem)
+                    val videoId = currentMediaItem?.mediaId // Assuming mediaId is the videoId
+                    val albumArt = currentMediaItem?.mediaMetadata?.artworkUri.toString()
+                    val playerHeader = currentMediaItem?.mediaMetadata?.title.toString()
+                    if(retryCount<=maxRetries) {
+                        getStreamUrl(videoId!!, albumArt, playerHeader, currentMediaItemIndex)
+                    }
+                    if(hasNextMediaItem()) {
+                        retryCount=0
+                        seekToNextMediaItem()
+                        playWhenReady = true
+                        prepare()
+
+
+                    }else
+                    {
+                        retryCount++
+                    }
+
+//                    handlePlaybackError(error, currentMediaItem)
+//                    quickRetryLauchMediaPlayer()
+
+//                    mediaSession?.player?.seekToNextMediaItem()
                 }
             })
         }
@@ -97,6 +119,7 @@ class PlaybackService(
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo) = mediaSession
 
     override fun onDestroy() {
+        Log.d("ondestry called","WHY???")
         mediaSession?.run {
             player.release()
             release()
@@ -110,13 +133,23 @@ class PlaybackService(
         // You can log the error or notify the user
         // For example:
 //        val currentMediaItem = playe.currentMediaItem
-        val currentUri = currentMediaItem?.localConfiguration?.uri
-        if (currentUri != null) {
-            android.util.Log.i("PlaybackService", "Current media URI: $currentUri")
-        } else {
-            android.util.Log.i("PlaybackService", "No current media URI found")
-        }
-        android.util.Log.e("PlaybackService", "Playback error occurred: ${error.message}")
+        val currentIndex = mediaSession?.player?.currentMediaItemIndex ?: -1 // Get current media item index
+//        val currentUri = currentMediaItem?.localConfiguration?.uri
+//        if (currentUri != null) {
+//            Log.i("PlaybackServiceCKER", "Current media URI: $currentUri")
+//        } else {
+//            Log.i("PlaybackServiceCKER", "No current media URI found")
+//        }
+//        Log.e("PlaybackServiceCKER", "Playback error occurred: ${error.message}")
+        moveToNextMediaItem(currentIndex,currentMediaItem)
+
+//        if (isNetworkError(error)) {
+//            Log.e("PlaybackServiceCKER", "Network error occurred: ${error.message}")
+//            // Handle network error (e.g., retrying the current media item, notifying the user, etc.)
+//            retryCurrentMediaItem(currentIndex,currentMediaItem)
+//        } else {
+//            Log.e("PlaybackServiceCKER", "Non-network playback error occurred: ${error.message}")
+//        }
     }
 
     fun fetchPlayList() {
@@ -143,19 +176,20 @@ class PlaybackService(
         }
     }
 
-    fun getStreamUrl(videoId: String, albumArt: String, playerHeader: String) {
+    fun getStreamUrl(videoId: String, albumArt: String, playerHeader: String,mediaIndex:Int=-1) {
         if (videoId != null) {
             serviceScope.launch {
                 remoteRepositorySource.getStreamUrl(
                     YoutubeCoreConstant.extractYoutubeVideoId(
                         videoId
-                    )!!
+                    )!!,mediaIndex
                 ).collect { response ->
                     if (response is Resource.Success) {
                         withContext(Dispatchers.Main) {
                             mediaSession?.player?.let {
+
                                 fun mediaItemData() = MediaItem.Builder()
-                                    .setMediaId("TubeFy")
+                                    .setMediaId(""+YoutubeCoreConstant.extractYoutubeVideoId(videoId)!!)
                                     .setUri(
                                         Uri.parse(response.data?.streamUrl)
                                     )
@@ -170,7 +204,7 @@ class PlaybackService(
                                             .build()
                                     )
                                     .build()
-                                playAudioList(listOf(mediaItemData()).toMutableList())
+                                playAudioList(listOf(mediaItemData()).toMutableList(),mediaIndex)
 
                             }
                         }
@@ -180,7 +214,9 @@ class PlaybackService(
         }
     }
 
-    fun playAudioList(mediaItems: List<MediaItem>) {
+    fun playAudioList(mediaItems: List<MediaItem>,mediaIndex:Int=-1) {
+
+        Log.d("Poda","<><><><<<>>>"+mediaIndex)
         mediaSession?.player?.let {
 
             if (it.currentMediaItem == null) {
@@ -192,7 +228,20 @@ class PlaybackService(
             } else {
 
                 val mutableMediaItems = mediaItems.toMutableList()
-                if (removeExistingPlayList) {
+                if(mediaIndex!=-1)
+                {
+                    if(mediaIndex<it.mediaItemCount) {
+                        it.removeMediaItem(mediaIndex)
+                        it.addMediaItems(mediaIndex, mutableMediaItems)
+                    }else
+                    {
+                        it.setMediaItems(mutableMediaItems)
+                        it.playWhenReady = true
+                        it.prepare()
+
+                    }
+                }
+                else if (removeExistingPlayList) {
 
                     removeExistingPlayList = false
                     it.setMediaItems(mutableMediaItems)
@@ -216,6 +265,106 @@ class PlaybackService(
         const val VIDEO_TITLE = "com.ramzmania.tubefy.VIDEO_TITLE"
 
 
+    }
+
+    private fun isNetworkError(error: PlaybackException): Boolean {
+        return error.errorCode == PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED ||
+                error.errorCode == PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT
+    }
+
+
+    private fun moveToNextMediaItem(currentIndex: Int,currentMediaItem: MediaItem?) {
+        val player = mediaSession?.player
+        if (player != null && currentIndex >= 0 && currentIndex < player.mediaItemCount - 1) {
+            val videoId = currentMediaItem?.mediaId // Assuming mediaId is the videoId
+            val albumArt = currentMediaItem?.mediaMetadata?.artworkUri.toString()
+            val playerHeader = currentMediaItem?.mediaMetadata?.title.toString()
+
+            // Fetch a new stream URL for the next media item
+            getStreamUrl(videoId!!, albumArt, playerHeader,currentIndex)
+//            player.seekToNextMediaItem()
+
+            // Remove the problematic media item and move to the next
+            player.removeMediaItem(currentIndex)
+
+        } else {
+            Log.i("PlaybackServiceCKER", "No more media items to play or invalid index.")
+            retryCurrentMediaItem(currentIndex,currentMediaItem)
+        }
+    }
+
+    private val maxRetries = 3
+    private var retryCount = 0
+    private fun retryCurrentMediaItem(currentIndex: Int, currentMediaItem: MediaItem?) {
+        if (retryCount < maxRetries) {
+            retryCount++
+            Log.i("PlaybackServiceCKER", "Retrying media item. Attempt $retryCount of $maxRetries")
+
+            currentMediaItem?.let {
+                val videoId = it.mediaId // Assuming mediaId is the videoId
+                val albumArt = it.mediaMetadata.artworkUri.toString()
+                val playerHeader = it.mediaMetadata.title.toString()
+                getStreamUrl(videoId!!, albumArt, playerHeader,currentIndex)
+
+            }
+        } else {
+            Log.e("PlaybackServiceCKER", "Max retries reached. Moving to the next media item.")
+            retryCount = 0
+            moveToNextMediaItem(currentIndex,currentMediaItem)
+        }
+    }
+
+
+    fun quickRetryLauchMediaPlayer()
+    {
+           /* mediaSession?.player?.let {
+
+                fun mediaItemData() = MediaItem.Builder()
+                    .setMediaId("id")
+                    .setUri(
+                        Uri.parse("https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4")
+                    )
+                    .setMediaMetadata(
+                        MediaMetadata.Builder()
+                            .setTitle("tadadada")
+                            .setArtist("Reading Page No : ")
+                            .setIsBrowsable(false)
+                            .setIsPlayable(true)
+                        .setArtworkUri(Uri.parse("https://www.cbc.ca/kids/images/weird_wonderful_bunnies_header_update_1140.jpg"))
+                            .setMediaType(MediaMetadata.MEDIA_TYPE_MUSIC)
+                            .build()
+                    )
+                    .build()
+
+                it.setMediaItem(mediaItemData())
+                it.playWhenReady = true
+                it.prepare()
+            }*/
+
+        CoroutineScope(Dispatchers.Main).launch {
+            try {
+                val mediaItems = fetchMediaItemsAsync()
+                // Do something with the media items
+
+
+            } catch (e: Exception) {
+                // Handle exceptions
+                e.printStackTrace()
+            }
+        }
+
+    }
+
+    suspend fun fetchMediaItemsAsync() = withContext(Dispatchers.IO) {
+//        val mediaItemCount = mediaSession?.player?.mediaItemCount
+//
+//        // Retrieve each media item by index
+//        val mediaItems = mutableListOf<MediaItem>()
+//        for (index in 0 until mediaItemCount!!) {
+//            val mediaItem = player.getMediaItemAt(index)
+//            mediaItems.add(mediaItem)
+//        }
+//        mediaItems
     }
 
 }

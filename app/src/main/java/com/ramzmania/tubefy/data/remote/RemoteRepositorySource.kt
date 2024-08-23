@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.Flow
 import org.schabi.newpipe.extractor.Page
 
 interface RemoteRepositorySource {
-    suspend fun getStreamUrl(videoId: String): Flow<Resource<StreamUrlData>>
+    suspend fun getStreamUrl(videoId: String,mediaIndex:Int =-1): Flow<Resource<StreamUrlData>>
 
 
     suspend fun getNewPipePageSearch( serviceId: Int, searchString: String,
