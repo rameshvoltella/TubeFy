@@ -1,4 +1,6 @@
 package com.ramzmania.tubefy.database
+
+import android.util.Log
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
@@ -27,7 +29,7 @@ interface PlaylistDao {
     suspend fun deleteOldestQuePlaylistEntries(limit: Int)
 
     @Transaction
-    suspend fun addQuePlaylists(playlists: List<QuePlaylist>) :Boolean{
+    suspend fun addQuePlaylists(playlists: List<QuePlaylist>): Boolean {
         val validPlaylists = playlists.filter { playlist ->
             isVideoIdPresent(playlist.videoId) == 0
         }
@@ -42,6 +44,27 @@ interface PlaylistDao {
         }
 
         insertQuePlaylists(validPlaylists)
+        return true
+    }
+
+    @Transaction
+    suspend fun addQueSingleSongPlaylists(data: QuePlaylist): Boolean {
+//        val validPlaylists = playlists.filter { playlist ->
+        val validPlaylists = isVideoIdPresent(data.videoId) == 0
+        Log.d("kadapa","came"+validPlaylists)
+//        }
+        if (validPlaylists) {
+            val currentCount = getQuePlaylistCount()
+            val newEntriesCount = 1
+            val totalRequired = currentCount + newEntriesCount
+
+            if (totalRequired > 1000) {
+                val entriesToDelete = totalRequired - 1000
+                deleteOldestQuePlaylistEntries(entriesToDelete)
+            }
+
+            insertQuePlaylist(data)
+        }
         return true
     }
 

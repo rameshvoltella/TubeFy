@@ -8,6 +8,8 @@ import com.ramzmania.tubefy.data.dto.base.searchformat.NewPipeSortingData
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreFormattedData
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreUniversalData
+import com.ramzmania.tubefy.database.PlaylistDao
+import com.ramzmania.tubefy.database.QuePlaylist
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.schabi.newpipe.extractor.InfoItem
@@ -16,8 +18,10 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class NewPipeDataFormatter <T> @Inject constructor():
+class NewPipeDataFormatter <T> @Inject constructor(private val playlistDao: PlaylistDao):
     UniversalYoutubeDataFormatter<NewPipeSortingData<T>, FormattingResult<TubeFyCoreUniversalData,Exception>>() {
+//        @Inject
+//        lateinit var playlistDao: PlaylistDao
     override suspend fun runFormatting(input: NewPipeSortingData<T>): FormattingResult<TubeFyCoreUniversalData,Exception> {
         return withContext(Dispatchers.IO){
             try {
@@ -44,6 +48,9 @@ class NewPipeDataFormatter <T> @Inject constructor():
                                         videoImage = newPipeSearchData.thumbnails[0].url, videoId = newPipeSearchData.url
                                     )
                                 )
+                                Log.d("tadada","yaaaassssssaa")
+
+                                playlistDao.addQueSingleSongPlaylists(QuePlaylist(videoId = newPipeSearchData.url, videoName = newPipeSearchData.name, videoThumbnail = newPipeSearchData.thumbnails[0].url))
 
                             }
                         }
@@ -67,6 +74,8 @@ class NewPipeDataFormatter <T> @Inject constructor():
                                         videoImage = newPipeSearchData.thumbnails[0].url, videoId = newPipeSearchData.url
                                     )
                                 )
+Log.d("tadada","yaaaaaa")
+                                playlistDao.addQueSingleSongPlaylists(QuePlaylist(videoId = newPipeSearchData.url, videoName = newPipeSearchData.name, videoThumbnail = newPipeSearchData.thumbnails[0].url))
 
                             }
                         }
@@ -85,6 +94,7 @@ class NewPipeDataFormatter <T> @Inject constructor():
 
             }catch (ex:Exception)
             {
+                ex.printStackTrace()
                 FormattingResult.FAILURE(Exception("Unable to get Youtube URL"))
             }
         }

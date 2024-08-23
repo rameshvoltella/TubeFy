@@ -65,12 +65,12 @@ private var nextPage: Page? = null
     override fun observeActivity() {
 //        viewModel.startScrapping("wwe")
         binding.next.setOnClickListener {
-
-            val list= listOf(
-                QuePlaylist(videoId = "video_id_1223", videoName = "Example Video 1", videoThumbnail = "http://example.com/thumbnail1.jpg"),
-                QuePlaylist(videoId = "video_id_1244", videoName = "Example Video 2", videoThumbnail = "http://example.com/thumbnail2.jpg")
-            )
-            viewModel.insertSongTOData(list)
+            viewModel.getSongsList()
+//            val list= listOf(
+//                QuePlaylist(videoId = "video_id_1223", videoName = "Example Video 1", videoThumbnail = "http://example.com/thumbnail1.jpg"),
+//                QuePlaylist(videoId = "video_id_1244", videoName = "Example Video 2", videoThumbnail = "http://example.com/thumbnail2.jpg")
+//            )
+//            viewModel.insertSongTOData(list)
 //            if (Page.isValid(nextPage)) {
 //                viewModel.searchNewPipeNextPage(nextPage,mutableListOf<String>("music_songs"),"aavesham")
 //            }
