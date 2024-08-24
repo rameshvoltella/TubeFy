@@ -1,6 +1,7 @@
 package com.ramzmania.tubefy.data.database
 
 import android.util.Log
+import com.ramzmania.tubefy.core.dataformatter.FormattingResult
 import com.ramzmania.tubefy.core.dataformatter.database.DatabaseFormatterFactory
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
@@ -9,6 +10,7 @@ import com.ramzmania.tubefy.database.PlaylistDao
 import com.ramzmania.tubefy.database.QuePlaylist
 import com.ramzmania.tubefy.errors.DATABASE_INSERTION_ERROR
 import com.ramzmania.tubefy.errors.DATABASE_PLAYLIST_ERROR
+import com.ramzmania.tubefy.errors.YOUTUBE_V3_SEARCH_ERROR
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -71,18 +73,28 @@ class DatabaseData @Inject constructor(private val playlistDao: PlaylistDao,priv
         return withContext(Dispatchers.IO)
         {
             Log.d("yono","yonopoda")
-            var formattedActivePlayList=databaseFormatterFactory.createForFormatActivePlayList()
-val result2=formattedActivePlayList.run(playlists);
-            result2.
-            val result=playlistDao.replaceActivePlaylist(formattedActivePlayList.r)
-            if(result)
+            var formattedActivePlayList=databaseFormatterFactory.formatActivePlayList().run(playlists)
+            when(formattedActivePlayList)
             {
-                Resource.Success(DatabaseResponse(200))
-            }else
-            {
-                Resource.DataError(DATABASE_INSERTION_ERROR)
+                is FormattingResult.SUCCESS->{
+                    val result=playlistDao.replaceActivePlaylist(formattedActivePlayList.data)
+                    if(result)
+                    {
+                        Resource.Success(DatabaseResponse(200))
+                    }else
+                    {
+                        Resource.DataError(DATABASE_INSERTION_ERROR)
+
+                    }
+                }
+                is FormattingResult.FAILURE->{Resource.DataError(YOUTUBE_V3_SEARCH_ERROR)}
 
             }
+
+
+            // Run the formatter
+
+
 
         }
     }
