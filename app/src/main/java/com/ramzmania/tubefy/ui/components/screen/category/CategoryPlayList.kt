@@ -1,5 +1,6 @@
 package com.ramzmania.tubefy.ui.components.screen.category
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -40,6 +41,7 @@ import com.ramzmania.tubefy.data.dto.youtubemusic.category.MusicCategoryPlayList
 import com.ramzmania.tubefy.data.dto.youtubemusic.category.MusicCategoryPlayListBase
 import com.ramzmania.tubefy.ui.components.NavigationItem
 import com.ramzmania.tubefy.utils.LocalNavController
+import java.net.URLDecoder
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
@@ -76,7 +78,10 @@ fun CategoryPlaylistView(viewModel: TubeFyViewModel = hiltViewModel()) {
             .background(Color.Black)
     ) {
         Text(
-            text = categoryName,
+            text = URLDecoder.decode(
+                categoryName,
+                StandardCharsets.UTF_8.toString()
+            ),
             fontWeight = FontWeight.Bold,
             color = Color.White,
             modifier = Modifier.padding(10.dp, 30.dp, 10.dp,10.dp),
@@ -145,22 +150,59 @@ fun HorizontalPlayList(playLists: List<MusicCategoryPlayList>) {
             val rowData = playLists[rowIndex]
 
             ContentPlayListItem(rowData) { selectedItem ->
-                navController!!.navigate(
-                    NavigationItem.PlayList.createRoute(
-                        selectedItem.playListId!!,
-                        selectedItem.playListName!!, URLEncoder.encode(
-                            YoutubeCoreConstant.decodeThumpUrl(selectedItem.playListThump?.takeIf { it.isNotEmpty() } ?: "nourl"),
+Log.d("tadadada",selectedItem.videoId+"<><><>")
+                if (selectedItem.videoId.length==11) {
+                    Log.d("tadadada",selectedItem.videoId+"<><><>")
+
+                    val encodedVideoThumpUrl = URLEncoder.encode(
+                        YoutubeCoreConstant.decodeThumpUrl(selectedItem.playListThump),
+                        StandardCharsets.UTF_8.toString()
+                    )
+                    val encodedVideoId =
+                        URLEncoder.encode(
+                            selectedItem.videoId,
                             StandardCharsets.UTF_8.toString()
                         )
-                    )
-                ) {
-                    navController.graph.route?.let { route ->
-                        popUpTo(route) {
-                            saveState = true
+                    val videoTitle =
+                        URLEncoder.encode(
+                            selectedItem.playListName,
+                            StandardCharsets.UTF_8.toString()
+                        )
+//                LocalNavController.current
+                    navController!!.navigate(
+                        NavigationItem.AudioPlayer.createRoute(
+                            encodedVideoId,
+                            encodedVideoThumpUrl, videoTitle, videoTitle, videoTitle
+                        )
+                    ) {
+                        navController.graph.route?.let { route ->
+                            popUpTo(route) {
+                                saveState = true
+                            }
                         }
+                        launchSingleTop = true
+                        restoreState = true
                     }
-                    launchSingleTop = true
-                    restoreState = true
+
+                } else {
+                    navController!!.navigate(
+                        NavigationItem.PlayList.createRoute(
+                            selectedItem.playListId!!,
+                            selectedItem.playListName!!, URLEncoder.encode(
+                                YoutubeCoreConstant.decodeThumpUrl(selectedItem.playListThump?.takeIf { it.isNotEmpty() }
+                                    ?: "nourl"),
+                                StandardCharsets.UTF_8.toString()
+                            )
+                        )
+                    ) {
+                        navController.graph.route?.let { route ->
+                            popUpTo(route) {
+                                saveState = true
+                            }
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
                 }
             }
         }

@@ -17,14 +17,19 @@ import com.ramzmania.tubefy.core.extractors.newpipeextractor.newPipeSearchFor
 import com.ramzmania.tubefy.core.extractors.newpipeextractor.newPipeSearchNextPageFor
 import com.ramzmania.tubefy.data.NetworkConnectivity
 import com.ramzmania.tubefy.data.Resource
-import com.ramzmania.tubefy.data.dto.base.playlist.PlayListCategory
 import com.ramzmania.tubefy.data.dto.base.playlist.PlayListData
+import com.ramzmania.tubefy.data.dto.home.youtubei.YoutubeiHomeBaseResponse
+import com.ramzmania.tubefy.data.dto.home.youtubei.YoutubeiMusicHomeApiResponse
+import com.ramzmania.tubefy.data.dto.home.youtubei.next.ContinuationContents
 import com.ramzmania.tubefy.data.dto.youtubeV3.YoutubeSearchResponse
-import com.ramzmania.tubefy.data.dto.youtubemusic.category.MusicCategoryPlayList
 import com.ramzmania.tubefy.data.dto.youtubemusic.category.MusicCategoryPlayListBase
+import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.categoryplaylist.BrowseHomePaginationRequest
+import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.categoryplaylist.BrowseHomeRequest
 import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.categoryplaylist.BrowseRequest
 import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.categoryplaylist.CategoryPlayListRoot
 import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.categoryplaylist.Client
+import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.categoryplaylist.ClientPagination
+import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.categoryplaylist.ContextPagination
 import com.ramzmania.tubefy.data.remote.api.ApiServices
 import com.ramzmania.tubefy.data.remote.api.ServiceGenerator
 import com.ramzmania.tubefy.errors.NETWORK_ERROR
@@ -36,27 +41,26 @@ import com.ramzmania.tubefy.errors.YOUTUBE_V3_SEARCH_ERROR
 import com.ramzmania.tubefy.player.YoutubePlayerPlaylistListModel
 import com.ramzmania.tubefy.player.createMediaItems
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import org.schabi.newpipe.extractor.InfoItem
-import org.schabi.newpipe.extractor.NewPipe
 import org.schabi.newpipe.extractor.Page
-import org.schabi.newpipe.extractor.playlist.PlaylistInfo
 import org.schabi.newpipe.extractor.search.SearchInfo
 import org.schabi.newpipe.extractor.services.youtube.YoutubeService
 import org.schabi.newpipe.extractor.services.youtube.extractors.YoutubeStreamExtractor
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
 import retrofit2.Response
 import java.io.IOException
-import java.net.URLDecoder
-import java.nio.charset.StandardCharsets
 import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
 
 class RemoteData @Inject
 constructor(
     private val serviceGenerator: ServiceGenerator,
     private val networkConnectivity: NetworkConnectivity,
     private val newPipeFormatterFactory: NewPipeDataFormatterFactory,
-    private val youtubeV3Formatter: YoutubeV3Formatter, private val youtubeMusicDataFormatterFactory: YoutubeMusicDataFormatterFactory
+    private val youtubeV3Formatter: YoutubeV3Formatter,
+    private val youtubeMusicDataFormatterFactory: YoutubeMusicDataFormatterFactory
 ) : RemoteDataSource {
     override suspend fun requestYoutubeV3(
         part: String,
@@ -102,7 +106,7 @@ constructor(
     }
 
 
-    override suspend fun getStreamUrl(videoId: String): Resource<StreamUrlData> {
+    override suspend fun getStreamUrl(videoId: String,mediaIndex:Int): Resource<StreamUrlData> {
         var streamUrl: String = ""
 
         withContext(Dispatchers.IO)
@@ -120,7 +124,7 @@ constructor(
             }
         }
         return if (streamUrl.length > 0) {
-            Resource.Success(StreamUrlData(streamUrl))
+            Resource.Success(StreamUrlData(streamUrl,mediaIndex))
         } else {
             Resource.DataError(404)
         }
@@ -131,6 +135,7 @@ constructor(
         var streamUrlArray: ArrayList<String> = ArrayList()
         var videoThumpUrls: ArrayList<String> = ArrayList()
         var videoTitles: ArrayList<String> = ArrayList()
+        var videoIdArray: ArrayList<String> = ArrayList()
         var mediaItems: List<MediaItem>? = null
 
 //         var mediaUris:Array<String> = listOf("http://example.com/audio1.mp3", "http://example.com/audio2.mp3")
@@ -139,8 +144,9 @@ constructor(
         withContext(Dispatchers.IO)
         {
             try {
-//                var currentIndex=0;
+                var currentIndex=0;
                 for (videoIds in youtubePlayerPlaylistListModel.playListData) {
+                    ensureActive()
                     val extractor =
                         YoutubeService(0).getStreamExtractor(
                             "${YoutubeCoreConstant.YOUTUBE_WATCH_URL}${
@@ -152,7 +158,16 @@ constructor(
                     extractor.fetchPage()
 
                     if (extractor.videoStreams.isNotEmpty()) {
-                        streamUrlArray?.add(extractor.videoStreams.first().content ?: "")
+                        Log.d("9papa",videoIds!!.videoId+"")
+                        videoIdArray.add(YoutubeCoreConstant.extractYoutubeVideoId(videoIds.videoId)!!)
+//                        if(videoIds.videoId.equals("https://www.youtube.com/watch?v=roz9sXFkTuE",ignoreCase = true)) {
+//                            streamUrlArray?.add("https://olakka"+extractor.videoStreams.first().content ?: "")
+//
+//                        }else
+//                        {
+                            streamUrlArray?.add(extractor.videoStreams.first().content ?: "")
+
+//                        }
                         videoTitles.add(videoIds.videoTitle)
                         videoThumpUrls.add(
                             "https://i.ytimg.com/vi/${
@@ -161,9 +176,16 @@ constructor(
                                 )
                             }/hq720.jpg"
                         )
+
+                        currentIndex++
+
                     }
                 }
-                mediaItems = createMediaItems(streamUrlArray, videoThumpUrls, videoTitles)
+                mediaItems = createMediaItems(streamUrlArray, videoThumpUrls, videoTitles,videoIdArray)
+            }catch (e: CancellationException) {
+                // Handle the cancellation, e.g., clean up resources if needed
+                Log.d("getStreamBulkUrl", "Operation was canceled")
+                e.printStackTrace() // Re-throw the cancellation exception to properly handle coroutine cancellation
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -204,15 +226,146 @@ constructor(
                 try {
                     (response is CategoryPlayListRoot).let {
 
-                        val result=youtubeMusicDataFormatterFactory.createForYoutubeMusicCategoryPlayListDataFormatter().run( (response as CategoryPlayListRoot))
-                        when(result)
-                        {
-                            is FormattingResult.SUCCESS->{  Resource.Success(result.data)
+                        val result =
+                            youtubeMusicDataFormatterFactory.createForYoutubeMusicCategoryPlayListDataFormatter()
+                                .run((response as CategoryPlayListRoot))
+                        when (result) {
+                            is FormattingResult.SUCCESS -> {
+                                Resource.Success(result.data)
                             }
-                            is FormattingResult.FAILURE->{Resource.DataError(YOUTUBE_SCRAP_ERROR)}
+
+                            is FormattingResult.FAILURE -> {
+                                Resource.DataError(YOUTUBE_SCRAP_ERROR)
+                            }
 
 
                         }
+
+                    }
+
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    Resource.DataError(YOUTUBE_SCRAP_ERROR)
+                }
+            }
+
+            else -> {
+                Resource.DataError(errorCode = response as Int)
+            }
+        }
+    }
+
+    override suspend fun getMusicHomeYoutubei(): Resource<YoutubeiHomeBaseResponse> {
+        val categoryPlaylistService = serviceGenerator.createService(ApiServices::class.java)
+        val client = Client(
+            clientName = "WEB_REMIX",
+            clientVersion = "1.20240729.01.00"
+//            originalUrl = "https://music.youtube.com/moods_and_genres"
+        )
+
+        val context =
+            com.ramzmania.tubefy.data.dto.youtubemusic.playlist.categoryplaylist.Context(client = client)
+
+        val request = BrowseHomeRequest(
+            context = context
+        )
+        return when (val response = processCall {
+            categoryPlaylistService.getMusicHomeYoutubeiInfo(
+                request, "https://music.youtube.com/youtubei/v1/browse?prettyPrint=false"
+            )
+        }) {
+            is Any -> {
+                try {
+                    (response is YoutubeiMusicHomeApiResponse).let {
+                        Log.d("kiiii", "yooo")
+                        return withContext(Dispatchers.IO)
+                        {
+                            val result =
+                                youtubeMusicDataFormatterFactory.createForYoutubeMusicHomeYoutubeiDataFormatter()
+                                    .run((response as YoutubeiMusicHomeApiResponse))
+                            when (result) {
+                                is FormattingResult.SUCCESS -> {
+                                    if (result.data.homePageContentDataList != null) {
+                                        Resource.Success(result.data)
+                                    } else {
+                                        Resource.DataError(YOUTUBE_SCRAP_ERROR)
+                                    }
+                                }
+
+                                is FormattingResult.FAILURE -> {
+                                    Resource.DataError(YOUTUBE_SCRAP_ERROR)
+                                }
+                            }
+
+                        }
+//                        Resource.DataError(YOUTUBE_SCRAP_ERROR)
+
+
+                    }
+
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    Resource.DataError(YOUTUBE_SCRAP_ERROR)
+                }
+            }
+
+            else -> {
+                Resource.DataError(errorCode = response as Int)
+            }
+        }
+    }
+
+    override suspend fun getMusicHomePaginationYoutubei(
+        paginationHex: String,
+        paginationId: String,
+        visitorData: String
+    ): Resource<YoutubeiHomeBaseResponse> {
+        val categoryPlaylistService = serviceGenerator.createService(ApiServices::class.java)
+        val client = ClientPagination(
+            clientName = "WEB_REMIX",
+            clientVersion = "1.20240729.01.00",
+            visitorData = visitorData
+//            originalUrl = "https://music.youtube.com/moods_and_genres"
+        )
+
+        val context =
+            ContextPagination(client = client)
+
+        val request = BrowseHomePaginationRequest(
+            context = context
+        )
+        return when (val response = processCall {
+            categoryPlaylistService.getMusicHomeYoutubeiPaginationInfo(
+                request,
+                "https://music.youtube.com/youtubei/v1/browse?continuation=" + paginationId + "&type=next&itct=" + paginationHex + "&prettyPrint=false"
+            )
+        }) {
+            is Any -> {
+                try {
+                    (response is YoutubeiMusicHomeApiResponse).let {
+                        Log.d("kiiii", "yooo")
+                        return withContext(Dispatchers.IO)
+                        {
+                        val result =
+                            youtubeMusicDataFormatterFactory.createForYoutubeMusicYoutubeiDataHomePaginationFormatter()
+                                .run((response as ContinuationContents))
+                        when (result) {
+                            is FormattingResult.SUCCESS -> {
+                                if (result.data.homePageContentDataList != null) {
+                                    Resource.Success(result.data)
+                                } else {
+                                    Resource.DataError(YOUTUBE_SCRAP_ERROR)
+                                }
+                            }
+
+                            is FormattingResult.FAILURE -> {
+                                Resource.DataError(YOUTUBE_SCRAP_ERROR)
+                            }
+
+                        }
+                        }
+//                        Resource.DataError(YOUTUBE_SCRAP_ERROR)
+
 
                     }
 
@@ -235,7 +388,6 @@ constructor(
         sortFilter: String
     ): Resource<TubeFyCoreUniversalData> {
         var searchInfo: SearchInfo? = null
-        var searchInfo2: SearchInfo? = null
 
         withContext(Dispatchers.IO)
         {
@@ -258,7 +410,8 @@ constructor(
             val result = newPipeFormatter.run(
                 NewPipeSortingData(
                     searchInfo!!.relatedItems,
-                    searchInfo!!.nextPage
+                    searchInfo!!.nextPage,
+                    contentFilter
                 )
             )
             when (result) {
@@ -284,7 +437,8 @@ constructor(
             val result = newPipeFormatter.run(
                 NewPipeSortingData(
                     pageSearchInfo.relatedItems,
-                    pageSearchInfo.nextPage
+                    pageSearchInfo.nextPage,
+                    contentFilter
                 )
             )
             when (result) {
@@ -319,6 +473,7 @@ constructor(
                 NewPipeSortingData(
                     newPipePlayList.relatedItems,
                     newPipePlayList.nextPage
+
                 )
             )
             when (result) {
@@ -370,7 +525,8 @@ constructor(
             val result = newPipeFormatter.run(
                 NewPipeSortingData(
                     nextPageSearchInfo.items,
-                    nextPageSearchInfo.nextPage
+                    nextPageSearchInfo.nextPage,
+                    contentFilter
                 )
             )
 //            val baseDataModel= TubeFyCoreUniversalData(NewPipeSortingInput(result,nextPageSearchInfo.nextPage))

@@ -12,19 +12,29 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -55,48 +65,119 @@ import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun HomePageContentList(
     homePageResponses: List<HomePageResponse?>,
-    viewModel: TubeFyViewModel = hiltViewModel(), navController: NavController?
+    viewModel: TubeFyViewModel = hiltViewModel(), navController: NavController?,onRefresh: () -> Unit
 ) {
     val streamUrlData by viewModel.streamUrlData.observeAsState()
     val playListData by viewModel.youTubePlayListData.observeAsState()
     val context = LocalContext.current
+    val lazyListState = rememberLazyListState()
+//    var isLoading by remember { mutableStateOf(false) }  // Track loading state
+    var isLoading=viewModel.loadMoreHomeData.collectAsState()
+    var loadMoreHomePageEnded=viewModel.loadMoreHomePageEnded.collectAsState()
 
-    LazyColumn {
-        items(homePageResponses) { response ->
 
-            response?.let {
-                when (it.cellType) {
-                    CellType.LIST -> GridContentList(
-                        heading = it.heading,
-                        contentData = it.contentData,
-                        navController = navController
-                    )
+   var isRefreshing =viewModel.pullToRefreshPage.collectAsState()
 
-                    CellType.HORIZONTAL_LIST -> HorizontalContentList(heading = it.heading,
-                        contentData = it.contentData,
-                        navController = navController
-                    )
+    // Create a PullRefreshState
+    val pullRefreshState = rememberPullRefreshState(
+        refreshing = isRefreshing.value,
+        onRefresh = {
+           viewModel.pullToRefreshHome(true)
+            onRefresh()
+        }
+    )
+    LaunchedEffect(lazyListState) {
+        snapshotFlow { lazyListState.layoutInfo }
+            .collect { layoutInfo ->
+                if (layoutInfo.visibleItemsInfo.isNotEmpty()) {
+                    val lastVisibleItem = layoutInfo.visibleItemsInfo.last()
+                    val totalItems = layoutInfo.totalItemsCount
+                    // Check if we've reached near the end of the list
+                    Log.d("laaaa","came>>>"+isLoading)
+                    if (lastVisibleItem.index >= totalItems - 1 && !isLoading.value&&!loadMoreHomePageEnded.value) {
+                        // Trigger loading more items
+                        Log.d("laaaa","came>>>goforloading111>>>"+homePageResponses.size)
 
-                    CellType.THREE_TYPE_CELL -> VerticalContentList(
-                        heading = it.heading,
-                        contentData = it.contentData,
-                        navController = navController
-                    )
+                        if(homePageResponses.size>1)
+                        {
+//                            Log.d("laaaa","came>>>goforloading")
 
-                    CellType.SINGLE_CELL -> SingleContentCell(contentData = it.contentData,heading = it.heading,)
-                    CellType.PLAYLIST_ONLY -> HorizontalContentList(
-                        heading = it.heading,
-                        contentData = it.contentData,
-                        navController = navController
-                    )
+//                         isLoading=true
+                         viewModel.setHomePageLoadMoreState(true)
+
+                        }
+
+                    }
+                }
+            }
+    }
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .pullRefresh(pullRefreshState)
+    ) {
+        LazyColumn(state = lazyListState) {
+            items(homePageResponses) { response ->
+
+                response?.let {
+                    when (it.cellType) {
+                        CellType.LIST -> GridContentList(
+                            heading = it.heading,
+                            contentData = it.contentData,
+                            navController = navController
+                        )
+
+                        CellType.HORIZONTAL_LIST -> HorizontalContentList(
+                            heading = it.heading,
+                            contentData = it.contentData,
+                            navController = navController
+                        )
+
+                        CellType.THREE_TYPE_CELL -> VerticalContentList(
+                            heading = it.heading,
+                            contentData = it.contentData,
+                            navController = navController
+                        )
+
+                        CellType.SINGLE_CELL -> SingleContentCell(
+                            contentData = it.contentData,
+                            heading = it.heading,
+                        )
+
+                        CellType.PLAYLIST_ONLY -> HorizontalContentList(
+                            heading = it.heading,
+                            contentData = it.contentData,
+                            navController = navController
+                        )
+                    }
+                }
+            }
+            item {
+                Spacer(modifier = Modifier.height(90.dp))
+            }
+            if (isLoading.value) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
                 }
             }
         }
+        PullRefreshIndicator(
+            refreshing = isRefreshing.value,
+            state = pullRefreshState,
+            modifier = Modifier.align(Alignment.TopCenter)
+        )
     }
-
     LaunchedEffect(key1 = playListData) {
         if (playListData is Resource.Success) {
 //            val items = (streamUrlData as Resource.Success<StreamUrlData>).data
@@ -314,7 +395,28 @@ fun HorizontalContentList(
                                 restoreState = true
                             }
 
-                        } else {
+                        } else if(selectedItem.playlistId.length>1)
+                        {
+                            Log.d("playList","YUHUUU")
+                            navController!!.navigate(
+                                NavigationItem.PlayList.createRoute(
+                                    selectedItem.playlistId!!,
+                                    selectedItem.title!!,URLEncoder.encode(
+                                        YoutubeCoreConstant.decodeThumpUrl(selectedItem.thumbnail?.takeIf { it.isNotEmpty() } ?: "nourl"),
+                                        StandardCharsets.UTF_8.toString()
+                                    )
+                                )
+                            ) {
+                                navController.graph.startDestinationRoute?.let { route ->
+                                    popUpTo(route) {
+                                        saveState = true
+                                    }
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+
+                        } else{
                             viewModel.getStreamUrl(selectedItem.videoId)
 
                         }

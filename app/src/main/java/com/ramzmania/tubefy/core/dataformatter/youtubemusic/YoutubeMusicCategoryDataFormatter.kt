@@ -27,6 +27,7 @@ class YoutubeMusicCategoryDataFormatter @Inject constructor()  :
                     var playListCategoryId=""
                     var playListBrowserId=""
                     var playlistName=""
+                    var stripCode=0L;
                     tabs.tabRenderer.let {tabRenderer ->
                         for (sectionListContents in tabRenderer?.content?.sectionListRenderer?.contents!!) {
                             if(sectionListContents.gridRenderer!=null) {
@@ -39,11 +40,18 @@ class YoutubeMusicCategoryDataFormatter @Inject constructor()  :
                                         gridRendererItems.musicNavigationButtonRenderer.clickCommand?.browseEndpoint?.browseId!!
                                     playListCategoryId =
                                         gridRendererItems.musicNavigationButtonRenderer.clickCommand?.browseEndpoint?.params!!
+                                    if(gridRendererItems.musicNavigationButtonRenderer.solid!=null)
+                                    {
+                                        if(gridRendererItems.musicNavigationButtonRenderer.solid.leftStripeColor!=0L)
+                                        {
+                                            stripCode=gridRendererItems.musicNavigationButtonRenderer.solid.leftStripeColor
+                                        }
+                                    }
                                     musicCategoryList.add(
                                         PlayListCategory(
                                             playListCategoryId,
                                             playlistName,
-                                            playListBrowserId
+                                            playListBrowserId,stripCode
                                         )
                                     )
 

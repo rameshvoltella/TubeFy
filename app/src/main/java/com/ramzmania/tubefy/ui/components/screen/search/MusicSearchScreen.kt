@@ -14,6 +14,8 @@ import androidx.compose.material3.TextField
 
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -34,39 +36,52 @@ import org.schabi.newpipe.extractor.Page
 
 @Composable
 fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
-    var text by remember { mutableStateOf(TextFieldValue()) }
+    val textFieldValueSaver = Saver<TextFieldValue, String>(
+        save = { it.text },  // Save only the text part
+        restore = { TextFieldValue(it) }  // Restore TextFieldValue from the text
+    )
+
+    // Use rememberSaveable with the custom Saver
+    var textFieldValue by rememberSaveable(stateSaver = textFieldValueSaver) {
+        mutableStateOf(TextFieldValue())
+    }
+//    var text by remember { mutableStateOf(TextFieldValue()) }
+//    var text by rememberSaveable { mutableStateOf("") }
     val searchPlayListName by viewModel.youTubeSearchData.observeAsState()
-    var isLoading by remember { mutableStateOf(false) }  // Track loading state
-    var videoListItems by remember { mutableStateOf<List<TubeFyCoreTypeData?>>(emptyList()) }
-    var page by remember { mutableStateOf<Page?>(null) }
+    var isLoading by rememberSaveable { mutableStateOf(false) }  // Track loading state
+    var videoListItems by rememberSaveable { mutableStateOf<List<TubeFyCoreTypeData?>>(emptyList()) }
+    var page by rememberSaveable { mutableStateOf<Page?>(null) }
     val lazyListState = rememberLazyListState()
-    var isChecked by remember { mutableStateOf(false) }
-    var isFreshSearch by remember { mutableStateOf(false) }
+    var isChecked by rememberSaveable { mutableStateOf(false) }
+    var isFreshSearch by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(key1 = searchPlayListName) {
         if (searchPlayListName is Resource.Success) {
 //            val items = (streamUrlData as Resource.Success<StreamUrlData>).data
             // Prepend new data to the existing list
-            Log.d("datata", "first")
-            Log.d(
-                "datata",
-                ">>VADAAACAME" + searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!.size
-            )
-            if (isFreshSearch) {
-                lazyListState.scrollToItem(0) // Scroll to top without animation
-                isFreshSearch = false
-                videoListItems = searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!
-            } else {
-                if (videoListItems.size > 0) {
-                    videoListItems =
-                        videoListItems + searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!
-                } else {
+            if (isLoading || isFreshSearch) {
+                Log.d("datata", "first")
+                Log.d(
+                    "datata",
+                    ">>VADAAACAME" + searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!.size
+                )
+                if (isFreshSearch) {
+                    lazyListState.scrollToItem(0) // Scroll to top without animation
+                    isFreshSearch = false
                     videoListItems =
                         searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!
+                } else {
+                    if (videoListItems.size > 0) {
+                        videoListItems =
+                            videoListItems + searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!
+                    } else {
+                        videoListItems =
+                            searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!
 
+                    }
                 }
+                isLoading = false
+                page = searchPlayListName!!.data!!.youtubeSortedData.newPipePage
             }
-            isLoading = false
-            page = searchPlayListName!!.data!!.youtubeSortedData.newPipePage
 
         } else if (searchPlayListName is Resource.DataError) {
             isLoading = false
@@ -92,7 +107,7 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
                                         viewModel.searchNewPipeNextPage(
                                             page,
                                             if (isChecked) mutableListOf("all") else mutableListOf("music_songs"),
-                                            text.text
+                                            textFieldValue.text
                                         ) // Implement this function in your ViewModel
                                     }
                                 }
@@ -106,7 +121,7 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
                                         viewModel.searchNewPipeNextPage(
                                             page,
                                             if (isChecked) mutableListOf("all") else mutableListOf("music_songs"),
-                                            text.text
+                                            textFieldValue.text
                                         ) // Implement this function in your ViewModel
                                     }
                                 }
@@ -126,9 +141,9 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
         // Top TextField
         val keyboardController = LocalSoftwareKeyboardController.current
         TextField(
-            value = text,
+            value = textFieldValue,
             placeholder = { Text("Search songs") },
-            onValueChange = { newText -> text = newText },
+            onValueChange = { newValue -> textFieldValue = newValue },
             keyboardOptions = KeyboardOptions.Default.copy(
                 imeAction = ImeAction.Done
             ),
@@ -137,7 +152,7 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
                 isFreshSearch = true
                 keyboardController?.hide() // Hide the keyboard
                 viewModel.searchNewPipePage(
-                    text.text,
+                    textFieldValue.text,
                     if (isChecked) mutableListOf("all") else mutableListOf("music_songs")
                 )
 
@@ -154,7 +169,18 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
         Row(modifier = Modifier.padding(20.dp)) {
             Switch(
                 checked = isChecked,
-                onCheckedChange = { checked -> isChecked = checked },
+                onCheckedChange = { checked ->
+                    run {
+                        isChecked = checked
+                        if (textFieldValue.text.isNotEmpty()) {
+                            isFreshSearch = true
+                            viewModel.searchNewPipePage(
+                                textFieldValue.text,
+                                if (isChecked) mutableListOf("all") else mutableListOf("music_songs")
+                            )
+                        }
+                    }
+                },
                 modifier = Modifier.padding(horizontal = 5.dp)
             )
 
@@ -171,8 +197,7 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
             )
 
         }
-        if(text.text.isEmpty())
-        {
+        if (textFieldValue.text.isEmpty()) {
             CategoryScreenMain()
         }
         if (isFreshSearch) {
@@ -196,6 +221,9 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
                 videoListItems[index]?.let { item ->
                     TrackItem(item)
                 }
+            }
+            item {
+                Spacer(modifier = Modifier.height(90.dp))
             }
             if (isLoading) {
                 item {

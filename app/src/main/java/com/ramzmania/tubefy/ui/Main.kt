@@ -7,7 +7,6 @@ import android.util.Log
 import android.widget.Toast
 import com.ramzmania.tubefy.core.YoutubeCoreConstant.extractYoutubeVideoId
 import com.ramzmania.tubefy.core.dataformatter.YoutubeApiType
-import com.ramzmania.tubefy.core.extractors.yotubewebextractor.YoutubeScrapType
 import com.ramzmania.tubefy.data.dto.base.searchformat.StreamUrlData
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreUniversalData
@@ -15,8 +14,11 @@ import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.base.playlist.PlayListCategory
 import com.ramzmania.tubefy.data.dto.home.HomePageResponse
 import com.ramzmania.tubefy.data.dto.base.playlist.PlayListData
+import com.ramzmania.tubefy.data.dto.home.youtubei.YoutubeiHomeBaseResponse
 import com.ramzmania.tubefy.data.dto.youtubestripper.ApiResponse
 import com.ramzmania.tubefy.data.observe
+import com.ramzmania.tubefy.database.DatabaseResponse
+import com.ramzmania.tubefy.database.QuePlaylist
 import com.ramzmania.tubefy.databinding.KkBinding
 import com.ramzmania.tubefy.ui.base.BaseBinderActivity
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
@@ -44,7 +46,14 @@ private var nextPage: Page? = null
         observe(viewModel.youTubeMusicHomeDefaultData, ::HandleDefaultHomeResponse)
         observe(viewModel.youTubePlayListData, ::HandleDefaultPlayListResponse)
         observe(viewModel.youTubeMusicCategoryData,:: HandleCategoryResposne)
+        observe(viewModel.youTubeiMusicHomeData,::HandleYoutubeii)
+        observe(viewModel.youTubeiMusicHomePaginationData,::HandleYoutubeii2)
 
+        observe(viewModel.getPlayListFromDatabase,::getDbSong)
+        observe(viewModel.addSongToDatabase,::addSonf)
+
+//        observe(viewModel.getAllActiveList,::getactivepl)
+        observe(viewModel.addToActiveDatabase,::addActive)
 
 
     }
@@ -54,23 +63,33 @@ private var nextPage: Page? = null
 
     override fun observeActivity() {
 //        viewModel.startScrapping("wwe")
-        binding.next.setOnClickListener {
-            if (Page.isValid(nextPage)) {
-                viewModel.searchNewPipeNextPage(nextPage,mutableListOf<String>("music_songs"),"aavesham")
-            }
-        }
+
 
         binding.YOUtbev3.setOnClickListener {
-            viewModel.loadPlayList("https://music.youtube.com/playlist?list=RDCLAK5uy_kmPRjHDECIcuVwnKsx2Ng7fyNgFKWNJFs")
+           val list= listOf(
+                QuePlaylist(videoId = "video_id_123", videoName = "Example Video 1", videoThumbnail = "http://example.com/thumbnail1.jpg"),
+                QuePlaylist(videoId = "video_id_124", videoName = "Example Video 2", videoThumbnail = "http://example.com/thumbnail2.jpg")
+            )
+            viewModel.insertSongTOData(list)
+//            viewModel.loadPlayList("https://music.youtube.com/playlist?list=RDCLAK5uy_kmPRjHDECIcuVwnKsx2Ng7fyNgFKWNJFs")
 
         }
         binding.lasttype.setOnClickListener {
-            viewModel.callCategoryPlayList()
+            viewModel.callYoutubeiHome()
 //            viewModel.loadDefaultHomeData()
 //            viewModel.startWebScrapping("https://music.youtube.com/moods_and_genres", YoutubeScrapType.YOUTUBE_MUSIC_CATEGORY)
                     }
 
-        binding.newpipehome.setOnClickListener { viewModel.searchNewPipePage("aavesham",mutableListOf<String>("music_songs")) }
+        binding.newpipehome.setOnClickListener {
+
+//            viewModel.searchNewPipePage("aavesham",mutableListOf<String>("music_songs"))
+            viewModel.setActiveSongsList(listOf(TubeFyCoreTypeData(videoId = "kona", videoImage = "kona", videoTitle = "kona")))
+
+        }
+        binding.next.setOnClickListener {
+            viewModel.getActivePlayList()
+
+        }
     }
 
     /*    override fun onCreate(savedInstanceState: Bundle?) {
@@ -169,6 +188,158 @@ private var nextPage: Page? = null
             else -> {}
         }
     }
+
+    private fun HandleYoutubeii(resource: Resource<YoutubeiHomeBaseResponse>) {
+        when (resource) {
+            is Resource.Loading -> {}
+            is Resource.Success -> {
+                Toast.makeText(applicationContext, "DAT FROM ASSERTS DATA>"+resource.data?.homePageContentDataList?.size, 1).show()
+
+                Log.d("url", "paginationId" + resource.data?.paginationContent?.paginationId)
+                Log.d("url", "paginationHEX" + resource.data?.paginationContent?.paginationHex)
+                Log.d("url", "vister" + resource.data?.paginationContent?.visitorData)
+
+                viewModel.callYoutubeiHomePagination(resource.data?.paginationContent?.paginationHex!!,resource.data?.paginationContent?.paginationId!!,resource.data?.paginationContent?.visitorData!!)
+
+
+//                resource.data?.playListVideoList?.forEach {
+//                    Log.d("url", "<><><>" + it?.videoId)
+//
+//                }
+//                Log.d("url", "" + resource.data[1]!!.contentData?.get(0)?.playlistId)
+//                Log.d("url", "" + resource.data[2]!!.contentData?.get(0)?.playlistId)
+//                Log.d("url", "" + resource.data[3]!!.contentData?.get(0)?.playlistId)
+//                Log.d("url", "" + resource.data[4]!!.contentData?.get(0)?.playlistId)
+//                Log.d("url", "" + resource.data[5]!!.contentData?.get(0)?.playlistId)
+
+//                openUrlInBrowser( resource.data!!.streamUrl)
+            }
+
+            is Resource.DataError -> {
+            }
+
+            else -> {}
+        }
+
+    }
+
+    private fun addActive(resource: Resource<DatabaseResponse>) {
+        when (resource) {
+            is Resource.Loading -> {}
+            is Resource.Success -> {
+
+                Toast.makeText(applicationContext,"Added to db",1).show()
+
+            }
+
+            is Resource.DataError -> {
+                Toast.makeText(applicationContext,"ERROR",1).show()
+
+            }
+
+            else -> {}
+        }
+    }
+
+    private fun getactivepl(resource: Resource<List<TubeFyCoreTypeData>>) {
+        when (resource) {
+            is Resource.Loading -> {}
+            is Resource.Success -> {
+
+                for(kk in resource.data!!)
+                {
+                    Log.d("TAGGG",""+kk.videoId)
+                }
+
+                Toast.makeText(applicationContext,"Added to db",1).show()
+
+            }
+
+            is Resource.DataError -> {
+                Toast.makeText(applicationContext,"ERROR",1).show()
+
+            }
+
+            else -> {}
+        }
+    }
+
+    private fun addSonf(resource: Resource<DatabaseResponse>) {
+        when (resource) {
+            is Resource.Loading -> {}
+            is Resource.Success -> {
+
+                Toast.makeText(applicationContext,"Added to db",1).show()
+                viewModel.getSongsList()
+
+            }
+
+            is Resource.DataError -> {
+                Toast.makeText(applicationContext,"ERROR",1).show()
+
+            }
+
+            else -> {}
+        }
+    }
+
+    private fun getDbSong(resource: Resource<List<QuePlaylist>>) {
+        when (resource) {
+            is Resource.Loading -> {}
+            is Resource.Success -> {
+                Toast.makeText(applicationContext,"size"+resource.data?.size,1).show()
+
+                for(data in resource.data!!)
+                {
+                    Log.d("rests",""+data.videoId)
+                }
+
+
+            }
+
+            is Resource.DataError -> {
+                Toast.makeText(applicationContext,"ERROR2222",1).show()
+
+            }
+
+            else -> {}
+        }
+    }
+
+    private fun HandleYoutubeii2(resource: Resource<YoutubeiHomeBaseResponse>) {
+        when (resource) {
+            is Resource.Loading -> {}
+            is Resource.Success -> {
+                Toast.makeText(applicationContext, "DAT FROM ASSERTS DATA>"+resource.data?.homePageContentDataList?.size, 1).show()
+
+                Log.d("url", "paginationId" + resource.data?.paginationContent?.paginationId)
+                Log.d("url", "paginationHEX" + resource.data?.paginationContent?.paginationHex)
+//                Log.d("url", "vister" + resource.data?.paginationContent?.visitorData)
+
+//                viewModel.callYoutubeiHomePagination(resource.data?.paginationContent?.paginationHex!!,resource.data?.paginationContent?.paginationId!!,resource.data?.paginationContent?.visitorData!!)
+
+
+//                resource.data?.playListVideoList?.forEach {
+//                    Log.d("url", "<><><>" + it?.videoId)
+//
+//                }
+//                Log.d("url", "" + resource.data[1]!!.contentData?.get(0)?.playlistId)
+//                Log.d("url", "" + resource.data[2]!!.contentData?.get(0)?.playlistId)
+//                Log.d("url", "" + resource.data[3]!!.contentData?.get(0)?.playlistId)
+//                Log.d("url", "" + resource.data[4]!!.contentData?.get(0)?.playlistId)
+//                Log.d("url", "" + resource.data[5]!!.contentData?.get(0)?.playlistId)
+
+//                openUrlInBrowser( resource.data!!.streamUrl)
+            }
+
+            is Resource.DataError -> {
+            }
+
+            else -> {}
+        }
+
+    }
+
     private fun HandleCategoryResposne(resource: Resource<List<PlayListCategory?>>) {
         when (resource) {
             is Resource.Loading -> {}

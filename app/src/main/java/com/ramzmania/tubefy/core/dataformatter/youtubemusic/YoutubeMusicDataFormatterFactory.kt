@@ -18,5 +18,14 @@ class YoutubeMusicDataFormatterFactory @Inject constructor() {
         return YoutubeMusicCategoryPlayListDataFormatter()
     }
 
+
+    fun createForYoutubeMusicHomeYoutubeiDataFormatter(): YoutubeMusicYoutubeiDataHomeFormatter {
+        return YoutubeMusicYoutubeiDataHomeFormatter()
+    }
+
+    fun createForYoutubeMusicYoutubeiDataHomePaginationFormatter(): YoutubeMusicYoutubeiDataHomePaginationFormatter {
+        return YoutubeMusicYoutubeiDataHomePaginationFormatter()
+    }
+
     // You can add more methods for different types if needed
 }

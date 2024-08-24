@@ -1,5 +1,6 @@
 package com.ramzmania.tubefy.data.dto.youtubemusic.playlist.categoryplaylist
 
+import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.FlexColumn
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
@@ -87,7 +88,9 @@ data class LabelData(
 @JsonClass(generateAdapter = true)
 data class MusicContent(
     @Json(name = "musicTwoRowItemRenderer")
-    val musicTwoRowItemRenderer: MusicTwoRowItemRenderer?
+    val musicTwoRowItemRenderer: MusicTwoRowItemRenderer?,
+    @Json(name = "musicResponsiveListItemRenderer")
+    val musicResponsiveListItemRenderer: MusicResponsiveListItemRenderer?
 )
 
 @JsonClass(generateAdapter = true)
@@ -103,6 +106,18 @@ data class MusicTwoRowItemRenderer(
     @Json(name = "thumbnailOverlay")
     val thumbnailOverlay: ThumbnailOverlay?
 )
+
+@JsonClass(generateAdapter = true)
+data class MusicResponsiveListItemRenderer(
+    @Json(name = "trackingParams")
+    val trackingParams: String?,
+    @Json(name = "thumbnail")
+    val thumbnail: ThumbnailRenderer?,
+    @Json(name = "flexColumns")
+    val flexColumns: List<FlexColumn>?
+)
+
+
 
 @JsonClass(generateAdapter = true)
 data class Title(

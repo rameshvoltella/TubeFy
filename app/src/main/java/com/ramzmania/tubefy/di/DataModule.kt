@@ -4,6 +4,8 @@ package com.ramzmania.tubefy.di
 import android.content.Context
 import com.ramzmania.tubefy.data.Network
 import com.ramzmania.tubefy.data.NetworkConnectivity
+import com.ramzmania.tubefy.data.database.DatabaseRepository
+import com.ramzmania.tubefy.data.database.DatabaseRepositorySource
 import com.ramzmania.tubefy.data.local.LocalRepository
 import com.ramzmania.tubefy.data.local.LocalRepositorySource
 import com.ramzmania.tubefy.data.remote.RemoteRepository
@@ -33,5 +35,8 @@ abstract class DataModule {
     @Singleton
     abstract fun provideRemoteRepository(remoteRepository: RemoteRepository): RemoteRepositorySource
 
+    @Binds
+    @Singleton
+    abstract fun provideDatabaseRepository(remoteRepository: DatabaseRepository): DatabaseRepositorySource
 
 }

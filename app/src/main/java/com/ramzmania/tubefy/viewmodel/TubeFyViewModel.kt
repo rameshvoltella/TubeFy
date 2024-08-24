@@ -13,23 +13,26 @@ import com.ramzmania.tubefy.core.extractors.yotubewebextractor.YoutubeJsonScrapp
 import com.ramzmania.tubefy.core.extractors.yotubewebextractor.YoutubeScrapType
 import com.ramzmania.tubefy.data.ContextModule
 import com.ramzmania.tubefy.data.Resource
+import com.ramzmania.tubefy.data.database.DatabaseRepository
 import com.ramzmania.tubefy.data.dto.base.playlist.PlayListCategory
 import com.ramzmania.tubefy.data.dto.home.HomePageResponse
 import com.ramzmania.tubefy.data.dto.base.playlist.PlayListData
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
+import com.ramzmania.tubefy.data.dto.home.youtubei.YoutubeiHomeBaseResponse
 import com.ramzmania.tubefy.data.dto.youtubemusic.category.MusicCategoryPlayListBase
 import com.ramzmania.tubefy.data.dto.youtubemusic.category.YtMusicCategoryBase
-import com.ramzmania.tubefy.data.dto.youtubemusic.category.YtMusicCategoryContent
 import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.YoutubeMusicPlayListContent
-import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.categoryplaylist.CategoryPlayListRoot
 import com.ramzmania.tubefy.data.dto.youtubestripper.ApiResponse
 import com.ramzmania.tubefy.data.dto.youtubestripper.MusicHomeResponse2
 import com.ramzmania.tubefy.data.local.LocalRepositorySource
 import com.ramzmania.tubefy.data.remote.RemoteRepositorySource
-import com.ramzmania.tubefy.player.PlayListSingleton
-import com.ramzmania.tubefy.player.YoutubePlayerPlaylistListModel
+import com.ramzmania.tubefy.database.DatabaseResponse
+import com.ramzmania.tubefy.database.QuePlaylist
+
 import com.ramzmania.tubefy.ui.base.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.schabi.newpipe.extractor.Page
 import javax.inject.Inject
@@ -39,12 +42,13 @@ class TubeFyViewModel @Inject constructor(
     val contextModule: ContextModule,
     val scrapping: YoutubeJsonScrapping,
     private val localRepositorySource: LocalRepositorySource,
-    private val remoteRepositorySource: RemoteRepositorySource
+    private val remoteRepositorySource: RemoteRepositorySource,
+    private val playlistDatabaseRepository: DatabaseRepository
 ) : BaseViewModel() {
 
     private var nextYoutubeV3PageToken: String? = null
     private var reloadHomeScreen=true
-    var youtubePlayerPlaylistListModel: YoutubePlayerPlaylistListModel?=null
+//    var youtubePlayerPlaylistListModel: YoutubePlayerPlaylistListModel?=null
     var koko: String?="koko"
 
 
@@ -106,6 +110,39 @@ class TubeFyViewModel @Inject constructor(
     private val youTubeCategoryPlayListPrivate = MutableLiveData<Resource<List<MusicCategoryPlayListBase?>>>()
     val youTubeCategoryPlayList: LiveData<Resource<List<MusicCategoryPlayListBase?>>> get() = youTubeCategoryPlayListPrivate
 
+
+    private val youTubeiMusicHomePrivate = MutableLiveData<Resource<YoutubeiHomeBaseResponse>>()
+    val youTubeiMusicHomeData: LiveData<Resource<YoutubeiHomeBaseResponse>> get() = youTubeiMusicHomePrivate
+
+    private val youTubeiMusicHomePaginationPrivate = MutableLiveData<Resource<YoutubeiHomeBaseResponse>>()
+    val youTubeiMusicHomePaginationData: LiveData<Resource<YoutubeiHomeBaseResponse>> get() = youTubeiMusicHomePaginationPrivate
+
+
+    private val loadMoreHomePagePrivate = MutableStateFlow(false)
+    val loadMoreHomeData = loadMoreHomePagePrivate.asStateFlow()
+
+    private val pullToRefreshPagePrivate = MutableStateFlow(false)
+    val pullToRefreshPage = pullToRefreshPagePrivate.asStateFlow()
+
+    private val loadMoreHomePageEndedPrivate = MutableStateFlow(false)
+    val loadMoreHomePageEnded = loadMoreHomePageEndedPrivate.asStateFlow()
+
+
+    private val getPlayListFromDatabasePrivate = MutableLiveData<Resource<List<QuePlaylist>>>()
+    val getPlayListFromDatabase: LiveData<Resource<List<QuePlaylist>>> get() = getPlayListFromDatabasePrivate
+
+
+    private val addSongToDatabasePrivate = MutableLiveData<Resource<DatabaseResponse>>()
+    val addSongToDatabase: LiveData<Resource<DatabaseResponse>> get() = addSongToDatabasePrivate
+
+
+    private val addToActiveDatabasePrivate = MutableLiveData<Resource<DatabaseResponse>>()
+    val addToActiveDatabase: LiveData<Resource<DatabaseResponse>> get() = addToActiveDatabasePrivate
+
+    private val getAllActiveListPrivate = MutableLiveData<Resource<List<TubeFyCoreTypeData?>>>()
+    val getAllActiveList: LiveData<Resource<List<TubeFyCoreTypeData?>>> get() = getAllActiveListPrivate
+
+
     fun setHtmlContent(content: ApiResponse?) {
 //        htmlContentPrivate.value = content
         viewModelScope.launch {
@@ -114,6 +151,11 @@ class TubeFyViewModel @Inject constructor(
                 youTubeSearchDataPrivate.value = it
             }
         }
+    }
+
+    fun pullToRefreshHome(refresh:Boolean)
+    {
+        pullToRefreshPagePrivate.value=refresh
     }
 
     fun setHtmlMusicContent(content: MusicHomeResponse2?) {
@@ -170,7 +212,7 @@ class TubeFyViewModel @Inject constructor(
     }
 
 
-    fun getBulkStreamUrl()
+  /*  fun getBulkStreamUrl()
     {
 //        Log.d("bulk calling","bulk"+youTubePlayListBulkData)
         Log.d("bulkmode","added 2222"+koko)
@@ -194,7 +236,7 @@ class TubeFyViewModel @Inject constructor(
 
         }
     }
-
+*/
     fun callCategoryPlayList(browserId:String,playerListId:String)
     {
 //        Log.d("bulk calling","bulk"+youTubePlayListBulkData)
@@ -222,12 +264,42 @@ class TubeFyViewModel @Inject constructor(
 
     }
 
+
+    fun callYoutubeiHome()
+    {
+//        Log.d("bulk calling","bulk"+youTubePlayListBulkData)
+
+        viewModelScope.launch {
+
+            remoteRepositorySource.getMusicHomeYoutubei().collect {
+                youTubeiMusicHomePrivate.value = it
+
+            }
+        }
+
+    }
+
+    fun callYoutubeiHomePagination(paginationHex:String,paginationId:String,visitorData:String)
+    {
+//        Log.d("bulk calling","bulk"+youTubePlayListBulkData)
+
+        viewModelScope.launch {
+
+            remoteRepositorySource.getMusicHomePaginationYoutubei(paginationHex,paginationId,visitorData).collect {
+                youTubeiMusicHomePaginationPrivate.value = it
+
+            }
+        }
+
+    }
+
     fun setCurrentPlayListData(playListItems: List<TubeFyCoreTypeData?>)
     {
-        koko="poda"
-        youtubePlayerPlaylistListModel=YoutubePlayerPlaylistListModel(playListItems)
-        PlayListSingleton.addData(playListItems)
-        Log.d("bulkmode","added 111"+koko)
+//        youtubePlayerPlaylistListModel=YoutubePlayerPlaylistListModel(playListItems)
+        setActiveSongsList(playListItems)
+//        PlayListSingleton.addData(playListItems)
+//        Log.d("bulkmode","added 111"+koko)
+
 
     }
     private fun setHtmlMusicCategoryContent(result: YtMusicCategoryBase?) {
@@ -448,6 +520,64 @@ Log.d("incomming<>","<>"+contentFilter)
     fun getHomeScreenReloadStatus():Boolean
     {
         return reloadHomeScreen
+    }
+
+    fun setHomePageLoadMoreState(isLoading: Boolean)
+    {
+        Log.d("laaaa","settttt")
+        loadMoreHomePagePrivate.value=isLoading
+    }
+
+    fun homePagePaginationEnded(value: Boolean)
+    {
+        loadMoreHomePageEndedPrivate.value=value
+    }
+
+
+
+    fun insertSongTOData(playlists: List<QuePlaylist>)
+    {
+        viewModelScope.launch {
+
+            playlistDatabaseRepository.addPlayList(playlists).collect {
+                addSongToDatabasePrivate.value = it
+
+            }
+        }
+    }
+
+    fun getSongsList()
+    {
+        viewModelScope.launch {
+
+            playlistDatabaseRepository.getPlaylists().collect {
+                getPlayListFromDatabasePrivate.value = it
+
+            }
+        }
+    }
+
+
+    fun setActiveSongsList(playlists: List<TubeFyCoreTypeData?>)
+    {
+        viewModelScope.launch {
+
+            playlistDatabaseRepository.addActivePlayList(playlists).collect {
+                addToActiveDatabasePrivate.value = it
+
+            }
+        }
+    }
+
+    fun getActivePlayList()
+    {
+        viewModelScope.launch {
+
+            playlistDatabaseRepository.getAllActivePlaylists().collect {
+                getAllActiveListPrivate.value = it
+
+            }
+        }
     }
 
 }

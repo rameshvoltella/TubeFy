@@ -1,11 +1,14 @@
 package com.ramzmania.tubefy.core.dataformatter.youtubemusic
 
 import android.util.Log
+import com.ramzmania.tubefy.core.YoutubeCoreConstant
 import com.ramzmania.tubefy.core.dataformatter.FormattingResult
 import com.ramzmania.tubefy.core.dataformatter.UniversalYoutubeDataFormatter
 import com.ramzmania.tubefy.data.dto.youtubemusic.category.MusicCategoryPlayList
 import com.ramzmania.tubefy.data.dto.youtubemusic.category.MusicCategoryPlayListBase
 import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.categoryplaylist.CategoryPlayListRoot
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -21,6 +24,7 @@ class YoutubeMusicCategoryPlayListDataFormatter @Inject constructor() :
             for (tabContents in plaListTabData.tabRenderer?.content?.sectionListRenderer?.contents!!) {
                 var categoryPlayListBaseName: String? = ""
                 var plaListId: String? = ""
+                var videoId: String? = ""
                 var plaListThumpNail: String? = ""
                 var plaListName: String? = ""
                 var checkingPlayerId=""
@@ -66,11 +70,62 @@ class YoutubeMusicCategoryPlayListDataFormatter @Inject constructor() :
                                 )
                             )
                         }
+                    }else if(shelfContent.musicResponsiveListItemRenderer!=null) {
+                       /* for (thumpNail in shelfContent.musicResponsiveListItemRenderer?.thumbnail?.musicThumbnailRenderer?.thumbnail?.thumbnails!!) {
+                            plaListThumpNail = thumpNail.url
+                            break
+                        }*/
+                        if(shelfContent.musicResponsiveListItemRenderer.flexColumns!=null) {
+                            for (flexColum in shelfContent.musicResponsiveListItemRenderer.flexColumns!!) {
+                               if( flexColum.musicResponsiveListItemFlexColumnRenderer?.text?.runs!=null)
+                               {
+                                   for(playListNameData in flexColum.musicResponsiveListItemFlexColumnRenderer?.text?.runs) {
+                                       if(playListNameData.text!=null) {
+                                           plaListName = playListNameData.text + "\n"
+                                       }
+                                       if(playListNameData.navigationEndpoint!=null)
+                                       {
+                                           if(playListNameData.navigationEndpoint.watchEndpoint!=null) {
+                                               if( playListNameData.navigationEndpoint.watchEndpoint.videoId!=null) {
+                                                   videoId=playListNameData.navigationEndpoint.watchEndpoint.videoId
+                                               }
+                                           }
+                                       }
+                                   }
+
+                               }
+
+                            }
+                        }
+                        if(videoId!=null) {
+                            musicCategoryPlayListContentList.add(
+                                MusicCategoryPlayList(
+                                    videoId = videoId,
+                                    playListName = plaListName!!,
+                                    playListThump = "https://i.ytimg.com/vi/${
+                                        YoutubeCoreConstant.extractYoutubeVideoId(
+                                            URLDecoder.decode(
+                                                videoId,
+                                                StandardCharsets.UTF_8.toString()
+                                            )
+                                        )
+                                    }/hq720.jpg"
+                                )
+                            )
+                        }
+
                     }
                 }
                 Log.d("DETAILS","---------------------------------------")
 //                musicCategoryPlayList.add(MusicCategoryPlayListBase(plaListBaseName = categoryPlayListBaseName!!,musicCategoryPlayListContentList)
-                musicCategoryPlayList.add(MusicCategoryPlayListBase(plaListBaseName = categoryPlayListBaseName!!,musicCategoryPlayListContentList))
+                if(musicCategoryPlayListContentList.size>0) {
+                    musicCategoryPlayList.add(
+                        MusicCategoryPlayListBase(
+                            plaListBaseName = categoryPlayListBaseName!!,
+                            musicCategoryPlayListContentList
+                        )
+                    )
+                }
 
                 Log.d("DETAILS","<categoryPlayListBaseName>"+categoryPlayListBaseName+"<plaListId>"+plaListId+"<plaListName>"+plaListName+"<plaListThumpNail>"+plaListThumpNail)
 

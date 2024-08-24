@@ -32,6 +32,12 @@ object YoutubeCoreConstant {
             url
         }
     }
+
+    fun extractPlaylistId(url: String): String? {
+        val regex = Regex("list=([a-zA-Z0-9_-]+)")
+        val matchResult = regex.find(url)
+        return matchResult?.groupValues?.get(1)
+    }
     fun decodeThumpUrl(encodedUrl: String): String {
         // Replace encoded characters with their actual representations
         return encodedUrl
@@ -39,6 +45,14 @@ object YoutubeCoreConstant {
             .replace("\\x3d", "=") // Decode `\x3d` to `=`
             .replace("\\x3f", "?") // Decode `\x3f` to `?`
             .replace("\\x2f", "/") // Decode `\x2f` to `/`
+
+        // Add more replacements as needed for other encoded characters
+    }
+    fun decodeTitle(encodedUrl: String): String {
+        // Replace encoded characters with their actual representations
+        return encodedUrl
+            .replace("\\u0026", "&").replace("\\","")
+
         // Add more replacements as needed for other encoded characters
     }
 }
