@@ -136,6 +136,14 @@ class TubeFyViewModel @Inject constructor(
     private val addSongToDatabasePrivate = MutableLiveData<Resource<DatabaseResponse>>()
     val addSongToDatabase: LiveData<Resource<DatabaseResponse>> get() = addSongToDatabasePrivate
 
+
+    private val addToActiveDatabasePrivate = MutableLiveData<Resource<DatabaseResponse>>()
+    val addToActiveDatabase: LiveData<Resource<DatabaseResponse>> get() = addToActiveDatabasePrivate
+
+    private val getAllActiveListPrivate = MutableLiveData<Resource<List<TubeFyCoreTypeData>>>()
+    val getAllActiveList: LiveData<Resource<List<TubeFyCoreTypeData>>> get() = getAllActiveListPrivate
+
+
     fun setHtmlContent(content: ApiResponse?) {
 //        htmlContentPrivate.value = content
         viewModelScope.launch {
@@ -544,6 +552,29 @@ Log.d("incomming<>","<>"+contentFilter)
 
             playlistDatabaseRepository.getPlaylists().collect {
                 getPlayListFromDatabasePrivate.value = it
+
+            }
+        }
+    }
+
+
+    fun setActiveSongsList(playlists: List<TubeFyCoreTypeData>)
+    {
+        viewModelScope.launch {
+
+            playlistDatabaseRepository.addActivePlayList(playlists).collect {
+                addToActiveDatabasePrivate.value = it
+
+            }
+        }
+    }
+
+    fun getActivePlayList()
+    {
+        viewModelScope.launch {
+
+            playlistDatabaseRepository.getAllActivePlaylists().collect {
+                getAllActiveListPrivate.value = it
 
             }
         }

@@ -72,7 +72,7 @@ interface PlaylistDao {
 
     // Insert new list, replacing existing data
     @Transaction
-    suspend fun replaceActivePlaylist(newPlaylist: List<ActivePlaylist>): Boolean {
+    suspend fun addAndReplaceActivePlaylist(newPlaylist: List<ActivePlaylist>): Boolean {
         clearActivePlaylist()
         insertActivePlaylist(newPlaylist)
         return true

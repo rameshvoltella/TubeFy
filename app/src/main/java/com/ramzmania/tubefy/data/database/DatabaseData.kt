@@ -77,7 +77,7 @@ class DatabaseData @Inject constructor(private val playlistDao: PlaylistDao,priv
             when(formattedActivePlayList)
             {
                 is FormattingResult.SUCCESS->{
-                    val result=playlistDao.replaceActivePlaylist(formattedActivePlayList.data)
+                    val result=playlistDao.addAndReplaceActivePlaylist(formattedActivePlayList.data)
                     if(result)
                     {
                         Resource.Success(DatabaseResponse(200))
@@ -109,7 +109,7 @@ class DatabaseData @Inject constructor(private val playlistDao: PlaylistDao,priv
                     databaseFormatterFactory.formatTubeFyPlayList().run(activePlayListData)
                 when (formattedActivePlayList) {
                     is FormattingResult.SUCCESS -> {
-                        
+
 //                    val result=playlistDao.replaceActivePlaylist(formattedActivePlayList.data)
 //                    if(result)
 //                    {
@@ -119,7 +119,7 @@ class DatabaseData @Inject constructor(private val playlistDao: PlaylistDao,priv
 //                        Resource.DataError(DATABASE_INSERTION_ERROR)
 //
 //                    }
-                        Resource.DataError(DATABASE_INSERTION_ERROR)
+                        Resource.Success(formattedActivePlayList.data)
                     }
 
                     is FormattingResult.FAILURE -> {
