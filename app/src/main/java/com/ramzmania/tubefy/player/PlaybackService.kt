@@ -146,35 +146,57 @@ class PlaybackService(
                     dataBaseRepositorySource.getPlaylists().collect {
                         if (it is Resource.Success) {
                             Log.d("handleMediaItemChange,", "<><><><><><4444444")
+                            var mediaItemsList:List<MediaItem>?=null
+                            withContext(Dispatchers.Main) {
+                                mediaItemsList = (0 until player.mediaItemCount).map { player.getMediaItemAt(it) }
 
-                            withContext(Dispatchers.IO)
-                            {
-                                Log.d("DATATATA", "DATA SIZE" + it.data?.size)
-                                val listFromQueue: ArrayList<TubeFyCoreTypeData?> = ArrayList()
+                                withContext(Dispatchers.IO)
+                                {
+                                    Log.d("DATATATA", "DATA SIZE" + it.data?.size)
+                                    val listFromQueue: ArrayList<TubeFyCoreTypeData?> = ArrayList()
 
-                                for (data in it.data!!) {
-                                    listFromQueue.add(
-                                        TubeFyCoreTypeData(
-                                            videoId = data.videoId,
-                                            videoTitle = data.videoName,
-                                            videoImage = data.videoThumbnail
-                                        )
-                                    )
-                                }
+                                    for (data in it.data!!) {
 
-                                if (listFromQueue.size > 0) {
-                                    apiPlaListBulkCallJob?.cancel()
-                                    listFromQueue.shuffle()
-                                    if (listFromQueue.size > 50) {
-                                        fetchFromQueue(listFromQueue.toMutableList().take(50))
-                                    } else {
-                                        fetchFromQueue(listFromQueue.toMutableList())
+
+                                        var isAlreadyInList =false
+
+                                        if(mediaItemsList!=null)
+                                        {
+                                            isAlreadyInList=mediaItemsList!!.any { it.mediaId == data.videoId }
+                                        }
+
+                                        if (!isAlreadyInList) {
+                                            // If not already in the list, add the mediaItem
+//                                        player.addMediaItem(mediaItem)
+                                            listFromQueue.add(
+                                                TubeFyCoreTypeData(
+                                                    videoId = data.videoId,
+                                                    videoTitle = data.videoName,
+                                                    videoImage = data.videoThumbnail
+                                                )
+                                            )
+                                        } else {
+                                            // If it's already in the list, skip adding it
+                                            Log.d("MediaItem", "The media item is already in the playlist.")
+                                        }
+
+                                    }
+
+                                    if (listFromQueue.size > 0) {
+                                        apiPlaListBulkCallJob?.cancel()
+                                        listFromQueue.shuffle()
+                                        if (listFromQueue.size > 50) {
+                                            fetchFromQueue(listFromQueue.toMutableList().take(50))
+                                        } else {
+                                            fetchFromQueue(listFromQueue.toMutableList())
+
+                                        }
 
                                     }
 
                                 }
-
                             }
+
 
                         }
                     }
@@ -496,6 +518,7 @@ class PlaybackService(
             moveToNextMediaItem(currentIndex, currentMediaItem)
         }
     }
+
 
 
 }
