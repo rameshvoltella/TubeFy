@@ -12,7 +12,7 @@ class DatabaseFormatter<InputType, OutputType> @Inject constructor() :
 
     override suspend fun runFormatting(input: InputType): FormattingResult<OutputType, Exception> {
         val activePlayListList: ArrayList<ActivePlaylist> = ArrayList()
-        val activeTubeFyList: ArrayList<TubeFyCoreTypeData> = ArrayList()
+        val activeTubeFyList: ArrayList<TubeFyCoreTypeData?> = ArrayList()
 
 
         when (input) {
@@ -85,13 +85,15 @@ class DatabaseFormatter<InputType, OutputType> @Inject constructor() :
     private fun convertToOutputType(activePlayListList: List<ActivePlaylist>): OutputType {
         // Implement conversion logic based on OutputType
         // Example placeholder: return activePlayListList as OutputType
-        throw NotImplementedError("Conversion to OutputType not implemented")
+        return activePlayListList as OutputType
+//        throw NotImplementedError("Conversion to OutputType not implemented")
     }
 
-    private fun convertToTubeFyCoreTypeDataOutputType(activePlayListList: List<TubeFyCoreTypeData>): OutputType {
+    private fun convertToTubeFyCoreTypeDataOutputType(activePlayListList: List<TubeFyCoreTypeData?>): OutputType {
         // Implement conversion logic based on OutputType
         // Example placeholder: return activePlayListList as OutputType
-        throw NotImplementedError("Conversion to OutputType not implemented")
+        return activePlayListList as OutputType
+//        throw NotImplementedError("Conversion to OutputType not implemented")
     }
 
 

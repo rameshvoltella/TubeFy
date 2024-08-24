@@ -69,7 +69,7 @@ class DatabaseData @Inject constructor(private val playlistDao: PlaylistDao,priv
         }
     }
 
-    override suspend fun addActivePlayList(playlists: List<TubeFyCoreTypeData>): Resource<DatabaseResponse> {
+    override suspend fun addActivePlayList(playlists: List<TubeFyCoreTypeData?>): Resource<DatabaseResponse> {
         return withContext(Dispatchers.IO)
         {
             Log.d("yono","yonopoda")
@@ -99,7 +99,7 @@ class DatabaseData @Inject constructor(private val playlistDao: PlaylistDao,priv
         }
     }
 
-    override suspend fun getAllActivePlaylists(): Resource<List<TubeFyCoreTypeData>> {
+    override suspend fun getAllActivePlaylists(): Resource<List<TubeFyCoreTypeData?>> {
         return withContext(Dispatchers.IO)
         {
             Log.d("yono","yonopoda")

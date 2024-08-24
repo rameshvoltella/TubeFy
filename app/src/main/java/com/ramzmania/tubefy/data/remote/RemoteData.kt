@@ -388,7 +388,6 @@ constructor(
         sortFilter: String
     ): Resource<TubeFyCoreUniversalData> {
         var searchInfo: SearchInfo? = null
-        var searchInfo2: SearchInfo? = null
 
         withContext(Dispatchers.IO)
         {

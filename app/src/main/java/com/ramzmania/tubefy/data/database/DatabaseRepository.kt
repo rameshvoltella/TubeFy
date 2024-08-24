@@ -37,11 +37,11 @@ class DatabaseRepository @Inject constructor(
         return flow {emit(databaseData.addSongToQueue(playData))  }
     }
 
-    override suspend fun addActivePlayList(playlists: List<TubeFyCoreTypeData>): Flow<Resource<DatabaseResponse>> {
+    override suspend fun addActivePlayList(playlists: List<TubeFyCoreTypeData?>): Flow<Resource<DatabaseResponse>> {
         return flow { emit(databaseData.addActivePlayList(playlists)) }
     }
 
-    override suspend fun getAllActivePlaylists(): Flow<Resource<List<TubeFyCoreTypeData>>> {
+    override suspend fun getAllActivePlaylists(): Flow<Resource<List<TubeFyCoreTypeData?>>> {
        return flow { emit(databaseData.getAllActivePlaylists()) }
     }
 

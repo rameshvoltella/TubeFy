@@ -11,9 +11,9 @@ interface DatabaseDataSource {
     suspend fun getPlaylists(): Resource<List<QuePlaylist>>
     suspend fun addSongToQueue(playData: QuePlaylist): Resource<DatabaseResponse>
 
-    suspend fun addActivePlayList(playlists: List<TubeFyCoreTypeData>): Resource<DatabaseResponse>
+    suspend fun addActivePlayList(playlists: List<TubeFyCoreTypeData?>): Resource<DatabaseResponse>
 
-    suspend fun getAllActivePlaylists(): Resource<List<TubeFyCoreTypeData>>
+    suspend fun getAllActivePlaylists(): Resource<List<TubeFyCoreTypeData?>>
 
 
 }

@@ -52,9 +52,8 @@ private var nextPage: Page? = null
         observe(viewModel.getPlayListFromDatabase,::getDbSong)
         observe(viewModel.addSongToDatabase,::addSonf)
 
-
-
-
+        observe(viewModel.getAllActiveList,::getactivepl)
+        observe(viewModel.addToActiveDatabase,::addActive)
 
 
     }
@@ -64,17 +63,7 @@ private var nextPage: Page? = null
 
     override fun observeActivity() {
 //        viewModel.startScrapping("wwe")
-        binding.next.setOnClickListener {
-            viewModel.getSongsList()
-//            val list= listOf(
-//                QuePlaylist(videoId = "video_id_1223", videoName = "Example Video 1", videoThumbnail = "http://example.com/thumbnail1.jpg"),
-//                QuePlaylist(videoId = "video_id_1244", videoName = "Example Video 2", videoThumbnail = "http://example.com/thumbnail2.jpg")
-//            )
-//            viewModel.insertSongTOData(list)
-//            if (Page.isValid(nextPage)) {
-//                viewModel.searchNewPipeNextPage(nextPage,mutableListOf<String>("music_songs"),"aavesham")
-//            }
-        }
+
 
         binding.YOUtbev3.setOnClickListener {
            val list= listOf(
@@ -91,7 +80,16 @@ private var nextPage: Page? = null
 //            viewModel.startWebScrapping("https://music.youtube.com/moods_and_genres", YoutubeScrapType.YOUTUBE_MUSIC_CATEGORY)
                     }
 
-        binding.newpipehome.setOnClickListener { viewModel.searchNewPipePage("aavesham",mutableListOf<String>("music_songs")) }
+        binding.newpipehome.setOnClickListener {
+
+//            viewModel.searchNewPipePage("aavesham",mutableListOf<String>("music_songs"))
+            viewModel.setActiveSongsList(listOf(TubeFyCoreTypeData(videoId = "kona", videoImage = "kona", videoTitle = "kona")))
+
+        }
+        binding.next.setOnClickListener {
+            viewModel.getActivePlayList()
+
+        }
     }
 
     /*    override fun onCreate(savedInstanceState: Bundle?) {
@@ -223,6 +221,47 @@ private var nextPage: Page? = null
             else -> {}
         }
 
+    }
+
+    private fun addActive(resource: Resource<DatabaseResponse>) {
+        when (resource) {
+            is Resource.Loading -> {}
+            is Resource.Success -> {
+
+                Toast.makeText(applicationContext,"Added to db",1).show()
+
+            }
+
+            is Resource.DataError -> {
+                Toast.makeText(applicationContext,"ERROR",1).show()
+
+            }
+
+            else -> {}
+        }
+    }
+
+    private fun getactivepl(resource: Resource<List<TubeFyCoreTypeData>>) {
+        when (resource) {
+            is Resource.Loading -> {}
+            is Resource.Success -> {
+
+                for(kk in resource.data!!)
+                {
+                    Log.d("TAGGG",""+kk.videoId)
+                }
+
+                Toast.makeText(applicationContext,"Added to db",1).show()
+
+            }
+
+            is Resource.DataError -> {
+                Toast.makeText(applicationContext,"ERROR",1).show()
+
+            }
+
+            else -> {}
+        }
     }
 
     private fun addSonf(resource: Resource<DatabaseResponse>) {

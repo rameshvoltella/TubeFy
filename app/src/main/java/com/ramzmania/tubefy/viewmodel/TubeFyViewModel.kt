@@ -49,7 +49,7 @@ class TubeFyViewModel @Inject constructor(
 
     private var nextYoutubeV3PageToken: String? = null
     private var reloadHomeScreen=true
-    var youtubePlayerPlaylistListModel: YoutubePlayerPlaylistListModel?=null
+//    var youtubePlayerPlaylistListModel: YoutubePlayerPlaylistListModel?=null
     var koko: String?="koko"
 
 
@@ -140,8 +140,8 @@ class TubeFyViewModel @Inject constructor(
     private val addToActiveDatabasePrivate = MutableLiveData<Resource<DatabaseResponse>>()
     val addToActiveDatabase: LiveData<Resource<DatabaseResponse>> get() = addToActiveDatabasePrivate
 
-    private val getAllActiveListPrivate = MutableLiveData<Resource<List<TubeFyCoreTypeData>>>()
-    val getAllActiveList: LiveData<Resource<List<TubeFyCoreTypeData>>> get() = getAllActiveListPrivate
+    private val getAllActiveListPrivate = MutableLiveData<Resource<List<TubeFyCoreTypeData?>>>()
+    val getAllActiveList: LiveData<Resource<List<TubeFyCoreTypeData?>>> get() = getAllActiveListPrivate
 
 
     fun setHtmlContent(content: ApiResponse?) {
@@ -296,9 +296,10 @@ class TubeFyViewModel @Inject constructor(
 
     fun setCurrentPlayListData(playListItems: List<TubeFyCoreTypeData?>)
     {
-        youtubePlayerPlaylistListModel=YoutubePlayerPlaylistListModel(playListItems)
-        PlayListSingleton.addData(playListItems)
-        Log.d("bulkmode","added 111"+koko)
+//        youtubePlayerPlaylistListModel=YoutubePlayerPlaylistListModel(playListItems)
+        setActiveSongsList(playListItems)
+//        PlayListSingleton.addData(playListItems)
+//        Log.d("bulkmode","added 111"+koko)
 
 
     }
@@ -558,7 +559,7 @@ Log.d("incomming<>","<>"+contentFilter)
     }
 
 
-    fun setActiveSongsList(playlists: List<TubeFyCoreTypeData>)
+    fun setActiveSongsList(playlists: List<TubeFyCoreTypeData?>)
     {
         viewModelScope.launch {
 
