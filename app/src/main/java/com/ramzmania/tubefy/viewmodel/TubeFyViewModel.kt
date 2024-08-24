@@ -298,7 +298,7 @@ class TubeFyViewModel @Inject constructor(
     {
 //        youtubePlayerPlaylistListModel=YoutubePlayerPlaylistListModel(playListItems)
         setActiveSongsList(playListItems)
-//        PlayListSingleton.addData(playListItems)
+        PlayListSingleton.addData(playListItems)
 //        Log.d("bulkmode","added 111"+koko)
 
 

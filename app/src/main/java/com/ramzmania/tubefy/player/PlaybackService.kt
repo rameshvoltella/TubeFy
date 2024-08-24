@@ -216,6 +216,7 @@ class PlaybackService(
                     apiPlaListBulkCallJob?.cancel()
                     preferenceManager.putLong("queue", System.currentTimeMillis())
                     removeExistingPlayList = true
+                    fetchFromActiveDb()
                     fetchPlayList(false)
                     //currentPlayListQueue=System.currentTimeMillis()
 
@@ -251,6 +252,33 @@ class PlaybackService(
             }
         }
         return START_STICKY
+    }
+
+    private fun fetchFromActiveDb() {
+        serviceScope.launch {
+            dataBaseRepositorySource.getAllActivePlaylists(
+
+            ).collect {
+                when(it)
+                {
+                    is Resource.Success->{
+
+//                        apiPlaListBulkCallJob?.cancel()
+                        if(it.data!=null) {
+                            if(it.data.isNotEmpty()) {
+                                for(item in it.data) {
+                                    Log.d("Got Active liat", "it" + item?.videoId)
+                                }
+//                                fetchFromQueue(it.data)
+                            }
+                        }
+
+
+                    }
+                    else -> {}
+                }
+            }
+        }
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo) = mediaSession
