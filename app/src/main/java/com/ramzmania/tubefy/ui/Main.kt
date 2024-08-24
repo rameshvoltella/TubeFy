@@ -52,7 +52,7 @@ private var nextPage: Page? = null
         observe(viewModel.getPlayListFromDatabase,::getDbSong)
         observe(viewModel.addSongToDatabase,::addSonf)
 
-        observe(viewModel.getAllActiveList,::getactivepl)
+//        observe(viewModel.getAllActiveList,::getactivepl)
         observe(viewModel.addToActiveDatabase,::addActive)
 
 

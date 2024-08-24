@@ -19,66 +19,88 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class NewPipeDataFormatter <T> @Inject constructor(private val playlistDao: PlaylistDao):
-    UniversalYoutubeDataFormatter<NewPipeSortingData<T>, FormattingResult<TubeFyCoreUniversalData,Exception>>() {
-//        @Inject
+class NewPipeDataFormatter<T> @Inject constructor(private val playlistDao: PlaylistDao) :
+    UniversalYoutubeDataFormatter<NewPipeSortingData<T>, FormattingResult<TubeFyCoreUniversalData, Exception>>() {
+    //        @Inject
 //        lateinit var playlistDao: PlaylistDao
-    override suspend fun runFormatting(input: NewPipeSortingData<T>): FormattingResult<TubeFyCoreUniversalData,Exception> {
-        return withContext(Dispatchers.IO){
+    override suspend fun runFormatting(input: NewPipeSortingData<T>): FormattingResult<TubeFyCoreUniversalData, Exception> {
+        return withContext(Dispatchers.IO) {
             try {
+
                 val sortedVideoList: ArrayList<TubeFyCoreTypeData> = ArrayList()
                 for (newPipeSearchData in input.result) {
 //                    Log.d("daz",""+newPipeSearchData)
                     when (newPipeSearchData) {
                         is StreamInfoItem -> {
-                            if(newPipeSearchData.url.contains("playList?list"))
-                            {
-                                Log.d("Chekzzzop","yoooooplist>"+newPipeSearchData.url)
+                            if (newPipeSearchData.url.contains("playList?list")) {
+                                Log.d("Chekzzzop", "yoooooplist>" + newPipeSearchData.url)
                                 sortedVideoList.add(
                                     TubeFyCoreTypeData(
                                         videoTitle = newPipeSearchData.name,
-                                        videoImage = newPipeSearchData.thumbnails[0].url, plaListUrl = newPipeSearchData.url
+                                        videoImage = newPipeSearchData.thumbnails[0].url,
+                                        plaListUrl = newPipeSearchData.url
                                     )
                                 )
-                            }else {
-                                Log.d("Chekzzzop","yooooovideo"+newPipeSearchData.url)
+                            } else {
+                                Log.d("Chekzzzop", "yooooovideo" + newPipeSearchData.url)
 
                                 sortedVideoList.add(
                                     TubeFyCoreTypeData(
                                         videoTitle = newPipeSearchData.name,
-                                        videoImage = newPipeSearchData.thumbnails[0].url, videoId = newPipeSearchData.url
+                                        videoImage = newPipeSearchData.thumbnails[0].url,
+                                        videoId = newPipeSearchData.url
                                     )
                                 )
-                                Log.d("tadada","klklklkl1111")
-
-                                playlistDao.addQueSingleSongPlaylists(QuePlaylist(videoId = newPipeSearchData.url, videoName = newPipeSearchData.name, videoThumbnail = newPipeSearchData.thumbnails[0].url))
-
+                                if (input?.contentFilter != null&&input?.contentFilter.contains("music_songs")) {
+                                    Log.d("tadada", "klklklkl1111")
+                                    playlistDao.addQueSingleSongPlaylists(
+                                        QuePlaylist(
+                                            videoId = newPipeSearchData.url,
+                                            videoName = newPipeSearchData.name,
+                                            videoThumbnail = newPipeSearchData.thumbnails[0].url
+                                        )
+                                    )
+                                }
                             }
                         }
+
                         is InfoItem -> {
-                            if(newPipeSearchData.url.contains("playlist?list", ignoreCase = true))
-                            {
-                                Log.d("Chekzzzop","2yooooopPlalist>"+newPipeSearchData.url)
+                            if (newPipeSearchData.url.contains(
+                                    "playlist?list",
+                                    ignoreCase = true
+                                )
+                            ) {
+                                Log.d("Chekzzzop", "2yooooopPlalist>" + newPipeSearchData.url)
 
                                 sortedVideoList.add(
                                     TubeFyCoreTypeData(
                                         videoTitle = newPipeSearchData.name,
-                                        videoImage = newPipeSearchData.thumbnails[0].url, plaListUrl = newPipeSearchData.url
+                                        videoImage = newPipeSearchData.thumbnails[0].url,
+                                        plaListUrl = newPipeSearchData.url
                                     )
                                 )
-                            }else {
-                                Log.d("Chekzzzop","2yooooopVideo>"+newPipeSearchData.url)
+                            } else {
+                                Log.d("Chekzzzop", "2yooooopVideo>" + newPipeSearchData.url)
 
                                 sortedVideoList.add(
                                     TubeFyCoreTypeData(
                                         videoTitle = newPipeSearchData.name,
-                                        videoImage = newPipeSearchData.thumbnails[0].url, videoId = newPipeSearchData.url
+                                        videoImage = newPipeSearchData.thumbnails[0].url,
+                                        videoId = newPipeSearchData.url
                                     )
                                 )
-                                Log.d("tadada","klklklkl222222")
 
-                                Log.d("tadada","yaaaaaa")
-                                playlistDao.addQueSingleSongPlaylists(QuePlaylist(videoId = newPipeSearchData.url, videoName = newPipeSearchData.name, videoThumbnail = newPipeSearchData.thumbnails[0].url))
+                                Log.d("tadada", "yaaaaaa")
+                                if (input?.contentFilter != null&&input?.contentFilter.contains("music_songs")) {
+                                    Log.d("tadada", "klklklkl222222")
+                                    playlistDao.addQueSingleSongPlaylists(
+                                        QuePlaylist(
+                                            videoId = newPipeSearchData.url,
+                                            videoName = newPipeSearchData.name,
+                                            videoThumbnail = newPipeSearchData.thumbnails[0].url
+                                        )
+                                    )
+                                }
 
                             }
                         }
@@ -89,14 +111,14 @@ class NewPipeDataFormatter <T> @Inject constructor(private val playlistDao: Play
                         }
                     }
                 }
-                FormattingResult.SUCCESS( TubeFyCoreUniversalData(
-                    TubeFyCoreFormattedData(sortedVideoList, input.nextPage),
-                    YoutubeApiType.NEW_PIPE_API
-                )
+                FormattingResult.SUCCESS(
+                    TubeFyCoreUniversalData(
+                        TubeFyCoreFormattedData(sortedVideoList, input.nextPage),
+                        YoutubeApiType.NEW_PIPE_API
+                    )
                 )
 
-            }catch (ex:Exception)
-            {
+            } catch (ex: Exception) {
                 ex.printStackTrace()
                 FormattingResult.FAILURE(Exception("Unable to get Youtube URL"))
             }

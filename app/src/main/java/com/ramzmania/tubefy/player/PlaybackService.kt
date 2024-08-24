@@ -162,8 +162,13 @@ class PlaybackService(
 
                                         if(mediaItemsList!=null)
                                         {
-                                            isAlreadyInList=mediaItemsList!!.any { it.mediaId == data.videoId }
+                                            isAlreadyInList=mediaItemsList!!.any {
+                                                Log.d("padaa",it.mediaId+"<>"+YoutubeCoreConstant.extractYoutubeVideoId(data.videoId))
+
+                                                it.mediaId ==YoutubeCoreConstant.extractYoutubeVideoId(data.videoId) }
                                         }
+
+                                        Log.d("padaa","what")
 
                                         if (!isAlreadyInList) {
                                             // If not already in the list, add the mediaItem
@@ -217,14 +222,11 @@ class PlaybackService(
                     preferenceManager.putLong("queue", System.currentTimeMillis())
                     removeExistingPlayList = true
                     fetchFromActiveDb()
-                    fetchPlayList(false)
-                    //currentPlayListQueue=System.currentTimeMillis()
 
                 }
 
                 ACTION_FETCH_SONG -> {
                     apiPlaListBulkCallJob?.cancel()
-                    //currentPlayListQueue=System.currentTimeMillis()
                     preferenceManager.putLong("queue", System.currentTimeMillis())
                     removeExistingPlayList = true
                     fetchRecentPlaylistQueue = true
@@ -263,13 +265,13 @@ class PlaybackService(
                 {
                     is Resource.Success->{
 
-//                        apiPlaListBulkCallJob?.cancel()
+                        apiPlaListBulkCallJob?.cancel()
                         if(it.data!=null) {
                             if(it.data.isNotEmpty()) {
-                                for(item in it.data) {
-                                    Log.d("Got Active liat", "it" + item?.videoId)
-                                }
-//                                fetchFromQueue(it.data)
+//                                for(item in it.data) {
+//                                    Log.d("Got Active liat", "it" + item?.videoId)
+//                                }
+                                fetchFromQueue(it.data)
                             }
                         }
 
@@ -339,6 +341,7 @@ class PlaybackService(
         }
     }
 
+/*
     fun fetchPlayList(inseLoop: Boolean) {
 
         val list = PlayListSingleton.getDataList()?.playListData?.take(2)
@@ -381,6 +384,7 @@ class PlaybackService(
             }
         }
     }
+*/
 
     fun getStreamUrl(
         videoId: String,

@@ -28,8 +28,7 @@ import com.ramzmania.tubefy.data.local.LocalRepositorySource
 import com.ramzmania.tubefy.data.remote.RemoteRepositorySource
 import com.ramzmania.tubefy.database.DatabaseResponse
 import com.ramzmania.tubefy.database.QuePlaylist
-import com.ramzmania.tubefy.player.PlayListSingleton
-import com.ramzmania.tubefy.player.YoutubePlayerPlaylistListModel
+
 import com.ramzmania.tubefy.ui.base.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -298,7 +297,7 @@ class TubeFyViewModel @Inject constructor(
     {
 //        youtubePlayerPlaylistListModel=YoutubePlayerPlaylistListModel(playListItems)
         setActiveSongsList(playListItems)
-        PlayListSingleton.addData(playListItems)
+//        PlayListSingleton.addData(playListItems)
 //        Log.d("bulkmode","added 111"+koko)
 
 

@@ -141,7 +141,7 @@ fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
             videoAudioItems = playListData!!.data!!.playListVideoList!!
             isLoading = false
             isDefaultDataLoaded = true
-            viewModel.setCurrentPlayListData(videoAudioItems)
+            viewModel.setActiveSongsList(videoAudioItems)
 
 //            if(playListData!!.data!!.playListVideoList?.get(0)?.videoId!=null)
 //            {
@@ -179,7 +179,7 @@ fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
             )
             videoAudioItems = searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!
             isLoading = false
-            viewModel.setCurrentPlayListData(videoAudioItems)
+            viewModel.setActiveSongsList(videoAudioItems)
         }
     }
 

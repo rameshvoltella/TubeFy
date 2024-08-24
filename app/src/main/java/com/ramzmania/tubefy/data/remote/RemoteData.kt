@@ -410,7 +410,8 @@ constructor(
             val result = newPipeFormatter.run(
                 NewPipeSortingData(
                     searchInfo!!.relatedItems,
-                    searchInfo!!.nextPage
+                    searchInfo!!.nextPage,
+                    contentFilter
                 )
             )
             when (result) {
@@ -436,7 +437,8 @@ constructor(
             val result = newPipeFormatter.run(
                 NewPipeSortingData(
                     pageSearchInfo.relatedItems,
-                    pageSearchInfo.nextPage
+                    pageSearchInfo.nextPage,
+                    contentFilter
                 )
             )
             when (result) {
@@ -471,6 +473,7 @@ constructor(
                 NewPipeSortingData(
                     newPipePlayList.relatedItems,
                     newPipePlayList.nextPage
+
                 )
             )
             when (result) {
@@ -522,7 +525,8 @@ constructor(
             val result = newPipeFormatter.run(
                 NewPipeSortingData(
                     nextPageSearchInfo.items,
-                    nextPageSearchInfo.nextPage
+                    nextPageSearchInfo.nextPage,
+                    contentFilter
                 )
             )
 //            val baseDataModel= TubeFyCoreUniversalData(NewPipeSortingInput(result,nextPageSearchInfo.nextPage))
