@@ -100,6 +100,41 @@ class DatabaseData @Inject constructor(private val playlistDao: PlaylistDao,priv
     }
 
     override suspend fun getAllActivePlaylists(): Resource<List<TubeFyCoreTypeData>> {
-        TODO("Not yet implemented")
+        return withContext(Dispatchers.IO)
+        {
+            Log.d("yono","yonopoda")
+            val activePlayListData=playlistDao.getActivePlaylist()
+            if(activePlayListData.isNotEmpty()) {
+                var formattedActivePlayList =
+                    databaseFormatterFactory.formatTubeFyPlayList().run(activePlayListData)
+                when (formattedActivePlayList) {
+                    is FormattingResult.SUCCESS -> {
+                        
+//                    val result=playlistDao.replaceActivePlaylist(formattedActivePlayList.data)
+//                    if(result)
+//                    {
+//                        Resource.Success(DatabaseResponse(200))
+//                    }else
+//                    {
+//                        Resource.DataError(DATABASE_INSERTION_ERROR)
+//
+//                    }
+                        Resource.DataError(DATABASE_INSERTION_ERROR)
+                    }
+
+                    is FormattingResult.FAILURE -> {
+                        Resource.DataError(YOUTUBE_V3_SEARCH_ERROR)
+                    }
+
+                }
+            }else{
+                Resource.DataError(YOUTUBE_V3_SEARCH_ERROR)
+            }
+
+            // Run the formatter
+
+
+
+        }
     }
 }
