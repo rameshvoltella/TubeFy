@@ -1,6 +1,7 @@
 package com.ramzmania.tubefy.data.database
 
 import android.util.Log
+import com.ramzmania.tubefy.core.dataformatter.database.DatabaseFormatterFactory
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
 import com.ramzmania.tubefy.database.DatabaseResponse
@@ -12,7 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
-class DatabaseData @Inject constructor(private val playlistDao: PlaylistDao):DatabaseDataSource {
+class DatabaseData @Inject constructor(private val playlistDao: PlaylistDao,private val databaseFormatterFactory: DatabaseFormatterFactory):DatabaseDataSource {
     override suspend fun addPlayList(playlists: List<QuePlaylist>): Resource<DatabaseResponse> {
         return withContext(Dispatchers.IO)
         {
@@ -67,7 +68,23 @@ class DatabaseData @Inject constructor(private val playlistDao: PlaylistDao):Dat
     }
 
     override suspend fun addActivePlayList(playlists: List<TubeFyCoreTypeData>): Resource<DatabaseResponse> {
-        TODO("Not yet implemented")
+        return withContext(Dispatchers.IO)
+        {
+            Log.d("yono","yonopoda")
+            var formattedActivePlayList=databaseFormatterFactory.createForFormatActivePlayList()
+val result2=formattedActivePlayList.run(playlists);
+            result2.
+            val result=playlistDao.replaceActivePlaylist(formattedActivePlayList.r)
+            if(result)
+            {
+                Resource.Success(DatabaseResponse(200))
+            }else
+            {
+                Resource.DataError(DATABASE_INSERTION_ERROR)
+
+            }
+
+        }
     }
 
     override suspend fun getAllActivePlaylists(): Resource<List<TubeFyCoreTypeData>> {

@@ -293,7 +293,7 @@ class PlaybackService(
 
     fun fetchFromQueue(totalList: List<TubeFyCoreTypeData?>) {
         val listFromQueue = totalList.take(2)
-        Log.d("PODSZ", "REMAINLISY" + totalList.size)
+//        Log.d("PODSZ", "REMAINLISY" + totalList.size)
         apiPlaListBulkCallJob = serviceScope.launch {
             remoteRepositorySource.getStreamBulkUrl(YoutubePlayerPlaylistListModel(listFromQueue!!))
                 .collect {
