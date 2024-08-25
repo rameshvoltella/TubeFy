@@ -6,6 +6,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import com.ramzmania.tubefy.data.dto.database.PlaylistNameWithUrl
 
 @Dao
 interface PlaylistDao {
@@ -90,4 +91,38 @@ interface PlaylistDao {
     // Get the entire active playlist
     @Query("SELECT * FROM ActivePlaylist")
     fun getActivePlaylist(): List<ActivePlaylist>
+
+
+    // FavoritePlaylist methods
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertFavorite(playlist: FavoritePlaylist)
+
+    @Query("DELETE FROM FavoritePlaylist WHERE videoId = :videoId")
+    suspend fun deleteFavorite(videoId: String)
+
+    @Query("SELECT * FROM FavoritePlaylist")
+    suspend fun getAllFavorites(): List<FavoritePlaylist>
+
+    @Query("SELECT COUNT(*) FROM FavoritePlaylist WHERE videoId = :videoId")
+    suspend fun isFavorite(videoId: String): Int
+
+    // CustomPlaylist methods
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertCustomPlaylistEntry(entry: CustomPlaylist)
+
+    @Query("SELECT * FROM CustomPlaylist WHERE playlistName = :playlistName")
+    suspend fun getCustomPlaylistByName(playlistName: String): List<CustomPlaylist>
+
+    @Query("DELETE FROM CustomPlaylist WHERE playlistName = :playlistName AND videoId = :videoId")
+    suspend fun deleteCustomPlaylistEntry(playlistName: String, videoId: String)
+
+    @Query("SELECT DISTINCT playlistName FROM CustomPlaylist")
+    suspend fun getAllPlaylistNames(): List<String>
+
+    // Delete all entries with the same playlist name
+    @Query("DELETE FROM CustomPlaylist WHERE playlistName = :playlistName")
+    suspend fun deleteCustomPlaylistByName(playlistName: String)
+
+    @Query("SELECT DISTINCT playlistName, videoUrl FROM CustomPlaylist")
+    suspend fun getAllPlaylistNamesWithUrls(): List<PlaylistNameWithUrl>
 }

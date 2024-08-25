@@ -5,7 +5,10 @@ import com.ramzmania.tubefy.core.dataformatter.FormattingResult
 import com.ramzmania.tubefy.core.dataformatter.database.DatabaseFormatterFactory
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
+import com.ramzmania.tubefy.data.dto.database.PlaylistNameWithUrl
+import com.ramzmania.tubefy.database.CustomPlaylist
 import com.ramzmania.tubefy.database.DatabaseResponse
+import com.ramzmania.tubefy.database.FavoritePlaylist
 import com.ramzmania.tubefy.database.PlaylistDao
 import com.ramzmania.tubefy.database.QuePlaylist
 import com.ramzmania.tubefy.errors.DATABASE_INSERTION_ERROR
@@ -136,5 +139,68 @@ class DatabaseData @Inject constructor(private val playlistDao: PlaylistDao,priv
 
 
         }
+    }
+
+    suspend fun addToFavorites(){
+        val isFavorite = playlistDao.isFavorite("abc123")>0
+        val favorite = FavoritePlaylist(
+            videoId = "abc123",
+            videoUrl = "https://example.com/video/abc123",
+            videoName = "Sample Video"
+        )
+
+// Insert into the database
+        if (!isFavorite) {
+        playlistDao.insertFavorite(favorite)
+        }
+
+    }
+
+   suspend fun getFavorites()
+    {
+        val favoriteVideos: List<FavoritePlaylist> = playlistDao.getAllFavorites()
+    }
+
+    suspend fun removeFromFavorites()
+    {
+        playlistDao.deleteFavorite("abc123")
+    }
+
+    suspend fun addtoplalist()
+    {
+        val customPlaylistEntry = CustomPlaylist(
+            playlistName = "My Playlist",
+            videoId = "def456",
+            videoUrl = "https://example.com/video/def456",
+            videoName = "Another Video"
+        )
+
+// Insert into the database
+        playlistDao.insertCustomPlaylistEntry(customPlaylistEntry)
+    }
+
+    suspend fun getSpecificPlayList()
+    {
+        val playlistName = "My Playlist"
+        val customPlaylist: List<CustomPlaylist> = playlistDao.getCustomPlaylistByName(playlistName)
+
+    }
+
+
+
+    suspend fun getAllPlayList()
+    {
+//        val playlistNames: List<String> = playlistDao.getAllPlaylistNames()
+        val playlistNamesWithUrls: List<PlaylistNameWithUrl> = playlistDao.getAllPlaylistNamesWithUrls()
+    }
+
+    suspend fun deleteSongFromPlayList()
+    {
+        playlistDao.deleteCustomPlaylistEntry("My Playlist", "def456")
+    }
+
+    suspend fun deleteSpecificPlayList()
+    {
+        playlistDao.deleteCustomPlaylistByName("My Playlist")
     }
 }

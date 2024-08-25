@@ -19,3 +19,20 @@ data class QuePlaylist(
     val videoName: String,
     val videoThumbnail: String
 )
+
+@Entity
+data class FavoritePlaylist(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val videoId: String,
+    val videoUrl: String,
+    val videoName: String
+)
+
+@Entity
+data class CustomPlaylist(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val playlistName: String,
+    val videoId: String,
+    val videoUrl: String,
+    val videoName: String
+)

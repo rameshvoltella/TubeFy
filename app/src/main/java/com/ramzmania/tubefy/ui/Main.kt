@@ -71,6 +71,7 @@ private var nextPage: Page? = null
                 QuePlaylist(videoId = "video_id_124", videoName = "Example Video 2", videoThumbnail = "http://example.com/thumbnail2.jpg")
             )
             viewModel.insertSongTOData(list)
+            viewModel.searchYoutubeV3()
 //            viewModel.loadPlayList("https://music.youtube.com/playlist?list=RDCLAK5uy_kmPRjHDECIcuVwnKsx2Ng7fyNgFKWNJFs")
 
         }

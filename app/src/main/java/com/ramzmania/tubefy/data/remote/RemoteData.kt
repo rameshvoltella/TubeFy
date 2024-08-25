@@ -118,6 +118,8 @@ constructor(
 
                 if (extractor.videoStreams.isNotEmpty()) {
                     streamUrl = extractor.videoStreams.first().content ?: ""
+
+                    Log.d("Streamz","<><>"+streamUrl)
                 }
             } catch (e: Exception) {
                 e.printStackTrace()

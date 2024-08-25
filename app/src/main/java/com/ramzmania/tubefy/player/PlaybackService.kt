@@ -190,8 +190,8 @@ class PlaybackService(
                                     if (listFromQueue.size > 0) {
                                         apiPlaListBulkCallJob?.cancel()
                                         listFromQueue.shuffle()
-                                        if (listFromQueue.size > 50) {
-                                            fetchFromQueue(listFromQueue.toMutableList().take(50))
+                                        if (listFromQueue.size > 20) {
+                                            fetchFromQueue(listFromQueue.toMutableList().take(20))
                                         } else {
                                             fetchFromQueue(listFromQueue.toMutableList())
 
