@@ -18,6 +18,7 @@ import com.ramzmania.tubefy.data.dto.base.playlist.PlayListCategory
 import com.ramzmania.tubefy.data.dto.home.HomePageResponse
 import com.ramzmania.tubefy.data.dto.base.playlist.PlayListData
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
+import com.ramzmania.tubefy.data.dto.database.PlaylistNameWithUrl
 import com.ramzmania.tubefy.data.dto.home.youtubei.YoutubeiHomeBaseResponse
 import com.ramzmania.tubefy.data.dto.youtubemusic.category.MusicCategoryPlayListBase
 import com.ramzmania.tubefy.data.dto.youtubemusic.category.YtMusicCategoryBase
@@ -26,7 +27,9 @@ import com.ramzmania.tubefy.data.dto.youtubestripper.ApiResponse
 import com.ramzmania.tubefy.data.dto.youtubestripper.MusicHomeResponse2
 import com.ramzmania.tubefy.data.local.LocalRepositorySource
 import com.ramzmania.tubefy.data.remote.RemoteRepositorySource
+import com.ramzmania.tubefy.database.CustomPlaylist
 import com.ramzmania.tubefy.database.DatabaseResponse
+import com.ramzmania.tubefy.database.FavoritePlaylist
 import com.ramzmania.tubefy.database.QuePlaylist
 
 import com.ramzmania.tubefy.ui.base.BaseViewModel
@@ -141,6 +144,20 @@ class TubeFyViewModel @Inject constructor(
 
     private val getAllActiveListPrivate = MutableLiveData<Resource<List<TubeFyCoreTypeData?>>>()
     val getAllActiveList: LiveData<Resource<List<TubeFyCoreTypeData?>>> get() = getAllActiveListPrivate
+///////////////////////////////////////////////////
+
+    private val isFavouritePrivate = MutableLiveData<Resource<Boolean>>()
+    val isFavourite: LiveData<Resource<Boolean>> get() = isFavouritePrivate
+
+    private val addingSongListPlayListOperationPrivate = MutableLiveData<Resource<DatabaseResponse>>()
+    val addingSongListPlayListOperation: LiveData<Resource<DatabaseResponse>> get() = addingSongListPlayListOperationPrivate
+
+    private val gettingSongPlayListOperationPrivate = MutableLiveData<Resource<List<TubeFyCoreTypeData?>>>()
+    val gettingSongPlayListOperation: LiveData<Resource<List<TubeFyCoreTypeData?>>> get() = gettingSongPlayListOperationPrivate
+
+    private val gettingPrivatePlayListPrivate = MutableLiveData<Resource<List<PlaylistNameWithUrl>>>()
+    val gettingPrivatePlayList: LiveData<Resource<List<PlaylistNameWithUrl>>> get() = gettingPrivatePlayListPrivate
+
 
 
     fun setHtmlContent(content: ApiResponse?) {
@@ -578,6 +595,42 @@ Log.d("incomming<>","<>"+contentFilter)
 
             }
         }
+    }
+
+    fun isFavourite(s: String) {
+
+    }
+
+    fun addToFavorites(favorite: FavoritePlaylist) {
+        TODO("Not yet implemented")
+    }
+
+    fun getFavorites() {
+        TODO("Not yet implemented")
+    }
+
+    fun removeFromFavorites(s: String) {
+
+    }
+
+    fun addToPlaylist(customPlaylistEntry0: CustomPlaylist) {
+        TODO("Not yet implemented")
+    }
+
+    fun getSpecificPlayList(s: String) {
+
+    }
+
+    fun getAllSavedPlayList() {
+        TODO("Not yet implemented")
+    }
+
+    fun deleteSongFromPlayList(s: String, s1: String) {
+
+    }
+
+    fun deleteSpecificPlayList(s: String) {
+
     }
 
 }
