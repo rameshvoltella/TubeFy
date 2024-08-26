@@ -163,7 +163,8 @@ fun MainScrmeen() {
 @Composable
 fun MainScreen() {
     val navController = rememberNavController()
-
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
     Box(modifier = Modifier.fillMaxSize()) {
         // Content that extends behind the bottom bar
         CompositionLocalProvider(
@@ -171,7 +172,9 @@ fun MainScreen() {
         ) {
             Scaffold(
 //                topBar = { TopBar() },
-                bottomBar = { BottomNavigationBar(navController) },
+                bottomBar = {  if (currentRoute != NavigationItem.AudioPlayer.route) {
+                    BottomNavigationBar(navController)
+                } },
                 content = {
                     Box(modifier = Modifier.fillMaxSize()) {
                         Navigation(navController = navController)

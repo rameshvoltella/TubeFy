@@ -51,7 +51,7 @@ class NewPipeDataFormatter<T> @Inject constructor(private val playlistDao: Playl
                                         videoId = newPipeSearchData.url
                                     )
                                 )
-                                if (input?.contentFilter != null&&input?.contentFilter.contains("music_songs")) {
+                                if (input?.contentFilter != null&&!input?.contentFilter.contains("all")) {
                                     Log.d("tadada", "klklklkl1111")
                                     playlistDao.addQueSingleSongPlaylists(
                                         QuePlaylist(
@@ -91,7 +91,7 @@ class NewPipeDataFormatter<T> @Inject constructor(private val playlistDao: Playl
                                 )
 
                                 Log.d("tadada", "yaaaaaa")
-                                if (input?.contentFilter != null&&input?.contentFilter.contains("music_songs")) {
+                                if (input?.contentFilter != null&&!input?.contentFilter.contains("all")) {
                                     Log.d("tadada", "klklklkl222222")
                                     playlistDao.addQueSingleSongPlaylists(
                                         QuePlaylist(

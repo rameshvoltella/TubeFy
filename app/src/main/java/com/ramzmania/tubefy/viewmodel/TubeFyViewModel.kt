@@ -18,6 +18,7 @@ import com.ramzmania.tubefy.data.dto.base.playlist.PlayListCategory
 import com.ramzmania.tubefy.data.dto.home.HomePageResponse
 import com.ramzmania.tubefy.data.dto.base.playlist.PlayListData
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
+import com.ramzmania.tubefy.data.dto.database.PlaylistNameWithUrl
 import com.ramzmania.tubefy.data.dto.home.youtubei.YoutubeiHomeBaseResponse
 import com.ramzmania.tubefy.data.dto.youtubemusic.category.MusicCategoryPlayListBase
 import com.ramzmania.tubefy.data.dto.youtubemusic.category.YtMusicCategoryBase
@@ -26,7 +27,9 @@ import com.ramzmania.tubefy.data.dto.youtubestripper.ApiResponse
 import com.ramzmania.tubefy.data.dto.youtubestripper.MusicHomeResponse2
 import com.ramzmania.tubefy.data.local.LocalRepositorySource
 import com.ramzmania.tubefy.data.remote.RemoteRepositorySource
+import com.ramzmania.tubefy.database.CustomPlaylist
 import com.ramzmania.tubefy.database.DatabaseResponse
+import com.ramzmania.tubefy.database.FavoritePlaylist
 import com.ramzmania.tubefy.database.QuePlaylist
 
 import com.ramzmania.tubefy.ui.base.BaseViewModel
@@ -47,9 +50,10 @@ class TubeFyViewModel @Inject constructor(
 ) : BaseViewModel() {
 
     private var nextYoutubeV3PageToken: String? = null
-    private var reloadHomeScreen=true
-//    var youtubePlayerPlaylistListModel: YoutubePlayerPlaylistListModel?=null
-    var koko: String?="koko"
+    private var reloadHomeScreen = true
+
+    //    var youtubePlayerPlaylistListModel: YoutubePlayerPlaylistListModel?=null
+    var koko: String? = "koko"
 
 
     init {
@@ -79,7 +83,6 @@ class TubeFyViewModel @Inject constructor(
     }
 
 
-
     private val htmlContentPrivate = MutableLiveData<String>()
     val htmlContent: LiveData<String> get() = htmlContentPrivate
 
@@ -93,7 +96,8 @@ class TubeFyViewModel @Inject constructor(
     private val youTubeMusicHomeDataPrivate = MutableLiveData<Resource<List<HomePageResponse?>>>()
     val youTubeMusicHomeData: LiveData<Resource<List<HomePageResponse?>>> get() = youTubeMusicHomeDataPrivate
 
-    private val youTubeMusicHomeDefaultDataPrivate = MutableLiveData<Resource<List<HomePageResponse?>>>()
+    private val youTubeMusicHomeDefaultDataPrivate =
+        MutableLiveData<Resource<List<HomePageResponse?>>>()
     val youTubeMusicHomeDefaultData: LiveData<Resource<List<HomePageResponse?>>> get() = youTubeMusicHomeDefaultDataPrivate
 
 
@@ -103,18 +107,21 @@ class TubeFyViewModel @Inject constructor(
     private val youTubePlayListBulkPrivate = MutableLiveData<Resource<List<MediaItem>>>()
     val youTubePlayListBulkData: LiveData<Resource<List<MediaItem>>> get() = youTubePlayListBulkPrivate
 
-    private val youTubeMusicCategoryDataPrivate = MutableLiveData<Resource<List<PlayListCategory?>>>()
+    private val youTubeMusicCategoryDataPrivate =
+        MutableLiveData<Resource<List<PlayListCategory?>>>()
     val youTubeMusicCategoryData: LiveData<Resource<List<PlayListCategory?>>> get() = youTubeMusicCategoryDataPrivate
 
 
-    private val youTubeCategoryPlayListPrivate = MutableLiveData<Resource<List<MusicCategoryPlayListBase?>>>()
+    private val youTubeCategoryPlayListPrivate =
+        MutableLiveData<Resource<List<MusicCategoryPlayListBase?>>>()
     val youTubeCategoryPlayList: LiveData<Resource<List<MusicCategoryPlayListBase?>>> get() = youTubeCategoryPlayListPrivate
 
 
     private val youTubeiMusicHomePrivate = MutableLiveData<Resource<YoutubeiHomeBaseResponse>>()
     val youTubeiMusicHomeData: LiveData<Resource<YoutubeiHomeBaseResponse>> get() = youTubeiMusicHomePrivate
 
-    private val youTubeiMusicHomePaginationPrivate = MutableLiveData<Resource<YoutubeiHomeBaseResponse>>()
+    private val youTubeiMusicHomePaginationPrivate =
+        MutableLiveData<Resource<YoutubeiHomeBaseResponse>>()
     val youTubeiMusicHomePaginationData: LiveData<Resource<YoutubeiHomeBaseResponse>> get() = youTubeiMusicHomePaginationPrivate
 
 
@@ -141,6 +148,22 @@ class TubeFyViewModel @Inject constructor(
 
     private val getAllActiveListPrivate = MutableLiveData<Resource<List<TubeFyCoreTypeData?>>>()
     val getAllActiveList: LiveData<Resource<List<TubeFyCoreTypeData?>>> get() = getAllActiveListPrivate
+///////////////////////////////////////////////////
+
+    private val isFavouritePrivate = MutableLiveData<Resource<Boolean>>()
+    val isFavourite: LiveData<Resource<Boolean>> get() = isFavouritePrivate
+
+    private val addingSongListPlayListOperationPrivate =
+        MutableLiveData<Resource<DatabaseResponse>>()
+    val addingSongListPlayListOperation: LiveData<Resource<DatabaseResponse>> get() = addingSongListPlayListOperationPrivate
+
+    private val gettingSongPlayListOperationPrivate =
+        MutableLiveData<Resource<List<TubeFyCoreTypeData?>>>()
+    val gettingSongPlayListOperation: LiveData<Resource<List<TubeFyCoreTypeData?>>> get() = gettingSongPlayListOperationPrivate
+
+    private val gettingPrivatePlayListPrivate =
+        MutableLiveData<Resource<List<PlaylistNameWithUrl>>>()
+    val gettingPrivatePlayList: LiveData<Resource<List<PlaylistNameWithUrl>>> get() = gettingPrivatePlayListPrivate
 
 
     fun setHtmlContent(content: ApiResponse?) {
@@ -153,21 +176,20 @@ class TubeFyViewModel @Inject constructor(
         }
     }
 
-    fun pullToRefreshHome(refresh:Boolean)
-    {
-        pullToRefreshPagePrivate.value=refresh
+    fun pullToRefreshHome(refresh: Boolean) {
+        pullToRefreshPagePrivate.value = refresh
     }
 
     fun setHtmlMusicContent(content: MusicHomeResponse2?) {
 //        htmlContentPrivate.value = content
-    /*    val videoInfoList =
-            extractVideoInfo(content!!.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()?.tabRenderer?.content?.sectionListRenderer?.contents?.flatMap {
-                it.musicCarouselShelfRenderer?.contents ?: emptyList()
-            })
+        /*    val videoInfoList =
+                extractVideoInfo(content!!.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()?.tabRenderer?.content?.sectionListRenderer?.contents?.flatMap {
+                    it.musicCarouselShelfRenderer?.contents ?: emptyList()
+                })
 
-        videoInfoList.forEach {
-            println("Video ID: ${it.videoId}, Playlist ID: ${it.playlistId}, Thumbnail: ${it.thumbnail}, Title: ${it.title}, Subtitle: ${it.subtitle}")
-        }*/
+            videoInfoList.forEach {
+                println("Video ID: ${it.videoId}, Playlist ID: ${it.playlistId}, Thumbnail: ${it.thumbnail}, Title: ${it.title}, Subtitle: ${it.subtitle}")
+            }*/
         viewModelScope.launch {
             localRepositorySource.manipulateYoutubeMusicHomeStripData(content!!).collect {
 
@@ -177,30 +199,27 @@ class TubeFyViewModel @Inject constructor(
 
     }
 
-    fun loadDefaultHomeData()
-    {
-        Log.d("loading","called")
+    fun loadDefaultHomeData() {
+        Log.d("loading", "called")
 
         viewModelScope.launch {
             localRepositorySource.loadDefaultHomePageData().collect {
-                Log.d("loading","came")
+                Log.d("loading", "came")
 
                 youTubeMusicHomeDefaultDataPrivate.value = it
             }
         }
     }
 
-    fun loadPlayList(playListUrl:String)
-    {
-        if(!playListUrl.startsWith("https:"))
-        {
+    fun loadPlayList(playListUrl: String) {
+        if (!playListUrl.startsWith("https:")) {
             viewModelScope.launch {
-                remoteRepositorySource.getPlayListInfo("https://music.youtube.com/playlist?list=$playListUrl").collect {
-                    youTubePlayListPrivate.value = it
-                }
+                remoteRepositorySource.getPlayListInfo("https://music.youtube.com/playlist?list=$playListUrl")
+                    .collect {
+                        youTubePlayListPrivate.value = it
+                    }
             }
-        }
-        else{
+        } else {
             viewModelScope.launch {
                 remoteRepositorySource.getPlayListInfo(playListUrl).collect {
                     youTubePlayListPrivate.value = it
@@ -212,51 +231,53 @@ class TubeFyViewModel @Inject constructor(
     }
 
 
-  /*  fun getBulkStreamUrl()
-    {
-//        Log.d("bulk calling","bulk"+youTubePlayListBulkData)
-        Log.d("bulkmode","added 2222"+koko)
+    /*  fun getBulkStreamUrl()
+      {
+  //        Log.d("bulk calling","bulk"+youTubePlayListBulkData)
+          Log.d("bulkmode","added 2222"+koko)
 
-        if(PlayListSingleton.getDataList()!=null&&PlayListSingleton.getDataList()?.playListData?.size!!>0) {
-            viewModelScope.launch {
-                Log.d("bulkmode","new arra"+PlayListSingleton.getDataList()?.playListData?.size)
-                 var list=PlayListSingleton.getDataList()?.playListData?.take(2)
-                remoteRepositorySource.getStreamBulkUrl(YoutubePlayerPlaylistListModel(list!!)).collect {
-                    youTubePlayListBulkPrivate.value = it
-                    if (youTubePlayListBulkPrivate.value is Resource.Success) {
-                        var list= PlayListSingleton.getDataList()?.playListData?.drop(2)
-                        list?.let { data -> PlayListSingleton.addData(data) }
-                        getBulkStreamUrl()
-                    }
-                }
-            }
-        }else
-        {
-            Log.d("bulkmode","added 3333333")
+          if(PlayListSingleton.getDataList()!=null&&PlayListSingleton.getDataList()?.playListData?.size!!>0) {
+              viewModelScope.launch {
+                  Log.d("bulkmode","new arra"+PlayListSingleton.getDataList()?.playListData?.size)
+                   var list=PlayListSingleton.getDataList()?.playListData?.take(2)
+                  remoteRepositorySource.getStreamBulkUrl(YoutubePlayerPlaylistListModel(list!!)).collect {
+                      youTubePlayListBulkPrivate.value = it
+                      if (youTubePlayListBulkPrivate.value is Resource.Success) {
+                          var list= PlayListSingleton.getDataList()?.playListData?.drop(2)
+                          list?.let { data -> PlayListSingleton.addData(data) }
+                          getBulkStreamUrl()
+                      }
+                  }
+              }
+          }else
+          {
+              Log.d("bulkmode","added 3333333")
 
-        }
-    }
-*/
-    fun callCategoryPlayList(browserId:String,playerListId:String)
-    {
-//        Log.d("bulk calling","bulk"+youTubePlayListBulkData)
-
-            viewModelScope.launch {
-
-                remoteRepositorySource.getCategoryPlayList(browserId,playerListId).collect {
-                    youTubeCategoryPlayListPrivate.value = it
-
-                }
-            }
-
-    }
-    fun callCategoryPlayList()
-    {
+          }
+      }
+  */
+    fun callCategoryPlayList(browserId: String, playerListId: String) {
 //        Log.d("bulk calling","bulk"+youTubePlayListBulkData)
 
         viewModelScope.launch {
 
-            remoteRepositorySource.getCategoryPlayList("FEmusic_moods_and_genres_category","ggMPOg1uX1JOQWZFeDByc2Jm").collect {
+            remoteRepositorySource.getCategoryPlayList(browserId, playerListId).collect {
+                youTubeCategoryPlayListPrivate.value = it
+
+            }
+        }
+
+    }
+
+    fun callCategoryPlayList() {
+//        Log.d("bulk calling","bulk"+youTubePlayListBulkData)
+
+        viewModelScope.launch {
+
+            remoteRepositorySource.getCategoryPlayList(
+                "FEmusic_moods_and_genres_category",
+                "ggMPOg1uX1JOQWZFeDByc2Jm"
+            ).collect {
                 youTubeCategoryPlayListPrivate.value = it
 
             }
@@ -265,8 +286,7 @@ class TubeFyViewModel @Inject constructor(
     }
 
 
-    fun callYoutubeiHome()
-    {
+    fun callYoutubeiHome() {
 //        Log.d("bulk calling","bulk"+youTubePlayListBulkData)
 
         viewModelScope.launch {
@@ -279,13 +299,20 @@ class TubeFyViewModel @Inject constructor(
 
     }
 
-    fun callYoutubeiHomePagination(paginationHex:String,paginationId:String,visitorData:String)
-    {
+    fun callYoutubeiHomePagination(
+        paginationHex: String,
+        paginationId: String,
+        visitorData: String
+    ) {
 //        Log.d("bulk calling","bulk"+youTubePlayListBulkData)
 
         viewModelScope.launch {
 
-            remoteRepositorySource.getMusicHomePaginationYoutubei(paginationHex,paginationId,visitorData).collect {
+            remoteRepositorySource.getMusicHomePaginationYoutubei(
+                paginationHex,
+                paginationId,
+                visitorData
+            ).collect {
                 youTubeiMusicHomePaginationPrivate.value = it
 
             }
@@ -293,8 +320,7 @@ class TubeFyViewModel @Inject constructor(
 
     }
 
-    fun setCurrentPlayListData(playListItems: List<TubeFyCoreTypeData?>)
-    {
+    fun setCurrentPlayListData(playListItems: List<TubeFyCoreTypeData?>) {
 //        youtubePlayerPlaylistListModel=YoutubePlayerPlaylistListModel(playListItems)
         setActiveSongsList(playListItems)
 //        PlayListSingleton.addData(playListItems)
@@ -302,6 +328,7 @@ class TubeFyViewModel @Inject constructor(
 
 
     }
+
     private fun setHtmlMusicCategoryContent(result: YtMusicCategoryBase?) {
 
         viewModelScope.launch {
@@ -312,45 +339,46 @@ class TubeFyViewModel @Inject constructor(
         }
 
     }
+
     fun setHtmlMusicPlayListContent(content: YoutubeMusicPlayListContent?) {
         if (content != null) {
 //            Log.d("dad",""+ content.contents?.twoColumnBrowseResultsRenderer?.contents?.sectionListRenderer?.contents?.get(0)?.musicPlaylistShelfRenderer!!.contents?.get(0)?.musicResponsiveListItemRenderer?.flexColumns?.get(0)?.musicResponsiveListItemFlexColumnRenderer!!.text!!.runs?.get(0)!!.text)
 //            Log.d("dad",""+ content.contents?.twoColumnBrowseResultsRenderer?.contents?.sectionListRenderer?.contents?.get(0)?.musicPlaylistShelfRenderer!!.contents?.get(0)?.musicResponsiveListItemRenderer?.flexColumns?.get(0)?.musicResponsiveListItemFlexColumnRenderer!!.text!!.runs?.get(0)!!.navigationEndpoint!!.watchEndpoint!!.videoId)
 //            Log.d("dad",""+ content.contents?.twoColumnBrowseResultsRenderer?.contents?.sectionListRenderer?.contents?.get(0)?.musicPlaylistShelfRenderer!!.contents?.get(0)?.musicResponsiveListItemRenderer?.thumbnail?.musicThumbnailRenderer?.thumbnail?.thumbnails?.get(0)!!.url)
 //
-           /* var playlistData=ArrayList<VideoPlayListModel>()
-            for (sectionContents in content.contents?.twoColumnBrowseResultsRenderer?.contents?.sectionListRenderer?.contents!!) {
-                for (musicPlaylistShelfRendererContents in sectionContents.musicPlaylistShelfRenderer?.contents!!) {
-//                    musicPlaylistShelfRendererConten
-                    var videoName: String? = ""
-                    var videoId: String? = ""
-                    var thumpNail: String? = null
-                    for (flexColumList in musicPlaylistShelfRendererContents.musicResponsiveListItemRenderer?.flexColumns!!) {
-                        for (musicResponsiveRunData in flexColumList.musicResponsiveListItemFlexColumnRenderer?.text?.runs!!) {
-                            if (musicResponsiveRunData.navigationEndpoint?.watchEndpoint != null) {
-                                videoId =
-                                    musicResponsiveRunData.navigationEndpoint.watchEndpoint.videoId
-                            }
-                            videoName=videoName+"\n"+ musicResponsiveRunData.text
-                        }
+            /* var playlistData=ArrayList<VideoPlayListModel>()
+             for (sectionContents in content.contents?.twoColumnBrowseResultsRenderer?.contents?.sectionListRenderer?.contents!!) {
+                 for (musicPlaylistShelfRendererContents in sectionContents.musicPlaylistShelfRenderer?.contents!!) {
+ //                    musicPlaylistShelfRendererConten
+                     var videoName: String? = ""
+                     var videoId: String? = ""
+                     var thumpNail: String? = null
+                     for (flexColumList in musicPlaylistShelfRendererContents.musicResponsiveListItemRenderer?.flexColumns!!) {
+                         for (musicResponsiveRunData in flexColumList.musicResponsiveListItemFlexColumnRenderer?.text?.runs!!) {
+                             if (musicResponsiveRunData.navigationEndpoint?.watchEndpoint != null) {
+                                 videoId =
+                                     musicResponsiveRunData.navigationEndpoint.watchEndpoint.videoId
+                             }
+                             videoName=videoName+"\n"+ musicResponsiveRunData.text
+                         }
 
-                    }
-                    for (thumpDetails in musicPlaylistShelfRendererContents.musicResponsiveListItemRenderer?.thumbnail?.musicThumbnailRenderer?.thumbnail?.thumbnails!!) {
-                        if (thumpNail == null) {
-                            thumpNail = thumpDetails.url
-                        }
-                        else
-                        {
-                            break
-                        }
-                    }
-                    playlistData.add(VideoPlayListModel(videoId,videoName,thumpNail))
+                     }
+                     for (thumpDetails in musicPlaylistShelfRendererContents.musicResponsiveListItemRenderer?.thumbnail?.musicThumbnailRenderer?.thumbnail?.thumbnails!!) {
+                         if (thumpNail == null) {
+                             thumpNail = thumpDetails.url
+                         }
+                         else
+                         {
+                             break
+                         }
+                     }
+                     playlistData.add(VideoPlayListModel(videoId,videoName,thumpNail))
 
-                    Log.d("fulldeatils","video->"+videoId+"<tnhumpNail>"+thumpNail+"<><name"+videoName)
-                }
+                     Log.d("fulldeatils","video->"+videoId+"<tnhumpNail>"+thumpNail+"<><name"+videoName)
+                 }
 
 
-            }*/
+             }*/
             val playlistData = ArrayList<VideoPlayListModel>()
             content.contents?.twoColumnBrowseResultsRenderer?.contents?.sectionListRenderer?.contents?.forEach { sectionContents ->
                 sectionContents.musicPlaylistShelfRenderer?.contents?.forEach { musicPlaylistShelfRendererContents ->
@@ -367,15 +395,18 @@ class TubeFyViewModel @Inject constructor(
                         }
                     }
 
-                    musicPlaylistShelfRendererContents.musicResponsiveListItemRenderer?.thumbnail?.musicThumbnailRenderer?.thumbnail?.thumbnails?.firstOrNull()?.let {
-                        thumpNail = it.url
-                    }
+                    musicPlaylistShelfRendererContents.musicResponsiveListItemRenderer?.thumbnail?.musicThumbnailRenderer?.thumbnail?.thumbnails?.firstOrNull()
+                        ?.let {
+                            thumpNail = it.url
+                        }
 
                     playlistData.add(VideoPlayListModel(videoId, videoName.toString(), thumpNail))
-                    Log.d("fulldeatils", "video->$videoId<thumpNail>$thumpNail<><name>${videoName.toString()}")
+                    Log.d(
+                        "fulldeatils",
+                        "video->$videoId<thumpNail>$thumpNail<><name>${videoName.toString()}"
+                    )
                 }
             }
-
 
 
         }
@@ -401,7 +432,7 @@ class TubeFyViewModel @Inject constructor(
 //        scrapping.fetchPageSource("https://music.youtube.com/")
     }
 
-    fun startWebScrapping(url: String,youtubeScrapType: YoutubeScrapType) {
+    fun startWebScrapping(url: String, youtubeScrapType: YoutubeScrapType) {
         scrapping.fetchPageSource(url, youtubeScrapType)
 
 //        scrapping.fetchPageSource("https://music.youtube.com/", YoutubeScrapType.YOUTUBE_MUSIC)
@@ -413,19 +444,23 @@ class TubeFyViewModel @Inject constructor(
     }
 
 
-    fun searchNewPipePage(searchKey:String, contentFilter: MutableList<String>) {
+    fun searchNewPipePage(searchKey: String, contentFilter: MutableList<String>) {
 //        val contentFilter = arrayOf<String>("music_songs")
-Log.d("incomming<>","<>"+contentFilter)
+        Log.d("incomming<>", "<>" + contentFilter)
         viewModelScope.launch {
             remoteRepositorySource.getNewPipePageSearch(0, searchKey, contentFilter, "")
                 .collect {
-                    Log.d("resultya","yadadada")
+                    Log.d("resultya", "yadadada")
                     youTubeSearchDataPrivate.value = it
                 }
         }
     }
 
-    fun searchNewPipeNextPage(page: Page?,contentFilter: MutableList<String>,searchString:String) {
+    fun searchNewPipeNextPage(
+        page: Page?,
+        contentFilter: MutableList<String>,
+        searchString: String
+    ) {
 //        val contentFilter = arrayOf<String>("all")
 
         viewModelScope.launch {
@@ -460,83 +495,77 @@ Log.d("incomming<>","<>"+contentFilter)
         val thumbnail: String?
     )
 
-   /* data class VideoInfo(
-        val videoId: String?,
-        val playlistId: String?,
-        val thumbnail: String?,
-        val title: String?,
-        val subtitle: String?
-    )*/
+    /* data class VideoInfo(
+         val videoId: String?,
+         val playlistId: String?,
+         val thumbnail: String?,
+         val title: String?,
+         val subtitle: String?
+     )*/
 
-/*    fun extractVideoInfo(contents: List<MusicCarouselContent>?): List<VideoInfo> {
-        val videoInfoList = mutableListOf<VideoInfo>()
+    /*    fun extractVideoInfo(contents: List<MusicCarouselContent>?): List<VideoInfo> {
+            val videoInfoList = mutableListOf<VideoInfo>()
 
-        contents?.forEach { content ->
-            val musicTwoRowItemRenderer = content.musicTwoRowItemRenderer
-            val musicResponsiveListItemRenderer = content.musicResponsiveListItemRenderer
+            contents?.forEach { content ->
+                val musicTwoRowItemRenderer = content.musicTwoRowItemRenderer
+                val musicResponsiveListItemRenderer = content.musicResponsiveListItemRenderer
 
-            if (musicTwoRowItemRenderer != null) {
-                val videoId = musicTwoRowItemRenderer.navigationEndpoint?.browseEndpoint?.browseId
-                val playlistId =
-                    musicTwoRowItemRenderer.menu?.menuRenderer?.items?.firstOrNull()?.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint?.playlistId
-                val thumbnail =
-                    musicTwoRowItemRenderer.thumbnailRenderer?.musicThumbnailRenderer?.thumbnail?.thumbnails?.firstOrNull()?.url
-                val title = musicTwoRowItemRenderer.title?.runs?.firstOrNull()?.text
-                val subtitle = musicTwoRowItemRenderer.subtitle?.runs?.firstOrNull()?.text
+                if (musicTwoRowItemRenderer != null) {
+                    val videoId = musicTwoRowItemRenderer.navigationEndpoint?.browseEndpoint?.browseId
+                    val playlistId =
+                        musicTwoRowItemRenderer.menu?.menuRenderer?.items?.firstOrNull()?.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint?.playlistId
+                    val thumbnail =
+                        musicTwoRowItemRenderer.thumbnailRenderer?.musicThumbnailRenderer?.thumbnail?.thumbnails?.firstOrNull()?.url
+                    val title = musicTwoRowItemRenderer.title?.runs?.firstOrNull()?.text
+                    val subtitle = musicTwoRowItemRenderer.subtitle?.runs?.firstOrNull()?.text
 
-                videoInfoList.add(VideoInfo(videoId, playlistId, thumbnail, title, subtitle))
+                    videoInfoList.add(VideoInfo(videoId, playlistId, thumbnail, title, subtitle))
+                }
+
+                if (musicResponsiveListItemRenderer != null) {
+                    val videoId = musicResponsiveListItemRenderer.flexColumns?.flatMap {
+                        it.musicResponsiveListItemFlexColumnRenderer?.text?.runs ?: emptyList()
+                    }
+                        ?.firstOrNull { it.navigationEndpoint?.watchEndpoint?.videoId != null }?.navigationEndpoint?.watchEndpoint?.videoId
+                    val playlistId = musicResponsiveListItemRenderer.flexColumns?.flatMap {
+                        it.musicResponsiveListItemFlexColumnRenderer?.text?.runs ?: emptyList()
+                    }
+                        ?.firstOrNull { it.navigationEndpoint?.watchEndpoint?.playlistId != null }?.navigationEndpoint?.watchEndpoint?.playlistId
+                    val thumbnail =
+                        musicResponsiveListItemRenderer.thumbnail?.musicThumbnailRenderer?.thumbnail?.thumbnails?.firstOrNull()?.url
+                    val title = musicResponsiveListItemRenderer.flexColumns?.flatMap {
+                        it.musicResponsiveListItemFlexColumnRenderer?.text?.runs ?: emptyList()
+                    }
+                        ?.firstOrNull { it.text != null }?.text
+                    val subtitle =
+                        "" // Assuming subtitle is not available in MusicResponsiveListItemRenderer
+    //              "kk".toInt()
+                    videoInfoList.add(VideoInfo(videoId, playlistId, thumbnail, title, subtitle))
+                }
             }
 
-            if (musicResponsiveListItemRenderer != null) {
-                val videoId = musicResponsiveListItemRenderer.flexColumns?.flatMap {
-                    it.musicResponsiveListItemFlexColumnRenderer?.text?.runs ?: emptyList()
-                }
-                    ?.firstOrNull { it.navigationEndpoint?.watchEndpoint?.videoId != null }?.navigationEndpoint?.watchEndpoint?.videoId
-                val playlistId = musicResponsiveListItemRenderer.flexColumns?.flatMap {
-                    it.musicResponsiveListItemFlexColumnRenderer?.text?.runs ?: emptyList()
-                }
-                    ?.firstOrNull { it.navigationEndpoint?.watchEndpoint?.playlistId != null }?.navigationEndpoint?.watchEndpoint?.playlistId
-                val thumbnail =
-                    musicResponsiveListItemRenderer.thumbnail?.musicThumbnailRenderer?.thumbnail?.thumbnails?.firstOrNull()?.url
-                val title = musicResponsiveListItemRenderer.flexColumns?.flatMap {
-                    it.musicResponsiveListItemFlexColumnRenderer?.text?.runs ?: emptyList()
-                }
-                    ?.firstOrNull { it.text != null }?.text
-                val subtitle =
-                    "" // Assuming subtitle is not available in MusicResponsiveListItemRenderer
-//              "kk".toInt()
-                videoInfoList.add(VideoInfo(videoId, playlistId, thumbnail, title, subtitle))
-            }
-        }
+            return videoInfoList
+        }*/
 
-        return videoInfoList
-    }*/
-
-    fun setHomeScreenReload(reloadHomeScreen:Boolean)
-    {
-        this.reloadHomeScreen=reloadHomeScreen
+    fun setHomeScreenReload(reloadHomeScreen: Boolean) {
+        this.reloadHomeScreen = reloadHomeScreen
     }
 
-    fun getHomeScreenReloadStatus():Boolean
-    {
+    fun getHomeScreenReloadStatus(): Boolean {
         return reloadHomeScreen
     }
 
-    fun setHomePageLoadMoreState(isLoading: Boolean)
-    {
-        Log.d("laaaa","settttt")
-        loadMoreHomePagePrivate.value=isLoading
+    fun setHomePageLoadMoreState(isLoading: Boolean) {
+        Log.d("laaaa", "settttt")
+        loadMoreHomePagePrivate.value = isLoading
     }
 
-    fun homePagePaginationEnded(value: Boolean)
-    {
-        loadMoreHomePageEndedPrivate.value=value
+    fun homePagePaginationEnded(value: Boolean) {
+        loadMoreHomePageEndedPrivate.value = value
     }
 
 
-
-    fun insertSongTOData(playlists: List<QuePlaylist>)
-    {
+    fun insertSongTOData(playlists: List<QuePlaylist>) {
         viewModelScope.launch {
 
             playlistDatabaseRepository.addPlayList(playlists).collect {
@@ -546,8 +575,7 @@ Log.d("incomming<>","<>"+contentFilter)
         }
     }
 
-    fun getSongsList()
-    {
+    fun getSongsList() {
         viewModelScope.launch {
 
             playlistDatabaseRepository.getPlaylists().collect {
@@ -558,8 +586,7 @@ Log.d("incomming<>","<>"+contentFilter)
     }
 
 
-    fun setActiveSongsList(playlists: List<TubeFyCoreTypeData?>)
-    {
+    fun setActiveSongsList(playlists: List<TubeFyCoreTypeData?>) {
         viewModelScope.launch {
 
             playlistDatabaseRepository.addActivePlayList(playlists).collect {
@@ -569,12 +596,101 @@ Log.d("incomming<>","<>"+contentFilter)
         }
     }
 
-    fun getActivePlayList()
-    {
+    fun getActivePlayList() {
         viewModelScope.launch {
 
             playlistDatabaseRepository.getAllActivePlaylists().collect {
                 getAllActiveListPrivate.value = it
+
+            }
+        }
+    }
+
+    fun isFavourite(videoId: String) {
+        viewModelScope.launch {
+
+            playlistDatabaseRepository.isFavourite(videoId).collect {
+                isFavouritePrivate.value = it
+
+            }
+        }
+    }
+
+    fun addToFavorites(favorite: FavoritePlaylist) {
+        viewModelScope.launch {
+
+            playlistDatabaseRepository.addToFavorites(favorite).collect {
+                addingSongListPlayListOperationPrivate.value = it
+
+            }
+        }
+    }
+
+    fun getFavorites() {
+        viewModelScope.launch {
+
+            playlistDatabaseRepository.getFavorites().collect {
+                gettingSongPlayListOperationPrivate.value = it
+
+            }
+        }
+    }
+
+    fun removeFromFavorites(videoId: String) {
+        viewModelScope.launch {
+
+            playlistDatabaseRepository.removeFromFavorites(videoId).collect {
+                addingSongListPlayListOperationPrivate.value = it
+
+            }
+        }
+    }
+
+    fun addToPlaylist(customPlaylistEntry: CustomPlaylist) {
+        viewModelScope.launch {
+
+            playlistDatabaseRepository.addToPlaylist(customPlaylistEntry).collect {
+                addingSongListPlayListOperationPrivate.value = it
+
+            }
+        }
+    }
+
+    fun getSpecificPlayList(playListName: String) {
+        viewModelScope.launch {
+
+            playlistDatabaseRepository.getSpecificPlayList(playListName).collect {
+                gettingSongPlayListOperationPrivate.value = it
+
+            }
+        }
+    }
+
+    fun getAllSavedPlayList() {
+        viewModelScope.launch {
+
+            playlistDatabaseRepository.getAllSavedPlayList().collect {
+                gettingPrivatePlayListPrivate.value = it
+
+            }
+        }
+    }
+
+    fun deleteSongFromPlayList(playListName: String, videoId: String) {
+        viewModelScope.launch {
+
+            playlistDatabaseRepository.deleteSongFromPlayList(playListName, videoId).collect {
+                addingSongListPlayListOperationPrivate.value = it
+
+            }
+        }
+    }
+
+    fun deleteSpecificPlayList(playListName: String) {
+        viewModelScope.launch {
+
+            playlistDatabaseRepository.deleteSpecificPlayList(playListName).collect {
+                addingSongListPlayListOperationPrivate.value = it
 
             }
         }

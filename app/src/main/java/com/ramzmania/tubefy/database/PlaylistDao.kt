@@ -6,6 +6,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import com.ramzmania.tubefy.data.dto.database.PlaylistNameWithUrl
 
 @Dao
 interface PlaylistDao {
@@ -90,4 +91,54 @@ interface PlaylistDao {
     // Get the entire active playlist
     @Query("SELECT * FROM ActivePlaylist")
     fun getActivePlaylist(): List<ActivePlaylist>
+
+
+    // FavoritePlaylist methods
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertFavorite(playlist: FavoritePlaylist)
+
+    @Query("DELETE FROM FavoritePlaylist WHERE videoId = :videoId")
+    suspend fun deleteFavorite(videoId: String):Int
+
+    @Query("SELECT * FROM FavoritePlaylist")
+    suspend fun getAllFavorites(): List<FavoritePlaylist>
+
+    @Query("SELECT COUNT(*) FROM FavoritePlaylist WHERE videoId = :videoId")
+    suspend fun isFavorite(videoId: String): Int
+
+    // CustomPlaylist methods
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertCustomPlaylistEntry(entry: CustomPlaylist)
+
+    // Check if a video ID exists in a specific playlist name
+    @Query("SELECT COUNT(*) FROM CustomPlaylist WHERE playlistName = :playlistName AND videoId = :videoId")
+    suspend fun isVideoIdPresentInPlaylist(playlistName: String, videoId: String): Int
+
+    // Insert only if the video ID is not present in the playlist
+    @Transaction
+    suspend fun insertCustomPlaylistEntryIfNotExists(entry: CustomPlaylist): Boolean {
+        val count = isVideoIdPresentInPlaylist(entry.playlistName, entry.videoId)
+        return if (count == 0) {
+            insertCustomPlaylistEntry(entry)
+            true
+        } else {
+            false
+        }
+    }
+
+    @Query("SELECT * FROM CustomPlaylist WHERE playlistName = :playlistName")
+    suspend fun getCustomPlaylistByName(playlistName: String): List<CustomPlaylist>
+
+    @Query("DELETE FROM CustomPlaylist WHERE playlistName = :playlistName AND videoId = :videoId")
+    suspend fun deleteCustomPlaylistEntry(playlistName: String, videoId: String):Int
+
+    @Query("SELECT DISTINCT playlistName FROM CustomPlaylist")
+    suspend fun getAllPlaylistNames(): List<String>
+
+    // Delete all entries with the same playlist name
+    @Query("DELETE FROM CustomPlaylist WHERE playlistName = :playlistName")
+    suspend fun deleteCustomPlaylistByName(playlistName: String):Int
+
+    @Query("SELECT DISTINCT playlistName, videoThump FROM CustomPlaylist")
+    suspend fun getAllPlaylistNamesWithUrls(): List<PlaylistNameWithUrl>
 }

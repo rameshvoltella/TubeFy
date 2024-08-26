@@ -14,10 +14,13 @@ import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.base.playlist.PlayListCategory
 import com.ramzmania.tubefy.data.dto.home.HomePageResponse
 import com.ramzmania.tubefy.data.dto.base.playlist.PlayListData
+import com.ramzmania.tubefy.data.dto.database.PlaylistNameWithUrl
 import com.ramzmania.tubefy.data.dto.home.youtubei.YoutubeiHomeBaseResponse
 import com.ramzmania.tubefy.data.dto.youtubestripper.ApiResponse
 import com.ramzmania.tubefy.data.observe
+import com.ramzmania.tubefy.database.CustomPlaylist
 import com.ramzmania.tubefy.database.DatabaseResponse
+import com.ramzmania.tubefy.database.FavoritePlaylist
 import com.ramzmania.tubefy.database.QuePlaylist
 import com.ramzmania.tubefy.databinding.KkBinding
 import com.ramzmania.tubefy.ui.base.BaseBinderActivity
@@ -56,6 +59,12 @@ private var nextPage: Page? = null
         observe(viewModel.addToActiveDatabase,::addActive)
 
 
+        observe(viewModel.isFavourite,::isFavourite)
+        observe(viewModel.addingSongListPlayListOperation,::addingSongListPlayListOperation)
+        observe(viewModel.gettingSongPlayListOperation,::gettingSongPlayListOperation)
+        observe(viewModel.gettingPrivatePlayList,::gettingPrivatePlayList)
+
+
     }
 
 
@@ -71,6 +80,7 @@ private var nextPage: Page? = null
                 QuePlaylist(videoId = "video_id_124", videoName = "Example Video 2", videoThumbnail = "http://example.com/thumbnail2.jpg")
             )
             viewModel.insertSongTOData(list)
+            viewModel.searchYoutubeV3()
 //            viewModel.loadPlayList("https://music.youtube.com/playlist?list=RDCLAK5uy_kmPRjHDECIcuVwnKsx2Ng7fyNgFKWNJFs")
 
         }
@@ -89,6 +99,89 @@ private var nextPage: Page? = null
         binding.next.setOnClickListener {
             viewModel.getActivePlayList()
 
+        }
+
+        binding.isfav.setOnClickListener { viewModel.isFavourite("favvidoid1") }
+
+        binding.addToFavorites.setOnClickListener {
+       /*     val favorite = FavoritePlaylist(
+            videoId = "favvidoid1",
+            videoThump = "https://example.com/video/abc123",
+            videoName = "Sample Video"
+        )
+            viewModel.addToFavorites(favorite)
+
+            val favorite2 = FavoritePlaylist(
+                videoId = "favvidoid2",
+                videoThump = "https://example.com/video/abc123",
+                videoName = "Sample Video"
+            )
+            viewModel.addToFavorites(favorite2)*/
+            val customPlaylistEntry2 = CustomPlaylist(
+                playlistName = "My Playlist002",
+                videoId = "sppppp2",
+                videoThump = "https://example.com/video/def456",
+                videoName = "Another Video"
+            )
+            viewModel.addToPlaylist(customPlaylistEntry2)
+
+        }
+
+        binding.getFavorites.setOnClickListener { viewModel.getFavorites() }
+
+        binding.removeFromFavorites.setOnClickListener { viewModel.removeFromFavorites("favvidoid2") }
+
+        binding.addToPlaylist.setOnClickListener {
+                    val customPlaylistEntry0 = CustomPlaylist(
+            playlistName = "My Playlist001",
+            videoId = "plalist 11111",
+            videoThump = "https://example.com/video/def456",
+            videoName = "Another Video"
+        )
+            viewModel.addToPlaylist(customPlaylistEntry0)
+
+            val customPlaylistEntry = CustomPlaylist(
+                playlistName = "My Playlist001",
+                videoId = "sppppp2",
+                videoThump = "https://example.com/video/def456",
+                videoName = "Another Video"
+            )
+            viewModel.addToPlaylist(customPlaylistEntry)
+            val customPlaylistEntry2 = CustomPlaylist(
+                playlistName = "My Playlist001",
+                videoId = "sppppp2",
+                videoThump = "https://example.com/video/def456",
+                videoName = "Another Video"
+            )
+            viewModel.addToPlaylist(customPlaylistEntry2)
+
+            val customPlaylistEntr3 = CustomPlaylist(
+                playlistName = "My Playlistww",
+                videoId = "plalist 1111333333",
+                videoThump = "https://example.com/video/def456",
+                videoName = "Another Video"
+            )
+            viewModel.addToPlaylist(customPlaylistEntr3)
+        }
+
+        binding.getSpecificPlayList.setOnClickListener {
+
+            viewModel.getSpecificPlayList("My Playlist001")
+
+            viewModel.getSpecificPlayList("My Playlist002")
+
+        }
+
+        binding.getAllSavedPlayList.setOnClickListener {
+            viewModel.getAllSavedPlayList()
+        }
+
+        binding.deleteSongFromPlayList.setOnClickListener {
+            viewModel.deleteSongFromPlayList("My Playlist","sppppp2")
+        }
+
+        binding.deleteSpecificPlayList.setOnClickListener {
+            viewModel.deleteSpecificPlayList("My Playlistww")
         }
     }
 
@@ -222,6 +315,90 @@ private var nextPage: Page? = null
         }
 
     }
+
+    private fun gettingPrivatePlayList(resource: Resource<List<PlaylistNameWithUrl>>) {
+        when (resource) {
+            is Resource.Loading -> {}
+            is Resource.Success -> {
+
+                Toast.makeText(applicationContext,"PlayList Names"+resource.data?.size,1).show()
+                Log.d("PODA","----------------------------")
+
+                for(kk in resource.data!!)
+                {
+                    Log.d("PODA<>","<>playlistName<>"+kk?.playlistName)
+                    Log.d("PODA<>","<>videoThump<>"+kk?.videoThump)
+                }
+                Log.d("PODA","----------ddddd------------------")
+            }
+
+            is Resource.DataError -> {
+                Toast.makeText(applicationContext,"ERROR",1).show()
+
+            }
+
+            else -> {}
+        }
+    }
+
+    private fun gettingSongPlayListOperation(resource: Resource<List<TubeFyCoreTypeData?>>) {
+        when (resource) {
+            is Resource.Loading -> {}
+            is Resource.Success -> {
+
+                Toast.makeText(applicationContext,"Data size db"+resource.data?.size,1).show()
+                Log.d("PODA","----------------------------")
+
+                for(kk in resource.data!!)
+                {
+                    Log.d("PODA","<>videoId<>"+kk?.videoId)
+                    Log.d("PODA","<>playListName<>"+kk?.playListName)
+                }
+                Log.d("PODA","----------ddddd------------------")
+
+            }
+
+            is Resource.DataError -> {
+                Toast.makeText(applicationContext,"ERROR",1).show()
+
+            }
+
+            else -> {}
+        }    }
+
+    private fun addingSongListPlayListOperation(resource: Resource<DatabaseResponse>) {
+        when (resource) {
+            is Resource.Loading -> {}
+            is Resource.Success -> {
+
+                Toast.makeText(applicationContext,"Added to db",1).show()
+
+            }
+
+            is Resource.DataError -> {
+                Toast.makeText(applicationContext,"ERROR",1).show()
+
+            }
+
+            else -> {}
+        }    }
+
+    private fun isFavourite(resource: Resource<Boolean>) {
+        when (resource) {
+            is Resource.Loading -> {}
+            is Resource.Success -> {
+
+                Toast.makeText(applicationContext,"IS FAVORITE>"+resource.data,1).show()
+
+            }
+
+            is Resource.DataError -> {
+                Toast.makeText(applicationContext,"ERROR",1).show()
+
+            }
+
+            else -> {}
+        }    }
 
     private fun addActive(resource: Resource<DatabaseResponse>) {
         when (resource) {
