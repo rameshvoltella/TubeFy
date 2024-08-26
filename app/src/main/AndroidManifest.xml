@@ -18,7 +18,7 @@
         android:name=".TubeFyApplication"
         android:theme="@style/Theme.TubeFy"
         tools:targetApi="31" >
-        <activity android:name=".ui.components.HomeActivity"
+        <activity android:name=".ui.Main"
             android:exported="true">
 
         <intent-filter>

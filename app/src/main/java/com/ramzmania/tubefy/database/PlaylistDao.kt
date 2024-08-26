@@ -95,7 +95,7 @@ interface PlaylistDao {
 
     // FavoritePlaylist methods
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertFavorite(playlist: FavoritePlaylist): Int
+    suspend fun insertFavorite(playlist: FavoritePlaylist)
 
     @Query("DELETE FROM FavoritePlaylist WHERE videoId = :videoId")
     suspend fun deleteFavorite(videoId: String):Int
@@ -108,7 +108,23 @@ interface PlaylistDao {
 
     // CustomPlaylist methods
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertCustomPlaylistEntry(entry: CustomPlaylist):Int
+    suspend fun insertCustomPlaylistEntry(entry: CustomPlaylist)
+
+    // Check if a video ID exists in a specific playlist name
+    @Query("SELECT COUNT(*) FROM CustomPlaylist WHERE playlistName = :playlistName AND videoId = :videoId")
+    suspend fun isVideoIdPresentInPlaylist(playlistName: String, videoId: String): Int
+
+    // Insert only if the video ID is not present in the playlist
+    @Transaction
+    suspend fun insertCustomPlaylistEntryIfNotExists(entry: CustomPlaylist): Boolean {
+        val count = isVideoIdPresentInPlaylist(entry.playlistName, entry.videoId)
+        return if (count == 0) {
+            insertCustomPlaylistEntry(entry)
+            true
+        } else {
+            false
+        }
+    }
 
     @Query("SELECT * FROM CustomPlaylist WHERE playlistName = :playlistName")
     suspend fun getCustomPlaylistByName(playlistName: String): List<CustomPlaylist>

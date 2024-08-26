@@ -104,7 +104,7 @@ private var nextPage: Page? = null
         binding.isfav.setOnClickListener { viewModel.isFavourite("favvidoid1") }
 
         binding.addToFavorites.setOnClickListener {
-            val favorite = FavoritePlaylist(
+       /*     val favorite = FavoritePlaylist(
             videoId = "favvidoid1",
             videoThump = "https://example.com/video/abc123",
             videoName = "Sample Video"
@@ -116,7 +116,14 @@ private var nextPage: Page? = null
                 videoThump = "https://example.com/video/abc123",
                 videoName = "Sample Video"
             )
-            viewModel.addToFavorites(favorite2)
+            viewModel.addToFavorites(favorite2)*/
+            val customPlaylistEntry2 = CustomPlaylist(
+                playlistName = "My Playlist002",
+                videoId = "sppppp2",
+                videoThump = "https://example.com/video/def456",
+                videoName = "Another Video"
+            )
+            viewModel.addToPlaylist(customPlaylistEntry2)
 
         }
 
@@ -126,7 +133,7 @@ private var nextPage: Page? = null
 
         binding.addToPlaylist.setOnClickListener {
                     val customPlaylistEntry0 = CustomPlaylist(
-            playlistName = "My Playlist",
+            playlistName = "My Playlist001",
             videoId = "plalist 11111",
             videoThump = "https://example.com/video/def456",
             videoName = "Another Video"
@@ -134,15 +141,15 @@ private var nextPage: Page? = null
             viewModel.addToPlaylist(customPlaylistEntry0)
 
             val customPlaylistEntry = CustomPlaylist(
-                playlistName = "My Playlist",
+                playlistName = "My Playlist001",
                 videoId = "sppppp2",
                 videoThump = "https://example.com/video/def456",
                 videoName = "Another Video"
             )
             viewModel.addToPlaylist(customPlaylistEntry)
             val customPlaylistEntry2 = CustomPlaylist(
-                playlistName = "My Playlistw",
-                videoId = "plalist 111112222",
+                playlistName = "My Playlist001",
+                videoId = "sppppp2",
                 videoThump = "https://example.com/video/def456",
                 videoName = "Another Video"
             )
@@ -159,7 +166,10 @@ private var nextPage: Page? = null
 
         binding.getSpecificPlayList.setOnClickListener {
 
-            viewModel.getSpecificPlayList("My Playlistww")
+            viewModel.getSpecificPlayList("My Playlist001")
+
+            viewModel.getSpecificPlayList("My Playlist002")
+
         }
 
         binding.getAllSavedPlayList.setOnClickListener {
@@ -167,7 +177,7 @@ private var nextPage: Page? = null
         }
 
         binding.deleteSongFromPlayList.setOnClickListener {
-            viewModel.deleteSongFromPlayList("sppppp2","My Playlist")
+            viewModel.deleteSongFromPlayList("My Playlist","sppppp2")
         }
 
         binding.deleteSpecificPlayList.setOnClickListener {

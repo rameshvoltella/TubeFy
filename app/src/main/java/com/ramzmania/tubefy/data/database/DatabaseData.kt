@@ -154,13 +154,13 @@ class DatabaseData @Inject constructor(
         val isFavorite = playlistDao.isFavorite(favoriteItem.videoId) > 0
 // Insert into the database
         return if (!isFavorite) {
-            val result = playlistDao.insertFavorite(favoriteItem)>0
-            if (result) {
+            playlistDao.insertFavorite(favoriteItem)
+//            if (result) {
                 Resource.Success(DatabaseResponse(200))
-            } else {
-                Resource.DataError(DATABASE_INSERTION_ERROR)
-
-            }
+//            } else {
+//                Resource.DataError(DATABASE_INSERTION_ERROR)
+//
+//            }
         }else
         {
             Resource.DataError(DATABASE_INSERTION_ERROR)
@@ -209,12 +209,9 @@ class DatabaseData @Inject constructor(
 //        )
 
 // Insert into the database
-       val result= playlistDao.insertCustomPlaylistEntry(customPlayListData)>0
-        return if (result) {
-            Resource.Success(DatabaseResponse(200))
-        } else {
-            Resource.DataError(DATABASE_INSERTION_ERROR)
-        }
+       playlistDao.insertCustomPlaylistEntryIfNotExists(customPlayListData)
+           return Resource.Success(DatabaseResponse(200))
+
     }
 
     override suspend fun getSpecificPlayList(playlistName:String): Resource<List<TubeFyCoreTypeData?>> {
