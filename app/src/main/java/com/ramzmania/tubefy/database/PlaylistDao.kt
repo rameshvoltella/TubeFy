@@ -95,10 +95,10 @@ interface PlaylistDao {
 
     // FavoritePlaylist methods
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertFavorite(playlist: FavoritePlaylist)
+    suspend fun insertFavorite(playlist: FavoritePlaylist): Int
 
     @Query("DELETE FROM FavoritePlaylist WHERE videoId = :videoId")
-    suspend fun deleteFavorite(videoId: String)
+    suspend fun deleteFavorite(videoId: String):Int
 
     @Query("SELECT * FROM FavoritePlaylist")
     suspend fun getAllFavorites(): List<FavoritePlaylist>
@@ -108,20 +108,20 @@ interface PlaylistDao {
 
     // CustomPlaylist methods
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertCustomPlaylistEntry(entry: CustomPlaylist)
+    suspend fun insertCustomPlaylistEntry(entry: CustomPlaylist):Int
 
     @Query("SELECT * FROM CustomPlaylist WHERE playlistName = :playlistName")
     suspend fun getCustomPlaylistByName(playlistName: String): List<CustomPlaylist>
 
     @Query("DELETE FROM CustomPlaylist WHERE playlistName = :playlistName AND videoId = :videoId")
-    suspend fun deleteCustomPlaylistEntry(playlistName: String, videoId: String)
+    suspend fun deleteCustomPlaylistEntry(playlistName: String, videoId: String):Int
 
     @Query("SELECT DISTINCT playlistName FROM CustomPlaylist")
     suspend fun getAllPlaylistNames(): List<String>
 
     // Delete all entries with the same playlist name
     @Query("DELETE FROM CustomPlaylist WHERE playlistName = :playlistName")
-    suspend fun deleteCustomPlaylistByName(playlistName: String)
+    suspend fun deleteCustomPlaylistByName(playlistName: String):Int
 
     @Query("SELECT DISTINCT playlistName, videoThump FROM CustomPlaylist")
     suspend fun getAllPlaylistNamesWithUrls(): List<PlaylistNameWithUrl>

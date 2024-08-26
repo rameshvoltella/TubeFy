@@ -81,7 +81,7 @@ fun PlayerBaseView(
     var videoUrl by remember { mutableStateOf("") }
     var showVideoPlayer by remember { mutableStateOf(false) }
 
-    var mediaUri = ""
+
     val navBackStackEntry = navController.currentBackStackEntry
 
 
@@ -443,7 +443,9 @@ fun PlayerBaseView(
                     painter = painterResource(id = R.drawable.ic_fav),
                     contentDescription = "Previous",
                     modifier = Modifier
-                        .size(30.dp)
+                        .size(30.dp).clickable {
+
+                        }
 
                 )
             }

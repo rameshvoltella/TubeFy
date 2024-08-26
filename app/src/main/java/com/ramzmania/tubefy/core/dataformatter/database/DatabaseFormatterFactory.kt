@@ -3,6 +3,8 @@ package com.ramzmania.tubefy.core.dataformatter.database
 import com.ramzmania.tubefy.data.dto.base.playlist.PlayListData
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
 import com.ramzmania.tubefy.database.ActivePlaylist
+import com.ramzmania.tubefy.database.CustomPlaylist
+import com.ramzmania.tubefy.database.FavoritePlaylist
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -15,6 +17,14 @@ class DatabaseFormatterFactory @Inject constructor() {
     }
 
     fun formatTubeFyPlayList(): DatabaseFormatter< List<ActivePlaylist>,List<TubeFyCoreTypeData?>,TubeFyCoreTypeData> {
+        return DatabaseFormatter(TubeFyCoreTypeData::class)
+    }
+
+    fun formatTubeFyCustomPlayList(): DatabaseFormatter< List<CustomPlaylist>,List<TubeFyCoreTypeData?>,TubeFyCoreTypeData> {
+        return DatabaseFormatter(TubeFyCoreTypeData::class)
+    }
+
+    fun formatTubeFyFavouritePlayList(): DatabaseFormatter< List<FavoritePlaylist>,List<TubeFyCoreTypeData?>,TubeFyCoreTypeData> {
         return DatabaseFormatter(TubeFyCoreTypeData::class)
     }
 
