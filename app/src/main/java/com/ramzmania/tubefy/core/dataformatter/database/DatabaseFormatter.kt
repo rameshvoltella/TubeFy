@@ -43,7 +43,7 @@ class DatabaseFormatter<InputType, OutputType,ListType : PlaylistItem> @Inject c
                                 Log.d("operationio","<><><>ACTIVE PL<><>")
                                 listData.add(
                                     FavoritePlaylist(
-                                        videoUrl = dataValue.videoImage,
+                                        videoThump = dataValue.videoImage,
                                         videoId = dataValue.videoId,
                                         videoName = dataValue.videoTitle
                                     )as ListType
@@ -53,9 +53,10 @@ class DatabaseFormatter<InputType, OutputType,ListType : PlaylistItem> @Inject c
                                 Log.d("operationio","<><><>ACTIVE PL<><>")
                                 listData.add(
                                     CustomPlaylist(
-                                        videoUrl = dataValue.videoImage,
+                                        videoThump = dataValue.videoImage,
                                         videoId = dataValue.videoId,
-                                        videoName = dataValue.videoTitle
+                                        videoName = dataValue.videoTitle,
+                                        playlistName = dataValue.playListName
                                     )as ListType
                                 )
                             }
@@ -75,9 +76,10 @@ class DatabaseFormatter<InputType, OutputType,ListType : PlaylistItem> @Inject c
                         is FavoritePlaylist->{
                             listData.add(
                                 TubeFyCoreTypeData(
-                                    videoImage = dataValue.videoUrl,
+                                    videoImage = dataValue.videoThump,
                                     videoId = dataValue.videoId,
-                                    videoTitle = dataValue.videoName
+                                    videoTitle = dataValue.videoName,
+                                    playListName = "TubeFy-Fav"
                                 )as ListType
                             )
                         }
@@ -85,9 +87,10 @@ class DatabaseFormatter<InputType, OutputType,ListType : PlaylistItem> @Inject c
                         is CustomPlaylist->{
                             listData.add(
                                 TubeFyCoreTypeData(
-                                    videoImage = dataValue.videoUrl,
+                                    videoImage = dataValue.videoThump,
                                     videoId = dataValue.videoId,
-                                    videoTitle = dataValue.videoName
+                                    videoTitle = dataValue.videoName,
+                                    playListName = dataValue.playlistName
                                 )as ListType
                             )
 

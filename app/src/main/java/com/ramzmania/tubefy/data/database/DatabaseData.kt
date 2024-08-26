@@ -145,7 +145,7 @@ class DatabaseData @Inject constructor(private val playlistDao: PlaylistDao,priv
         val isFavorite = playlistDao.isFavorite("abc123")>0
         val favorite = FavoritePlaylist(
             videoId = "abc123",
-            videoUrl = "https://example.com/video/abc123",
+            videoThump = "https://example.com/video/abc123",
             videoName = "Sample Video"
         )
 
@@ -171,7 +171,7 @@ class DatabaseData @Inject constructor(private val playlistDao: PlaylistDao,priv
         val customPlaylistEntry = CustomPlaylist(
             playlistName = "My Playlist",
             videoId = "def456",
-            videoUrl = "https://example.com/video/def456",
+            videoThump = "https://example.com/video/def456",
             videoName = "Another Video"
         )
 
