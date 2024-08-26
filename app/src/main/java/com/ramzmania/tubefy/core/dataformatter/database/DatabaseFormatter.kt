@@ -1,5 +1,6 @@
 package com.ramzmania.tubefy.core.dataformatter.database
 
+import android.util.Log
 import com.ramzmania.tubefy.core.dataformatter.FormattingResult
 import com.ramzmania.tubefy.core.dataformatter.UniversalYoutubeDataFormatter
 import com.ramzmania.tubefy.data.dto.base.PlaylistItem
@@ -29,9 +30,30 @@ class DatabaseFormatter<InputType, OutputType,ListType : PlaylistItem> @Inject c
 
                             if (listTypeClass == ActivePlaylist::class)
                             {
+                                Log.d("operationio","<><><>ACTIVE PL<><>")
                                 listData.add(
                                     ActivePlaylist(
                                         videoThumbnail = dataValue.videoImage,
+                                        videoId = dataValue.videoId,
+                                        videoName = dataValue.videoTitle
+                                    )as ListType
+                                )
+                            }else if (listTypeClass == FavoritePlaylist::class)
+                            {
+                                Log.d("operationio","<><><>ACTIVE PL<><>")
+                                listData.add(
+                                    FavoritePlaylist(
+                                        videoUrl = dataValue.videoImage,
+                                        videoId = dataValue.videoId,
+                                        videoName = dataValue.videoTitle
+                                    )as ListType
+                                )
+                            }else if (listTypeClass == CustomPlaylist::class)
+                            {
+                                Log.d("operationio","<><><>ACTIVE PL<><>")
+                                listData.add(
+                                    CustomPlaylist(
+                                        videoUrl = dataValue.videoImage,
                                         videoId = dataValue.videoId,
                                         videoName = dataValue.videoTitle
                                     )as ListType
@@ -40,6 +62,8 @@ class DatabaseFormatter<InputType, OutputType,ListType : PlaylistItem> @Inject c
 
                         }
                         is ActivePlaylist -> {
+                            Log.d("operationio","<><><>TubeFyCoreTypeData PL<><>")
+
                             listData.add(
                                 TubeFyCoreTypeData(
                                     videoImage = dataValue.videoThumbnail,
@@ -49,10 +73,23 @@ class DatabaseFormatter<InputType, OutputType,ListType : PlaylistItem> @Inject c
                             )
                         }
                         is FavoritePlaylist->{
-
+                            listData.add(
+                                TubeFyCoreTypeData(
+                                    videoImage = dataValue.videoUrl,
+                                    videoId = dataValue.videoId,
+                                    videoTitle = dataValue.videoName
+                                )as ListType
+                            )
                         }
 
                         is CustomPlaylist->{
+                            listData.add(
+                                TubeFyCoreTypeData(
+                                    videoImage = dataValue.videoUrl,
+                                    videoId = dataValue.videoId,
+                                    videoTitle = dataValue.videoName
+                                )as ListType
+                            )
 
                         }
                         else -> {
