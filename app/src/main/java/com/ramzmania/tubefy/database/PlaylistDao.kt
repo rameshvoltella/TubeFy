@@ -123,6 +123,6 @@ interface PlaylistDao {
     @Query("DELETE FROM CustomPlaylist WHERE playlistName = :playlistName")
     suspend fun deleteCustomPlaylistByName(playlistName: String)
 
-    @Query("SELECT DISTINCT playlistName, videoUrl FROM CustomPlaylist")
+    @Query("SELECT DISTINCT playlistName, videoThumbnail FROM CustomPlaylist")
     suspend fun getAllPlaylistNamesWithUrls(): List<PlaylistNameWithUrl>
 }

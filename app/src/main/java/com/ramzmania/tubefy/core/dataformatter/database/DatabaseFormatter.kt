@@ -43,7 +43,7 @@ class DatabaseFormatter<InputType, OutputType,ListType : PlaylistItem> @Inject c
                                 Log.d("operationio","<><><>ACTIVE PL<><>")
                                 listData.add(
                                     FavoritePlaylist(
-                                        videoUrl = dataValue.videoImage,
+                                        videoThumbnail = dataValue.videoImage,
                                         videoId = dataValue.videoId,
                                         videoName = dataValue.videoTitle
                                     )as ListType
@@ -53,7 +53,7 @@ class DatabaseFormatter<InputType, OutputType,ListType : PlaylistItem> @Inject c
                                 Log.d("operationio","<><><>ACTIVE PL<><>")
                                 listData.add(
                                     CustomPlaylist(
-                                        videoUrl = dataValue.videoImage,
+                                        videoThumbnail = dataValue.videoImage,
                                         videoId = dataValue.videoId,
                                         videoName = dataValue.videoTitle
                                     )as ListType
@@ -75,7 +75,7 @@ class DatabaseFormatter<InputType, OutputType,ListType : PlaylistItem> @Inject c
                         is FavoritePlaylist->{
                             listData.add(
                                 TubeFyCoreTypeData(
-                                    videoImage = dataValue.videoUrl,
+                                    videoImage = dataValue.videoThumbnail,
                                     videoId = dataValue.videoId,
                                     videoTitle = dataValue.videoName
                                 )as ListType
@@ -85,7 +85,7 @@ class DatabaseFormatter<InputType, OutputType,ListType : PlaylistItem> @Inject c
                         is CustomPlaylist->{
                             listData.add(
                                 TubeFyCoreTypeData(
-                                    videoImage = dataValue.videoUrl,
+                                    videoImage = dataValue.videoThumbnail,
                                     videoId = dataValue.videoId,
                                     videoTitle = dataValue.videoName
                                 )as ListType

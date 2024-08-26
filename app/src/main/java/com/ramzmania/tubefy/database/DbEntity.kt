@@ -25,7 +25,7 @@ data class QuePlaylist(
 data class FavoritePlaylist(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val videoId: String,
-    val videoUrl: String,
+    val videoThumbnail: String,
     val videoName: String
 )
 
@@ -34,6 +34,6 @@ data class CustomPlaylist(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val playlistName: String,
     val videoId: String,
-    val videoUrl: String,
+    val videoThumbnail: String,
     val videoName: String
 )
