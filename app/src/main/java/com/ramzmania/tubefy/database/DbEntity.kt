@@ -2,6 +2,7 @@ package com.ramzmania.tubefy.database
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.ramzmania.tubefy.data.dto.base.PlaylistItem
 
 
 @Entity
@@ -10,7 +11,7 @@ data class ActivePlaylist(
     val videoId: String,
     val videoName: String,
     val videoThumbnail: String
-)
+): PlaylistItem
 
 @Entity
 data class QuePlaylist(

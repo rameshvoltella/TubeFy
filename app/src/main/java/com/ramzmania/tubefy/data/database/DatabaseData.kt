@@ -203,4 +203,11 @@ class DatabaseData @Inject constructor(private val playlistDao: PlaylistDao,priv
     {
         playlistDao.deleteCustomPlaylistByName("My Playlist")
     }
+
+
+    suspend fun isFavourite()
+    {
+        val isFavorite = playlistDao.isFavorite("abc123")>0
+
+    }
 }

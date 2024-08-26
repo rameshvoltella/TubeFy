@@ -10,12 +10,12 @@ import javax.inject.Singleton
 class DatabaseFormatterFactory @Inject constructor() {
 
     // Example method for formatting a list of TubeFyCoreTypeData to a list of ActivePlaylist
-    fun formatActivePlayList(): DatabaseFormatter<List<TubeFyCoreTypeData?>, List<ActivePlaylist>> {
-        return DatabaseFormatter()
+    fun formatActivePlayList(): DatabaseFormatter<List<TubeFyCoreTypeData?>, List<ActivePlaylist>,ActivePlaylist> {
+        return DatabaseFormatter(ActivePlaylist::class)
     }
 
-    fun formatTubeFyPlayList(): DatabaseFormatter< List<ActivePlaylist>,List<TubeFyCoreTypeData?>> {
-        return DatabaseFormatter()
+    fun formatTubeFyPlayList(): DatabaseFormatter< List<ActivePlaylist>,List<TubeFyCoreTypeData?>,TubeFyCoreTypeData> {
+        return DatabaseFormatter(TubeFyCoreTypeData::class)
     }
 
     // Add more methods for different input/output types if needed
