@@ -6,6 +6,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
+import com.ramzmania.tubefy.core.YoutubeCoreConstant
 import com.ramzmania.tubefy.core.YoutubeCoreConstant.extractYoutubeVideoId
 import com.ramzmania.tubefy.data.dto.base.searchformat.StreamUrlData
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreUniversalData
@@ -149,6 +150,8 @@ class TubeFyViewModel @Inject constructor(
     private val getAllActiveListPrivate = MutableLiveData<Resource<List<TubeFyCoreTypeData?>>>()
     val getAllActiveList: LiveData<Resource<List<TubeFyCoreTypeData?>>> get() = getAllActiveListPrivate
 ///////////////////////////////////////////////////
+    private val isFavouriteSongMutableStatePrivate = MutableStateFlow(false)
+    val isFavouriteState = isFavouriteSongMutableStatePrivate.asStateFlow()
 
     private val isFavouritePrivate = MutableLiveData<Resource<Boolean>>()
     val isFavourite: LiveData<Resource<Boolean>> get() = isFavouritePrivate
@@ -609,8 +612,11 @@ class TubeFyViewModel @Inject constructor(
     fun isFavourite(videoId: String) {
         viewModelScope.launch {
 
-            playlistDatabaseRepository.isFavourite(videoId).collect {
+            playlistDatabaseRepository.isFavourite(YoutubeCoreConstant.extractYoutubeVideoId(videoId)!!).collect {
                 isFavouritePrivate.value = it
+//                Log.d("y?oyoy","yoyoy>>>"+it.data!!)
+//                if(it ==Resource.Success)
+                isFavouriteSongMutableStatePrivate.value=it.data!!
 
             }
         }
@@ -621,7 +627,7 @@ class TubeFyViewModel @Inject constructor(
 
             playlistDatabaseRepository.addToFavorites(favorite).collect {
                 addingSongListPlayListOperationPrivate.value = it
-
+                isFavourite(favorite.videoId)
             }
         }
     }
@@ -641,7 +647,7 @@ class TubeFyViewModel @Inject constructor(
 
             playlistDatabaseRepository.removeFromFavorites(videoId).collect {
                 addingSongListPlayListOperationPrivate.value = it
-
+                isFavourite(videoId)
             }
         }
     }

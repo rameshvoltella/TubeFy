@@ -1,6 +1,7 @@
 package com.ramzmania.tubefy.data.database
 
 import android.util.Log
+import com.ramzmania.tubefy.core.YoutubeCoreConstant
 import com.ramzmania.tubefy.core.dataformatter.FormattingResult
 import com.ramzmania.tubefy.core.dataformatter.database.DatabaseFormatterFactory
 import com.ramzmania.tubefy.data.Resource
@@ -140,7 +141,8 @@ class DatabaseData @Inject constructor(
     }
 
     override suspend fun isFavourite(videoId: String): Resource<Boolean> {
-        val isFavorite = playlistDao.isFavorite(videoId) > 0
+        val isFavorite = playlistDao.isFavorite(YoutubeCoreConstant.extractYoutubeVideoId(videoId)!!) > 0
+        Log.d("ISFAVE CAL",videoId+"yoyoy"+isFavorite)
         return Resource.Success(isFavorite)
 
     }
@@ -151,10 +153,17 @@ class DatabaseData @Inject constructor(
 //            videoThump = "https://example.com/video/abc123",
 //            videoName = "Sample Video"
 //        )
-        val isFavorite = playlistDao.isFavorite(favoriteItem.videoId) > 0
+        val isFavorite = playlistDao.isFavorite(YoutubeCoreConstant.extractYoutubeVideoId(favoriteItem.videoId)!!) > 0
+
+Log.d("fadak","isfav"+isFavorite)
+//
+//
 // Insert into the database
         return if (!isFavorite) {
+            Log.d("fadak","inserting"+favoriteItem.videoId+"<>"+favoriteItem.videoThump+"<>"+favoriteItem.videoName)
+
             playlistDao.insertFavorite(favoriteItem)
+//            isFavourite(YoutubeCoreConstant.extractYoutubeVideoId(favoriteItem.videoId)!!)
 //            if (result) {
                 Resource.Success(DatabaseResponse(200))
 //            } else {
@@ -191,9 +200,10 @@ class DatabaseData @Inject constructor(
     }
 
     override suspend fun removeFromFavorites(videoId:String): Resource<DatabaseResponse> {
-        val result=playlistDao.deleteFavorite(videoId)>0
+        val result=playlistDao.deleteFavorite(YoutubeCoreConstant.extractYoutubeVideoId(videoId)!!)>0
        return if (result) {
-            Resource.Success(DatabaseResponse(200))
+//           isFavourite(videoId)
+           Resource.Success(DatabaseResponse(200))
         } else {
             Resource.DataError(DATABASE_INSERTION_ERROR)
         }

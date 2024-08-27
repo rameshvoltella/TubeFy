@@ -4,6 +4,7 @@ import VideoPlayerView
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -29,6 +30,7 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,6 +56,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.ramzmania.tubefy.R
 import com.ramzmania.tubefy.core.YoutubeCoreConstant
+import com.ramzmania.tubefy.database.FavoritePlaylist
 import com.ramzmania.tubefy.player.PlaybackService
 import com.ramzmania.tubefy.utils.LocalNavController
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
@@ -62,7 +65,7 @@ import java.nio.charset.StandardCharsets
 
 @kotlin.OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun PlayerBaseView(
+fun PlayerBaseView(viewModel: TubeFyViewModel= hiltViewModel()
 ) {
     var isLoading by remember { mutableStateOf(true) }  // Track loading state
     var mediaController by remember { mutableStateOf<MediaController?>(null) }
@@ -81,7 +84,7 @@ fun PlayerBaseView(
     var videoUrl by remember { mutableStateOf("") }
     var showVideoPlayer by remember { mutableStateOf(false) }
 
-
+    var isFavouriteSong =viewModel.isFavouriteState.collectAsState()
     val navBackStackEntry = navController.currentBackStackEntry
 
 
@@ -113,6 +116,8 @@ fun PlayerBaseView(
             navBackStackEntry?.arguments?.getString("playerBottomSub"),
             StandardCharsets.UTF_8.toString()
         )
+
+        viewModel.isFavourite(YoutubeCoreConstant.extractYoutubeVideoId(videoId)!!)
 
 
     }
@@ -440,10 +445,19 @@ fun PlayerBaseView(
                     )
                 }
                 Image(
-                    painter = painterResource(id = R.drawable.ic_fav),
+                    painter = painterResource(id = if (isFavouriteSong.value==true) R.drawable.ic_unfav else R.drawable.ic_fav),
                     contentDescription = "Previous",
                     modifier = Modifier
                         .size(30.dp).clickable {
+                            Toast.makeText(context,"dldldld"+isFavouriteSong.value,1).show()
+                            if(isFavouriteSong.value)
+                            {
+                                viewModel.removeFromFavorites(YoutubeCoreConstant.extractYoutubeVideoId(videoId)!!)
+                            }else
+                            {
+                                viewModel.addToFavorites(FavoritePlaylist(videoId=YoutubeCoreConstant.extractYoutubeVideoId(videoId)!!, videoThump = albumArt, videoName = playerHeader) )
+
+                            }
 
                         }
 
