@@ -44,6 +44,7 @@ fun MediaControllerComposable(
 
                                     override fun onTracksChanged(tracks: Tracks) {
                                         super.onTracksChanged(tracks)
+
                                     }
 
                                     override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {

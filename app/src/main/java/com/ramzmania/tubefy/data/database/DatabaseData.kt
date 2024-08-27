@@ -249,8 +249,13 @@ Log.d("fadak","isfav"+isFavorite)
 
 
     override suspend fun getAllSavedPlayList(): Resource<List<PlaylistNameWithUrl>> {
-        val allSavedPlayList: List<PlaylistNameWithUrl> =
-            playlistDao.getAllPlaylistNamesWithUrls()
+        val allSavedPlayList: MutableList<PlaylistNameWithUrl> =
+            playlistDao.getAllPlaylistNamesWithUrls().toMutableList()
+
+        if(getFavorites().data!=null&&getFavorites().data?.size!!>0)
+        {
+            allSavedPlayList.add(0,PlaylistNameWithUrl("TubeFy-Favorites","Favorites"))
+        }
 
         return if(allSavedPlayList.isNotEmpty())
         {

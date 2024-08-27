@@ -203,6 +203,7 @@ fun PlayerBaseView(viewModel: TubeFyViewModel= hiltViewModel()
             if (it != null) {
                 albumArt =
                     it.artworkUri?.toString()!!
+                videoId=mediaController?.currentMediaItem?.mediaId!!
 
                 playerHeader = it.title.toString()
 

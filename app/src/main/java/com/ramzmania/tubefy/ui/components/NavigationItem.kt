@@ -18,4 +18,8 @@ sealed class NavigationItem(var route: String, var icon: Int, var title: String)
     data object CategoryPlayList : NavigationItem("categoryPlayList/{browserId}/{playerListId}/{categoryName}", R.drawable.ic_profile, "CategoryPlayList") {
         fun createRoute(browserId: String, playerListId: String,categoryName:String) = "categoryPlayList/$browserId/$playerListId/$categoryName"
     }
+
+    data object MyPlayList : NavigationItem("myPlayList/{playerListImage}/{playerListName}", R.drawable.ic_profile, "CategoryPlayList") {
+        fun createRoute(playerListImage: String, playerListName: String) = "myPlayList/$playerListImage/$playerListName"
+    }
 }

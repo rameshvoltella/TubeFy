@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
@@ -45,8 +44,11 @@ import coil.request.ImageRequest
 import com.ramzmania.tubefy.R
 import com.ramzmania.tubefy.core.YoutubeCoreConstant
 import com.ramzmania.tubefy.data.Resource
+import com.ramzmania.tubefy.data.dto.base.PlaylistItem
+import com.ramzmania.tubefy.data.dto.base.playlist.PlayListCategory
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
 import com.ramzmania.tubefy.data.dto.database.PlaylistNameWithUrl
+import com.ramzmania.tubefy.database.CustomPlaylist
 import com.ramzmania.tubefy.ui.components.NavigationItem
 import com.ramzmania.tubefy.utils.LocalNavController
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
@@ -55,19 +57,16 @@ import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
 @Composable
-fun LibraryDetailPage(viewModel: TubeFyViewModel = hiltViewModel()) {
+fun MyLibraryPage(viewModel: TubeFyViewModel = hiltViewModel()) {
     var doLoadData by remember { mutableStateOf(true) }  // Track loading state
-    val gettingPlayListSongs by viewModel.gettingSongPlayListOperation.observeAsState()
-    var playListItems by rememberSaveable { mutableStateOf<List<TubeFyCoreTypeData?>>(emptyList()) }
-    val navController = LocalNavController.current
-    val navBackStackEntry = navController.currentBackStackEntry
-    var plaListName by remember { mutableStateOf("Songs") }  // Track loading state
+    val gettingMyPlayList by viewModel.gettingPrivatePlayList.observeAsState()
+    var playListItems by rememberSaveable { mutableStateOf<List<PlaylistNameWithUrl?>>(emptyList()) }
 
-    LaunchedEffect(key1 = gettingPlayListSongs) {
-        if (gettingPlayListSongs is Resource.Success) {
+    LaunchedEffect(key1 = gettingMyPlayList) {
+        if (gettingMyPlayList is Resource.Success) {
             doLoadData = false
-            if (gettingPlayListSongs?.data != null && gettingPlayListSongs?.data!!.isNotEmpty()) {
-                playListItems = gettingPlayListSongs?.data!!
+            if (gettingMyPlayList?.data != null && gettingMyPlayList?.data!!.isNotEmpty()) {
+                playListItems = gettingMyPlayList?.data!!
             }
 
         }
@@ -76,12 +75,7 @@ fun LibraryDetailPage(viewModel: TubeFyViewModel = hiltViewModel()) {
 
     LaunchedEffect(key1 = Unit) {
         if (doLoadData) {
-            plaListName = navBackStackEntry?.arguments?.getString("playerListName")!!
-            if (plaListName == "TubeFy-Favorites") {
-                viewModel.getFavorites()
-            }
-
-
+            viewModel.getAllSavedPlayList()
         }
 
     }
@@ -91,7 +85,10 @@ fun LibraryDetailPage(viewModel: TubeFyViewModel = hiltViewModel()) {
             .background(colorResource(id = R.color.colorPrimary))
     ) {
         Text(
-            text = if (plaListName == "TubeFy-Favorites") "Favorites" else plaListName,
+            text = URLDecoder.decode(
+                "Saved library",
+                StandardCharsets.UTF_8.toString()
+            ),
             fontWeight = FontWeight.Bold,
             color = Color.White,
             modifier = Modifier.padding(10.dp, 30.dp, 10.dp, 10.dp),
@@ -100,7 +97,7 @@ fun LibraryDetailPage(viewModel: TubeFyViewModel = hiltViewModel()) {
             fontSize = 40.sp
         )
         if (playListItems != null && playListItems.isNotEmpty()) {
-            LibraryListBaseView(playListItems)
+            LibraryHomeView(playListItems)
         }
 
     }
@@ -108,43 +105,33 @@ fun LibraryDetailPage(viewModel: TubeFyViewModel = hiltViewModel()) {
 }
 
 @Composable
-fun LibraryListBaseView(
-    playListItems: List<TubeFyCoreTypeData?>,
-    viewModel: TubeFyViewModel = hiltViewModel()
-) {
-    val newNav = LocalNavController.current
-    val gettingActivePlayList by viewModel.addToActiveDatabase.observeAsState()
-    var doLoadData by remember { mutableStateOf(false) }  // Track loading state
-    LaunchedEffect(key1 = gettingActivePlayList) {
-        if (gettingActivePlayList is Resource.Success) {
+fun LibraryHomeView(tracks: List<PlaylistNameWithUrl?>) {
+    val navController = LocalNavController.current
 
-            if (doLoadData) {
-                doLoadData=false
-                if (playListItems.isNotEmpty()) {
-                    doLoadData=true
-                    viewModel.setActiveSongsList(playListItems)
-                    val encodedVideoThumpUrl = URLEncoder.encode(
-                        YoutubeCoreConstant.decodeThumpUrl(playListItems.get(0)!!.videoImage),
-                        StandardCharsets.UTF_8.toString()
-                    )
-                    val encodedVideoId =
-                        URLEncoder.encode(
-                            playListItems.get(0)!!.videoId,
-                            StandardCharsets.UTF_8.toString()
-                        )
-                    val videoTitle =
-                        URLEncoder.encode(
-                            playListItems.get(0)!!.videoTitle,
-                            StandardCharsets.UTF_8.toString()
-                        )
-//                LocalNavController.current
-                    newNav!!.navigate(
-                        NavigationItem.AudioPlayer.createRoute(
-                            encodedVideoId,
-                            encodedVideoThumpUrl, videoTitle, videoTitle, videoTitle, true
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(top = 10.dp)
+            .background(colorResource(id = R.color.colorPrimary))
+    ) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(bottom = 16.dp) // Padding for the whole LazyColumn
+        ) {
+
+            items(tracks!!) { track ->
+                LibraryHomeItem(playListItem = track!!) { selectedItem ->
+                    navController!!.navigate(
+                        NavigationItem.MyPlayList.createRoute(
+
+                            URLEncoder.encode(
+                                YoutubeCoreConstant.decodeThumpUrl(selectedItem.videoThump!!),
+                                StandardCharsets.UTF_8.toString()
+                            ), selectedItem.playlistName!!
                         )
                     ) {
-                        newNav.graph.route?.let { route ->
+                        navController.graph.route?.let { route ->
                             popUpTo(route) {
                                 saveState = true
                             }
@@ -152,39 +139,6 @@ fun LibraryListBaseView(
                         launchSingleTop = true
                         restoreState = true
                     }
-                }
-            }
-        }
-    }
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(colorResource(id = R.color.colorPrimary))
-    ) {
-
-        Button(
-            onClick = {
-
-                if (playListItems.isNotEmpty()) {
-                    doLoadData=true
-                    viewModel.setActiveSongsList(playListItems)
-
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 10.dp),
-
-            ) { Text(text = "Play All") }
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(bottom = 16.dp) // Padding for the whole LazyColumn
-        ) {
-
-            if (playListItems != null) {
-                items(playListItems!!) { playListItems ->
-                    LibraryItem(trackName = playListItems!!)
                 }
             }
             item {
@@ -197,7 +151,7 @@ fun LibraryListBaseView(
 }
 
 @Composable
-fun LibraryItem(trackName: TubeFyCoreTypeData) {
+fun LibraryHomeItem(playListItem: PlaylistNameWithUrl, onClick: (PlaylistNameWithUrl) -> Unit) {
 
     Column(
         modifier = Modifier
@@ -210,7 +164,8 @@ fun LibraryItem(trackName: TubeFyCoreTypeData) {
         Card(
             modifier = Modifier
 //                .padding(8.dp)
-                .fillMaxWidth(),
+                .fillMaxWidth()
+                .clickable { onClick(playListItem!!) },
             elevation = CardDefaults.cardElevation(4.dp), // Use CardDefaults.cardElevation for elevation
             colors = CardDefaults.cardColors(containerColor = Color.DarkGray), // Set background color
             shape = RoundedCornerShape(8.dp) // Adjust the corner radius for a rounded effect
@@ -221,7 +176,7 @@ fun LibraryItem(trackName: TubeFyCoreTypeData) {
                     .fillMaxWidth()
             ) {
 
-                trackName.videoImage?.let { thumbnailUrl ->
+                playListItem.videoThump?.let { thumbnailUrl ->
                     AsyncImage(
                         model = ImageRequest.Builder(LocalContext.current)
                             .data(YoutubeCoreConstant.decodeThumpUrl(thumbnailUrl))
@@ -251,7 +206,7 @@ fun LibraryItem(trackName: TubeFyCoreTypeData) {
                 // Spacer to push the text and right image apart
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = trackName.videoTitle!!,
+                    text = if (playListItem.playlistName!! == "TubeFy-Favorites") "Favorite" else playListItem.playlistName!!,
                     fontWeight = FontWeight.Thin,
                     color = Color.White,
                     modifier = Modifier
@@ -284,6 +239,13 @@ fun LibraryItem(trackName: TubeFyCoreTypeData) {
 
 @Preview(showBackground = true)
 @Composable
-fun preview() {
-//    LibraryListBaseViewiew(listOf(TubeFyCoreTypeData("sndfhiew","sdjfvjdnfv","https://www.jjj.com")))
+fun previews() {
+    LibraryHomeView(
+        listOf(
+            PlaylistNameWithUrl(
+                playlistName = "sndfhiew",
+                videoThump = "https://www.jjj.com",
+            )
+        )
+    )
 }

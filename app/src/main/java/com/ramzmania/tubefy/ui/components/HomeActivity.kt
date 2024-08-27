@@ -50,6 +50,8 @@ import com.ramzmania.tubefy.ui.components.screen.home.HomeInitialScreen
 import com.ramzmania.tubefy.ui.components.screen.ProfileScreen
 import com.ramzmania.tubefy.ui.components.screen.album.AlbumScreen
 import com.ramzmania.tubefy.ui.components.screen.category.CategoryPlaylistView
+import com.ramzmania.tubefy.ui.components.screen.library.LibraryDetailPage
+import com.ramzmania.tubefy.ui.components.screen.library.MyLibraryPage
 import com.ramzmania.tubefy.ui.components.screen.player.PlayerBaseView
 import com.ramzmania.tubefy.ui.components.screen.search.AudioSearchScreen
 import com.ramzmania.tubefy.utils.LocalNavController
@@ -205,7 +207,7 @@ fun Navigation(navController: NavHostController) {
         }
 
         composable(NavigationItem.Books.route) {
-            BooksScreen()
+            MyLibraryPage()
         }
         composable(NavigationItem.Profile.route) {
             ProfileScreen()
@@ -215,6 +217,9 @@ fun Navigation(navController: NavHostController) {
         }
         composable(NavigationItem.AudioPlayer.route) { backStackEntry ->
             PlayerBaseView()
+        }
+        composable(NavigationItem.MyPlayList.route) { backStackEntry ->
+            LibraryDetailPage()
         }
         composable(NavigationItem.CategoryPlayList.route) { backStackEntry ->
             CategoryPlaylistView()
