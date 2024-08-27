@@ -58,6 +58,7 @@ import com.ramzmania.tubefy.R
 import com.ramzmania.tubefy.core.YoutubeCoreConstant
 import com.ramzmania.tubefy.database.FavoritePlaylist
 import com.ramzmania.tubefy.player.PlaybackService
+import com.ramzmania.tubefy.ui.components.screen.library.PlayListDialogViewer
 import com.ramzmania.tubefy.utils.LocalNavController
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
 import java.net.URLDecoder
@@ -83,6 +84,9 @@ fun PlayerBaseView(viewModel: TubeFyViewModel= hiltViewModel()
     var isBulk by remember { mutableStateOf("false") }  // Track loading state
     var videoUrl by remember { mutableStateOf("") }
     var showVideoPlayer by remember { mutableStateOf(false) }
+    var showPlaListDialog by remember {
+        mutableStateOf(false)
+    }
 
     var isFavouriteSong =viewModel.isFavouriteState.collectAsState()
     val navBackStackEntry = navController.currentBackStackEntry
@@ -216,7 +220,12 @@ fun PlayerBaseView(viewModel: TubeFyViewModel= hiltViewModel()
             }
         }
     )
-
+    if (showPlaListDialog) {
+        PlayListDialogViewer(
+            viewModel = viewModel,
+            onDismiss = { showPlaListDialog = false } // Reset the state when the dialog is dismissed
+        )
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -375,6 +384,7 @@ fun PlayerBaseView(viewModel: TubeFyViewModel= hiltViewModel()
                     contentDescription = "Previous",
                     modifier = Modifier
                         .size(30.dp)
+                        .clickable { showPlaListDialog = true }
 
                 )
                 Row(
@@ -449,14 +459,22 @@ fun PlayerBaseView(viewModel: TubeFyViewModel= hiltViewModel()
                     painter = painterResource(id = if (isFavouriteSong.value==true) R.drawable.ic_unfav else R.drawable.ic_fav),
                     contentDescription = "Previous",
                     modifier = Modifier
-                        .size(30.dp).clickable {
-                            Toast.makeText(context,"dldldld"+isFavouriteSong.value,1).show()
-                            if(isFavouriteSong.value)
-                            {
-                                viewModel.removeFromFavorites(YoutubeCoreConstant.extractYoutubeVideoId(videoId)!!)
-                            }else
-                            {
-                                viewModel.addToFavorites(FavoritePlaylist(videoId=YoutubeCoreConstant.extractYoutubeVideoId(videoId)!!, videoThump = albumArt, videoName = playerHeader) )
+                        .size(30.dp)
+                        .clickable {
+                            if (isFavouriteSong.value) {
+                                viewModel.removeFromFavorites(
+                                    YoutubeCoreConstant.extractYoutubeVideoId(
+                                        videoId
+                                    )!!
+                                )
+                            } else {
+                                viewModel.addToFavorites(
+                                    FavoritePlaylist(
+                                        videoId = YoutubeCoreConstant.extractYoutubeVideoId(
+                                            videoId
+                                        )!!, videoThump = albumArt, videoName = playerHeader
+                                    )
+                                )
 
                             }
 
