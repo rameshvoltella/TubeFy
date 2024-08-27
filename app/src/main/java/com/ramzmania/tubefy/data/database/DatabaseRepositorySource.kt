@@ -18,7 +18,7 @@ interface DatabaseRepositorySource {
 
     suspend fun addSongToQueue(playData: QuePlaylist): Flow<Resource<DatabaseResponse>>
 
-    suspend fun addActivePlayList(playlists: List<TubeFyCoreTypeData?>): Flow<Resource<DatabaseResponse>>
+    suspend fun addActivePlayList(playlists: List<TubeFyCoreTypeData?>,clickPosition:Int): Flow<Resource<DatabaseResponse>>
 
     suspend fun getAllActivePlaylists(): Flow<Resource<List<TubeFyCoreTypeData?>>>
     suspend fun isFavourite(videoId: String):Flow< Resource<Boolean>>

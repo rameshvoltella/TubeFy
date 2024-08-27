@@ -7,6 +7,7 @@ import com.ramzmania.tubefy.core.dataformatter.database.DatabaseFormatterFactory
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
 import com.ramzmania.tubefy.data.dto.database.PlaylistNameWithUrl
+import com.ramzmania.tubefy.database.ActivePlaylist
 import com.ramzmania.tubefy.database.CustomPlaylist
 import com.ramzmania.tubefy.database.DatabaseResponse
 import com.ramzmania.tubefy.database.FavoritePlaylist
@@ -14,6 +15,7 @@ import com.ramzmania.tubefy.database.PlaylistDao
 import com.ramzmania.tubefy.database.QuePlaylist
 import com.ramzmania.tubefy.errors.DATABASE_INSERTION_ERROR
 import com.ramzmania.tubefy.errors.DATABASE_PLAYLIST_ERROR
+import com.ramzmania.tubefy.utils.swap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -71,7 +73,7 @@ class DatabaseData @Inject constructor(
         }
     }
 
-    override suspend fun addActivePlayList(playlists: List<TubeFyCoreTypeData?>): Resource<DatabaseResponse> {
+    override suspend fun addActivePlayList(playlists: List<TubeFyCoreTypeData?>,clickPosition: Int): Resource<DatabaseResponse> {
         return withContext(Dispatchers.IO)
         {
             Log.d("yono", "yonopoda")
@@ -79,8 +81,19 @@ class DatabaseData @Inject constructor(
                 databaseFormatterFactory.formatActivePlayList().run(playlists)
             when (formattedActivePlayList) {
                 is FormattingResult.SUCCESS -> {
+//                    var data=formattedActivePlayList.data.toMutableList()
+//
+//                    if(clickPosition>0)
+//                    {
+//                        data=formattedActivePlayList.data.toMutableList().swap(0,clickPosition)
+//                    }
+                    val activePlaylists: MutableList<ActivePlaylist> = formattedActivePlayList.data.toMutableList()
+                    if(clickPosition>0)
+                    {
+                        activePlaylists.swap(0,clickPosition)
+                    }
                     val result =
-                        playlistDao.addAndReplaceActivePlaylist(formattedActivePlayList.data)
+                        playlistDao.addAndReplaceActivePlaylist(activePlaylists)
                     if (result) {
                         Resource.Success(DatabaseResponse(200))
                     } else {

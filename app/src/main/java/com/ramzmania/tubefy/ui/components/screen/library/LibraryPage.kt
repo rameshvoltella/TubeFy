@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -115,26 +116,28 @@ fun LibraryListBaseView(
     val newNav = LocalNavController.current
     val gettingActivePlayList by viewModel.addToActiveDatabase.observeAsState()
     var doLoadData by remember { mutableStateOf(false) }  // Track loading state
+    var clickedPosition by remember { mutableStateOf(0) }  // Track loading state
+
     LaunchedEffect(key1 = gettingActivePlayList) {
         if (gettingActivePlayList is Resource.Success) {
 
             if (doLoadData) {
-                doLoadData=false
+                doLoadData = false
                 if (playListItems.isNotEmpty()) {
-                    doLoadData=true
+                    doLoadData = true
                     viewModel.setActiveSongsList(playListItems)
                     val encodedVideoThumpUrl = URLEncoder.encode(
-                        YoutubeCoreConstant.decodeThumpUrl(playListItems.get(0)!!.videoImage),
+                        YoutubeCoreConstant.decodeThumpUrl(playListItems.get(clickedPosition)!!.videoImage),
                         StandardCharsets.UTF_8.toString()
                     )
                     val encodedVideoId =
                         URLEncoder.encode(
-                            playListItems.get(0)!!.videoId,
+                            playListItems.get(clickedPosition)!!.videoId,
                             StandardCharsets.UTF_8.toString()
                         )
                     val videoTitle =
                         URLEncoder.encode(
-                            playListItems.get(0)!!.videoTitle,
+                            playListItems.get(clickedPosition)!!.videoTitle,
                             StandardCharsets.UTF_8.toString()
                         )
 //                LocalNavController.current
@@ -166,7 +169,8 @@ fun LibraryListBaseView(
             onClick = {
 
                 if (playListItems.isNotEmpty()) {
-                    doLoadData=true
+                    doLoadData = true
+                    clickedPosition = 0
                     viewModel.setActiveSongsList(playListItems)
 
                 }
@@ -183,8 +187,14 @@ fun LibraryListBaseView(
         ) {
 
             if (playListItems != null) {
-                items(playListItems!!) { playListItems ->
-                    LibraryItem(trackName = playListItems!!)
+                itemsIndexed(playListItems!!) { index, playListData ->
+                    LibraryItem(trackName = playListData!!) {
+                        clickedPosition = index
+                        doLoadData = true
+                        viewModel.setActiveSongsList(playListItems, index)
+
+
+                    }
                 }
             }
             item {
@@ -197,7 +207,7 @@ fun LibraryListBaseView(
 }
 
 @Composable
-fun LibraryItem(trackName: TubeFyCoreTypeData) {
+fun LibraryItem(trackName: TubeFyCoreTypeData, onClick: (TubeFyCoreTypeData) -> Unit) {
 
     Column(
         modifier = Modifier
@@ -210,7 +220,8 @@ fun LibraryItem(trackName: TubeFyCoreTypeData) {
         Card(
             modifier = Modifier
 //                .padding(8.dp)
-                .fillMaxWidth(),
+                .fillMaxWidth()
+                .clickable { onClick(trackName!!) },
             elevation = CardDefaults.cardElevation(4.dp), // Use CardDefaults.cardElevation for elevation
             colors = CardDefaults.cardColors(containerColor = Color.DarkGray), // Set background color
             shape = RoundedCornerShape(8.dp) // Adjust the corner radius for a rounded effect

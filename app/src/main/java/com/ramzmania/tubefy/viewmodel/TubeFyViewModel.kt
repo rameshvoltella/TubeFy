@@ -589,10 +589,10 @@ class TubeFyViewModel @Inject constructor(
     }
 
 
-    fun setActiveSongsList(playlists: List<TubeFyCoreTypeData?>) {
+    fun setActiveSongsList(playlists: List<TubeFyCoreTypeData?>,clickPosition:Int=-1) {
         viewModelScope.launch {
 
-            playlistDatabaseRepository.addActivePlayList(playlists).collect {
+            playlistDatabaseRepository.addActivePlayList(playlists,clickPosition).collect {
                 addToActiveDatabasePrivate.value = it
 
             }
