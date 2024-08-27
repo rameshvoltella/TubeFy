@@ -125,7 +125,7 @@ fun LibraryListBaseView(
                 doLoadData = false
                 if (playListItems.isNotEmpty()) {
                     doLoadData = true
-                    viewModel.setActiveSongsList(playListItems)
+//                    viewModel.setActiveSongsList(playListItems)
                     val encodedVideoThumpUrl = URLEncoder.encode(
                         YoutubeCoreConstant.decodeThumpUrl(playListItems.get(clickedPosition)!!.videoImage),
                         StandardCharsets.UTF_8.toString()

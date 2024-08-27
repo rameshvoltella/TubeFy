@@ -76,7 +76,7 @@ class DatabaseData @Inject constructor(
     override suspend fun addActivePlayList(playlists: List<TubeFyCoreTypeData?>,clickPosition: Int): Resource<DatabaseResponse> {
         return withContext(Dispatchers.IO)
         {
-            Log.d("yono", "yonopoda")
+            Log.d("yono", "yonopodacheker"+clickPosition)
             var formattedActivePlayList =
                 databaseFormatterFactory.formatActivePlayList().run(playlists)
             when (formattedActivePlayList) {

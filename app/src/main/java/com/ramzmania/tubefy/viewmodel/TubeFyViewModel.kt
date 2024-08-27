@@ -323,14 +323,14 @@ class TubeFyViewModel @Inject constructor(
 
     }
 
-    fun setCurrentPlayListData(playListItems: List<TubeFyCoreTypeData?>) {
-//        youtubePlayerPlaylistListModel=YoutubePlayerPlaylistListModel(playListItems)
-        setActiveSongsList(playListItems)
-//        PlayListSingleton.addData(playListItems)
-//        Log.d("bulkmode","added 111"+koko)
-
-
-    }
+//    fun setCurrentPlayListData(playListItems: List<TubeFyCoreTypeData?>) {
+////        youtubePlayerPlaylistListModel=YoutubePlayerPlaylistListModel(playListItems)
+//        setActiveSongsList(playListItems)
+////        PlayListSingleton.addData(playListItems)
+////        Log.d("bulkmode","added 111"+koko)
+//
+//
+//    }
 
     private fun setHtmlMusicCategoryContent(result: YtMusicCategoryBase?) {
 
