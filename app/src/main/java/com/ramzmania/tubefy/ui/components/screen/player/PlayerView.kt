@@ -210,6 +210,15 @@ fun PlayerBaseView(viewModel: TubeFyViewModel= hiltViewModel()
                 {
                     startFetchSongService(context, videoId, albumArt, playerHeader!!)
 
+                }else{
+                    totalTime = if (mediaController!!.duration >= 3600000) "%02d:%02d:%02d".format(
+                        mediaController!!.duration / 1000 / 60 / 60,
+                        mediaController!!.duration / 1000 / 60 % 60,
+                        mediaController!!.duration / 1000 % 60
+                    ) else "%02d:%02d".format(
+                        mediaController!!.duration / 1000 / 60 % 60,
+                        mediaController!!.duration / 1000 % 60
+                    )
                 }
 //                viewModel.getStreamUrl(videoId!!)
             }
