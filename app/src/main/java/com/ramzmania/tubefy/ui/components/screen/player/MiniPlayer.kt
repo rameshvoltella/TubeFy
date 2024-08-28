@@ -1,8 +1,10 @@
 package com.ramzmania.tubefy.ui.components.screen.player
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,8 +18,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,6 +38,7 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -57,8 +64,33 @@ fun MiniPlayerView(viewModel: TubeFyViewModel = hiltViewModel()) {
     var isPlaying by remember { mutableStateOf(false) }
     var videoId by remember { mutableStateOf("") }
     var palette by remember { mutableStateOf<Palette?>(null) }
-    val newNav = LocalNavController.current
+    var progress by remember { mutableStateOf(0f) }  // Track progress
 
+    val newNav = LocalNavController.current
+    LaunchedEffect(mediaController?.isPlaying) {
+        while (true) {
+            Log.d("timer", "yessssss")
+            if (mediaController?.isConnected == true && isPlaying) {
+                progress =
+                    (mediaController!!.currentPosition * 1.0f / mediaController!!.duration).coerceIn(
+                        0f,
+                        1f
+                    )
+
+
+                // Update progress every second
+                kotlinx.coroutines.delay(1000L)
+            } else {
+                // Stop updating if not playing
+                kotlinx.coroutines.delay(1000L)
+//                    break
+                if (mediaController?.isPlaying != true) {
+                    break
+                }
+            }
+
+        }
+    }
     LoadBitmapAndExtractPalette(albumArt) { extractedPalette ->
         palette = extractedPalette
     }
@@ -96,6 +128,7 @@ fun MiniPlayerView(viewModel: TubeFyViewModel = hiltViewModel()) {
     val dominantColor = palette?.dominantSwatch?.rgb?.let { Color(it) } ?: Color.DarkGray
     Column {
         // Top card item
+        MiniSeekBar(progress = progress)
         Card(
             modifier = Modifier
 //                .padding(8.dp)
@@ -225,7 +258,42 @@ fun MiniPlayerView(viewModel: TubeFyViewModel = hiltViewModel()) {
 }
 
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MiniSeekBar(progress: Float) {
+    // Create an interaction source that is never interacted with
+    val interactionSource = remember { MutableInteractionSource() }
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(4.dp) // Set the height of the track without the extra padding
+    ) {
+        Slider(
+            value = progress * 100f,
+            thumb = {
+                SliderDefaults.Thumb( //androidx.compose.material3.SliderDefaults
+                    interactionSource = interactionSource,
+                    thumbSize = DpSize(0.dp,0.dp)
+                )
+            },
+            onValueChange = { newValue ->
 
+            },
+            colors = SliderDefaults.colors(
+                activeTrackColor = Color.White,
+                inactiveTrackColor = Color.Gray,
+                thumbColor = Color.Red
+            ),
+            interactionSource = interactionSource,
+            enabled = true, // Disables manual seeking,
+            valueRange = 0f..100f,
+            modifier = Modifier
+                .fillMaxWidth()
+
+
+        )
+    }
+}
 
 
 @Preview(showBackground = true)
