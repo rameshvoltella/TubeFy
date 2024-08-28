@@ -1,6 +1,8 @@
 # TubeFy
 ![TubeFy Logo](https://github.com/rameshvoltella/TubeFy/blob/beta/app/src/main/res/drawable/tubefy_icon.png)
-Discover Your Favorite Music with Ease!
+
+
+**Discover Your Favorite Music with Ease!**
 
 Transform your YouTube experience into a seamless music streaming journey with our app. Just like Spotify, our app lets you play YouTube videos as songs, giving you access to your favorite tracks without interruption. Whether you're into the latest hits or classic tunes, you can enjoy them all in a Spotify-like interface.
 
