@@ -33,7 +33,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
@@ -44,6 +47,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.palette.graphics.Palette
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.ramzmania.tubefy.R
@@ -53,6 +57,7 @@ import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.base.searchformat.StreamUrlData
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
 import com.ramzmania.tubefy.ui.components.NavigationItem
+import com.ramzmania.tubefy.ui.components.screen.player.LoadBitmapAndExtractPalette
 import com.ramzmania.tubefy.utils.LocalNavController
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
 import java.net.URLDecoder
@@ -70,6 +75,8 @@ fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
     val navController = LocalNavController.current
     val navBackStackEntry = navController.currentBackStackEntry
     val context = LocalContext.current
+    var palette by remember { mutableStateOf<Palette?>(null) }
+
     Log.d("sadakku", ">>>>>")
     var isDefaultDataLoaded by rememberSaveable { mutableStateOf(false) }
 
@@ -104,32 +111,52 @@ fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
             }
         }
     }
+    LoadBitmapAndExtractPalette(URLDecoder.decode(
+        navBackStackEntry?.arguments?.getString("playlistImage"),
+        StandardCharsets.UTF_8.toString()
+    )) { extractedPalette ->
+        palette = extractedPalette
+    }
+    val dominantColor = palette?.dominantSwatch?.rgb?.let { Color(it) } ?: Color.Black
+    val gradientBrush = Brush.linearGradient(
+        colors = listOf(Color.Transparent, Color.Black),
+        start = Offset(0f, 0f),
+        end = Offset(0f, Float.POSITIVE_INFINITY),
+        tileMode = TileMode.Clamp
+    )
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black)
+            .background(dominantColor)
     ) {
-        navBackStackEntry?.arguments?.getString("playlistName")?.let {
-            AlbumHeader(
-                imageUrl = URLDecoder.decode(
-                    navBackStackEntry?.arguments?.getString("playlistImage"),
-                    StandardCharsets.UTF_8.toString()
-                ), // Replace with your image URL
-                title = it, finalItems = videoAudioItems
-
-            )
-        }
-        if (isLoading) {
-            // Show progress indicator while loading
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
+        Row(modifier = Modifier.background(gradientBrush)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
             ) {
-                CircularProgressIndicator(color = colorResource(id = R.color.tubefyred))
+                navBackStackEntry?.arguments?.getString("playlistName")?.let {
+                    AlbumHeader(
+                        imageUrl = URLDecoder.decode(
+                            navBackStackEntry?.arguments?.getString("playlistImage"),
+                            StandardCharsets.UTF_8.toString()
+                        ), // Replace with your image URL
+                        title = it, finalItems = videoAudioItems
+
+                    )
+                }
+                if (isLoading) {
+                    // Show progress indicator while loading
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = colorResource(id = R.color.tubefyred))
+                    }
+                } else {
+                    // Show track list when data is loaded
+                    AlbumTrackList(tracks = videoAudioItems)
+                }
             }
-        } else {
-            // Show track list when data is loaded
-            AlbumTrackList(tracks = videoAudioItems)
         }
 //        AlbumTrackList(tracks =finalItems)
     }
@@ -275,7 +302,7 @@ fun AlbumTrackList(tracks: List<TubeFyCoreTypeData?>) {
             TrackItem(trackName = track!!)
         }
         item {
-            Spacer(modifier = Modifier.height(90.dp))
+            Spacer(modifier = Modifier.height(140.dp))
         }
     }
 }

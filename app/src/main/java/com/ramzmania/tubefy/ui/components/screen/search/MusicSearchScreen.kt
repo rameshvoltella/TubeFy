@@ -195,6 +195,7 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
                                 if (isChecked) mutableListOf("all") else mutableListOf("music_songs")
                             )
                         }
+                        keyboardController?.hide()
                     }
                 },
                 modifier = Modifier.padding(horizontal = 5.dp)
