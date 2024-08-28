@@ -1,8 +1,9 @@
 package com.ramzmania.tubefy.ui.components.screen.library
 
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.runtime.Composable
 
-import android.os.Parcelable
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 
@@ -23,6 +24,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -50,13 +52,15 @@ import coil.request.ImageRequest
 import com.ramzmania.tubefy.R
 import com.ramzmania.tubefy.core.YoutubeCoreConstant
 import com.ramzmania.tubefy.data.Resource
+import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
 import com.ramzmania.tubefy.data.dto.database.PlaylistNameWithUrl
 import com.ramzmania.tubefy.database.CustomPlaylist
+import com.ramzmania.tubefy.database.FavoritePlaylist
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
 
 
 @Composable
-fun PlaylistDialog(
+fun PlaylistDialog(currentSongDetails: TubeFyCoreTypeData,viewModel: TubeFyViewModel = hiltViewModel(),
     playlists: List<PlaylistNameWithUrl?>,
     onDismiss: () -> Unit,
     onItemClick: (PlaylistNameWithUrl?) -> Unit
@@ -66,6 +70,7 @@ fun PlaylistDialog(
         save = { it.text },  // Save only the text part
         restore = { TextFieldValue(it) }  // Restore TextFieldValue from the text
     )
+    val context= LocalContext.current
 
     // Use rememberSaveable with the custom Saver
     var textFieldValue by rememberSaveable(stateSaver = textFieldValueSaver) {
@@ -109,7 +114,8 @@ fun PlaylistDialog(
                                 modifier = Modifier
                                     .height(50.dp)
                                     .width(50.dp)
-                                    .padding(horizontal = 5.dp, vertical = 10.dp),
+                                    .padding(horizontal = 5.dp, vertical = 10.dp)
+                                    .clickable { showPlayListEditText = true },
                                 contentScale = ContentScale.Crop
                             )
 
@@ -132,8 +138,23 @@ fun PlaylistDialog(
                                     imeAction = ImeAction.Done
                                 ),
                                 keyboardActions = KeyboardActions(onDone = {
-                                    // Handle text input
 
+                                    if (!(playlists.any { it?.playlistName == textFieldValue.text })) {
+                                        // Handle text input
+                                        showPlayListEditText=false
+                                        addToPlayList(
+                                            currentSongDetails,
+                                            viewModel,
+                                            textFieldValue.text
+                                        )
+                                        viewModel.dismissPlaListDialog(true)
+                                    } else {
+                                        Toast.makeText(
+                                            context,
+                                            "Playlist Already Available",
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    }
 
                                 })
                             )
@@ -142,23 +163,47 @@ fun PlaylistDialog(
                             Spacer(modifier = Modifier.width(8.dp))
 
                             Image(
-                                painter = painterResource(id = R.drawable.ic_add_playlist),
+                                painter = painterResource(id = R.drawable.ic_remove),
                                 contentDescription = "Right Image 1",
                                 modifier = Modifier
                                     .height(30.dp)
                                     .width(30.dp)
-                                    .padding(horizontal = 5.dp, vertical = 10.dp),
+                                    .padding(horizontal = 2.dp, vertical = 2.dp)
+                                    .clickable { showPlayListEditText = false },
                                 contentScale = ContentScale.Crop
                             )
 
                             // Second Image on the right
                             Image(
-                                painter = painterResource(id = R.drawable.ic_add_playlist), // Replace with the appropriate drawable resource
+                                painter = painterResource(id = R.drawable.ic_correct), // Replace with the appropriate drawable resource
                                 contentDescription = "Right Image 2",
                                 modifier = Modifier
                                     .height(30.dp)
                                     .width(30.dp)
-                                    .padding(horizontal = 5.dp, vertical = 10.dp),
+                                    .padding(horizontal = 2.dp, vertical = 2.dp)
+                                    .clickable {
+                                        if(!( playlists.any { it?.playlistName == textFieldValue.text})) {
+                                            showPlayListEditText=false
+                                            // Handle text input
+                                            addToPlayList(
+                                                currentSongDetails,
+                                                viewModel,
+                                                textFieldValue.text
+                                            )
+                                            viewModel.dismissPlaListDialog(true)
+                                        }else
+                                        {
+                                            Toast.makeText(context,"Playlist Already Available",Toast.LENGTH_LONG).show()
+                                        }
+
+                                     /*   showPlayListEditText = false
+                                        addToPlayList(
+                                            currentSongDetails,
+                                            viewModel,
+                                            textFieldValue.text
+                                        )
+                                        viewModel.dismissPlaListDialog(true)*/
+                                    },
                                 contentScale = ContentScale.Crop
                             )
 
@@ -203,7 +248,8 @@ fun PlaylistDialog(
 
                                     // Playlist Name on the Right
                                     Text(
-                                        text = playlist?.playlistName!!,
+                                        text = if (playlist.playlistName!! == "TubeFy-Favorites") "Favorite" else playlist.playlistName!!,
+//                                        text = playlist?.playlistName!!,
                                         color = colorResource(id = R.color.white),
                                         fontWeight = FontWeight.Medium
                                     )
@@ -218,11 +264,14 @@ fun PlaylistDialog(
 }
 
 @Composable
-fun PlayListDialogViewer(viewModel: TubeFyViewModel = hiltViewModel(),onDismiss: () -> Unit ) {
+fun PlayListDialogViewer(viewModel: TubeFyViewModel = hiltViewModel(),onDismiss: () -> Unit ,currentSongDetails: TubeFyCoreTypeData) {
+    viewModel.dismissPlaListDialog(false)
     var showDialog by remember { mutableStateOf(true) }
     val gettingMyPlayList by viewModel.gettingPrivatePlayList.observeAsState()
     var playListItems by rememberSaveable { mutableStateOf<List<PlaylistNameWithUrl?>>(emptyList()) }
     var doLoadData by remember { mutableStateOf(true) }  // Track loading state
+    var dismissPlayListDialog=viewModel.dismissPlayListDialog.collectAsState()
+    var reloadAllPlayList=viewModel.reloadAllPlayList.collectAsState()
 
     LaunchedEffect(key1 = gettingMyPlayList) {
         if (gettingMyPlayList is Resource.Success) {
@@ -244,6 +293,15 @@ fun PlayListDialogViewer(viewModel: TubeFyViewModel = hiltViewModel(),onDismiss:
         }
 
     }
+    if(reloadAllPlayList.value)
+    {
+        Log.d("homedaaa2222","yoda")
+
+        viewModel.getAllSavedPlayList()
+//        doLoadData=true
+//        viewModel.reloadAllCustomPlayListData(false)
+
+    }
    /* val playlists = listOf(
         PlaylistNameWithUrl("Playlist 1", "https://placekitten.com/64/64"),
         PlaylistNameWithUrl("Playlist 2", "https://placekitten.com/64/64"),
@@ -256,6 +314,7 @@ fun PlayListDialogViewer(viewModel: TubeFyViewModel = hiltViewModel(),onDismiss:
 */
     if (showDialog) {
         PlaylistDialog(
+            currentSongDetails=currentSongDetails,
             playlists = playListItems,
             onDismiss = {
                 showDialog = false
@@ -263,13 +322,46 @@ fun PlayListDialogViewer(viewModel: TubeFyViewModel = hiltViewModel(),onDismiss:
             },
             onItemClick = { playlist ->
                 // Handle item click
-                viewModel.addToPlaylist(CustomPlaylist(playlistName = playlist?.playlistName!!, videoId = "", videoName = "", videoThump = ""))
+                addToPlayList(currentSongDetails,viewModel,playlist?.playlistName!!)
                 showDialog = false
                 onDismiss() // Notify parent to reset the state
 
             }
         )
     }
+
+    if(dismissPlayListDialog.value)
+    {
+        showDialog = false
+        onDismiss()
+    }
+}
+
+fun addToPlayList(
+    currentSongDetails: TubeFyCoreTypeData,
+    viewModel: TubeFyViewModel,
+    playlistName: String
+) {
+
+    if(!playlistName.equals("Tubefy-Favorites")) {
+        viewModel.addToPlaylist(
+            CustomPlaylist(
+                playlistName = playlistName,
+                videoId = currentSongDetails.videoId,
+                videoName = currentSongDetails.videoTitle,
+                videoThump = currentSongDetails.videoImage
+            )
+        )
+    }else{
+        viewModel.addToFavorites(
+            FavoritePlaylist(
+                videoId = currentSongDetails.videoId,
+                videoName = currentSongDetails.videoTitle,
+                videoThump = currentSongDetails.videoImage
+            )
+        )
+    }
+    viewModel.reloadAllCustomPlayListData(true)
 }
 
 @Preview(showBackground = true)

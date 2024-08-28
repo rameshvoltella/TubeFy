@@ -30,5 +30,7 @@ interface DatabaseRepositorySource {
     suspend fun getAllSavedPlayList(): Flow<Resource<List<PlaylistNameWithUrl>>>
     suspend fun deleteSongFromPlayList(playlistName:String,songName:String):Flow< Resource<DatabaseResponse>>
     suspend fun deleteSpecificPlayList(playlistName:String): Flow<Resource<DatabaseResponse>>
+    suspend fun deleteAllFavorites(): Flow<Resource<DatabaseResponse>>
+
 
 }

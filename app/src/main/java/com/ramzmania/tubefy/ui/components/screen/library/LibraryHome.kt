@@ -1,6 +1,5 @@
 package com.ramzmania.tubefy.ui.components.screen.library
 
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,6 +19,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -44,11 +44,8 @@ import coil.request.ImageRequest
 import com.ramzmania.tubefy.R
 import com.ramzmania.tubefy.core.YoutubeCoreConstant
 import com.ramzmania.tubefy.data.Resource
-import com.ramzmania.tubefy.data.dto.base.PlaylistItem
-import com.ramzmania.tubefy.data.dto.base.playlist.PlayListCategory
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
 import com.ramzmania.tubefy.data.dto.database.PlaylistNameWithUrl
-import com.ramzmania.tubefy.database.CustomPlaylist
 import com.ramzmania.tubefy.ui.components.NavigationItem
 import com.ramzmania.tubefy.utils.LocalNavController
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
@@ -61,10 +58,12 @@ fun MyLibraryPage(viewModel: TubeFyViewModel = hiltViewModel()) {
     var doLoadData by remember { mutableStateOf(true) }  // Track loading state
     val gettingMyPlayList by viewModel.gettingPrivatePlayList.observeAsState()
     var playListItems by rememberSaveable { mutableStateOf<List<PlaylistNameWithUrl?>>(emptyList()) }
+    var reloadAllPlayList=viewModel.reloadAllPlayList.collectAsState()
 
     LaunchedEffect(key1 = gettingMyPlayList) {
         if (gettingMyPlayList is Resource.Success) {
             doLoadData = false
+            viewModel.reloadAllCustomPlayListData(false)
             if (gettingMyPlayList?.data != null && gettingMyPlayList?.data!!.isNotEmpty()) {
                 playListItems = gettingMyPlayList?.data!!
             }
@@ -77,8 +76,14 @@ fun MyLibraryPage(viewModel: TubeFyViewModel = hiltViewModel()) {
         if (doLoadData) {
             viewModel.getAllSavedPlayList()
         }
+        else if(reloadAllPlayList.value)
+        {
+            viewModel.getAllSavedPlayList()
+           // viewModel.reloadAllCustomPlayListData(true)
+        }
 
     }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -105,9 +110,22 @@ fun MyLibraryPage(viewModel: TubeFyViewModel = hiltViewModel()) {
 }
 
 @Composable
-fun LibraryHomeView(tracks: List<PlaylistNameWithUrl?>) {
+fun LibraryHomeView(tracks: List<PlaylistNameWithUrl?>,viewModel: TubeFyViewModel = hiltViewModel()) {
     val navController = LocalNavController.current
+    var showDialog by remember { mutableStateOf(false) }
+    var playlistName by remember { mutableStateOf("") }
 
+    if (showDialog) {
+        DeleteSongConfirmationDialog(
+            onConfirm = {
+                deletePlayList(playlistName,viewModel)
+                showDialog = false // Close the dialog after confirming
+            },
+            onDismiss = {
+                showDialog = false // Close the dialog without confirming
+            }
+        )
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -121,7 +139,7 @@ fun LibraryHomeView(tracks: List<PlaylistNameWithUrl?>) {
         ) {
 
             items(tracks!!) { track ->
-                LibraryHomeItem(playListItem = track!!) { selectedItem ->
+                LibraryHomeItem(playListItem = track!!, onClick = { selectedItem ->
                     navController!!.navigate(
                         NavigationItem.MyPlayList.createRoute(
 
@@ -139,7 +157,11 @@ fun LibraryHomeView(tracks: List<PlaylistNameWithUrl?>) {
                         launchSingleTop = true
                         restoreState = true
                     }
-                }
+                }, onDeleteClick = {selectedTrack->
+                    playlistName=selectedTrack.playlistName
+                    showDialog = true
+
+                })
             }
             item {
                 Spacer(modifier = Modifier.height(90.dp))
@@ -151,7 +173,8 @@ fun LibraryHomeView(tracks: List<PlaylistNameWithUrl?>) {
 }
 
 @Composable
-fun LibraryHomeItem(playListItem: PlaylistNameWithUrl, onClick: (PlaylistNameWithUrl) -> Unit) {
+fun LibraryHomeItem(viewModel: TubeFyViewModel= hiltViewModel(),playListItem: PlaylistNameWithUrl, onClick: (PlaylistNameWithUrl) -> Unit,
+                    onDeleteClick: (PlaylistNameWithUrl) -> Unit) {
 
     Column(
         modifier = Modifier
@@ -219,14 +242,16 @@ fun LibraryHomeItem(playListItem: PlaylistNameWithUrl, onClick: (PlaylistNameWit
                     fontSize = 16.sp
                 )
                 // Spacer to push the text and right image apart
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(6.dp))
                 Image(
                     painter = painterResource(id = R.drawable.ic_delete),
                     contentDescription = "Right Image",
                     modifier = Modifier
-                        .height(50.dp)
-                        .width(50.dp)
-                        .padding(horizontal = 5.dp, vertical = 10.dp),
+                        .height(30.dp)
+                        .width(30.dp)
+                        .align(Alignment.CenterVertically)
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                        .clickable { onDeleteClick(playListItem)},
                     contentScale = ContentScale.Crop
                 )
 
@@ -235,6 +260,18 @@ fun LibraryHomeItem(playListItem: PlaylistNameWithUrl, onClick: (PlaylistNameWit
 //        Text(text = trackName.videoTitle,  color = Color.Black)
 //        Divider(modifier = Modifier.padding(vertical = 4.dp), color = Color.Gray)
     }
+}
+
+fun deletePlayList(playlistName: String, viewModel: TubeFyViewModel) {
+  if (playlistName == "TubeFy-Favorites"){
+      viewModel.deleteAllFavorites()
+  }else{
+      viewModel.deleteSpecificPlayList(playlistName)
+  }
+    viewModel.reloadAllCustomPlayListData(true)
+
+
+
 }
 
 @Preview(showBackground = true)

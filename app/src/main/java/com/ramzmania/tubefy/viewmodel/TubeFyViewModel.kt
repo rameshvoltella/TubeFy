@@ -135,6 +135,11 @@ class TubeFyViewModel @Inject constructor(
     private val loadMoreHomePageEndedPrivate = MutableStateFlow(false)
     val loadMoreHomePageEnded = loadMoreHomePageEndedPrivate.asStateFlow()
 
+    private val dismissPlayListDialogPrivate = MutableStateFlow(false)
+    val dismissPlayListDialog = dismissPlayListDialogPrivate.asStateFlow()
+
+    private val reloadAllPlayListPrivate = MutableStateFlow(false)
+    val reloadAllPlayList = reloadAllPlayListPrivate.asStateFlow()
 
     private val getPlayListFromDatabasePrivate = MutableLiveData<Resource<List<QuePlaylist>>>()
     val getPlayListFromDatabase: LiveData<Resource<List<QuePlaylist>>> get() = getPlayListFromDatabasePrivate
@@ -696,6 +701,24 @@ class TubeFyViewModel @Inject constructor(
         viewModelScope.launch {
 
             playlistDatabaseRepository.deleteSpecificPlayList(playListName).collect {
+                addingSongListPlayListOperationPrivate.value = it
+
+            }
+        }
+    }
+
+    fun dismissPlaListDialog(value: Boolean) {
+        dismissPlayListDialogPrivate.value=value
+    }
+
+    fun reloadAllCustomPlayListData(value: Boolean) {
+        reloadAllPlayListPrivate.value=value
+    }
+
+    fun deleteAllFavorites() {
+        viewModelScope.launch {
+
+            playlistDatabaseRepository.deleteAllFavorites().collect {
                 addingSongListPlayListOperationPrivate.value = it
 
             }

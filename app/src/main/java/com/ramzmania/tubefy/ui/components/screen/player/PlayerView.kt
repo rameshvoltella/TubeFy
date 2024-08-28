@@ -56,6 +56,8 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.ramzmania.tubefy.R
 import com.ramzmania.tubefy.core.YoutubeCoreConstant
+import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
+import com.ramzmania.tubefy.database.CustomPlaylist
 import com.ramzmania.tubefy.database.FavoritePlaylist
 import com.ramzmania.tubefy.player.PlaybackService
 import com.ramzmania.tubefy.ui.components.screen.library.PlayListDialogViewer
@@ -221,10 +223,21 @@ fun PlayerBaseView(viewModel: TubeFyViewModel= hiltViewModel()
         }
     )
     if (showPlaListDialog) {
-        PlayListDialogViewer(
-            viewModel = viewModel,
-            onDismiss = { showPlaListDialog = false } // Reset the state when the dialog is dismissed
-        )
+        if(mediaController?.currentMediaItem!=null) {
+            PlayListDialogViewer(
+                viewModel = viewModel,
+                onDismiss = { showPlaListDialog = false },
+                TubeFyCoreTypeData(
+                    videoId = mediaController?.currentMediaItem!!.mediaId,
+                    videoImage = albumArt,
+                    videoTitle = playerHeader
+                )
+                // Reset the state when the dialog is dismissed
+            )
+        }else
+        {
+            showPlaListDialog=false
+        }
     }
     Column(
         modifier = Modifier

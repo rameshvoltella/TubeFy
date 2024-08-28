@@ -100,6 +100,9 @@ interface PlaylistDao {
     @Query("DELETE FROM FavoritePlaylist WHERE videoId = :videoId")
     suspend fun deleteFavorite(videoId: String):Int
 
+    @Query("DELETE FROM FavoritePlaylist")
+    suspend fun deleteAllFavorites(): Int
+
     @Query("SELECT * FROM FavoritePlaylist")
     suspend fun getAllFavorites(): List<FavoritePlaylist>
 

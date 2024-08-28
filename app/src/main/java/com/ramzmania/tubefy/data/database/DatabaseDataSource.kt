@@ -28,6 +28,7 @@ interface DatabaseDataSource {
     suspend fun getAllSavedPlayList(): Resource<List<PlaylistNameWithUrl>>
     suspend fun deleteSongFromPlayList(playlistName:String,songName:String): Resource<DatabaseResponse>
     suspend fun deleteSpecificPlayList(playlistName:String): Resource<DatabaseResponse>
+    suspend fun deleteAllFavorites(): Resource<DatabaseResponse>
 
 
 

@@ -222,6 +222,16 @@ Log.d("fadak","isfav"+isFavorite)
         }
     }
 
+    override suspend fun deleteAllFavorites(): Resource<DatabaseResponse> {
+        val result=playlistDao.deleteAllFavorites()>0
+        return if (result) {
+//           isFavourite(videoId)
+            Resource.Success(DatabaseResponse(200))
+        } else {
+            Resource.DataError(DATABASE_INSERTION_ERROR)
+        }
+    }
+
 
     override suspend fun addToPlaylist(customPlayListData:CustomPlaylist): Resource<DatabaseResponse> {
 //        val customPlaylistEntry = CustomPlaylist(

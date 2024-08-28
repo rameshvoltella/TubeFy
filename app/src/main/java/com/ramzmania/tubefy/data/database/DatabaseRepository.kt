@@ -87,5 +87,9 @@ class DatabaseRepository @Inject constructor(
         return flow { emit(databaseData.deleteSpecificPlayList(playlistName)) }
     }
 
+    override suspend fun deleteAllFavorites(): Flow<Resource<DatabaseResponse>> {
+        return flow { emit(databaseData.deleteAllFavorites()) }
+    }
+
 
 }

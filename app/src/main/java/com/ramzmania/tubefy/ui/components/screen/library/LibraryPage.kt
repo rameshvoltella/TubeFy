@@ -1,6 +1,5 @@
 package com.ramzmania.tubefy.ui.components.screen.library
 
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -13,9 +12,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -47,11 +46,9 @@ import com.ramzmania.tubefy.R
 import com.ramzmania.tubefy.core.YoutubeCoreConstant
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
-import com.ramzmania.tubefy.data.dto.database.PlaylistNameWithUrl
 import com.ramzmania.tubefy.ui.components.NavigationItem
 import com.ramzmania.tubefy.utils.LocalNavController
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
-import java.net.URLDecoder
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
@@ -80,6 +77,8 @@ fun LibraryDetailPage(viewModel: TubeFyViewModel = hiltViewModel()) {
             plaListName = navBackStackEntry?.arguments?.getString("playerListName")!!
             if (plaListName == "TubeFy-Favorites") {
                 viewModel.getFavorites()
+            } else {
+                viewModel.getSpecificPlayList(plaListName)
             }
 
 
@@ -117,7 +116,8 @@ fun LibraryListBaseView(
     val gettingActivePlayList by viewModel.addToActiveDatabase.observeAsState()
     var doLoadData by remember { mutableStateOf(false) }  // Track loading state
     var clickedPosition by remember { mutableStateOf(0) }  // Track loading state
-
+    var showDialog by remember { mutableStateOf(false) }
+    var tubeFyCoreItem by remember { mutableStateOf(TubeFyCoreTypeData(videoId ="", videoImage = "", videoTitle = "")) }
     LaunchedEffect(key1 = gettingActivePlayList) {
         if (gettingActivePlayList is Resource.Success) {
 
@@ -159,6 +159,18 @@ fun LibraryListBaseView(
             }
         }
     }
+
+    if (showDialog) {
+        DeleteSongConfirmationDialog(
+            onConfirm = {
+                deleteSongFromPlayList(viewModel,tubeFyCoreItem.playListName,tubeFyCoreItem.videoId)
+                showDialog = false // Close the dialog after confirming
+            },
+            onDismiss = {
+                showDialog = false // Close the dialog without confirming
+            }
+        )
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -188,13 +200,26 @@ fun LibraryListBaseView(
 
             if (playListItems != null) {
                 itemsIndexed(playListItems!!) { index, playListData ->
-                    LibraryItem(trackName = playListData!!) {
-                        clickedPosition = index
-                        doLoadData = true
-                        viewModel.setActiveSongsList(playListItems, index)
-
-
-                    }
+//                    LibraryItem(trackName = playListData!!) {
+//                        clickedPosition = index
+//                        doLoadData = true
+//                        viewModel.setActiveSongsList(playListItems, index)
+//
+//
+//                    }
+                    LibraryItem(
+                        trackName = playListData!!,
+                        onClick = { selectedTrack ->
+                            clickedPosition = index
+                            doLoadData = true
+                            viewModel.setActiveSongsList(playListItems, index)
+                        },
+                        onDeleteClick = { selectedTrack ->
+                            // Handle the delete action, e.g., showing a confirmation dialog
+                            tubeFyCoreItem=selectedTrack
+                            showDialog = true
+                        }
+                    )
                 }
             }
             item {
@@ -207,7 +232,12 @@ fun LibraryListBaseView(
 }
 
 @Composable
-fun LibraryItem(trackName: TubeFyCoreTypeData, onClick: (TubeFyCoreTypeData) -> Unit) {
+fun LibraryItem(
+    viewModel: TubeFyViewModel = hiltViewModel(),
+    trackName: TubeFyCoreTypeData,
+    onClick: (TubeFyCoreTypeData) -> Unit,
+    onDeleteClick: (TubeFyCoreTypeData) -> Unit
+) {
 
     Column(
         modifier = Modifier
@@ -275,14 +305,18 @@ fun LibraryItem(trackName: TubeFyCoreTypeData, onClick: (TubeFyCoreTypeData) -> 
                     fontSize = 16.sp
                 )
                 // Spacer to push the text and right image apart
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(6.dp))
                 Image(
                     painter = painterResource(id = R.drawable.ic_delete),
                     contentDescription = "Right Image",
                     modifier = Modifier
-                        .height(50.dp)
-                        .width(50.dp)
-                        .padding(horizontal = 5.dp, vertical = 10.dp),
+                        .height(30.dp)
+                        .width(30.dp)
+                        .align(Alignment.CenterVertically)
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                        .clickable {
+                            onDeleteClick(trackName)
+                        },
                     contentScale = ContentScale.Crop
                 )
 
@@ -291,6 +325,49 @@ fun LibraryItem(trackName: TubeFyCoreTypeData, onClick: (TubeFyCoreTypeData) -> 
 //        Text(text = trackName.videoTitle,  color = Color.Black)
 //        Divider(modifier = Modifier.padding(vertical = 4.dp), color = Color.Gray)
     }
+}
+
+
+@Composable
+fun DeleteSongConfirmationDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(text = "Delete Song")
+        },
+        text = {
+            Text(text = "Are you sure you want to delete this song from the playlist?")
+        },
+        confirmButton = {
+            Button(
+                onClick = onConfirm
+            ) {
+                Text("Yes")
+            }
+        },
+        dismissButton = {
+            Button(
+                onClick = onDismiss
+            ) {
+                Text("No")
+            }
+        }
+    )
+}
+
+fun deleteSongFromPlayList(viewModel: TubeFyViewModel, playListName: String, videoId: String) {
+
+    if (playListName == "TubeFy-Favorites") {
+        viewModel.removeFromFavorites(videoId)
+        viewModel.getFavorites()
+    } else {
+        viewModel.deleteSongFromPlayList(playListName = playListName, videoId = videoId)
+        viewModel.getSpecificPlayList(playListName)
+    }
+
 }
 
 @Preview(showBackground = true)
