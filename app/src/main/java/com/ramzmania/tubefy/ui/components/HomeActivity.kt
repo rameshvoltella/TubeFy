@@ -1,6 +1,7 @@
 package com.ramzmania.tubefy.ui.components
 
 import android.annotation.SuppressLint
+import android.content.ComponentName
 import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -10,10 +11,20 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -24,8 +35,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.MutableState
 
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.TileMode
@@ -33,18 +47,23 @@ import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.session.MediaController
+import androidx.media3.session.SessionToken
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.google.common.util.concurrent.MoreExecutors
 import com.ramzmania.tubefy.R
+import com.ramzmania.tubefy.player.PlaybackService
 import com.ramzmania.tubefy.ui.components.screen.BooksScreen
 import com.ramzmania.tubefy.ui.components.screen.home.HomeInitialScreen
 import com.ramzmania.tubefy.ui.components.screen.ProfileScreen
@@ -52,24 +71,27 @@ import com.ramzmania.tubefy.ui.components.screen.album.AlbumScreen
 import com.ramzmania.tubefy.ui.components.screen.category.CategoryPlaylistView
 import com.ramzmania.tubefy.ui.components.screen.library.LibraryDetailPage
 import com.ramzmania.tubefy.ui.components.screen.library.MyLibraryPage
+import com.ramzmania.tubefy.ui.components.screen.player.MiniPlayerView
 import com.ramzmania.tubefy.ui.components.screen.player.PlayerBaseView
 import com.ramzmania.tubefy.ui.components.screen.search.AudioSearchScreen
 import com.ramzmania.tubefy.utils.LocalNavController
 import dagger.hilt.android.AndroidEntryPoint
+import dagger.hilt.android.UnstableApi
 
 @AndroidEntryPoint
-class HomeActivity: ComponentActivity() {
+class HomeActivity : ComponentActivity() {
     private var mediaController: MediaController? = null
-
+    private val mediaControllerState = mutableStateOf<MediaController?>(null)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-                MainScreen()
+            MainScreen(mediaControllerState = mediaControllerState)
 
         }
     }
 
-    /*@UnstableApi
+    @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+    @UnstableApi
     override fun onStart() {
         super.onStart()
         try {
@@ -84,7 +106,7 @@ class HomeActivity: ComponentActivity() {
                         Log.d("kona","3333333")
 
                         mediaController = controllerFuture.get()
-
+                        mediaControllerState.value = mediaController // Update state
                       //  playPDFAudio()
 
                     } catch (ex: Exception) {
@@ -101,9 +123,9 @@ ex.printStackTrace()
     override fun onStop() {
         mediaController?.release()
         mediaController = null
+        mediaControllerState.value = mediaController // Update state
         super.onStop()
     }
-*/
     fun playPDFAudio() {
 //        Toast.makeText(applicationContext,"playing"+File(filesDir.absolutePath
 //                + "/pdfAudio/audio.wav").absolutePath,1).show()
@@ -111,10 +133,10 @@ ex.printStackTrace()
 //        Log.d("path",File(filesDir.absolutePath
 //                + "/pdfAudio/audio.wav").absolutePath)
         try {
-Log.d("konaaa","innnn")
+            Log.d("konaaa", "innnn")
             val mediaController = mediaController ?: return
             if (!mediaController.isConnected) return
-            Log.d("konaaa","retunrd")
+            Log.d("konaaa", "retunrd")
 
 //            val drawableUri: Uri =
 //                Uri.parse("android.resource://${BuildConfig.APPLICATION_ID}/${R.drawable.logo}")
@@ -127,7 +149,7 @@ Log.d("konaaa","innnn")
                 .setMediaMetadata(
                     MediaMetadata.Builder()
                         .setTitle("tadadada")
-                        .setArtist("Reading Page No : " )
+                        .setArtist("Reading Page No : ")
                         .setIsBrowsable(false)
                         .setIsPlayable(true)
 //                        .setArtworkUri(drawableUri)
@@ -141,42 +163,36 @@ Log.d("konaaa","innnn")
             mediaController.prepare()
 
         } catch (ex: Exception) {
-ex.printStackTrace()
+            ex.printStackTrace()
         }
     }
 }
 
-@Composable
-fun MainScrmeen() {
-    val navController = rememberNavController()
-    Scaffold(
-        topBar = { TopBar() },
-        bottomBar = { BottomNavigationBar(navController) },
-        content = { padding ->
-            Box(modifier = Modifier.padding(padding)) {
-                Navigation(navController = navController)
-            }
-        },
-        contentColor = colorResource(R.color.colorPrimary)
-    )
-}
+
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun MainScreen() {
+fun MainScreen(mediaControllerState: MutableState<MediaController?>) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
+
     Box(modifier = Modifier.fillMaxSize()) {
         // Content that extends behind the bottom bar
         CompositionLocalProvider(
             LocalNavController provides navController // Added missing comma
         ) {
             Scaffold(
-//                topBar = { TopBar() },
-                bottomBar = {  if (currentRoute != NavigationItem.AudioPlayer.route) {
-                    BottomNavigationBar(navController)
-                } },
+                bottomBar = {
+                    if (currentRoute != NavigationItem.AudioPlayer.route) {
+                        Column {
+                            if (mediaControllerState.value != null&&mediaControllerState.value!!.currentMediaItem!=null) {
+                                MiniPlayerView()
+                            }
+                            BottomNavigationBar(navController)
+                        }
+                    }
+                },
                 content = {
                     Box(modifier = Modifier.fillMaxSize()) {
                         Navigation(navController = navController)
@@ -190,11 +206,11 @@ fun MainScreen() {
 }
 
 
-@Preview(showBackground = true)
+/*@Preview(showBackground = true)
 @Composable
 fun MainScreenPreview() {
     MainScreen()
-}
+}*/
 
 @Composable
 fun Navigation(navController: NavHostController) {
@@ -234,7 +250,8 @@ fun TopBar() {
         title = { Text(text = stringResource(R.string.app_name), fontSize = 18.sp) },
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = colorResource(id = R.color.colorPrimary),
-            titleContentColor = Color.White)
+            titleContentColor = Color.White
+        )
     )
 }
 
@@ -254,7 +271,7 @@ fun BottomNavigationBar(navController: NavController) {
     )
     // Create a linear gradient brush
     val gradientBrush = Brush.linearGradient(
-        colors = listOf( Color.Transparent,Color.Black),
+        colors = listOf(Color.Transparent, Color.Black),
         start = Offset(0f, 0f),
         end = Offset(0f, Float.POSITIVE_INFINITY),
         tileMode = TileMode.Clamp
@@ -263,7 +280,7 @@ fun BottomNavigationBar(navController: NavController) {
         containerColor = Color.Transparent, // Set container color to transparent
         contentColor = Color.White,
         modifier = Modifier.background(gradientBrush) // Apply gradient brush as background
-    )  {
+    ) {
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentRoute = navBackStackEntry?.destination?.route
         items.forEach { item ->
@@ -292,12 +309,4 @@ fun BottomNavigationBar(navController: NavController) {
             )
         }
     }
-}
-
-
-
-@Preview(showBackground = true)
-@Composable
-fun BottomNavigationBarPreview() {
-    // BottomNavigationBar()
 }
