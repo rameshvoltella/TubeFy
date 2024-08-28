@@ -71,6 +71,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation(libs.androidx.runtime.livedata)
+    implementation(libs.androidx.palette.ktx)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

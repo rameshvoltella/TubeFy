@@ -343,6 +343,7 @@ fun addToPlayList(
     playlistName: String
 ) {
 
+    Log.d("kolpo","added"+playlistName)
     if(!playlistName.equals("Tubefy-Favorites")) {
         viewModel.addToPlaylist(
             CustomPlaylist(

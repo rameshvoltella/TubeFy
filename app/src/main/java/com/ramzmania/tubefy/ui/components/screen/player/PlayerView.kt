@@ -200,7 +200,18 @@ fun PlayerBaseView(viewModel: TubeFyViewModel= hiltViewModel()
 //                viewModel.getBulkStreamUrl()
                 startFetchPlayListService(context)
             } else {
-                startFetchSongService(context, videoId, albumArt, playerHeader!!)
+
+                var loadService=true
+                if(mediaController!=null&&mediaController!!.isConnected&&mediaController!!.currentMediaItem!=null&&mediaController!!.currentMediaItem?.mediaId.equals(YoutubeCoreConstant.extractYoutubeVideoId(videoId)))
+                {
+                    loadService=false
+                }
+
+                if(loadService)
+                {
+                    startFetchSongService(context, videoId, albumArt, playerHeader!!)
+
+                }
 //                viewModel.getStreamUrl(videoId!!)
             }
 

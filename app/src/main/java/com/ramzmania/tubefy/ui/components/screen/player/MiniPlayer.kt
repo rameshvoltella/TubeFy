@@ -1,6 +1,5 @@
 package com.ramzmania.tubefy.ui.components.screen.player
 
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -29,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -36,12 +36,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.media3.session.MediaController
+import androidx.palette.graphics.Palette
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.ramzmania.tubefy.R
 import com.ramzmania.tubefy.core.YoutubeCoreConstant
 import com.ramzmania.tubefy.database.FavoritePlaylist
+import com.ramzmania.tubefy.ui.components.NavigationItem
+import com.ramzmania.tubefy.utils.LocalNavController
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 @Composable
 fun MiniPlayerView(viewModel: TubeFyViewModel = hiltViewModel()) {
@@ -51,7 +56,12 @@ fun MiniPlayerView(viewModel: TubeFyViewModel = hiltViewModel()) {
     var isFavouriteSong =viewModel.isFavouriteState.collectAsState()
     var isPlaying by remember { mutableStateOf(false) }
     var videoId by remember { mutableStateOf("") }
+    var palette by remember { mutableStateOf<Palette?>(null) }
+    val newNav = LocalNavController.current
 
+    LoadBitmapAndExtractPalette(albumArt) { extractedPalette ->
+        palette = extractedPalette
+    }
     MediaControllerComposable(
         onPlayingChanged = { playing ->
             isPlaying = playing
@@ -78,21 +88,43 @@ fun MiniPlayerView(viewModel: TubeFyViewModel = hiltViewModel()) {
             }
         }
     )
+    val dominantColor = palette?.dominantSwatch?.rgb?.let { Color(it) } ?: Color.DarkGray
     Column {
         // Top card item
         Card(
             modifier = Modifier
 //                .padding(8.dp)
                 .height(50.dp)
-                .fillMaxWidth(),
+                .fillMaxWidth()
+                .clickable {
+                    val encodedVideoId =
+                        URLEncoder.encode(videoId, StandardCharsets.UTF_8.toString())
+                    newNav!!.navigate(
+                        NavigationItem.AudioPlayer.createRoute(
+                            encodedVideoId,
+                            URLEncoder.encode(albumArt, StandardCharsets.UTF_8.toString()),
+                            URLEncoder.encode(songName, StandardCharsets.UTF_8.toString()),
+                            URLEncoder.encode(songName, StandardCharsets.UTF_8.toString()),
+                            URLEncoder.encode(songName, StandardCharsets.UTF_8.toString())
+                        )
+                    ) {
+                        newNav.graph.route?.let { route ->
+                            popUpTo(route) {
+                                saveState = true
+                            }
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
             elevation = CardDefaults.cardElevation(4.dp), // Use CardDefaults.cardElevation for elevation
-            colors = CardDefaults.cardColors(containerColor = Color.DarkGray), // Set background color
+            colors = CardDefaults.cardColors(containerColor = colorResource(id = R.color.colorPrimary)), // Set background color
             shape = RoundedCornerShape(8.dp) // Adjust the corner radius for a rounded effect
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Gray),
+                    .background(dominantColor),
             ) {
                 // Left ImageView
                 AsyncImage(
@@ -112,7 +144,8 @@ fun MiniPlayerView(viewModel: TubeFyViewModel = hiltViewModel()) {
                 // Text overlapping the right image
                 Box(
                     modifier = Modifier
-                        .weight(1f) .align(Alignment.CenterVertically),// Ensures the Box takes up remaining space
+                        .weight(1f)
+                        .align(Alignment.CenterVertically),// Ensures the Box takes up remaining space
                     contentAlignment = Alignment.CenterStart // Centers content within the Box
                 ) {
                     Text(
@@ -120,7 +153,7 @@ fun MiniPlayerView(viewModel: TubeFyViewModel = hiltViewModel()) {
                         fontSize = 16.sp,
                         color = Color.White,
                         maxLines = 1,
-                        textAlign = TextAlign.Center, // Centers text within its own bounds
+                        textAlign = TextAlign.Left, // Centers text within its own bounds
                         modifier = Modifier
                             .align(Alignment.TopStart) // Aligns the Text within the Box
                             .padding(4.dp)
@@ -140,7 +173,8 @@ fun MiniPlayerView(viewModel: TubeFyViewModel = hiltViewModel()) {
                             contentDescription = null,
                             modifier = Modifier
                                 .width(20.dp)
-                                .height(50.dp).clickable {
+                                .height(50.dp)
+                                .clickable {
                                     if (isFavouriteSong.value) {
                                         viewModel.removeFromFavorites(
                                             YoutubeCoreConstant.extractYoutubeVideoId(
@@ -167,13 +201,16 @@ fun MiniPlayerView(viewModel: TubeFyViewModel = hiltViewModel()) {
                         contentDescription = null,
                         modifier = Modifier
                             .width(20.dp)
-                            .height(50.dp).clickable {  if (mediaController != null && mediaController!!.isConnected) {
-                                if (isPlaying) {
-                                    mediaController?.pause()
-                                } else {
-                                    mediaController?.play()
+                            .height(50.dp)
+                            .clickable {
+                                if (mediaController != null && mediaController!!.isConnected) {
+                                    if (isPlaying) {
+                                        mediaController?.pause()
+                                    } else {
+                                        mediaController?.play()
+                                    }
                                 }
-                            } } // Ensure it matches the height of the Row
+                            } // Ensure it matches the height of the Row
                     )
                 }
             }
