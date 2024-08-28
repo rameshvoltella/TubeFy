@@ -229,26 +229,38 @@ fun PlaylistDialog(currentSongDetails: TubeFyCoreTypeData,viewModel: TubeFyViewM
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     // Thumbnail Image on the Left
-                                    AsyncImage(
-                                        model = ImageRequest.Builder(LocalContext.current)
-                                            .data(YoutubeCoreConstant.decodeThumpUrl(playlist?.videoThump!!))
-                                            .crossfade(true)
-                                            .placeholder(R.drawable.placeholder)
-                                            .error(R.drawable.placeholder)
-                                            .build(),
-                                        contentDescription = "Drawable Image",
-                                        modifier = Modifier
-                                            .height(50.dp)
-                                            .width(50.dp),
-                                        contentScale = ContentScale.Crop
-                                    )
+                                    if(playlist?.videoThump.equals("Favorites"))
+                                    {
+                                        Image(
+                                            painter = painterResource(id = R.drawable.fav_playlist),
+                                            contentDescription = "Right Image",
+                                            modifier = Modifier
+                                                .height(50.dp)
+                                                .width(50.dp),
+                                            contentScale = ContentScale.Crop
+                                        )
 
+                                    }else {
+                                        AsyncImage(
+                                            model = ImageRequest.Builder(LocalContext.current)
+                                                .data(YoutubeCoreConstant.decodeThumpUrl(playlist?.videoThump!!))
+                                                .crossfade(true)
+                                                .placeholder(R.drawable.placeholder)
+                                                .error(R.drawable.placeholder)
+                                                .build(),
+                                            contentDescription = "Drawable Image",
+                                            modifier = Modifier
+                                                .height(50.dp)
+                                                .width(50.dp),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    }
 
                                     Spacer(modifier = Modifier.width(16.dp))
 
                                     // Playlist Name on the Right
                                     Text(
-                                        text = if (playlist.playlistName!! == "TubeFy-Favorites") "Favorite" else playlist.playlistName!!,
+                                        text = if (playlist?.playlistName!! == "TubeFy-Favorites") "Favorite" else playlist.playlistName!!,
 //                                        text = playlist?.playlistName!!,
                                         color = colorResource(id = R.color.white),
                                         fontWeight = FontWeight.Medium

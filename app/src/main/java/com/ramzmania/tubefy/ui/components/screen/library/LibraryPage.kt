@@ -382,7 +382,6 @@ fun DeleteSongConfirmationDialog(
 }
 
 fun deleteSongFromPlayList(viewModel: TubeFyViewModel, playListName: String, videoId: String) {
-  Log.d("tadadadad","plnam"+playListName)
     if (playListName == "TubeFy-Favorites") {
         viewModel.removeFromFavorites(videoId)
         viewModel.getFavorites()

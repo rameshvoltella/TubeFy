@@ -207,19 +207,33 @@ fun LibraryHomeItem(viewModel: TubeFyViewModel= hiltViewModel(),playListItem: Pl
             ) {
 
                 playListItem.videoThump?.let { thumbnailUrl ->
-                    AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data(YoutubeCoreConstant.decodeThumpUrl(thumbnailUrl))
-                            .crossfade(true)
-                            .placeholder(R.drawable.placeholder)
-                            .error(R.drawable.placeholder)
-                            .build(),
-                        contentDescription = "Drawable Image",
-                        modifier = Modifier
-                            .height(50.dp)
-                            .width(50.dp),
-                        contentScale = ContentScale.Crop
-                    )
+
+                   if(thumbnailUrl.equals("Favorites"))
+                   {
+                       Image(
+                           painter = painterResource(id = R.drawable.fav_playlist),
+                           contentDescription = "Right Image",
+                           modifier = Modifier
+                               .height(50.dp)
+                               .width(50.dp),
+                           contentScale = ContentScale.Crop
+                       )
+
+                   }else {
+                       AsyncImage(
+                           model = ImageRequest.Builder(LocalContext.current)
+                               .data(YoutubeCoreConstant.decodeThumpUrl(thumbnailUrl))
+                               .crossfade(true)
+                               .placeholder(R.drawable.placeholder)
+                               .error(R.drawable.placeholder)
+                               .build(),
+                           contentDescription = "Drawable Image",
+                           modifier = Modifier
+                               .height(50.dp)
+                               .width(50.dp),
+                           contentScale = ContentScale.Crop
+                       )
+                   }
                 } ?: AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
                         .data(R.drawable.images)

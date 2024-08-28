@@ -200,6 +200,7 @@ fun MiniPlayerView(viewModel: TubeFyViewModel = hiltViewModel()) {
                                 } // Ensure it matches the height of the Row
                         )
                     }
+                    Spacer(modifier = Modifier.width(8.dp)) // Adjust the width as needed for the desired gap
                     // Second Image
                     Image(
                         painter = painterResource(id = if (isPlaying) R.drawable.ic_player_pause else R.drawable.ic_player_play),
