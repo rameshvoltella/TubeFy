@@ -1,5 +1,6 @@
 package com.ramzmania.tubefy.ui.components.screen.library
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -66,6 +67,16 @@ fun LibraryDetailPage(viewModel: TubeFyViewModel = hiltViewModel()) {
             doLoadData = false
             if (gettingPlayListSongs?.data != null && gettingPlayListSongs?.data!!.isNotEmpty()) {
                 playListItems = gettingPlayListSongs?.data!!
+            }else{
+                playListItems= emptyList()
+            }
+
+        }
+       else if (gettingPlayListSongs is Resource.DataError) {
+            if (gettingPlayListSongs?.data != null && gettingPlayListSongs?.data!!.isNotEmpty()) {
+                playListItems = gettingPlayListSongs?.data!!
+            }else{
+                playListItems= emptyList()
             }
 
         }
@@ -101,6 +112,17 @@ fun LibraryDetailPage(viewModel: TubeFyViewModel = hiltViewModel()) {
         )
         if (playListItems != null && playListItems.isNotEmpty()) {
             LibraryListBaseView(playListItems)
+        }
+        else{
+            Text(
+                text = "No songs listed in this playlist",
+                fontWeight = FontWeight.Medium,
+                color = Color.White,
+                modifier = Modifier.padding(10.dp, 30.dp, 10.dp, 10.dp),
+                textAlign = TextAlign.Left,
+                maxLines = 2,
+                fontSize = 20.sp
+            )
         }
 
     }
@@ -360,7 +382,7 @@ fun DeleteSongConfirmationDialog(
 }
 
 fun deleteSongFromPlayList(viewModel: TubeFyViewModel, playListName: String, videoId: String) {
-
+  Log.d("tadadadad","plnam"+playListName)
     if (playListName == "TubeFy-Favorites") {
         viewModel.removeFromFavorites(videoId)
         viewModel.getFavorites()

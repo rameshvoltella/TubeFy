@@ -75,6 +75,8 @@ fun MiniPlayerView(viewModel: TubeFyViewModel = hiltViewModel()) {
 
                 songName = mediaController?.currentMediaItem?.mediaMetadata?.title.toString()
                 videoId=mediaController?.currentMediaItem?.mediaId!!
+                viewModel.isFavourite(YoutubeCoreConstant.extractYoutubeVideoId(videoId)!!)
+
             }
 
         }, onMetaDataChangedValue = {
@@ -84,6 +86,9 @@ fun MiniPlayerView(viewModel: TubeFyViewModel = hiltViewModel()) {
                     it.artworkUri?.toString()!!
 
                 songName = it.title.toString()
+                videoId=mediaController?.currentMediaItem?.mediaId!!
+                viewModel.isFavourite(YoutubeCoreConstant.extractYoutubeVideoId(videoId)!!)
+
 
             }
         }

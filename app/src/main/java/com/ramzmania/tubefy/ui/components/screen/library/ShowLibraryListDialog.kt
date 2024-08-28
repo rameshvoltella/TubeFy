@@ -269,31 +269,29 @@ fun PlayListDialogViewer(viewModel: TubeFyViewModel = hiltViewModel(),onDismiss:
     var showDialog by remember { mutableStateOf(true) }
     val gettingMyPlayList by viewModel.gettingPrivatePlayList.observeAsState()
     var playListItems by rememberSaveable { mutableStateOf<List<PlaylistNameWithUrl?>>(emptyList()) }
-    var doLoadData by remember { mutableStateOf(true) }  // Track loading state
+//    var doLoadData by remember { mutableStateOf(true) }  // Track loading state
     var dismissPlayListDialog=viewModel.dismissPlayListDialog.collectAsState()
-    var reloadAllPlayList=viewModel.reloadAllPlayList.collectAsState()
+//    var reloadAllPlayList=viewModel.reloadAllPlayList.collectAsState()
 
     LaunchedEffect(key1 = gettingMyPlayList) {
         if (gettingMyPlayList is Resource.Success) {
 
-            doLoadData = false
             if (gettingMyPlayList?.data != null && gettingMyPlayList?.data!!.isNotEmpty()) {
                 playListItems = gettingMyPlayList?.data!!
+
             }
 
         }
         else if (gettingMyPlayList is Resource.DataError) {
-            doLoadData = false
         }
     }
 
     LaunchedEffect(key1 = Unit) {
-        if (doLoadData) {
             viewModel.getAllSavedPlayList()
-        }
+
 
     }
-    if(reloadAllPlayList.value)
+    /*if(reloadAllPlayList.value)
     {
         Log.d("homedaaa2222","yoda")
 
@@ -301,7 +299,7 @@ fun PlayListDialogViewer(viewModel: TubeFyViewModel = hiltViewModel(),onDismiss:
 //        doLoadData=true
 //        viewModel.reloadAllCustomPlayListData(false)
 
-    }
+    }*/
    /* val playlists = listOf(
         PlaylistNameWithUrl("Playlist 1", "https://placekitten.com/64/64"),
         PlaylistNameWithUrl("Playlist 2", "https://placekitten.com/64/64"),

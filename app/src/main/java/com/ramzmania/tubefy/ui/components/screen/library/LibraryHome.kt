@@ -1,5 +1,6 @@
 package com.ramzmania.tubefy.ui.components.screen.library
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -73,18 +74,20 @@ fun MyLibraryPage(viewModel: TubeFyViewModel = hiltViewModel()) {
     }
 
     LaunchedEffect(key1 = Unit) {
-        if (doLoadData) {
+//        if (doLoadData) {
             viewModel.getAllSavedPlayList()
-        }
-        else if(reloadAllPlayList.value)
-        {
-            viewModel.getAllSavedPlayList()
-           // viewModel.reloadAllCustomPlayListData(true)
-        }
+//        }
+//        else if(reloadAllPlayList.value)
+//        {
+//            viewModel.getAllSavedPlayList()
+//           // viewModel.reloadAllCustomPlayListData(true)
+//        }
 
     }
     if(reloadAllPlayList.value)
     {
+        Log.d("VADA","VANNU")
+        doLoadData=true
         viewModel.getAllSavedPlayList()
         // viewModel.reloadAllCustomPlayListData(true)
     }
@@ -247,18 +250,19 @@ fun LibraryHomeItem(viewModel: TubeFyViewModel= hiltViewModel(),playListItem: Pl
                 )
                 // Spacer to push the text and right image apart
                 Spacer(modifier = Modifier.width(6.dp))
-                Image(
-                    painter = painterResource(id = R.drawable.ic_delete),
-                    contentDescription = "Right Image",
-                    modifier = Modifier
-                        .height(30.dp)
-                        .width(30.dp)
-                        .align(Alignment.CenterVertically)
-                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                        .clickable { onDeleteClick(playListItem)},
-                    contentScale = ContentScale.Crop
-                )
-
+                if (playListItem.playlistName!! != "TubeFy-Favorites") {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_delete),
+                        contentDescription = "Right Image",
+                        modifier = Modifier
+                            .height(30.dp)
+                            .width(30.dp)
+                            .align(Alignment.CenterVertically)
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                            .clickable { onDeleteClick(playListItem) },
+                        contentScale = ContentScale.Crop
+                    )
+                }
             }
         }
 //        Text(text = trackName.videoTitle,  color = Color.Black)
@@ -267,7 +271,9 @@ fun LibraryHomeItem(viewModel: TubeFyViewModel= hiltViewModel(),playListItem: Pl
 }
 
 fun deletePlayList(playlistName: String, viewModel: TubeFyViewModel) {
-  if (playlistName == "TubeFy-Favorites"){
+Log.d("TADA","DELETE->"+playlistName)
+
+    if (playlistName == "TubeFy-Favorites"){
       viewModel.deleteAllFavorites()
   }else{
       viewModel.deleteSpecificPlayList(playlistName)

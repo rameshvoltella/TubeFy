@@ -216,9 +216,12 @@ Log.d("fadak","isfav"+isFavorite)
         val result=playlistDao.deleteFavorite(YoutubeCoreConstant.extractYoutubeVideoId(videoId)!!)>0
        return if (result) {
 //           isFavourite(videoId)
+           Log.d("dada","radam");
            Resource.Success(DatabaseResponse(200))
         } else {
-            Resource.DataError(DATABASE_INSERTION_ERROR)
+           Log.d("dada","radam2222");
+
+           Resource.DataError(DATABASE_INSERTION_ERROR)
         }
     }
 
@@ -275,10 +278,13 @@ Log.d("fadak","isfav"+isFavorite)
         val allSavedPlayList: MutableList<PlaylistNameWithUrl> =
             playlistDao.getAllPlaylistNamesWithUrls().toMutableList()
 
-        if(getFavorites().data!=null&&getFavorites().data?.size!!>0)
-        {
+        Log.d("befor fave","<>"+allSavedPlayList)
+
+//        if(getFavorites().data!=null&&getFavorites().data?.size!!>0)
+//        {
             allSavedPlayList.add(0,PlaylistNameWithUrl("TubeFy-Favorites","Favorites"))
-        }
+//        }
+        Log.d("befor fave","<after>"+allSavedPlayList)
 
         return if(allSavedPlayList.isNotEmpty())
         {
