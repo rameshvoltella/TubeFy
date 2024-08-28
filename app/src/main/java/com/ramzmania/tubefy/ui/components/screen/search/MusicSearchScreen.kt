@@ -2,12 +2,14 @@ package com.ramzmania.tubefy.ui.components.screen.search
 
 import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -20,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.input.ImeAction
@@ -27,6 +30,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.ramzmania.tubefy.R
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
 import com.ramzmania.tubefy.ui.components.screen.album.TrackItem
@@ -164,6 +168,18 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
             textStyle = androidx.compose.material3.MaterialTheme.typography.bodyLarge.copy(
                 color = Color.Red
             )
+                 ,   trailingIcon = {
+                Icon(
+                    painter = painterResource(id = R.drawable.close), // Replace with your icon resource
+                    contentDescription = "Search Icon",
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clickable {
+                            // Handle icon click if needed
+                            textFieldValue = textFieldValue.copy(text = "") // Clear the text
+                        }
+                )
+            }
 //                .border(1.dp, MaterialTheme.colors.onSurface)
         )
         Row(modifier = Modifier.padding(20.dp)) {
@@ -179,6 +195,7 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
                                 if (isChecked) mutableListOf("all") else mutableListOf("music_songs")
                             )
                         }
+                        keyboardController?.hide()
                     }
                 },
                 modifier = Modifier.padding(horizontal = 5.dp)

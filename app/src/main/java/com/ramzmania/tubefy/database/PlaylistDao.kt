@@ -100,6 +100,9 @@ interface PlaylistDao {
     @Query("DELETE FROM FavoritePlaylist WHERE videoId = :videoId")
     suspend fun deleteFavorite(videoId: String):Int
 
+    @Query("DELETE FROM FavoritePlaylist")
+    suspend fun deleteAllFavorites(): Int
+
     @Query("SELECT * FROM FavoritePlaylist")
     suspend fun getAllFavorites(): List<FavoritePlaylist>
 
@@ -139,6 +142,9 @@ interface PlaylistDao {
     @Query("DELETE FROM CustomPlaylist WHERE playlistName = :playlistName")
     suspend fun deleteCustomPlaylistByName(playlistName: String):Int
 
-    @Query("SELECT DISTINCT playlistName, videoThump FROM CustomPlaylist")
+//    @Query("SELECT DISTINCT playlistName, videoThump FROM CustomPlaylist")
+//    suspend fun getAllPlaylistNamesWithUrls(): List<PlaylistNameWithUrl>
+
+    @Query("SELECT playlistName, videoThump FROM CustomPlaylist GROUP BY playlistName")
     suspend fun getAllPlaylistNamesWithUrls(): List<PlaylistNameWithUrl>
 }

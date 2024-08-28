@@ -79,7 +79,7 @@ class DatabaseFormatter<InputType, OutputType,ListType : PlaylistItem> @Inject c
                                     videoImage = dataValue.videoThump,
                                     videoId = dataValue.videoId,
                                     videoTitle = dataValue.videoName,
-                                    playListName = "TubeFy-Fav"
+                                    playListName = "TubeFy-Favorites"
                                 )as ListType
                             )
                         }

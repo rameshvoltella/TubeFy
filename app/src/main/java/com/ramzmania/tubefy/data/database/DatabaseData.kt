@@ -1,11 +1,13 @@
 package com.ramzmania.tubefy.data.database
 
 import android.util.Log
+import com.ramzmania.tubefy.core.YoutubeCoreConstant
 import com.ramzmania.tubefy.core.dataformatter.FormattingResult
 import com.ramzmania.tubefy.core.dataformatter.database.DatabaseFormatterFactory
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
 import com.ramzmania.tubefy.data.dto.database.PlaylistNameWithUrl
+import com.ramzmania.tubefy.database.ActivePlaylist
 import com.ramzmania.tubefy.database.CustomPlaylist
 import com.ramzmania.tubefy.database.DatabaseResponse
 import com.ramzmania.tubefy.database.FavoritePlaylist
@@ -13,6 +15,7 @@ import com.ramzmania.tubefy.database.PlaylistDao
 import com.ramzmania.tubefy.database.QuePlaylist
 import com.ramzmania.tubefy.errors.DATABASE_INSERTION_ERROR
 import com.ramzmania.tubefy.errors.DATABASE_PLAYLIST_ERROR
+import com.ramzmania.tubefy.utils.swap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -70,16 +73,27 @@ class DatabaseData @Inject constructor(
         }
     }
 
-    override suspend fun addActivePlayList(playlists: List<TubeFyCoreTypeData?>): Resource<DatabaseResponse> {
+    override suspend fun addActivePlayList(playlists: List<TubeFyCoreTypeData?>,clickPosition: Int): Resource<DatabaseResponse> {
         return withContext(Dispatchers.IO)
         {
-            Log.d("yono", "yonopoda")
+            Log.d("yono", "yonopodacheker"+clickPosition)
             var formattedActivePlayList =
                 databaseFormatterFactory.formatActivePlayList().run(playlists)
             when (formattedActivePlayList) {
                 is FormattingResult.SUCCESS -> {
+//                    var data=formattedActivePlayList.data.toMutableList()
+//
+//                    if(clickPosition>0)
+//                    {
+//                        data=formattedActivePlayList.data.toMutableList().swap(0,clickPosition)
+//                    }
+                    val activePlaylists: MutableList<ActivePlaylist> = formattedActivePlayList.data.toMutableList()
+                    if(clickPosition>0)
+                    {
+                        activePlaylists.swap(0,clickPosition)
+                    }
                     val result =
-                        playlistDao.addAndReplaceActivePlaylist(formattedActivePlayList.data)
+                        playlistDao.addAndReplaceActivePlaylist(activePlaylists)
                     if (result) {
                         Resource.Success(DatabaseResponse(200))
                     } else {
@@ -140,7 +154,8 @@ class DatabaseData @Inject constructor(
     }
 
     override suspend fun isFavourite(videoId: String): Resource<Boolean> {
-        val isFavorite = playlistDao.isFavorite(videoId) > 0
+        val isFavorite = playlistDao.isFavorite(YoutubeCoreConstant.extractYoutubeVideoId(videoId)!!) > 0
+        Log.d("ISFAVE CAL",videoId+"yoyoy"+isFavorite)
         return Resource.Success(isFavorite)
 
     }
@@ -151,10 +166,17 @@ class DatabaseData @Inject constructor(
 //            videoThump = "https://example.com/video/abc123",
 //            videoName = "Sample Video"
 //        )
-        val isFavorite = playlistDao.isFavorite(favoriteItem.videoId) > 0
+        val isFavorite = playlistDao.isFavorite(YoutubeCoreConstant.extractYoutubeVideoId(favoriteItem.videoId)!!) > 0
+
+Log.d("fadak","isfav"+isFavorite)
+//
+//
 // Insert into the database
         return if (!isFavorite) {
+            Log.d("fadak","inserting"+favoriteItem.videoId+"<>"+favoriteItem.videoThump+"<>"+favoriteItem.videoName)
+
             playlistDao.insertFavorite(favoriteItem)
+//            isFavourite(YoutubeCoreConstant.extractYoutubeVideoId(favoriteItem.videoId)!!)
 //            if (result) {
                 Resource.Success(DatabaseResponse(200))
 //            } else {
@@ -191,8 +213,22 @@ class DatabaseData @Inject constructor(
     }
 
     override suspend fun removeFromFavorites(videoId:String): Resource<DatabaseResponse> {
-        val result=playlistDao.deleteFavorite(videoId)>0
+        val result=playlistDao.deleteFavorite(YoutubeCoreConstant.extractYoutubeVideoId(videoId)!!)>0
        return if (result) {
+//           isFavourite(videoId)
+           Log.d("dada","radam");
+           Resource.Success(DatabaseResponse(200))
+        } else {
+           Log.d("dada","radam2222");
+
+           Resource.DataError(DATABASE_INSERTION_ERROR)
+        }
+    }
+
+    override suspend fun deleteAllFavorites(): Resource<DatabaseResponse> {
+        val result=playlistDao.deleteAllFavorites()>0
+        return if (result) {
+//           isFavourite(videoId)
             Resource.Success(DatabaseResponse(200))
         } else {
             Resource.DataError(DATABASE_INSERTION_ERROR)
@@ -239,8 +275,16 @@ class DatabaseData @Inject constructor(
 
 
     override suspend fun getAllSavedPlayList(): Resource<List<PlaylistNameWithUrl>> {
-        val allSavedPlayList: List<PlaylistNameWithUrl> =
-            playlistDao.getAllPlaylistNamesWithUrls()
+        val allSavedPlayList: MutableList<PlaylistNameWithUrl> =
+            playlistDao.getAllPlaylistNamesWithUrls().toMutableList()
+
+        Log.d("befor fave","<>"+allSavedPlayList)
+
+//        if(getFavorites().data!=null&&getFavorites().data?.size!!>0)
+//        {
+            allSavedPlayList.add(0,PlaylistNameWithUrl("TubeFy-Favorites","Favorites"))
+//        }
+        Log.d("befor fave","<after>"+allSavedPlayList)
 
         return if(allSavedPlayList.isNotEmpty())
         {

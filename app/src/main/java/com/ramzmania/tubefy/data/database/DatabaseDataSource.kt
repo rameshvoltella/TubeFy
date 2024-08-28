@@ -14,7 +14,7 @@ interface DatabaseDataSource {
     suspend fun getPlaylists(): Resource<List<QuePlaylist>>
     suspend fun addSongToQueue(playData: QuePlaylist): Resource<DatabaseResponse>
 
-    suspend fun addActivePlayList(playlists: List<TubeFyCoreTypeData?>): Resource<DatabaseResponse>
+    suspend fun addActivePlayList(playlists: List<TubeFyCoreTypeData?>,clickPosition:Int): Resource<DatabaseResponse>
 
     suspend fun getAllActivePlaylists(): Resource<List<TubeFyCoreTypeData?>>
 
@@ -28,6 +28,7 @@ interface DatabaseDataSource {
     suspend fun getAllSavedPlayList(): Resource<List<PlaylistNameWithUrl>>
     suspend fun deleteSongFromPlayList(playlistName:String,songName:String): Resource<DatabaseResponse>
     suspend fun deleteSpecificPlayList(playlistName:String): Resource<DatabaseResponse>
+    suspend fun deleteAllFavorites(): Resource<DatabaseResponse>
 
 
 

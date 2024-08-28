@@ -6,6 +6,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
+import com.ramzmania.tubefy.core.YoutubeCoreConstant
 import com.ramzmania.tubefy.core.YoutubeCoreConstant.extractYoutubeVideoId
 import com.ramzmania.tubefy.data.dto.base.searchformat.StreamUrlData
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreUniversalData
@@ -134,6 +135,11 @@ class TubeFyViewModel @Inject constructor(
     private val loadMoreHomePageEndedPrivate = MutableStateFlow(false)
     val loadMoreHomePageEnded = loadMoreHomePageEndedPrivate.asStateFlow()
 
+    private val dismissPlayListDialogPrivate = MutableStateFlow(false)
+    val dismissPlayListDialog = dismissPlayListDialogPrivate.asStateFlow()
+
+    private val reloadAllPlayListPrivate = MutableStateFlow(false)
+    val reloadAllPlayList = reloadAllPlayListPrivate.asStateFlow()
 
     private val getPlayListFromDatabasePrivate = MutableLiveData<Resource<List<QuePlaylist>>>()
     val getPlayListFromDatabase: LiveData<Resource<List<QuePlaylist>>> get() = getPlayListFromDatabasePrivate
@@ -149,6 +155,8 @@ class TubeFyViewModel @Inject constructor(
     private val getAllActiveListPrivate = MutableLiveData<Resource<List<TubeFyCoreTypeData?>>>()
     val getAllActiveList: LiveData<Resource<List<TubeFyCoreTypeData?>>> get() = getAllActiveListPrivate
 ///////////////////////////////////////////////////
+    private val isFavouriteSongMutableStatePrivate = MutableStateFlow(false)
+    val isFavouriteState = isFavouriteSongMutableStatePrivate.asStateFlow()
 
     private val isFavouritePrivate = MutableLiveData<Resource<Boolean>>()
     val isFavourite: LiveData<Resource<Boolean>> get() = isFavouritePrivate
@@ -320,14 +328,14 @@ class TubeFyViewModel @Inject constructor(
 
     }
 
-    fun setCurrentPlayListData(playListItems: List<TubeFyCoreTypeData?>) {
-//        youtubePlayerPlaylistListModel=YoutubePlayerPlaylistListModel(playListItems)
-        setActiveSongsList(playListItems)
-//        PlayListSingleton.addData(playListItems)
-//        Log.d("bulkmode","added 111"+koko)
-
-
-    }
+//    fun setCurrentPlayListData(playListItems: List<TubeFyCoreTypeData?>) {
+////        youtubePlayerPlaylistListModel=YoutubePlayerPlaylistListModel(playListItems)
+//        setActiveSongsList(playListItems)
+////        PlayListSingleton.addData(playListItems)
+////        Log.d("bulkmode","added 111"+koko)
+//
+//
+//    }
 
     private fun setHtmlMusicCategoryContent(result: YtMusicCategoryBase?) {
 
@@ -586,10 +594,10 @@ class TubeFyViewModel @Inject constructor(
     }
 
 
-    fun setActiveSongsList(playlists: List<TubeFyCoreTypeData?>) {
+    fun setActiveSongsList(playlists: List<TubeFyCoreTypeData?>,clickPosition:Int=-1) {
         viewModelScope.launch {
 
-            playlistDatabaseRepository.addActivePlayList(playlists).collect {
+            playlistDatabaseRepository.addActivePlayList(playlists,clickPosition).collect {
                 addToActiveDatabasePrivate.value = it
 
             }
@@ -609,8 +617,11 @@ class TubeFyViewModel @Inject constructor(
     fun isFavourite(videoId: String) {
         viewModelScope.launch {
 
-            playlistDatabaseRepository.isFavourite(videoId).collect {
+            playlistDatabaseRepository.isFavourite(YoutubeCoreConstant.extractYoutubeVideoId(videoId)!!).collect {
                 isFavouritePrivate.value = it
+//                Log.d("y?oyoy","yoyoy>>>"+it.data!!)
+//                if(it ==Resource.Success)
+                isFavouriteSongMutableStatePrivate.value=it.data!!
 
             }
         }
@@ -621,7 +632,7 @@ class TubeFyViewModel @Inject constructor(
 
             playlistDatabaseRepository.addToFavorites(favorite).collect {
                 addingSongListPlayListOperationPrivate.value = it
-
+                isFavourite(favorite.videoId)
             }
         }
     }
@@ -641,7 +652,7 @@ class TubeFyViewModel @Inject constructor(
 
             playlistDatabaseRepository.removeFromFavorites(videoId).collect {
                 addingSongListPlayListOperationPrivate.value = it
-
+                isFavourite(videoId)
             }
         }
     }
@@ -690,6 +701,24 @@ class TubeFyViewModel @Inject constructor(
         viewModelScope.launch {
 
             playlistDatabaseRepository.deleteSpecificPlayList(playListName).collect {
+                addingSongListPlayListOperationPrivate.value = it
+
+            }
+        }
+    }
+
+    fun dismissPlaListDialog(value: Boolean) {
+        dismissPlayListDialogPrivate.value=value
+    }
+
+    fun reloadAllCustomPlayListData(value: Boolean) {
+        reloadAllPlayListPrivate.value=value
+    }
+
+    fun deleteAllFavorites() {
+        viewModelScope.launch {
+
+            playlistDatabaseRepository.deleteAllFavorites().collect {
                 addingSongListPlayListOperationPrivate.value = it
 
             }

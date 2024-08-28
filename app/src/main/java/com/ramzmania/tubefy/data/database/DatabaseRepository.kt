@@ -40,8 +40,8 @@ class DatabaseRepository @Inject constructor(
         return flow {emit(databaseData.addSongToQueue(playData))  }
     }
 
-    override suspend fun addActivePlayList(playlists: List<TubeFyCoreTypeData?>): Flow<Resource<DatabaseResponse>> {
-        return flow { emit(databaseData.addActivePlayList(playlists)) }
+    override suspend fun addActivePlayList(playlists: List<TubeFyCoreTypeData?>,clickPosition:Int): Flow<Resource<DatabaseResponse>> {
+        return flow { emit(databaseData.addActivePlayList(playlists,clickPosition)) }
     }
 
     override suspend fun getAllActivePlaylists(): Flow<Resource<List<TubeFyCoreTypeData?>>> {
@@ -85,6 +85,10 @@ class DatabaseRepository @Inject constructor(
 
     override suspend fun deleteSpecificPlayList(playlistName: String): Flow<Resource<DatabaseResponse>> {
         return flow { emit(databaseData.deleteSpecificPlayList(playlistName)) }
+    }
+
+    override suspend fun deleteAllFavorites(): Flow<Resource<DatabaseResponse>> {
+        return flow { emit(databaseData.deleteAllFavorites()) }
     }
 
 
