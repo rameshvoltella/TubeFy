@@ -163,6 +163,7 @@ fun LibraryListBaseView(
     if (showDialog) {
         DeleteSongConfirmationDialog(
             onConfirm = {
+                doLoadData=true
                 deleteSongFromPlayList(viewModel,tubeFyCoreItem.playListName,tubeFyCoreItem.videoId)
                 showDialog = false // Close the dialog after confirming
             },

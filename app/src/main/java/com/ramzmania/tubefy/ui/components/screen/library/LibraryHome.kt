@@ -83,7 +83,11 @@ fun MyLibraryPage(viewModel: TubeFyViewModel = hiltViewModel()) {
         }
 
     }
-
+    if(reloadAllPlayList.value)
+    {
+        viewModel.getAllSavedPlayList()
+        // viewModel.reloadAllCustomPlayListData(true)
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
