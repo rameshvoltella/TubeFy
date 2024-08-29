@@ -45,7 +45,7 @@ click here -> https://youtu.be/YrhG8T8gbU4
 - **Kotlin**: The app is built using Kotlin, a modern programming language for Android development known for its conciseness and safety features. ([Kotlin GitHub Repository](https://github.com/JetBrains/kotlin))
 - **Jetpack Compose**: Jetpack Compose is used for building the user interface (UI) of the app. It offers a modern and declarative way to construct UIs, making it easier to develop and maintain complex UIs. ([Jetpack Compose GitHub Repository](https://github.com/androidx/androidx/tree/androidx-main/compose))
 - **MediaSession**: Control and advertise playback using a MediaSession([MediaSession](https://developer.android.com/media/media3/session/control-playback))
-- **Room**: Save data in a local database using Room   Part of Android Jetpack([MediaSession](https://developer.android.com/training/data-storage/room))
+- **Room**: Save data in a local database using Room   Part of Android Jetpack([Room](https://developer.android.com/training/data-storage/room))
 
 ## MY GITHUB TROPHY
 
