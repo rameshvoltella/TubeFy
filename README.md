@@ -25,3 +25,8 @@ click here -> https://youtu.be/YrhG8T8gbU4
         <img src="https://github.com/rameshvoltella/TubeFy/blob/beta/screenshots/WhatsApp%20Image%202024-08-28%20at%209.09.37%20PM(1).jpeg" alt="Player" style="width: 40%; height: 40%;">
     </div>
 </div>
+
+
+## MY GITHUB TROPHY
+
+[![trophy](https://github-profile-trophy.vercel.app/?username=rameshvoltella)](https://github.com/ryo-ma/github-profile-trophy)
