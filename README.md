@@ -14,6 +14,9 @@ Transform your YouTube experience into a seamless music streaming journey with o
 - **User-Friendly Interface:** Navigate your music library and playlists with an intuitive and sleek interface designed for ease of use.
 
 Elevate your music experience and enjoy YouTube's vast music library like never before. Download now and start listening!
+## Video Preview
+
+click here -> https://youtu.be/YrhG8T8gbU4
 
 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
     <div style="text-align: center;">
