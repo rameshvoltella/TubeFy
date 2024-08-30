@@ -250,7 +250,7 @@ fun LibraryHomeItem(viewModel: TubeFyViewModel= hiltViewModel(),playListItem: Pl
                 // Spacer to push the text and right image apart
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = if (playListItem.playlistName!! == "TubeFy-Favorites") "Favorite" else playListItem.playlistName!!,
+                    text = if (playListItem.playlistName!! == "TubeFy-Favorites") "Favorite" else  playListItem.playlistName.replaceFirstChar { it.uppercase() },
                     fontWeight = FontWeight.Thin,
                     color = Color.White,
                     modifier = Modifier

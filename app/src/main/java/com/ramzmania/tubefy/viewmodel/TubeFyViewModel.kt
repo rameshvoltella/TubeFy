@@ -141,6 +141,13 @@ class TubeFyViewModel @Inject constructor(
     private val reloadAllPlayListPrivate = MutableStateFlow(false)
     val reloadAllPlayList = reloadAllPlayListPrivate.asStateFlow()
 
+    private val showPlayListDialogPrivate = MutableStateFlow(false)
+    val showPlayListDialog = showPlayListDialogPrivate.asStateFlow()
+
+    private var selectedTrackPrivate =MutableStateFlow<TubeFyCoreTypeData?>(null)
+    val selectedTrack=selectedTrackPrivate.asStateFlow()
+
+
     private val getPlayListFromDatabasePrivate = MutableLiveData<Resource<List<QuePlaylist>>>()
     val getPlayListFromDatabase: LiveData<Resource<List<QuePlaylist>>> get() = getPlayListFromDatabasePrivate
 
@@ -629,6 +636,7 @@ class TubeFyViewModel @Inject constructor(
 
     fun addToFavorites(favorite: FavoritePlaylist) {
         viewModelScope.launch {
+            Log.d("kolpo","added favourties111111")
 
             playlistDatabaseRepository.addToFavorites(favorite).collect {
                 addingSongListPlayListOperationPrivate.value = it
@@ -723,6 +731,13 @@ class TubeFyViewModel @Inject constructor(
 
             }
         }
+    }
+
+    fun showPlayListDialog(showDialog:Boolean,selectedSong:TubeFyCoreTypeData?=null) {
+
+        showPlayListDialogPrivate.value=showDialog
+        selectedTrackPrivate.value=selectedSong
+
     }
 
 }

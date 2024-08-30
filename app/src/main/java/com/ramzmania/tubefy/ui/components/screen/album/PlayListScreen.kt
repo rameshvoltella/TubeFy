@@ -19,12 +19,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -57,6 +59,7 @@ import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.base.searchformat.StreamUrlData
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
 import com.ramzmania.tubefy.ui.components.NavigationItem
+import com.ramzmania.tubefy.ui.components.screen.library.PlayListDialogViewer
 import com.ramzmania.tubefy.ui.components.screen.player.LoadBitmapAndExtractPalette
 import com.ramzmania.tubefy.utils.LocalNavController
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
@@ -111,10 +114,12 @@ fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
             }
         }
     }
-    LoadBitmapAndExtractPalette(URLDecoder.decode(
-        navBackStackEntry?.arguments?.getString("playlistImage"),
-        StandardCharsets.UTF_8.toString()
-    )) { extractedPalette ->
+    LoadBitmapAndExtractPalette(
+        URLDecoder.decode(
+            navBackStackEntry?.arguments?.getString("playlistImage"),
+            StandardCharsets.UTF_8.toString()
+        )
+    ) { extractedPalette ->
         palette = extractedPalette
     }
     val dominantColor = palette?.dominantSwatch?.rgb?.let { Color(it) } ?: Color.Black
@@ -288,15 +293,33 @@ fun AlbumHeader(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 10.dp),
-
-            ) { Text(text = "Play All") }
+            colors = ButtonDefaults.buttonColors(
+                containerColor = colorResource(id = R.color.tubefyred), // Background color of the button
+                contentColor = Color.White   // Text color of the button
+            )
+        ) { Text(text = "Play All") }
 
 
     }
 }
 
 @Composable
-fun AlbumTrackList(tracks: List<TubeFyCoreTypeData?>) {
+fun AlbumTrackList(
+    tracks: List<TubeFyCoreTypeData?>,
+    viewModel: TubeFyViewModel = hiltViewModel()
+) {
+    var showPlayListDialog = viewModel.showPlayListDialog.collectAsState()
+    var currentSongItemSelected = viewModel.selectedTrack.collectAsState()
+
+    if (showPlayListDialog.value && currentSongItemSelected.value != null) {
+        PlayListDialogViewer(
+            viewModel = viewModel,
+            onDismiss = { viewModel.showPlayListDialog(false) },
+            currentSongItemSelected.value!!
+            // Reset the state when the dialog is dismissed
+        )
+    }
+
     LazyColumn {
         items(tracks!!) { track ->
             TrackItem(trackName = track!!)
@@ -308,7 +331,7 @@ fun AlbumTrackList(tracks: List<TubeFyCoreTypeData?>) {
 }
 
 @Composable
-fun TrackItem(trackName: TubeFyCoreTypeData) {
+fun TrackItem(trackName: TubeFyCoreTypeData, viewModel: TubeFyViewModel = hiltViewModel()) {
     val newNav = LocalNavController.current
 
     Column(
@@ -328,46 +351,45 @@ fun TrackItem(trackName: TubeFyCoreTypeData) {
                 val videoTitle =
                     URLEncoder.encode(trackName.videoTitle, StandardCharsets.UTF_8.toString())
 
-                Log.d("Sound track","<><><"+trackName.videoId)
-                 if(trackName.videoId.length>10)
-                 {
-                     val encodedVideoId =
-                         URLEncoder.encode(trackName.videoId, StandardCharsets.UTF_8.toString())
-                     newNav!!.navigate(
-                         NavigationItem.AudioPlayer.createRoute(
-                             encodedVideoId,
-                             encodedVideoThumpUrl, videoTitle, videoTitle, videoTitle
-                         )
-                     ) {
-                         newNav.graph.route?.let { route ->
-                             popUpTo(route) {
-                                 saveState = true
-                             }
-                         }
-                         launchSingleTop = true
-                         restoreState = true
-                     }
-                 }
-                 else{
-                     newNav!!.navigate(
-                         NavigationItem.PlayList.createRoute(
-                             URLEncoder.encode(YoutubeCoreConstant.extractPlaylistId(trackName.plaListUrl!!), StandardCharsets.UTF_8.toString())
-                             ,
-                             videoTitle,
-                                 encodedVideoThumpUrl
+                Log.d("Sound track", "<><><" + trackName.videoId)
+                if (trackName.videoId.length > 10) {
+                    val encodedVideoId =
+                        URLEncoder.encode(trackName.videoId, StandardCharsets.UTF_8.toString())
+                    newNav!!.navigate(
+                        NavigationItem.AudioPlayer.createRoute(
+                            encodedVideoId,
+                            encodedVideoThumpUrl, videoTitle, videoTitle, videoTitle
+                        )
+                    ) {
+                        newNav.graph.route?.let { route ->
+                            popUpTo(route) {
+                                saveState = true
+                            }
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                } else {
+                    newNav!!.navigate(
+                        NavigationItem.PlayList.createRoute(
+                            URLEncoder.encode(
+                                YoutubeCoreConstant.extractPlaylistId(trackName.plaListUrl!!),
+                                StandardCharsets.UTF_8.toString()
+                            ),
+                            videoTitle,
+                            encodedVideoThumpUrl
 
-                         )
-                     ) {
-                         newNav.graph.route?.let { route ->
-                             popUpTo(route) {
-                                 saveState = true
-                             }
-                         }
-                         launchSingleTop = true
-                         restoreState = true
-                     }
-                 }
-
+                        )
+                    ) {
+                        newNav.graph.route?.let { route ->
+                            popUpTo(route) {
+                                saveState = true
+                            }
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
 
 
 //                LocalNavController.current
@@ -430,18 +452,34 @@ fun TrackItem(trackName: TubeFyCoreTypeData) {
                     maxLines = 1,
                     fontSize = 16.sp
                 )
-                if(trackName.videoId.isEmpty()) {
+                if (trackName.videoId.isEmpty()) {
                     // Spacer to push the text and right image apart
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(2.dp))
                     Image(
                         painter = painterResource(id = R.drawable.ic_playlist),
                         contentDescription = "Right Image",
                         modifier = Modifier
-                            .height(50.dp)
-                            .width(50.dp).padding(horizontal = 5.dp, vertical = 10.dp),
+                            .height(30.dp)
+                            .align(Alignment.CenterVertically)
+                            .width(30.dp)
+                            .padding(horizontal = 5.dp, vertical = 5.dp),
                         contentScale = ContentScale.Crop
                     )
                 }
+                Spacer(modifier = Modifier.width(2.dp))
+                Image(
+                    painter = painterResource(id = R.drawable.ic_more),
+                    contentDescription = "Right Image",
+                    modifier = Modifier
+                        .height(30.dp)
+                        .align(Alignment.CenterVertically)
+                        .width(30.dp)
+                        .padding(horizontal = 5.dp, vertical = 5.dp)
+                        .clickable {
+                            viewModel.showPlayListDialog(true, trackName)
+                        },
+                    contentScale = ContentScale.Crop
+                )
             }
         }
 //        Text(text = trackName.videoTitle,  color = Color.Black)
@@ -452,5 +490,12 @@ fun TrackItem(trackName: TubeFyCoreTypeData) {
 @Preview
 @Composable
 fun PreviewAlbumScreen() {
-    TrackItem(TubeFyCoreTypeData("","sbksdnbcjhsabdjcaskjncdkadsnkcnsdkndckdsnvkcsnjndkfjndsknvksdnkvnskdc","ascs","dcs"))
+    TrackItem(
+        TubeFyCoreTypeData(
+            "",
+            "sbksdnbcjhsabdjcaskjncdkadsnkcnsdkndckdsnvkcsnjndkfjndsknvksdnkvnskdc",
+            "ascs",
+            "dcs"
+        )
+    )
 }

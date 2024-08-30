@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
@@ -213,6 +214,11 @@ fun LibraryListBaseView(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 10.dp),
+
+            colors = ButtonDefaults.buttonColors(
+                containerColor = colorResource(id = R.color.tubefyred), // Background color of the button
+                contentColor = Color.White   // Text color of the button
+            )
 
             ) { Text(text = "Play All") }
         LazyColumn(

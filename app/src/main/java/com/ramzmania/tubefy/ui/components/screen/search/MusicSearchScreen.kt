@@ -35,6 +35,7 @@ import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
 import com.ramzmania.tubefy.ui.components.screen.album.TrackItem
 import com.ramzmania.tubefy.ui.components.screen.category.CategoryScreenMain
+import com.ramzmania.tubefy.ui.components.screen.library.PlayListDialogViewer
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
 import org.schabi.newpipe.extractor.Page
 
@@ -58,6 +59,10 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
     val lazyListState = rememberLazyListState()
     var isChecked by rememberSaveable { mutableStateOf(false) }
     var isFreshSearch by rememberSaveable { mutableStateOf(false) }
+    var showPlayListDialog=viewModel.showPlayListDialog.collectAsState()
+    var currentSongItemSelected=viewModel.selectedTrack.collectAsState()
+
+
     LaunchedEffect(key1 = searchPlayListName) {
         if (searchPlayListName is Resource.Success) {
 //            val items = (streamUrlData as Resource.Success<StreamUrlData>).data
@@ -136,7 +141,18 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
                 }
             }
     }
+//    var showPlayListDialog=viewModel.showPlayListDialog.collectAsState()
+//    var currentSongItemSelected=viewModel.selectedTrack.collectAsState()
 
+    if(showPlayListDialog.value&&currentSongItemSelected.value!=null)
+    {
+        PlayListDialogViewer(
+            viewModel = viewModel,
+            onDismiss = { viewModel.showPlayListDialog(false) },
+            currentSongItemSelected.value!!
+            // Reset the state when the dialog is dismissed
+        )
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()

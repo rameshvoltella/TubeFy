@@ -166,6 +166,8 @@ class DatabaseData @Inject constructor(
 //            videoThump = "https://example.com/video/abc123",
 //            videoName = "Sample Video"
 //        )
+        Log.d("kolpo","added favourties3333333")
+
         val isFavorite = playlistDao.isFavorite(YoutubeCoreConstant.extractYoutubeVideoId(favoriteItem.videoId)!!) > 0
 
 Log.d("fadak","isfav"+isFavorite)
