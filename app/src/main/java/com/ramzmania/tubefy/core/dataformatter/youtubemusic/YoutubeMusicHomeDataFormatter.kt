@@ -35,7 +35,6 @@ class YoutubeMusicHomeDataFormatter @Inject constructor()  :
                     musicTwoRowItemRenderer.thumbnailRenderer?.musicThumbnailRenderer?.thumbnail?.thumbnails?.firstOrNull()?.url
                 val title = musicTwoRowItemRenderer.title?.runs?.firstOrNull()?.text
                 val subtitle = musicTwoRowItemRenderer.subtitle?.runs?.firstOrNull()?.text
-                Log.d("check first","$videoId <><> $playlistId")
                 if (videoId!!.length> 11) {
                     videoSortedListWithPlaylist.add(
                         BaseContentData(
@@ -78,7 +77,6 @@ class YoutubeMusicHomeDataFormatter @Inject constructor()  :
                 val subtitle =
                     "" // Assuming subtitle is not available in MusicResponsiveListItemRenderer
 //              "kk".toInt()
-                Log.d("check two","$videoId <><> $playlistId")
 
                 if (videoId!!.length> 11) {
                     videoSortedListWithPlaylist.add(
@@ -101,8 +99,6 @@ class YoutubeMusicHomeDataFormatter @Inject constructor()  :
                 }
             }
         }
-            Log.d("what size","videoSortedListWithoutPlaylist>>>"+videoSortedListWithoutPlaylist.size)
-            Log.d("what size","videoSortedListWithPlaylist>>>"+videoSortedListWithPlaylist.size)
 
             if (videoSortedListWithoutPlaylist.size > 0) {
             videoSortedList.add(HomePageResponse("Most Played",CellType.LIST, videoSortedListWithoutPlaylist))

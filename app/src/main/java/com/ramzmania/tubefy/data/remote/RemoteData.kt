@@ -119,7 +119,6 @@ constructor(
                 if (extractor.videoStreams.isNotEmpty()) {
                     streamUrl = extractor.videoStreams.first().content ?: ""
 
-                    Log.d("Streamz","<><>"+streamUrl)
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -160,7 +159,6 @@ constructor(
                     extractor.fetchPage()
 
                     if (extractor.videoStreams.isNotEmpty()) {
-                        Log.d("9papa",videoIds!!.videoId+"")
                         videoIdArray.add(YoutubeCoreConstant.extractYoutubeVideoId(videoIds.videoId)!!)
 //                        if(videoIds.videoId.equals("https://www.youtube.com/watch?v=roz9sXFkTuE",ignoreCase = true)) {
 //                            streamUrlArray?.add("https://olakka"+extractor.videoStreams.first().content ?: "")
@@ -186,7 +184,6 @@ constructor(
                 mediaItems = createMediaItems(streamUrlArray, videoThumpUrls, videoTitles,videoIdArray)
             }catch (e: CancellationException) {
                 // Handle the cancellation, e.g., clean up resources if needed
-                Log.d("getStreamBulkUrl", "Operation was canceled")
                 e.printStackTrace() // Re-throw the cancellation exception to properly handle coroutine cancellation
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -279,7 +276,6 @@ constructor(
             is Any -> {
                 try {
                     (response is YoutubeiMusicHomeApiResponse).let {
-                        Log.d("kiiii", "yooo")
                         return withContext(Dispatchers.IO)
                         {
                             val result =
@@ -345,7 +341,6 @@ constructor(
             is Any -> {
                 try {
                     (response is YoutubeiMusicHomeApiResponse).let {
-                        Log.d("kiiii", "yooo")
                         return withContext(Dispatchers.IO)
                         {
                         val result =
@@ -418,7 +413,6 @@ constructor(
             )
             when (result) {
                 is FormattingResult.SUCCESS -> {
-                    Log.d("TAGGIZ", "" + result.data.youtubeSortedData.youtubeSortedList!!.size)
 
                     Resource.Success(result)
 
@@ -534,10 +528,7 @@ constructor(
 //            val baseDataModel= TubeFyCoreUniversalData(NewPipeSortingInput(result,nextPageSearchInfo.nextPage))
             when (result) {
                 is FormattingResult.SUCCESS -> {
-                    Log.d(
-                        "TAGGIZNEXTPAGE",
-                        "" + result.data.youtubeSortedData.youtubeSortedList!!.size
-                    )
+
                     Resource.Success(result.data)
 
                 }

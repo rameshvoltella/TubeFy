@@ -69,11 +69,7 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
 //            val items = (streamUrlData as Resource.Success<StreamUrlData>).data
             // Prepend new data to the existing list
             if (isLoading || isFreshSearch) {
-                Log.d("datata", "first")
-                Log.d(
-                    "datata",
-                    ">>VADAAACAME" + searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!.size
-                )
+
                 if (isFreshSearch) {
                     lazyListState.scrollToItem(0) // Scroll to top without animation
                     isFreshSearch = false

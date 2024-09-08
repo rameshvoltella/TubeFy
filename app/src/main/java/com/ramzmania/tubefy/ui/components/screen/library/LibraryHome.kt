@@ -86,7 +86,6 @@ fun MyLibraryPage(viewModel: TubeFyViewModel = hiltViewModel()) {
     }
     if(reloadAllPlayList.value)
     {
-        Log.d("VADA","VANNU")
         doLoadData=true
         viewModel.getAllSavedPlayList()
         // viewModel.reloadAllCustomPlayListData(true)
@@ -285,7 +284,6 @@ fun LibraryHomeItem(viewModel: TubeFyViewModel= hiltViewModel(),playListItem: Pl
 }
 
 fun deletePlayList(playlistName: String, viewModel: TubeFyViewModel) {
-Log.d("TADA","DELETE->"+playlistName)
 
     if (playlistName == "TubeFy-Favorites"){
       viewModel.deleteAllFavorites()

@@ -228,7 +228,6 @@ private var nextPage: Page? = null
             is Resource.Loading -> {}
             is Resource.Success -> {
                 Toast.makeText(applicationContext, "WEB SCAPPING DATA>" + resource.data!!.streamUrl, 1).show()
-                Log.d("url", "" + resource.data!!.streamUrl)
                 openUrlInBrowser( resource.data!!.streamUrl)
             }
 
@@ -243,7 +242,6 @@ private var nextPage: Page? = null
             is Resource.Loading -> {}
             is Resource.Success -> {
                 Toast.makeText(applicationContext, "WEB SCAPPING DATA>" + resource.data!!.size, 1).show()
-                Log.d("url", "" + resource.data[0]!!.contentData!!.size)
 //                Log.d("url", "" + resource.data[1]!!.contentData!!.size)
 
 //                openUrlInBrowser( resource.data!!.streamUrl)
@@ -354,7 +352,6 @@ private var nextPage: Page? = null
                     Log.d("PODA","<>videoId<>"+kk?.videoId)
                     Log.d("PODA","<>playListName<>"+kk?.playListName)
                 }
-                Log.d("PODA","----------ddddd------------------")
 
             }
 

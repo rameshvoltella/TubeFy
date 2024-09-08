@@ -30,7 +30,6 @@ class YoutubeV3Formatter@Inject constructor() :
                         )
                     )
                 }
-                Log.d("konnna","3333"+sortedVideoList.size)
 
                 FormattingResult.SUCCESS(
                     TubeFyCoreUniversalData(
@@ -41,13 +40,11 @@ class YoutubeV3Formatter@Inject constructor() :
                     )
                 )
             } catch (ex: Exception) {
-                Log.d("konnna","exccc")
 
                 FormattingResult.FAILURE(Exception("Unable to get Youtube URL"))
 
             }
         } else {
-            Log.d("konnna","exx2")
 
             FormattingResult.FAILURE(Exception("Unable to get Youtube URL"))
         }

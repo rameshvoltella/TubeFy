@@ -80,18 +80,15 @@ fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
     val context = LocalContext.current
     var palette by remember { mutableStateOf<Palette?>(null) }
 
-    Log.d("sadakku", ">>>>>")
     var isDefaultDataLoaded by rememberSaveable { mutableStateOf(false) }
 
 //    val playlistId = navBackStackEntry?.arguments?.getString("playlistId")
     LaunchedEffect(Unit) {
         val playlistId = navBackStackEntry?.arguments?.getString("playlistId")
-        Log.d("sadakku", ">>2222>>>" + playlistId)
         if (!isDefaultDataLoaded) {
             playlistId?.let {
                 if (playlistId.startsWith("PLAYLIST-ID-")) {
                     if (playlistId.startsWith("PLAYLIST-ID-YT")) {
-                        Log.d("incomming<>", "<>music_songs")
 
                         viewModel.searchNewPipePage(
                             playlistId.replace(
@@ -169,7 +166,6 @@ fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
         if (playListData is Resource.Success) {
 //            val items = (streamUrlData as Resource.Success<StreamUrlData>).data
             // Prepend new data to the existing list
-            Log.d("datata", ">>VADAAA" + playListData!!.data!!.playListVideoList?.get(0)?.videoId)
             videoAudioItems = playListData!!.data!!.playListVideoList!!
             isLoading = false
             isDefaultDataLoaded = true
@@ -188,11 +184,9 @@ fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
     }
     LaunchedEffect(key1 = streamUrlData) {
         if (streamUrlData is Resource.Success) {
-            val items = (streamUrlData as Resource.Success<StreamUrlData>).data
+//            val items = (streamUrlData as Resource.Success<StreamUrlData>).data
             // Prepend new data to the existing list
-            Log.d("datata", ">>VADAAA")
 
-            Log.d("datata", ">>" + streamUrlData!!.data!!.streamUrl)
             if (streamUrlData!!.data!!.streamUrl.isNotEmpty()) {
                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse(streamUrlData!!.data!!.streamUrl))
                 context.startActivity(intent)
@@ -204,11 +198,7 @@ fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
         if (searchPlayListName is Resource.Success) {
 //            val items = (streamUrlData as Resource.Success<StreamUrlData>).data
             // Prepend new data to the existing list
-            Log.d("datata", "first")
-            Log.d(
-                "datata",
-                ">>VADAAACAME" + searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!.size
-            )
+
             videoAudioItems = searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!
             isLoading = false
             viewModel.setActiveSongsList(videoAudioItems)
@@ -351,7 +341,6 @@ fun TrackItem(trackName: TubeFyCoreTypeData, viewModel: TubeFyViewModel = hiltVi
                 val videoTitle =
                     URLEncoder.encode(trackName.videoTitle, StandardCharsets.UTF_8.toString())
 
-                Log.d("Sound track", "<><><" + trackName.videoId)
                 if (trackName.videoId.length > 10) {
                     val encodedVideoId =
                         URLEncoder.encode(trackName.videoId, StandardCharsets.UTF_8.toString())

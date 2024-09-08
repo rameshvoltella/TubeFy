@@ -109,7 +109,6 @@ fun PlayerBaseView(viewModel: TubeFyViewModel= hiltViewModel()
 
     LaunchedEffect(Unit) {
         isBulk = navBackStackEntry?.arguments?.getString("isBulk")!!
-        Log.d("isBulk", "isBulk>>>>" + isBulk)
         videoId = URLDecoder.decode(
             navBackStackEntry?.arguments?.getString("videoId"),
             StandardCharsets.UTF_8.toString()
@@ -142,9 +141,7 @@ fun PlayerBaseView(viewModel: TubeFyViewModel= hiltViewModel()
     }
 
     LaunchedEffect(mediaController?.isPlaying) {
-        Log.d("corortine", "loading called" + isLoading)
         while (true) {
-            Log.d("timer", "yessssss")
             if (mediaController?.isConnected == true && isPlaying) {
                 progress =
                     (mediaController!!.currentPosition * 1.0f / mediaController!!.duration).coerceIn(
@@ -248,10 +245,7 @@ fun PlayerBaseView(viewModel: TubeFyViewModel= hiltViewModel()
 
                 playerBottomHeader = it.title.toString()
                 playerBottomSub = it.title.toString()
-                Log.d(
-                    "album",
-                    albumArt + "<>" + it.artworkUri?.path + "<>" + it.artworkUri?.scheme + "<>" + it.artworkUri?.host
-                )
+
             }
         }
     )
@@ -485,7 +479,6 @@ fun PlayerBaseView(viewModel: TubeFyViewModel= hiltViewModel()
                                             }
                                             if (showVideoPlayer) {
                                                 showVideoPlayer = false
-                                                Log.d("loading", "<<<<" + isLoading + "<>")
                                             }
                                         }
 

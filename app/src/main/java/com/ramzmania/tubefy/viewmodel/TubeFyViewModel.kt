@@ -215,11 +215,9 @@ class TubeFyViewModel @Inject constructor(
     }
 
     fun loadDefaultHomeData() {
-        Log.d("loading", "called")
 
         viewModelScope.launch {
             localRepositorySource.loadDefaultHomePageData().collect {
-                Log.d("loading", "came")
 
                 youTubeMusicHomeDefaultDataPrivate.value = it
             }
@@ -416,10 +414,7 @@ class TubeFyViewModel @Inject constructor(
                         }
 
                     playlistData.add(VideoPlayListModel(videoId, videoName.toString(), thumpNail))
-                    Log.d(
-                        "fulldeatils",
-                        "video->$videoId<thumpNail>$thumpNail<><name>${videoName.toString()}"
-                    )
+
                 }
             }
 
@@ -461,11 +456,9 @@ class TubeFyViewModel @Inject constructor(
 
     fun searchNewPipePage(searchKey: String, contentFilter: MutableList<String>) {
 //        val contentFilter = arrayOf<String>("music_songs")
-        Log.d("incomming<>", "<>" + contentFilter)
         viewModelScope.launch {
             remoteRepositorySource.getNewPipePageSearch(0, searchKey, contentFilter, "")
                 .collect {
-                    Log.d("resultya", "yadadada")
                     youTubeSearchDataPrivate.value = it
                 }
         }
@@ -571,7 +564,6 @@ class TubeFyViewModel @Inject constructor(
     }
 
     fun setHomePageLoadMoreState(isLoading: Boolean) {
-        Log.d("laaaa", "settttt")
         loadMoreHomePagePrivate.value = isLoading
     }
 
@@ -636,7 +628,6 @@ class TubeFyViewModel @Inject constructor(
 
     fun addToFavorites(favorite: FavoritePlaylist) {
         viewModelScope.launch {
-            Log.d("kolpo","added favourties111111")
 
             playlistDatabaseRepository.addToFavorites(favorite).collect {
                 addingSongListPlayListOperationPrivate.value = it

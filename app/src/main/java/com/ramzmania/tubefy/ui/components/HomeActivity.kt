@@ -95,15 +95,12 @@ class HomeActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         try {
-            Log.d("kona","1111")
             val sessionToken = SessionToken(this, ComponentName(this, PlaybackService::class.java))
             val controllerFuture = MediaController.Builder(this, sessionToken).buildAsync()
             controllerFuture.addListener(
                 {
-                    Log.d("kona","22222")
 
                     try {
-                        Log.d("kona","3333333")
 
                         mediaController = controllerFuture.get()
                         mediaControllerState.value = mediaController // Update state
@@ -133,10 +130,8 @@ ex.printStackTrace()
 //        Log.d("path",File(filesDir.absolutePath
 //                + "/pdfAudio/audio.wav").absolutePath)
         try {
-            Log.d("konaaa", "innnn")
             val mediaController = mediaController ?: return
             if (!mediaController.isConnected) return
-            Log.d("konaaa", "retunrd")
 
 //            val drawableUri: Uri =
 //                Uri.parse("android.resource://${BuildConfig.APPLICATION_ID}/${R.drawable.logo}")

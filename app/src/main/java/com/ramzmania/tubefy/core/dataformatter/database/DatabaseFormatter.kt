@@ -30,7 +30,6 @@ class DatabaseFormatter<InputType, OutputType,ListType : PlaylistItem> @Inject c
 
                             if (listTypeClass == ActivePlaylist::class)
                             {
-                                Log.d("operationio","<><><>ACTIVE PL<><>")
                                 listData.add(
                                     ActivePlaylist(
                                         videoThumbnail = dataValue.videoImage,
@@ -40,7 +39,6 @@ class DatabaseFormatter<InputType, OutputType,ListType : PlaylistItem> @Inject c
                                 )
                             }else if (listTypeClass == FavoritePlaylist::class)
                             {
-                                Log.d("operationio","<><><>ACTIVE PL<><>")
                                 listData.add(
                                     FavoritePlaylist(
                                         videoThump = dataValue.videoImage,
@@ -50,7 +48,6 @@ class DatabaseFormatter<InputType, OutputType,ListType : PlaylistItem> @Inject c
                                 )
                             }else if (listTypeClass == CustomPlaylist::class)
                             {
-                                Log.d("operationio","<><><>ACTIVE PL<><>")
                                 listData.add(
                                     CustomPlaylist(
                                         videoThump = dataValue.videoImage,
@@ -63,7 +60,6 @@ class DatabaseFormatter<InputType, OutputType,ListType : PlaylistItem> @Inject c
 
                         }
                         is ActivePlaylist -> {
-                            Log.d("operationio","<><><>TubeFyCoreTypeData PL<><>")
 
                             listData.add(
                                 TubeFyCoreTypeData(

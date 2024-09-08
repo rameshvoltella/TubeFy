@@ -54,7 +54,6 @@ class DatabaseRepository @Inject constructor(
     }
 
     override suspend fun addToFavorites(favoriteItem: FavoritePlaylist): Flow<Resource<DatabaseResponse>> {
-        Log.d("kolpo","added favourties 2222")
 
         return flow { emit(databaseData.addToFavorites(favoriteItem)) }
     }

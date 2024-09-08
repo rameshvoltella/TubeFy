@@ -151,9 +151,7 @@ fun HorizontalPlayList(playLists: List<MusicCategoryPlayList>) {
             val rowData = playLists[rowIndex]
 
             ContentPlayListItem(rowData) { selectedItem ->
-Log.d("tadadada",selectedItem.videoId+"<><><>")
                 if (selectedItem.videoId.length==11) {
-                    Log.d("tadadada",selectedItem.videoId+"<><><>")
 
                     val encodedVideoThumpUrl = URLEncoder.encode(
                         YoutubeCoreConstant.decodeThumpUrl(selectedItem.playListThump),

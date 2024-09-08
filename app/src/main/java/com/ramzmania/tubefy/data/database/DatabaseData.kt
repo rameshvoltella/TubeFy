@@ -42,16 +42,13 @@ class DatabaseData @Inject constructor(
     override suspend fun getPlaylists(): Resource<List<QuePlaylist>> {
         return withContext(Dispatchers.IO)
         {
-            Log.d("handleMediaItemChange,", "<><><><><><6666666")
 
             val result = playlistDao.getAllQuePlaylist()
 
             if (result != null && result.size > 0) {
-                Log.d("handleMediaItemChange,", "<><><><><><90909")
 
                 Resource.Success(result)
             } else {
-                Log.d("handleMediaItemChange,", "<><><><><><88888")
 
                 Resource.DataError(DATABASE_PLAYLIST_ERROR)
             }
@@ -61,7 +58,6 @@ class DatabaseData @Inject constructor(
     override suspend fun addSongToQueue(songData: QuePlaylist): Resource<DatabaseResponse> {
         return withContext(Dispatchers.IO)
         {
-            Log.d("yono", "yonopoda")
             val result = playlistDao.addQueSingleSongPlaylists(songData)
             if (result) {
                 Resource.Success(DatabaseResponse(200))
@@ -76,7 +72,6 @@ class DatabaseData @Inject constructor(
     override suspend fun addActivePlayList(playlists: List<TubeFyCoreTypeData?>,clickPosition: Int): Resource<DatabaseResponse> {
         return withContext(Dispatchers.IO)
         {
-            Log.d("yono", "yonopodacheker"+clickPosition)
             var formattedActivePlayList =
                 databaseFormatterFactory.formatActivePlayList().run(playlists)
             when (formattedActivePlayList) {
@@ -118,7 +113,6 @@ class DatabaseData @Inject constructor(
     override suspend fun getAllActivePlaylists(): Resource<List<TubeFyCoreTypeData?>> {
         return withContext(Dispatchers.IO)
         {
-            Log.d("yono", "yonopoda")
             val activePlayListData = playlistDao.getActivePlaylist()
             if (activePlayListData.isNotEmpty()) {
                 var formattedActivePlayList =
@@ -155,7 +149,6 @@ class DatabaseData @Inject constructor(
 
     override suspend fun isFavourite(videoId: String): Resource<Boolean> {
         val isFavorite = playlistDao.isFavorite(YoutubeCoreConstant.extractYoutubeVideoId(videoId)!!) > 0
-        Log.d("ISFAVE CAL",videoId+"yoyoy"+isFavorite)
         return Resource.Success(isFavorite)
 
     }
@@ -166,16 +159,13 @@ class DatabaseData @Inject constructor(
 //            videoThump = "https://example.com/video/abc123",
 //            videoName = "Sample Video"
 //        )
-        Log.d("kolpo","added favourties3333333")
 
         val isFavorite = playlistDao.isFavorite(YoutubeCoreConstant.extractYoutubeVideoId(favoriteItem.videoId)!!) > 0
 
-Log.d("fadak","isfav"+isFavorite)
 //
 //
 // Insert into the database
         return if (!isFavorite) {
-            Log.d("fadak","inserting"+favoriteItem.videoId+"<>"+favoriteItem.videoThump+"<>"+favoriteItem.videoName)
 
             playlistDao.insertFavorite(favoriteItem)
 //            isFavourite(YoutubeCoreConstant.extractYoutubeVideoId(favoriteItem.videoId)!!)
@@ -218,10 +208,8 @@ Log.d("fadak","isfav"+isFavorite)
         val result=playlistDao.deleteFavorite(YoutubeCoreConstant.extractYoutubeVideoId(videoId)!!)>0
        return if (result) {
 //           isFavourite(videoId)
-           Log.d("dada","radam");
            Resource.Success(DatabaseResponse(200))
         } else {
-           Log.d("dada","radam2222");
 
            Resource.DataError(DATABASE_INSERTION_ERROR)
         }
@@ -280,13 +268,11 @@ Log.d("fadak","isfav"+isFavorite)
         val allSavedPlayList: MutableList<PlaylistNameWithUrl> =
             playlistDao.getAllPlaylistNamesWithUrls().toMutableList()
 
-        Log.d("befor fave","<>"+allSavedPlayList)
 
 //        if(getFavorites().data!=null&&getFavorites().data?.size!!>0)
 //        {
             allSavedPlayList.add(0,PlaylistNameWithUrl("TubeFy-Favorites","Favorites"))
 //        }
-        Log.d("befor fave","<after>"+allSavedPlayList)
 
         return if(allSavedPlayList.isNotEmpty())
         {

@@ -33,7 +33,6 @@ class NewPipeDataFormatter<T> @Inject constructor(private val playlistDao: Playl
                     when (newPipeSearchData) {
                         is StreamInfoItem -> {
                             if (newPipeSearchData.url.contains("playList?list")) {
-                                Log.d("Chekzzzop", "yoooooplist>" + newPipeSearchData.url)
                                 sortedVideoList.add(
                                     TubeFyCoreTypeData(
                                         videoTitle = newPipeSearchData.name,
@@ -42,7 +41,6 @@ class NewPipeDataFormatter<T> @Inject constructor(private val playlistDao: Playl
                                     )
                                 )
                             } else {
-                                Log.d("Chekzzzop", "yooooovideo" + newPipeSearchData.url)
 
                                 sortedVideoList.add(
                                     TubeFyCoreTypeData(
@@ -52,7 +50,6 @@ class NewPipeDataFormatter<T> @Inject constructor(private val playlistDao: Playl
                                     )
                                 )
                                 if (input?.contentFilter != null&&!input?.contentFilter.contains("all")) {
-                                    Log.d("tadada", "klklklkl1111")
                                     playlistDao.addQueSingleSongPlaylists(
                                         QuePlaylist(
                                             videoId = newPipeSearchData.url,
@@ -70,7 +67,6 @@ class NewPipeDataFormatter<T> @Inject constructor(private val playlistDao: Playl
                                     ignoreCase = true
                                 )
                             ) {
-                                Log.d("Chekzzzop", "2yooooopPlalist>" + newPipeSearchData.url)
 
                                 sortedVideoList.add(
                                     TubeFyCoreTypeData(
@@ -80,7 +76,6 @@ class NewPipeDataFormatter<T> @Inject constructor(private val playlistDao: Playl
                                     )
                                 )
                             } else {
-                                Log.d("Chekzzzop", "2yooooopVideo>" + newPipeSearchData.url)
 
                                 sortedVideoList.add(
                                     TubeFyCoreTypeData(
@@ -90,9 +85,7 @@ class NewPipeDataFormatter<T> @Inject constructor(private val playlistDao: Playl
                                     )
                                 )
 
-                                Log.d("tadada", "yaaaaaa")
                                 if (input?.contentFilter != null&&!input?.contentFilter.contains("all")) {
-                                    Log.d("tadada", "klklklkl222222")
                                     playlistDao.addQueSingleSongPlaylists(
                                         QuePlaylist(
                                             videoId = newPipeSearchData.url,

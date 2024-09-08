@@ -49,7 +49,6 @@ fun MediaControllerComposable(
 
                                     override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
                                         super.onMediaMetadataChanged(mediaMetadata)
-                                        Log.d("tagggg","chagessss")
                                         onMetaDataChangedValue(mediaMetadata)
 
                                     }
