@@ -11,6 +11,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 
@@ -211,7 +212,13 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
                         keyboardController?.hide()
                     }
                 },
-                modifier = Modifier.padding(horizontal = 5.dp)
+                modifier = Modifier.padding(horizontal = 5.dp),
+                colors = SwitchDefaults.colors(
+//                    checkedThumbColor = Color.Blue,    // Color of the thumb when checked
+//                    uncheckedThumbColor = Color.Gray,  // Color of the thumb when unchecked
+                    checkedTrackColor = colorResource(id = R.color.tubefyred),  // Color of the track when checked
+//                    uncheckedTrackColor = Color.LightGray // Color of the track when unchecked
+                )
             )
 
             // Display the current state
