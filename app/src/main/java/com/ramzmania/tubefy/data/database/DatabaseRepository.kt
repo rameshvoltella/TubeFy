@@ -1,5 +1,6 @@
 package com.ramzmania.tubefy.data.database
 
+import android.util.Log
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
 import com.ramzmania.tubefy.data.dto.database.PlaylistNameWithUrl
@@ -53,6 +54,7 @@ class DatabaseRepository @Inject constructor(
     }
 
     override suspend fun addToFavorites(favoriteItem: FavoritePlaylist): Flow<Resource<DatabaseResponse>> {
+
         return flow { emit(databaseData.addToFavorites(favoriteItem)) }
     }
 

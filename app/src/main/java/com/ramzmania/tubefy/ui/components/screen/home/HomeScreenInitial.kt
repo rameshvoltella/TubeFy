@@ -53,12 +53,9 @@ fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel(), navControlle
     var isScrapDataLoaded by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(key1 = loadPagination.value) {
-        Log.d("laaaa", "came to home" + loadPagination.value)
 
         if (loadPagination.value) {
-            Log.d("laaaa", "came to home")
             if (visiterData.isNotEmpty() && paginationId.isNotEmpty() && paginationHex.isNotEmpty() && !loadMoreHomePageEnded.value) {
-                Log.d("laaaa", "call happed")
 
                 viewModel.callYoutubeiHomePagination(paginationHex, paginationId, visiterData)
             }
@@ -70,7 +67,6 @@ fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel(), navControlle
     // Trigger loading of default home data
     LaunchedEffect(Unit) {
 
-        Log.d("poda", "isloaded" + isDefaultDataLoaded)
         /* if(!isScrapDataLoaded) {
 
              viewModel.startWebScrapping(
@@ -238,7 +234,7 @@ fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel(), navControlle
                             .padding(16.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        CircularProgressIndicator()
+                        CircularProgressIndicator(color = colorResource(id = R.color.tubefyred))
                     }
                 }
             }

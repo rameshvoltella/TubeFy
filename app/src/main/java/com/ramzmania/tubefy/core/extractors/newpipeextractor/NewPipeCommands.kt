@@ -15,7 +15,6 @@ fun newPipeSearchFor(
     contentFilter: List<String?>,
     sortFilter: String
 ): SearchInfo {
-    Log.d("data", ">>>$serviceId>>>>$searchString<>$contentFilter<>$sortFilter")
     checkServiceId(serviceId)
 //        return Single.fromCallable {
     return SearchInfo.getInfo(
@@ -48,7 +47,6 @@ fun newPipeSearchNextPageFor(
     contentFilter: List<String?>,
     sortFilter: String, page: Page
 ): ListExtractor.InfoItemsPage<InfoItem> {
-    Log.d("data", ">>>$serviceId>>>>$searchString<>$contentFilter<>$sortFilter")
     checkServiceId(serviceId)
 //        return Single.fromCallable {
     return SearchInfo.getMoreItems(

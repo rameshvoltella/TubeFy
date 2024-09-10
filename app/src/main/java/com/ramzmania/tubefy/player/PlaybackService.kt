@@ -66,7 +66,6 @@ class PlaybackService(
                         // Playback has started
                         // Add your logic here for when playback starts
                         if (fetchRecentPlaylistQueue) {
-                            Log.d("check,", "<><><><><><")
                             fetchRecentPlaylistQueue = false
                             handleMediaItemChange()
                         }
@@ -79,10 +78,7 @@ class PlaybackService(
                     val albumArt = currentMediaItem?.mediaMetadata?.artworkUri.toString()
                     val playerHeader = currentMediaItem?.mediaMetadata?.title.toString()
 
-                    Log.d(
-                        "retrying on fail",
-                        "<ERRORretryCount>" + retryCount + "<maxRetries>" + maxRetries
-                    )
+
                     if (retryCount <= maxRetries) {
                         getStreamUrl(videoId!!, albumArt, playerHeader, currentMediaItemIndex)
                     }
@@ -108,7 +104,6 @@ class PlaybackService(
                 }
 
                 override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-                    Log.d("mamama", "ccccc")
 //                    mediaItem?.let {
                     handleMediaItemChange()
 //                    }
@@ -134,25 +129,20 @@ class PlaybackService(
 
     private fun handleMediaItemChange() {
         val player = mediaSession?.player
-        Log.d("handleMediaItemChange,", "<><><><><><1111")
 
         if (player != null) {
-            Log.d("handleMediaItemChange,", "<><><><><><22222")
 
             if (!player.hasNextMediaItem()) {
-                Log.d("handleMediaItemChange,", "<><><><><><33333")
 
                 serviceScope.launch {
                     dataBaseRepositorySource.getPlaylists().collect {
                         if (it is Resource.Success) {
-                            Log.d("handleMediaItemChange,", "<><><><><><4444444")
                             var mediaItemsList:List<MediaItem>?=null
                             withContext(Dispatchers.Main) {
                                 mediaItemsList = (0 until player.mediaItemCount).map { player.getMediaItemAt(it) }
 
                                 withContext(Dispatchers.IO)
                                 {
-                                    Log.d("DATATATA", "DATA SIZE" + it.data?.size)
                                     val listFromQueue: ArrayList<TubeFyCoreTypeData?> = ArrayList()
 
                                     for (data in it.data!!) {
@@ -163,12 +153,10 @@ class PlaybackService(
                                         if(mediaItemsList!=null)
                                         {
                                             isAlreadyInList=mediaItemsList!!.any {
-                                                Log.d("padaa",it.mediaId+"<>"+YoutubeCoreConstant.extractYoutubeVideoId(data.videoId))
 
                                                 it.mediaId ==YoutubeCoreConstant.extractYoutubeVideoId(data.videoId) }
                                         }
 
-                                        Log.d("padaa","what")
 
                                         if (!isAlreadyInList) {
                                             // If not already in the list, add the mediaItem
@@ -286,7 +274,6 @@ class PlaybackService(
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo) = mediaSession
 
     override fun onDestroy() {
-        Log.d("ondestry called", "WHY???")
         mediaSession?.run {
             player.release()
             release()
@@ -323,7 +310,6 @@ class PlaybackService(
 
     fun fetchFromQueue(totalList: List<TubeFyCoreTypeData?>) {
         val listFromQueue = totalList.take(2)
-//        Log.d("PODSZ", "REMAINLISY" + totalList.size)
         apiPlaListBulkCallJob = serviceScope.launch {
             remoteRepositorySource.getStreamBulkUrl(YoutubePlayerPlaylistListModel(listFromQueue!!))
                 .collect {
@@ -437,7 +423,6 @@ class PlaybackService(
 
     fun playAudioList(mediaItems: List<MediaItem>, mediaIndex: Int = -1) {
 
-        Log.d("Poda", "<><><><<<>>>" + mediaIndex)
 //        mediaSession?.player?.let {
         if (mediaSession != null && mediaSession?.player != null) {
             val it = mediaSession?.player
@@ -447,7 +432,6 @@ class PlaybackService(
                 it.setMediaItems(mediaItems)
                 it.playWhenReady = true
                 it.prepare()
-                Log.d("UNDOO","!!!!!!!")
             } else {
 
                 val mutableMediaItems = mediaItems.toMutableList()
@@ -459,13 +443,11 @@ class PlaybackService(
                             it.playWhenReady = true
                             it.prepare()
                         }
-                        Log.d("UNDOO","22222!!!!!!!")
 
                     } else {
                         it.setMediaItems(mutableMediaItems)
                         it.playWhenReady = true
                         it.prepare()
-                        Log.d("UNDOO","33333!!!!!!!")
 
 
                     }
@@ -475,11 +457,9 @@ class PlaybackService(
                     it.setMediaItems(mutableMediaItems)
                     it.playWhenReady = true
                     it.prepare()
-                    Log.d("UNDOO","44444!!!!!!!")
 
                 } else {
                     it.addMediaItems(mutableMediaItems)
-                    Log.d("UNDOO","55555!!!!!!!")
 
 //                    if(!it.isPlaying)
 //                    {

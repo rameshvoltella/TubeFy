@@ -69,7 +69,6 @@ fun MiniPlayerView(viewModel: TubeFyViewModel = hiltViewModel()) {
     val newNav = LocalNavController.current
     LaunchedEffect(mediaController?.isPlaying) {
         while (true) {
-            Log.d("timer", "yessssss")
             if (mediaController?.isConnected == true && isPlaying) {
                 progress =
                     (mediaController!!.currentPosition * 1.0f / mediaController!!.duration).coerceIn(

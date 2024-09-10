@@ -31,7 +31,6 @@ class YoutubeMusicCategoryPlayListDataFormatter @Inject constructor() :
                     var plaListName: String? = ""
                     var checkingPlayerId = ""
 //                                tabContents.musicCarouselShelfRenderer.contents[0].musicTwoRowItemRenderer.thumbnailRenderer.musicThumbnailRenderer.thumbnail.thumbnails[0].url
-                    Log.d("chtiop", ">>>" + tabContents)
                     categoryPlayListBaseName =
                         tabContents.musicCarouselShelfRenderer?.header?.musicCarouselShelfBasicHeaderRenderer?.accessibilityData?.accessibilityData?.label!!
                     val musicCategoryPlayListContentList = mutableListOf<MusicCategoryPlayList>()
@@ -119,7 +118,6 @@ class YoutubeMusicCategoryPlayListDataFormatter @Inject constructor() :
 
                         }
                     }
-                    Log.d("DETAILS", "---------------------------------------")
 //                musicCategoryPlayList.add(MusicCategoryPlayListBase(plaListBaseName = categoryPlayListBaseName!!,musicCategoryPlayListContentList)
                     if (musicCategoryPlayListContentList.size > 0) {
                         musicCategoryPlayList.add(
@@ -130,12 +128,7 @@ class YoutubeMusicCategoryPlayListDataFormatter @Inject constructor() :
                         )
                     }
 
-                    Log.d(
-                        "DETAILS",
-                        "<categoryPlayListBaseName>" + categoryPlayListBaseName + "<plaListId>" + plaListId + "<plaListName>" + plaListName + "<plaListThumpNail>" + plaListThumpNail
-                    )
 
-                    Log.d("DETAILS", "---------------ENDED------------------------")
                 }
 
 

@@ -20,33 +20,24 @@ class YoutubeWebDataFormatter@Inject constructor() : UniversalYoutubeDataFormatt
                 var videoName = ""
                 var videoId = ""
                 var videoImage = ""
-                Log.d("checker", "-----------------1")
                 if (contents.itemSectionRenderer != null) {
-                    Log.d("checker", "-----------------22222")
 
                     for (contentsBaseRenderer in contents.itemSectionRenderer.contentsBaseRenderer) {
-                        Log.d("checker", "-----------------33333")
 
                         if (contentsBaseRenderer != null) {
-                            Log.d("checker", "-----------------4444444")
 
                             if (contentsBaseRenderer.reelShelfRenderer != null) {
                                 if (contentsBaseRenderer.reelShelfRenderer.shortsList != null) {
-                                    Log.d("checker", "-----------------5555555")
 
                                     for (shortData in contentsBaseRenderer.reelShelfRenderer.shortsList) {
                                         if (shortData.trackingParams != null) {
-                                            Log.d("checker", "-----------------66666666")
 
                                             shortData.trackingParams.reelsOnTap.innerTubeCommand.reelWatchEndpoint.videoId
                                             videoName = shortData.trackingParams.accessibilityText
                                             if (shortData.trackingParams.reelsOnTap?.innerTubeCommand?.reelWatchEndpoint != null) {
                                                 videoId =
                                                     shortData.trackingParams.reelsOnTap.innerTubeCommand.reelWatchEndpoint.videoId
-                                                Log.d(
-                                                    "checker",
-                                                    "-----------------777777" + videoId
-                                                )
+
 
                                             }
                                             if (shortData.trackingParams.reelsThumpNail?.thumpList != null) {

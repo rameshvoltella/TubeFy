@@ -353,8 +353,8 @@ fun addToPlayList(
     playlistName: String
 ) {
 
-    Log.d("kolpo","added"+playlistName)
-    if(!playlistName.equals("Tubefy-Favorites")) {
+//    Log.d("kolpo","added"+playlistName+"<><"+currentSongDetails.videoId+"<><"+currentSongDetails.videoTitle+"<><>"+currentSongDetails.videoImage)
+    if(!playlistName.equals("TubeFy-Favorites")) {
         viewModel.addToPlaylist(
             CustomPlaylist(
                 playlistName = playlistName,
@@ -364,6 +364,8 @@ fun addToPlayList(
             )
         )
     }else{
+//        Log.d("kolpo","added favourties")
+
         viewModel.addToFavorites(
             FavoritePlaylist(
                 videoId = currentSongDetails.videoId,

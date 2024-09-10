@@ -97,10 +97,8 @@ fun HomePageContentList(
                     val lastVisibleItem = layoutInfo.visibleItemsInfo.last()
                     val totalItems = layoutInfo.totalItemsCount
                     // Check if we've reached near the end of the list
-                    Log.d("laaaa","came>>>"+isLoading)
                     if (lastVisibleItem.index >= totalItems - 1 && !isLoading.value&&!loadMoreHomePageEnded.value) {
                         // Trigger loading more items
-                        Log.d("laaaa","came>>>goforloading111>>>"+homePageResponses.size)
 
                         if(homePageResponses.size>1)
                         {
@@ -182,7 +180,6 @@ fun HomePageContentList(
         if (playListData is Resource.Success) {
 //            val items = (streamUrlData as Resource.Success<StreamUrlData>).data
             // Prepend new data to the existing list
-            Log.d("datata", ">>VADAAA" + playListData!!.data!!.playListVideoList?.get(0)?.videoId)
             if (playListData!!.data!!.playListVideoList?.get(0)?.videoId != null) {
                 viewModel.getStreamUrl(playListData!!.data!!.playListVideoList?.get(0)?.videoId!!)
             }
@@ -197,9 +194,7 @@ fun HomePageContentList(
         if (streamUrlData is Resource.Success) {
             val items = (streamUrlData as Resource.Success<StreamUrlData>).data
             // Prepend new data to the existing list
-            Log.d("datata", ">>VADAAA")
 
-            Log.d("datata", ">>" + streamUrlData!!.data!!.streamUrl)
             if (streamUrlData!!.data!!.streamUrl.isNotEmpty()) {
                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse(streamUrlData!!.data!!.streamUrl))
                 context.startActivity(intent)
@@ -223,7 +218,6 @@ fun VerticalContentList(
             it.forEach { data ->
                 ContentItemList(data = data) { selectedItem ->
                     // Handle item click here
-                    Log.d("ItemClicked", "Clicked item: ${selectedItem.videoId}")
 //                    viewModel.getStreamUrl(selectedItem.videoId!!)
                     val encodedVideoUrl = URLEncoder.encode(
                         YoutubeCoreConstant.decodeThumpUrl(
@@ -289,7 +283,6 @@ fun GridContentList(
                 items(it) { data ->
                     ContentItemList(data = data) { selectedItem ->
                         // Handle item click here
-                        Log.d("ItemClicked", "Clicked item: ${selectedItem.videoId}")
 
                         val encodedVideoUrl = URLEncoder.encode(
                             YoutubeCoreConstant.decodeThumpUrl(
@@ -349,18 +342,12 @@ fun HorizontalContentList(
                 items(it) { data ->
                     ContentItem(data = data) { selectedItem ->
                         // Handle item click here
-                        Log.d(
-                            "ItemClicked",
-                            "Clicked item horizontalFIRST: ${selectedItem.playlistId}"
-                        )
+
                         if (selectedItem.videoId?.length!! > 11 || selectedItem.playlistId!!.startsWith(
                                 "PLAYLIST-ID-"
                             )
                         ) {
-                            Log.d(
-                                "ItemClicked",
-                                "Clicked item playlistId: ${selectedItem.playlistId}"+"<>"+" ${selectedItem.title}"+"<>"+" ${selectedItem.thumbnail}"
-                            )
+
 
 //                        viewModel.loadPlayList(selectedItem.playlistId!!)
 //                        navController!!.navigate(NavigationItem.PlayList.route) {
@@ -397,7 +384,6 @@ fun HorizontalContentList(
 
                         } else if(selectedItem.playlistId.length>1)
                         {
-                            Log.d("playList","YUHUUU")
                             navController!!.navigate(
                                 NavigationItem.PlayList.createRoute(
                                     selectedItem.playlistId!!,
@@ -436,7 +422,6 @@ fun SingleContentCell(
     contentData?.firstOrNull()?.let { data ->
         ContentItem(data = data) { selectedItem ->
             // Handle item click here
-            Log.d("ItemClicked", "Clicked item: ${selectedItem.videoId}")
             viewModel.getStreamUrl(selectedItem.videoId!!)
         }
     }
@@ -518,7 +503,6 @@ fun ContentItemList(data: BaseContentData, onClick: (BaseContentData) -> Unit) {
 //                .padding(8.dp)
                 .fillMaxWidth()
         ) {
-            Log.d("incoming", "" + data.title)
 
             data.thumbnail?.let { thumbnailUrl ->
                 AsyncImage(
@@ -572,7 +556,6 @@ fun Content2Item(data: BaseContentData) {
             .padding(8.dp)
             .fillMaxWidth()
     ) {
-        Log.d("incomming", "" + data.thumbnail)
         data.thumbnail?.let {
 //            Image(
 //                painter = rememberImagePainter(data = it),

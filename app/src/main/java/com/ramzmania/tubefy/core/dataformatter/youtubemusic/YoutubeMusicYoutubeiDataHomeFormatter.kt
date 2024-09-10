@@ -89,10 +89,7 @@ class YoutubeMusicYoutubeiDataHomeFormatter @Inject constructor() :
 
                                 }
 
-                                Log.d(
-                                    "masscheck",
-                                    "AMLIST videoId ->" + videoId + "<videoName>" + videoName + "<videoThump>" + videoThump + "<videoPlayList>" + videoPlayList
-                                )
+
                                 if (videoId != null && videoId.length > 1) {
                                     listOfBaseContent.add(
                                         BaseContentData(
@@ -122,18 +119,12 @@ class YoutubeMusicYoutubeiDataHomeFormatter @Inject constructor() :
                                         break
                                     }
                                 }
-                                Log.d(
-                                    "vaaapa",
-                                    "" + musicCarouselShelfRendererContents.musicTwoRowItemRenderer.thumbnailOverlay?.musicItemThumbnailOverlayRenderer?.content?.musicPlayButtonRenderer?.playNavigationEndpoint?.watchPlaylistEndpoint
-                                )
+
                                 if (musicCarouselShelfRendererContents.musicTwoRowItemRenderer.thumbnailOverlay?.musicItemThumbnailOverlayRenderer?.content?.musicPlayButtonRenderer?.playNavigationEndpoint?.watchPlaylistEndpoint?.playlistId != null) {
                                     videoPlayList =
                                         musicCarouselShelfRendererContents.musicTwoRowItemRenderer.thumbnailOverlay?.musicItemThumbnailOverlayRenderer?.content?.musicPlayButtonRenderer?.playNavigationEndpoint?.watchPlaylistEndpoint?.playlistId!!
                                 }
-                                Log.d(
-                                    "masscheck",
-                                    "AMGRID videoId ->" + videoId + "<videoName>" + videoName + "<videoThump>" + videoThump + "<videoPlayList>" + videoPlayList
-                                )
+
 
                                 if (videoPlayList != null && videoPlayList.length > 1) {
                                     listOfBaseContent.add(
@@ -149,7 +140,6 @@ class YoutubeMusicYoutubeiDataHomeFormatter @Inject constructor() :
 
 
                         }
-                        Log.d("masscheck", "GOING TO ADD " + isList)
 
                         youtubeMusicHomeDataList.add(
                             HomePageResponse(
@@ -165,7 +155,6 @@ class YoutubeMusicYoutubeiDataHomeFormatter @Inject constructor() :
 
             }
 
-            Log.d("Tagger", "before")
             if (inputData.responseContext?.visitorData != null) {
                 val visiterData = inputData.responseContext?.visitorData
                 if (paginationHex != null && paginationHex.length > 0) {
@@ -176,25 +165,19 @@ class YoutubeMusicYoutubeiDataHomeFormatter @Inject constructor() :
                             visiterData
                         ), youtubeMusicHomeDataList
                     )
-                    Log.d("Tagger", "innn" + youtubeiHomeFirstResponse)
 
                 } else {
                     youtubeiHomeFirstResponse =
                         YoutubeiHomeBaseResponse(null, youtubeMusicHomeDataList)
-                    Log.d("Tagger", "innn222" + youtubeiHomeFirstResponse)
 
                 }
             } else {
                 youtubeiHomeFirstResponse =
                     YoutubeiHomeBaseResponse(null, youtubeMusicHomeDataList)
-                Log.d("Tagger", "innn3333" + youtubeiHomeFirstResponse)
 
             }
             if (youtubeiHomeFirstResponse != null) {
-                Log.d(
-                    "Tagger",
-                    "innnsuccc" + youtubeiHomeFirstResponse.homePageContentDataList!!.size
-                )
+
 
                 return FormattingResult.SUCCESS(youtubeiHomeFirstResponse)
 

@@ -11,6 +11,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 
@@ -22,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -35,6 +37,7 @@ import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
 import com.ramzmania.tubefy.ui.components.screen.album.TrackItem
 import com.ramzmania.tubefy.ui.components.screen.category.CategoryScreenMain
+import com.ramzmania.tubefy.ui.components.screen.library.PlayListDialogViewer
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
 import org.schabi.newpipe.extractor.Page
 
@@ -58,16 +61,16 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
     val lazyListState = rememberLazyListState()
     var isChecked by rememberSaveable { mutableStateOf(false) }
     var isFreshSearch by rememberSaveable { mutableStateOf(false) }
+    var showPlayListDialog=viewModel.showPlayListDialog.collectAsState()
+    var currentSongItemSelected=viewModel.selectedTrack.collectAsState()
+
+
     LaunchedEffect(key1 = searchPlayListName) {
         if (searchPlayListName is Resource.Success) {
 //            val items = (streamUrlData as Resource.Success<StreamUrlData>).data
             // Prepend new data to the existing list
             if (isLoading || isFreshSearch) {
-                Log.d("datata", "first")
-                Log.d(
-                    "datata",
-                    ">>VADAAACAME" + searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!.size
-                )
+
                 if (isFreshSearch) {
                     lazyListState.scrollToItem(0) // Scroll to top without animation
                     isFreshSearch = false
@@ -136,7 +139,18 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
                 }
             }
     }
+//    var showPlayListDialog=viewModel.showPlayListDialog.collectAsState()
+//    var currentSongItemSelected=viewModel.selectedTrack.collectAsState()
 
+    if(showPlayListDialog.value&&currentSongItemSelected.value!=null)
+    {
+        PlayListDialogViewer(
+            viewModel = viewModel,
+            onDismiss = { viewModel.showPlayListDialog(false) },
+            currentSongItemSelected.value!!
+            // Reset the state when the dialog is dismissed
+        )
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -198,7 +212,13 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
                         keyboardController?.hide()
                     }
                 },
-                modifier = Modifier.padding(horizontal = 5.dp)
+                modifier = Modifier.padding(horizontal = 5.dp),
+                colors = SwitchDefaults.colors(
+//                    checkedThumbColor = Color.Blue,    // Color of the thumb when checked
+//                    uncheckedThumbColor = Color.Gray,  // Color of the thumb when unchecked
+                    checkedTrackColor = colorResource(id = R.color.tubefyred),  // Color of the track when checked
+//                    uncheckedTrackColor = Color.LightGray // Color of the track when unchecked
+                )
             )
 
             // Display the current state
@@ -224,7 +244,7 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
                     .padding(16.dp),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(color = colorResource(id = R.color.tubefyred))
             }
         }
 
@@ -250,7 +270,7 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
                             .padding(16.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        CircularProgressIndicator()
+                        CircularProgressIndicator(color = colorResource(id = R.color.tubefyred))
                     }
                 }
             }

@@ -154,7 +154,6 @@ class YoutubeJsonScrapping constructor(val webView: WebView, val context: Contex
 //                    .replace("\\\\\\\\\"", "")
 ////                webViewModel.setHtmlContent(result)
                 CoroutineScope(Dispatchers.IO).launch {
-                    Log.d("passing home data", "yaaa1111")
                     if (result.startsWith("{")&&result.endsWith("}")) {
 
                         passYtMusicHomeData(parseJson(result))
@@ -191,7 +190,6 @@ class YoutubeJsonScrapping constructor(val webView: WebView, val context: Contex
 //                    .replace("\\\\\\\\\"", "")
 ////                webViewModel.setHtmlContent(result)
                     CoroutineScope(Dispatchers.IO).launch {
-                        Log.d("passing home data", "yaaa1111")
                         if (result.startsWith("{")&&result.endsWith("}")) {
                             passYTMusicPlayListData(parseJson(result))
                         }
@@ -265,7 +263,6 @@ class YoutubeJsonScrapping constructor(val webView: WebView, val context: Contex
 //                val clip = ClipData.newPlainText("label", result)
 //                clipboard.setPrimaryClip(clip)
                     CoroutineScope(Dispatchers.IO).launch {
-                        Log.d("passing home data", "yaaa1111")
                             if (result.startsWith("{")&&result.endsWith("}")) {
 
                                 passYTMusicPlayCategory(parseJson(result))
@@ -332,17 +329,14 @@ class YoutubeJsonScrapping constructor(val webView: WebView, val context: Contex
     }
 
     private suspend fun passYtMusicHomeData(data: MusicHomeResponse2?) {
-        Log.d("passing home data", "yaaa")
         sharedJsonMusicHomeContentPrivate.emit(data)
     }
 
     private suspend fun passYTMusicPlayListData(data: YoutubeMusicPlayListContent?) {
-        Log.d("passing home data", "yaaa")
         sharedJsonMusicHomePlayListContentPrivate.emit(data)
     }
 
     private suspend fun passYTMusicPlayCategory(data: YtMusicCategoryBase?) {
-        Log.d("passing home data", "yaaa")
         sharedJsonMusicCategoryPlayListContentPrivate.emit(data)
     }
 

@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -132,7 +133,7 @@ fun CategoryPlaylistView(viewModel: TubeFyViewModel = hiltViewModel()) {
                         .fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator()
+                    CircularProgressIndicator(color = colorResource(id = R.color.tubefyred))
                 }
             }
         }
@@ -150,9 +151,7 @@ fun HorizontalPlayList(playLists: List<MusicCategoryPlayList>) {
             val rowData = playLists[rowIndex]
 
             ContentPlayListItem(rowData) { selectedItem ->
-Log.d("tadadada",selectedItem.videoId+"<><><>")
                 if (selectedItem.videoId.length==11) {
-                    Log.d("tadadada",selectedItem.videoId+"<><><>")
 
                     val encodedVideoThumpUrl = URLEncoder.encode(
                         YoutubeCoreConstant.decodeThumpUrl(selectedItem.playListThump),

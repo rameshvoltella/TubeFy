@@ -86,7 +86,6 @@ fun MyLibraryPage(viewModel: TubeFyViewModel = hiltViewModel()) {
     }
     if(reloadAllPlayList.value)
     {
-        Log.d("VADA","VANNU")
         doLoadData=true
         viewModel.getAllSavedPlayList()
         // viewModel.reloadAllCustomPlayListData(true)
@@ -250,7 +249,7 @@ fun LibraryHomeItem(viewModel: TubeFyViewModel= hiltViewModel(),playListItem: Pl
                 // Spacer to push the text and right image apart
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = if (playListItem.playlistName!! == "TubeFy-Favorites") "Favorite" else playListItem.playlistName!!,
+                    text = if (playListItem.playlistName!! == "TubeFy-Favorites") "Favorite" else  playListItem.playlistName.replaceFirstChar { it.uppercase() },
                     fontWeight = FontWeight.Thin,
                     color = Color.White,
                     modifier = Modifier
@@ -285,7 +284,6 @@ fun LibraryHomeItem(viewModel: TubeFyViewModel= hiltViewModel(),playListItem: Pl
 }
 
 fun deletePlayList(playlistName: String, viewModel: TubeFyViewModel) {
-Log.d("TADA","DELETE->"+playlistName)
 
     if (playlistName == "TubeFy-Favorites"){
       viewModel.deleteAllFavorites()
