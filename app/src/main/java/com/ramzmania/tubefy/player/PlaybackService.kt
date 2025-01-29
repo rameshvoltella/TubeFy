@@ -57,6 +57,7 @@ class PlaybackService(
     override fun onCreate() {
         super.onCreate()
 
+
         val player = ExoPlayer.Builder(this).build().apply {
             // Adding the error listener to the ExoPlayer instance
             addListener(object : Player.Listener {
@@ -110,6 +111,8 @@ class PlaybackService(
                 }
             })
         }
+
+
         val activityIntent = Intent(this, HomeActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
