@@ -105,6 +105,7 @@ dependencies {
     implementation (libs.converter.gson)
     implementation (libs.converter.scalars)
     implementation (libs.coil.compose)
+//    implementation(":shazamkit-android-release")
     // Hiltsa
   /*  implementation("com.google.dagger:hilt-android:2.50")
     implementation("androidx.navigation:navigation-runtime-ktx:2.7.7")

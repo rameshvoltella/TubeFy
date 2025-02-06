@@ -10,6 +10,9 @@ pluginManagement {
         mavenCentral()
         gradlePluginPortal()
         maven { url =uri("https://jitpack.io") } // <----- Add this
+        flatDir {
+            dirs("libs")
+        }
 
     }
 }
