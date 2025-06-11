@@ -39,6 +39,9 @@
                 <action android:name="android.media.browse.MediaBrowserService" />
                 <action android:name="android.intent.action.MEDIA_BUTTON" />
             </intent-filter>
+            <meta-data
+                android:name="android.media.browse.service"
+                android:resource="@xml/automotive_app_desc" />
         </service>
     </application>
 

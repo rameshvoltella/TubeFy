@@ -3,6 +3,7 @@ package com.ramzmania.tubefy.player
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.util.Log
 import android.view.KeyEvent
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
@@ -10,11 +11,15 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.LibraryResult
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
+import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
+import okhttp3.internal.toImmutableList
 
 @UnstableApi
-class MediaLibrarySessionCallback: MediaLibraryService.MediaLibrarySession.Callback {
+class MediaLibrarySessionCallback(
+    private val service: PlaybackService
+): MediaLibraryService.MediaLibrarySession.Callback {
 
     override fun onGetLibraryRoot(
         session: MediaLibraryService.MediaLibrarySession,
@@ -23,7 +28,23 @@ class MediaLibrarySessionCallback: MediaLibraryService.MediaLibrarySession.Callb
     ): ListenableFuture<LibraryResult<MediaItem>> {
         return Futures.immediateFuture(LibraryResult.ofItem(browsableItem(Root), params))
     }
+    override fun onGetChildren(
+        session: MediaLibraryService.MediaLibrarySession,
+        browser: MediaSession.ControllerInfo,
+        parentId: String,
+        page: Int,
+        pageSize: Int,
+        params: MediaLibraryService.LibraryParams?
+    ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
+Log.d("andi","OLAKKA")
+        val mediaItems = if (parentId == "root") {
+            service.getCurrentPlaylist().toImmutableList()
+        } else {
+            emptyList<MediaItem>().toImmutableList()
+        }
 
+        return Futures.immediateFuture(LibraryResult.ofItemList(mediaItems, params))
+    }
 
     override fun onMediaButtonEvent(
         session: MediaSession,
