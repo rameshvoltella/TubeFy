@@ -41,7 +41,7 @@ class YoutubeWebDataFormatter@Inject constructor() : UniversalYoutubeDataFormatt
 
                                             }
                                             if (shortData.trackingParams.reelsThumpNail?.thumpList != null) {
-                                                for (thumpList in shortData.trackingParams.reelsThumpNail?.thumpList) {
+                                                for (thumpList in shortData.trackingParams.reelsThumpNail?.thumpList!!) {
                                                     videoImage = thumpList.reelShortsThumpNailUrl
                                                 }
                                             }

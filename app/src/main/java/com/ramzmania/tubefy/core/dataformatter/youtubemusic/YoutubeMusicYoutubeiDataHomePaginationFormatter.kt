@@ -33,7 +33,7 @@ class YoutubeMusicYoutubeiDataHomePaginationFormatter @Inject constructor() :
             if (inputData.continuationContents?.sectionListContinuation != null) {
 
                 if (inputData.continuationContents?.sectionListContinuation?.continuations != null) {
-                    for (continuations in inputData.continuationContents?.sectionListContinuation?.continuations) {
+                    for (continuations in inputData.continuationContents?.sectionListContinuation?.continuations!!) {
                         paginationHex = continuations?.nextContinuationData?.continuation
                         paginationId = continuations?.nextContinuationData?.clickTrackingParams
                         if (paginationHex != null) {
@@ -45,13 +45,13 @@ class YoutubeMusicYoutubeiDataHomePaginationFormatter @Inject constructor() :
 
                 if (inputData.continuationContents?.sectionListContinuation?.contents != null) {
 
-                    for (contentData in inputData.continuationContents?.sectionListContinuation?.contents) {
+                    for (contentData in inputData.continuationContents?.sectionListContinuation?.contents!!) {
                         var headingData = ""
                         if (contentData?.musicCarouselShelfRenderer?.header?.musicCarouselShelfBasicHeaderRenderer?.accessibilityData?.accessibilityLabel?.label
                             != null
                         ) {
                             headingData =
-                                contentData.musicCarouselShelfRenderer?.header?.musicCarouselShelfBasicHeaderRenderer?.accessibilityData?.accessibilityLabel?.label
+                                contentData.musicCarouselShelfRenderer?.header?.musicCarouselShelfBasicHeaderRenderer?.accessibilityData?.accessibilityLabel?.label!!
                         } else {
                             headingData = "TOP"
                         }
@@ -151,7 +151,7 @@ class YoutubeMusicYoutubeiDataHomePaginationFormatter @Inject constructor() :
                                         isList=true
                                       if(musicCarouselShelfRendererContents.musicTwoRowItemRenderer.thumbnailOverlay?.musicItemThumbnailOverlayRenderer?.content?.musicPlayButtonRenderer?.playNavigationEndpoint?.watchEndpoint?.videoId!=null)
                                       {
-                                          videoId=musicCarouselShelfRendererContents.musicTwoRowItemRenderer.thumbnailOverlay?.musicItemThumbnailOverlayRenderer?.content?.musicPlayButtonRenderer?.playNavigationEndpoint?.watchEndpoint?.videoId
+                                          videoId= musicCarouselShelfRendererContents.musicTwoRowItemRenderer.thumbnailOverlay?.musicItemThumbnailOverlayRenderer?.content?.musicPlayButtonRenderer?.playNavigationEndpoint?.watchEndpoint?.videoId!!
                                       }
                                     }
 

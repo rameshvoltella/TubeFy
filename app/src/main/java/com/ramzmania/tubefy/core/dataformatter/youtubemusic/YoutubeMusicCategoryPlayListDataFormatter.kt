@@ -43,7 +43,7 @@ class YoutubeMusicCategoryPlayListDataFormatter @Inject constructor() :
                             }
                             if (shelfContent.musicTwoRowItemRenderer.title?.runs!!.isNotEmpty()) {
                                 plaListName =
-                                    shelfContent.musicTwoRowItemRenderer.title?.runs[0].text
+                                    shelfContent.musicTwoRowItemRenderer.title?.runs[0]?.text
                             }
                             try {
                                 checkingPlayerId =
@@ -81,7 +81,7 @@ class YoutubeMusicCategoryPlayListDataFormatter @Inject constructor() :
                             if (shelfContent.musicResponsiveListItemRenderer.flexColumns != null) {
                                 for (flexColum in shelfContent.musicResponsiveListItemRenderer.flexColumns!!) {
                                     if (flexColum.musicResponsiveListItemFlexColumnRenderer?.text?.runs != null) {
-                                        for (playListNameData in flexColum.musicResponsiveListItemFlexColumnRenderer?.text?.runs) {
+                                        for (playListNameData in flexColum.musicResponsiveListItemFlexColumnRenderer?.text?.runs!!) {
                                             if (playListNameData.text != null) {
                                                 plaListName = playListNameData.text + "\n"
                                             }
