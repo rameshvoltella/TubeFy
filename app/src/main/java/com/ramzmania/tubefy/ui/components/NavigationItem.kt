@@ -5,9 +5,18 @@ import com.ramzmania.tubefy.R
 sealed class NavigationItem(var route: String, var icon: Int, var title: String) {
     data object Home : NavigationItem("home", R.drawable.ic_home, "Home")
     data object Search : NavigationItem("search", R.drawable.ic_search, "Search")
-    data object Books : NavigationItem("library", R.drawable.library, "Your Library")
+    data object Books : NavigationItem("library", R.drawable.library, "Library")
     data object Profile : NavigationItem("about", R.drawable.info, "About")
-//    data object PlayList : NavigationItem("playlist", R.drawable.ic_profile, "Playlist")
+
+    data object Downloads : NavigationItem("download", R.drawable.info, "Downloads")
+
+    data object LocalDownloads : NavigationItem("localdownloads/{songpath}", R.drawable.info, "LocalDownloads")
+    {
+        fun createRoute(songpath: String) = "localdownloads/$songpath"
+
+    }
+
+    //    data object PlayList : NavigationItem("playlist", R.drawable.ic_profile, "Playlist")
    data object PlayList : NavigationItem("playlist/{playlistId}/{playlistName}/{playlistImage}", R.drawable.ic_search, "Playlist") {
         fun createRoute(playlistId: String, playlistName: String,playlistImage: String) = "playlist/$playlistId/$playlistName/$playlistImage"
     }
