@@ -540,7 +540,7 @@ fun PlayerBaseView(viewModel: TubeFyViewModel= hiltViewModel()
                             modifier = Modifier
                                 .size(30.dp)
                                 .clickable {
-                                 /*  Toast.makeText(context,"download",1).show()
+//                                   Toast.makeText(context,"download",1).show()
                                     val currentMediaItem = mediaController?.currentMediaItem
 //                             currentMediaItem?.playbackProperties?.uri?.toString()
                                     val filePath = context.getExternalFilesDir(null)?.absolutePath + "/downloads/"+playerHeader.toSafeFileName()+".mp4"
@@ -551,7 +551,7 @@ fun PlayerBaseView(viewModel: TubeFyViewModel= hiltViewModel()
                                     Toast.makeText(context,"download"+videoUrl,1).show()
                                     Log.d("TAKKIO",">"+filePath)
 
-                                    DownloadQueueUtil.enqueue(videoUrl, filePath)*/
+                                    DownloadQueueUtil.enqueue(videoUrl, filePath)
                                 }
 
                         )

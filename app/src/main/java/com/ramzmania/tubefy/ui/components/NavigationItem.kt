@@ -1,5 +1,6 @@
 package com.ramzmania.tubefy.ui.components
 
+import android.util.Base64
 import com.ramzmania.tubefy.R
 
 sealed class NavigationItem(var route: String, var icon: Int, var title: String) {
@@ -12,7 +13,12 @@ sealed class NavigationItem(var route: String, var icon: Int, var title: String)
 
     data object LocalDownloads : NavigationItem("localdownloads/{songpath}", R.drawable.info, "LocalDownloads")
     {
-        fun createRoute(songpath: String) = "localdownloads/$songpath"
+//        val encoded = Base64.encodeToString(songpath.toByteArray(), Base64.URL_SAFE or Base64.NO_WRAP)
+//        fun createRoute(songpath: String) = "localdownloads/$songpath"
+        fun createRoute(songpath: String): String {
+            val encoded = Base64.encodeToString(songpath.toByteArray(), Base64.URL_SAFE or Base64.NO_WRAP)
+            return "localdownloads/$encoded"
+        }
 
     }
 

@@ -77,7 +77,7 @@ fun FileListScreen(packageName: String) {
 //                            }
                             newNav!!.navigate(
                                 NavigationItem.LocalDownloads.createRoute(
-                                    "file.absolutePath"
+                                    file.absolutePath
                                 )
                             ) {
                                 newNav.graph.route?.let { route ->

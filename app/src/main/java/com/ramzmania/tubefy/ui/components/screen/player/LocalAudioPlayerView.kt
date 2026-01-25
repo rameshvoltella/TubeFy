@@ -1,6 +1,7 @@
 package com.ramzmania.tubefy.ui.components.screen.player
 
 import android.net.Uri
+import android.util.Base64
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -27,7 +28,7 @@ fun AudioPlayerScreen() {
     val navController = LocalNavController.current
 
     val navBackStackEntry = navController.currentBackStackEntry
-    val filePath = navBackStackEntry?.arguments?.getString("songpath")!!
+    val filePath = String(Base64.decode(navBackStackEntry?.arguments?.getString("songpath")!!, Base64.URL_SAFE))
 Log.d("kona","<><>"+filePath)
     // Remember ExoPlayer instance
     val exoPlayer = remember {

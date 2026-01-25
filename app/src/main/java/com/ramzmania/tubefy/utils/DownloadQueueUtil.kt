@@ -31,9 +31,9 @@ object DownloadQueueUtil {
     val tasks: StateFlow<List<DownloadTask>> = _tasks
 
     private lateinit var appContext: Context
-    private val notificationManager by lazy {
-        appContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-    }
+//    private val notificationManager by lazy {
+//        appContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+//    }
 
     fun init(context: Context) {
         appContext = context.applicationContext
@@ -88,23 +88,23 @@ object DownloadQueueUtil {
 
                         updateProgress(task.id, progress)
 
-                        notificationManager.notify(
-                            notifyId,
-                            DownloadNotificationHelper.build(
-                                appContext,
-                                notifyId,
-                                progress,
-                                file.name
-                            )
-                        )
+//                        notificationManager.notify(
+//                            notifyId,
+//                            DownloadNotificationHelper.build(
+//                                appContext,
+//                                notifyId,
+//                                progress,
+//                                file.name
+//                            )
+//                        )
                     }
                 }
             }
 
-            notificationManager.notify(
-                notifyId,
-                DownloadNotificationHelper.completed(appContext, file.name)
-            )
+//            notificationManager.notify(
+//                notifyId,
+//                DownloadNotificationHelper.completed(appContext, file.name)
+//            )
 
             markCompleted(task.id)
 
