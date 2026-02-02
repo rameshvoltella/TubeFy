@@ -52,8 +52,11 @@ class PlaybackService(
     private var fetchRecentPlaylistQueue: Boolean = false
     var path: String = ""
     private var apiPlaListBulkCallJob: Job? = null
+    val mediaItemList = mutableListOf<MediaItem>()
 //    var currentPlayListQueue:Long=0L
-
+fun getCurrentPlaylist(): List<MediaItem> {
+    return mediaItemList
+}
     override fun onCreate() {
         super.onCreate()
 
@@ -124,7 +127,7 @@ class PlaybackService(
         )
 
 
-        mediaLibrarySessionCallback = MediaLibrarySessionCallback()
+        mediaLibrarySessionCallback = MediaLibrarySessionCallback(this)
         mediaSession =
             MediaLibrarySession.Builder(this, player, mediaLibrarySessionCallback)
                 .setSessionActivity(pendingIntent).build()
@@ -147,6 +150,9 @@ class PlaybackService(
                                 withContext(Dispatchers.IO)
                                 {
                                     val listFromQueue: ArrayList<TubeFyCoreTypeData?> = ArrayList()
+                                    if(mediaItemsList!=null) {
+                                        mediaItemList.addAll(mediaItemsList!!)
+                                    }
 
                                     for (data in it.data!!) {
 
@@ -164,6 +170,8 @@ class PlaybackService(
                                         if (!isAlreadyInList) {
                                             // If not already in the list, add the mediaItem
 //                                        player.addMediaItem(mediaItem)
+                                            mediaItemList.clear()
+
                                             listFromQueue.add(
                                                 TubeFyCoreTypeData(
                                                     videoId = data.videoId,

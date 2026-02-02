@@ -45,7 +45,7 @@ class YoutubeMusicYoutubeiDataHomeFormatter @Inject constructor() :
                     var headingData = ""
                     if (sectionListRendererContents.musicCarouselShelfRenderer?.header?.musicCarouselShelfBasicHeaderRenderer?.accessibilityData?.accessibilityData?.label != null) {
                         headingData =
-                            sectionListRendererContents.musicCarouselShelfRenderer?.header?.musicCarouselShelfBasicHeaderRenderer?.accessibilityData?.accessibilityData?.label
+                            sectionListRendererContents.musicCarouselShelfRenderer?.header?.musicCarouselShelfBasicHeaderRenderer?.accessibilityData?.accessibilityData?.label!!
                     } else {
                         headingData = "TOP"
                     }

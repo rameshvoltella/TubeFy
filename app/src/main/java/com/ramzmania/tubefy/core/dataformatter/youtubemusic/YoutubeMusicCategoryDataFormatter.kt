@@ -34,7 +34,7 @@ class YoutubeMusicCategoryDataFormatter @Inject constructor()  :
                                 for (gridRendererItems in sectionListContents.gridRenderer?.items!!) {
                                     if (gridRendererItems.musicNavigationButtonRenderer?.buttonText?.runs?.size!! > 0) {
                                         playlistName =
-                                            gridRendererItems.musicNavigationButtonRenderer?.buttonText?.runs[0].text!!
+                                            gridRendererItems.musicNavigationButtonRenderer?.buttonText?.runs[0]?.text!!
                                     }
                                     playListBrowserId =
                                         gridRendererItems.musicNavigationButtonRenderer.clickCommand?.browseEndpoint?.browseId!!

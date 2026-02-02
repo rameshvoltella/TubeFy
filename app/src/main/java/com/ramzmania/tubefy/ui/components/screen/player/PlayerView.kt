@@ -4,6 +4,7 @@ import VideoPlayerView
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -64,7 +65,9 @@ import com.ramzmania.tubefy.database.CustomPlaylist
 import com.ramzmania.tubefy.database.FavoritePlaylist
 import com.ramzmania.tubefy.player.PlaybackService
 import com.ramzmania.tubefy.ui.components.screen.library.PlayListDialogViewer
+import com.ramzmania.tubefy.utils.DownloadQueueUtil
 import com.ramzmania.tubefy.utils.LocalNavController
+import com.ramzmania.tubefy.utils.toSafeFileName
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
@@ -527,6 +530,28 @@ fun PlayerBaseView(viewModel: TubeFyViewModel= hiltViewModel()
 
                                     }
 
+                                }
+
+                        )
+
+                        Image(
+                            painter = painterResource( R.drawable.ic_unfav),
+                            contentDescription = "Download",
+                            modifier = Modifier
+                                .size(30.dp)
+                                .clickable {
+//                                   Toast.makeText(context,"download",1).show()
+                                    val currentMediaItem = mediaController?.currentMediaItem
+//                             currentMediaItem?.playbackProperties?.uri?.toString()
+                                    val filePath = context.getExternalFilesDir(null)?.absolutePath + "/downloads/"+playerHeader.toSafeFileName()+".mp4"
+                                    videoUrl =
+                                        currentMediaItem?.localConfiguration?.uri
+                                            ?.toString()
+                                            .toString()
+                                    Toast.makeText(context,"download"+videoUrl,1).show()
+                                    Log.d("TAKKIO",">"+filePath)
+
+                                    DownloadQueueUtil.enqueue(videoUrl, filePath)
                                 }
 
                         )

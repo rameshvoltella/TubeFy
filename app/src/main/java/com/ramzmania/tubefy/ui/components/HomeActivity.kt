@@ -71,6 +71,8 @@ import com.ramzmania.tubefy.ui.components.screen.album.AlbumScreen
 import com.ramzmania.tubefy.ui.components.screen.category.CategoryPlaylistView
 import com.ramzmania.tubefy.ui.components.screen.library.LibraryDetailPage
 import com.ramzmania.tubefy.ui.components.screen.library.MyLibraryPage
+import com.ramzmania.tubefy.ui.components.screen.player.AudioPlayerScreen
+import com.ramzmania.tubefy.ui.components.screen.player.FileListScreen
 import com.ramzmania.tubefy.ui.components.screen.player.MiniPlayerView
 import com.ramzmania.tubefy.ui.components.screen.player.PlayerBaseView
 import com.ramzmania.tubefy.ui.components.screen.search.AudioSearchScreen
@@ -220,8 +222,14 @@ fun Navigation(navController: NavHostController) {
         composable(NavigationItem.Books.route) {
             MyLibraryPage()
         }
+        composable(NavigationItem.Downloads.route) {
+            FileListScreen("downloads")
+        }
         composable(NavigationItem.Profile.route) {
             ProfileScreen()
+        }
+        composable(NavigationItem.LocalDownloads.route) { backStackEntry ->
+            AudioPlayerScreen()
         }
         composable(NavigationItem.PlayList.route) { backStackEntry ->
             AlbumScreen()
@@ -262,6 +270,7 @@ fun BottomNavigationBar(navController: NavController) {
         NavigationItem.Home,
         NavigationItem.Search,
         NavigationItem.Books,
+        NavigationItem.Downloads,
         NavigationItem.Profile
     )
     // Create a linear gradient brush
