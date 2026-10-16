@@ -454,7 +454,8 @@ private fun playAll(navController: NavController, finalItems: List<TubeFyCoreTyp
     }
 }
 
-private fun openTrack(navController: NavController, trackName: TubeFyCoreTypeData) {
+/** Opens a song in the player, or a playlist result in the album screen. */
+fun openTrack(navController: NavController, trackName: TubeFyCoreTypeData) {
     val encodedVideoThumpUrl = URLEncoder.encode(decodeThumpUrl(trackName.videoImage), StandardCharsets.UTF_8.toString())
     val videoTitle = URLEncoder.encode(trackName.videoTitle, StandardCharsets.UTF_8.toString())
 
@@ -509,7 +510,7 @@ private fun albumSubtitle(songs: List<TubeFyCoreTypeData>): String? {
     return parts.joinToString(" • ")
 }
 
-private fun formatDuration(seconds: Long): String {
+fun formatDuration(seconds: Long): String {
     val hours = seconds / 3600
     val minutes = seconds / 60 % 60
     val secs = seconds % 60

@@ -17,6 +17,7 @@ import androidx.compose.ui.res.painterResource
 import com.ramzmania.tubefy.core.YoutubeCoreConstant
 import com.ramzmania.tubefy.data.dto.base.playlist.PlayListCategory
 import com.ramzmania.tubefy.ui.components.NavigationItem
+import com.ramzmania.tubefy.ui.components.ChipRow
 import com.ramzmania.tubefy.ui.components.navigateToTab
 import com.ramzmania.tubefy.ui.components.screen.category.openCategoryPlaylistItem
 import com.ramzmania.tubefy.ui.theme.DiscoverAccent
@@ -321,30 +322,6 @@ private fun DiscoverHeader(onSearchClick: () -> Unit, onProfileClick: () -> Unit
                 .border(1.dp, DiscoverBorder, CircleShape)
                 .clickable(onClick = onProfileClick)
         )
-    }
-}
-
-@Composable
-private fun ChipRow(chips: List<String>, selected: String, onSelect: (String) -> Unit) {
-    LazyRow(
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        items(chips) { label ->
-            val isSelected = label == selected
-            Text(
-                text = label,
-                color = if (isSelected) DiscoverOnAccent else Color.White.copy(alpha = 0.85f),
-                fontSize = 15.sp,
-                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(50))
-                    .background(if (isSelected) DiscoverAccent else DiscoverSurface)
-                    .border(1.dp, if (isSelected) Color.Transparent else DiscoverBorder, RoundedCornerShape(50))
-                    .clickable { onSelect(label) }
-                    .padding(horizontal = 20.dp, vertical = 9.dp)
-            )
-        }
     }
 }
 
