@@ -206,7 +206,7 @@ fun LibraryHomeItem(
                 modifier = Modifier
                     .size(84.dp)
                     .clip(RoundedCornerShape(14.dp))
-                    .background(Brush.linearGradient(listOf(Color(0xFF6B47B8), Color(0xFF2B2045))))
+                    .background(Brush.linearGradient(listOf(Color(0xFFD6334A), Color(0xFF3A1219))))
             ) {
                 Icon(Icons.Rounded.Star, contentDescription = null, tint = Color(0xFFFFD54F), modifier = Modifier.size(44.dp))
             }

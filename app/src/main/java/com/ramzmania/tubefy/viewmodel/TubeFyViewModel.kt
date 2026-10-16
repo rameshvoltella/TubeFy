@@ -721,6 +721,30 @@ class TubeFyViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Removes a song from a saved playlist (or favorites) and then reloads that list.
+     * Both steps run in one coroutine so the reload always sees the deletion.
+     */
+    fun removeSongFromSavedList(playListName: String, videoId: String) {
+        viewModelScope.launch {
+            if (playListName == "TubeFy-Favorites") {
+                playlistDatabaseRepository.removeFromFavorites(videoId).collect {
+                    addingSongListPlayListOperationPrivate.value = it
+                }
+                playlistDatabaseRepository.getFavorites().collect {
+                    gettingSongPlayListOperationPrivate.value = it
+                }
+            } else {
+                playlistDatabaseRepository.deleteSongFromPlayList(playListName, videoId).collect {
+                    addingSongListPlayListOperationPrivate.value = it
+                }
+                playlistDatabaseRepository.getSpecificPlayList(playListName).collect {
+                    gettingSongPlayListOperationPrivate.value = it
+                }
+            }
+        }
+    }
+
     fun deleteSongFromPlayList(playListName: String, videoId: String) {
         viewModelScope.launch {
 

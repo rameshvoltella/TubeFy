@@ -313,7 +313,7 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
     }
 }
 
-private val SearchFieldFill = Color(0xFF15131D)
+private val SearchFieldFill = Color(0xFF161314)
 
 /** Search result card: 16:9 thumbnail with duration badge, title, "channel • views", and ⋮. */
 @Composable

@@ -453,17 +453,11 @@ fun DeleteSongConfirmationDialog(
             TextButton(onClick = onConfirm) { Text("Delete", color = DeleteRed) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text("Cancel", color = DiscoverTextSecondary) }
         }
     )
 }
 
 fun deleteSongFromPlayList(viewModel: TubeFyViewModel, playListName: String, videoId: String) {
-    if (playListName == FAVORITES_PLAYLIST) {
-        viewModel.removeFromFavorites(videoId)
-        viewModel.getFavorites()
-    } else {
-        viewModel.deleteSongFromPlayList(playListName = playListName, videoId = videoId)
-        viewModel.getSpecificPlayList(playListName)
-    }
+    viewModel.removeSongFromSavedList(playListName, videoId)
 }
