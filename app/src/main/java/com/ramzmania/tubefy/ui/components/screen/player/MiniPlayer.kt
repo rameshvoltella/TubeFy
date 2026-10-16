@@ -170,7 +170,7 @@ fun MiniPlayerView(viewModel: TubeFyViewModel = hiltViewModel()) {
             .background(DiscoverSurface)
             .border(1.dp, DiscoverBorder, RoundedCornerShape(22.dp))
             .clickable { openPlayer() }
-            .padding(10.dp)
+            .padding(horizontal = 10.dp, vertical = 7.dp)
     ) {
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
@@ -182,8 +182,8 @@ fun MiniPlayerView(viewModel: TubeFyViewModel = hiltViewModel()) {
             contentDescription = songName,
             contentScale = ContentScale.Crop,
             modifier = Modifier
-                .size(52.dp)
-                .clip(RoundedCornerShape(10.dp))
+                .size(44.dp)
+                .clip(RoundedCornerShape(9.dp))
         )
         Column(
             modifier = Modifier
@@ -193,7 +193,7 @@ fun MiniPlayerView(viewModel: TubeFyViewModel = hiltViewModel()) {
             Text(
                 text = songName,
                 color = Color.White,
-                fontSize = 16.sp,
+                fontSize = 15.sp,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -204,7 +204,7 @@ fun MiniPlayerView(viewModel: TubeFyViewModel = hiltViewModel()) {
                 fontSize = 13.sp,
                 maxLines = 1
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(5.dp))
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -223,7 +223,7 @@ fun MiniPlayerView(viewModel: TubeFyViewModel = hiltViewModel()) {
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
-                .size(46.dp)
+                .size(40.dp)
                 .clip(CircleShape)
                 .border(1.5.dp, DiscoverAccent, CircleShape)
                 .clickable {
@@ -236,11 +236,11 @@ fun MiniPlayerView(viewModel: TubeFyViewModel = hiltViewModel()) {
                 imageVector = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
                 contentDescription = if (isPlaying) "Pause" else "Play",
                 tint = Color.White,
-                modifier = Modifier.size(26.dp)
+                modifier = Modifier.size(22.dp)
             )
         }
         IconButton(onClick = { mediaController?.takeIf { it.hasNextMediaItem() }?.seekToNextMediaItem() }) {
-            Icon(Icons.Rounded.SkipNext, contentDescription = "Next", tint = Color.White, modifier = Modifier.size(30.dp))
+            Icon(Icons.Rounded.SkipNext, contentDescription = "Next", tint = Color.White, modifier = Modifier.size(26.dp))
         }
     }
 }
