@@ -5,6 +5,9 @@ import android.content.Intent
 import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.compose.animation.Crossfade
+import androidx.compose.ui.draw.rotate
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -651,13 +654,18 @@ private fun ActionTile(
     }
 }
 
-/** Bottom "Up next" panel; swiping it sideways skips to the next song in the queue. */
+/**
+ * Bottom "Up next" panel, collapsed to a small "⌃ Up next" tab. Tapping it expands the next
+ * song (swipe it sideways to play it); tapping again collapses it.
+ */
 @Composable
 private fun UpNextBar(nextItem: MediaItem?, onSwipe: () -> Unit) {
     val scope = rememberCoroutineScope()
     val offsetX = remember { Animatable(0f) }
     var barWidth by remember { mutableFloatStateOf(1f) }
     val hasNext = nextItem != null
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    val arrowRotation by animateFloatAsState(if (expanded) 180f else 0f, label = "upNextArrow")
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -667,16 +675,31 @@ private fun UpNextBar(nextItem: MediaItem?, onSwipe: () -> Unit) {
             .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
             .background(SurfaceTint)
             .navigationBarsPadding()
-            .padding(top = 6.dp, bottom = 12.dp)
+            .animateContentSize()
     ) {
-        Icon(Icons.Rounded.KeyboardArrowUp, null, tint = SecondaryText, modifier = Modifier.size(20.dp))
-        Text("Up next", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { expanded = !expanded }
+                .padding(top = 6.dp, bottom = if (expanded) 4.dp else 10.dp)
+        ) {
+            Icon(
+                Icons.Rounded.KeyboardArrowUp,
+                contentDescription = if (expanded) "Hide up next" else "Show up next",
+                tint = SecondaryText,
+                modifier = Modifier
+                    .size(20.dp)
+                    .rotate(arrowRotation)
+            )
+            Text("Up next", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+        }
 
-        Row(
+        if (expanded) Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 8.dp)
+                .padding(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 12.dp)
                 .onSizeChanged { barWidth = it.width.toFloat() }
                 .offset { IntOffset(offsetX.value.roundToInt(), 0) }
                 .draggable(
