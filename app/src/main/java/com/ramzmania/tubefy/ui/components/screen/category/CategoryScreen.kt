@@ -27,6 +27,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,25 +51,11 @@ import java.nio.charset.StandardCharsets
 @Composable
 fun CategoryScreenMain(viewModel: TubeFyViewModel = hiltViewModel()) {
     val categoryData by viewModel.youTubeMusicCategoryData.observeAsState()
-    var isDefaultDataLoaded by rememberSaveable { mutableStateOf(false) }
-    var categoryItemsList by remember { mutableStateOf<List<PlayListCategory?>>(emptyList()) }
+    val categoryItemsList = (categoryData as? Resource.Success)?.data.orEmpty()
     val navController = LocalNavController.current
 
     LaunchedEffect(Unit) {
-        if (!isDefaultDataLoaded) {
-            viewModel.startWebScrapping(
-                "https://music.youtube.com/moods_and_genres",
-                YoutubeScrapType.YOUTUBE_MUSIC_CATEGORY
-            )
-        }
-
-    }
-
-    LaunchedEffect(key1 = categoryData) {
-        if (categoryData is Resource.Success) {
-            isDefaultDataLoaded = true
-            categoryItemsList = categoryData?.data!!
-        }
+        viewModel.loadMusicCategories()
     }
 
     if (categoryItemsList.isNotEmpty()) {
@@ -104,7 +91,23 @@ fun CategoryScreenMain(viewModel: TubeFyViewModel = hiltViewModel()) {
                 Spacer(modifier = Modifier.height(190.dp))
             }
         }
-    }else{
+    } else if (categoryData is Resource.DataError) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 48.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "Couldn't load categories",
+                color = Color.White,
+                fontSize = 16.sp
+            )
+            TextButton(onClick = { viewModel.loadMusicCategories(forceRefresh = true) }) {
+                Text(text = "Retry", color = colorResource(id = R.color.tubefyred), fontSize = 16.sp)
+            }
+        }
+    } else {
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center

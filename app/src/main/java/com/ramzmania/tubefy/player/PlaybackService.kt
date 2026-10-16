@@ -404,7 +404,7 @@ class PlaybackService(
                                     .setMediaMetadata(
                                         MediaMetadata.Builder()
                                             .setTitle(playerHeader)
-                                            .setArtist("Artist :${playerHeader}")
+                                            .setArtist(response.data?.artist?.takeIf { it.isNotBlank() } ?: "Artist :${playerHeader}")
                                             .setIsBrowsable(false)
                                             .setIsPlayable(true)
                                             .setArtworkUri(Uri.parse(albumArt))

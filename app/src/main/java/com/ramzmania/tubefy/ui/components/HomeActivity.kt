@@ -204,7 +204,8 @@ fun MainScreen(mediaControllerState: MutableState<MediaController?>) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .statusBarsPadding()
+                            // The full-screen player draws behind the status bar itself
+                            .then(if (currentRoute != NavigationItem.AudioPlayer.route) Modifier.statusBarsPadding() else Modifier)
                     ) {
                         Navigation(navController = navController)
                     }

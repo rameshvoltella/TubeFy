@@ -12,6 +12,7 @@ import com.ramzmania.tubefy.data.dto.base.searchformat.StreamUrlData
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreUniversalData
 import com.ramzmania.tubefy.core.extractors.yotubewebextractor.YoutubeJsonScrapping
 import com.ramzmania.tubefy.core.extractors.yotubewebextractor.YoutubeScrapType
+import com.ramzmania.tubefy.errors.YOUTUBE_SCRAP_ERROR
 import com.ramzmania.tubefy.data.ContextModule
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.database.DatabaseRepository
@@ -36,6 +37,7 @@ import com.ramzmania.tubefy.database.QuePlaylist
 import com.ramzmania.tubefy.ui.base.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.schabi.newpipe.extractor.Page
@@ -343,14 +345,27 @@ class TubeFyViewModel @Inject constructor(
 //    }
 
     private fun setHtmlMusicCategoryContent(result: YtMusicCategoryBase?) {
-
-        viewModelScope.launch {
-            localRepositorySource.manipulateYoutubeMusicCategorySearchStripData(result!!).collect {
-
-                youTubeMusicCategoryDataPrivate.value = it
-            }
+        if (result == null) {
+            youTubeMusicCategoryDataPrivate.value = Resource.DataError(YOUTUBE_SCRAP_ERROR)
+            return
         }
+        viewModelScope.launch {
+            localRepositorySource.manipulateYoutubeMusicCategorySearchStripData(result)
+                .catch { emit(Resource.DataError(YOUTUBE_SCRAP_ERROR)) }
+                .collect {
+                    youTubeMusicCategoryDataPrivate.value = it
+                }
+        }
+    }
 
+    /** Loads the search tab's mood & genre categories unless they are already loaded. */
+    fun loadMusicCategories(forceRefresh: Boolean = false) {
+        if (!forceRefresh && youTubeMusicCategoryDataPrivate.value is Resource.Success) return
+        youTubeMusicCategoryDataPrivate.value = Resource.Loading()
+        startWebScrapping(
+            "https://music.youtube.com/moods_and_genres",
+            YoutubeScrapType.YOUTUBE_MUSIC_CATEGORY
+        )
     }
 
     fun setHtmlMusicPlayListContent(content: YoutubeMusicPlayListContent?) {

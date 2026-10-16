@@ -1,612 +1,751 @@
 package com.ramzmania.tubefy.ui.components.screen.player
 
-import VideoPlayerView
 import android.content.Context
 import android.content.Intent
-import android.util.Log
+import android.widget.Toast
 import androidx.annotation.OptIn
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
+import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.FavoriteBorder
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
+import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.Pause
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Repeat
+import androidx.compose.material.icons.rounded.RepeatOne
+import androidx.compose.material.icons.rounded.Shuffle
+import androidx.compose.material.icons.rounded.SkipNext
+import androidx.compose.material.icons.rounded.SkipPrevious
+import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.TileMode
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.media3.common.C
+import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
+import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaController
+import androidx.media3.ui.AspectRatioFrameLayout
+import androidx.media3.ui.PlayerView
 import androidx.palette.graphics.Palette
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.ramzmania.tubefy.R
 import com.ramzmania.tubefy.core.YoutubeCoreConstant
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
-import com.ramzmania.tubefy.database.CustomPlaylist
 import com.ramzmania.tubefy.database.FavoritePlaylist
 import com.ramzmania.tubefy.player.PlaybackService
 import com.ramzmania.tubefy.ui.components.screen.library.PlayListDialogViewer
 import com.ramzmania.tubefy.utils.LocalNavController
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
+import kotlin.math.abs
+import kotlin.math.roundToInt
+
+private enum class PlayerMode { Song, Video }
+
+private val FavouriteRed = Color(0xFFFF4D4D)
+private val SurfaceTint = Color.White.copy(alpha = 0.08f)
+private val SecondaryText = Color.White.copy(alpha = 0.62f)
 
 @kotlin.OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun PlayerBaseView(viewModel: TubeFyViewModel= hiltViewModel()
-) {
-    var isLoading by remember { mutableStateOf(true) }  // Track loading state
-    var mediaController by remember { mutableStateOf<MediaController?>(null) }
-    var isPlaying by remember { mutableStateOf(false) }
-    var progress by remember { mutableStateOf(0f) }  // Track progress
+fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
     val navController = LocalNavController.current
     val context = LocalContext.current
-    var currentTime by remember { mutableStateOf("00:00") }
-    var totalTime by remember { mutableStateOf("00:00") }
-    var playerHeader by remember { mutableStateOf("") }
-    var playerBottomHeader by remember { mutableStateOf("") }
-    var playerBottomSub by remember { mutableStateOf("") }
-    var albumArt by remember { mutableStateOf("") }
-    var videoId by remember { mutableStateOf("") }
-    var isBulk by remember { mutableStateOf("false") }  // Track loading state
-    var videoUrl by remember { mutableStateOf("") }
-    var showVideoPlayer by remember { mutableStateOf(false) }
-    var showPlaListDialog by remember {
-        mutableStateOf(false)
-    }
-    var palette by remember { mutableStateOf<Palette?>(null) }
+    val navArgs = remember { navController.currentBackStackEntry?.arguments }
+    fun navArg(key: String) =
+        URLDecoder.decode(navArgs?.getString(key) ?: "", StandardCharsets.UTF_8.toString())
 
-    var isFavouriteSong =viewModel.isFavouriteState.collectAsState()
-    val navBackStackEntry = navController.currentBackStackEntry
-    LoadBitmapAndExtractPalette(albumArt) { extractedPalette ->
-        palette = extractedPalette
+    val isBulk = remember { navArgs?.getString("isBulk") == "true" }
+    var videoId by remember { mutableStateOf(navArg("videoId")) }
+    var albumArt by remember {
+        mutableStateOf("https://i.ytimg.com/vi/${YoutubeCoreConstant.extractYoutubeVideoId(videoId)}/hq720.jpg")
     }
-    val dominantColor = palette?.dominantSwatch?.rgb?.let { Color(it) } ?: colorResource(id = R.color.colorPrimary)
-    val gradientBrush = Brush.linearGradient(
-        colors = listOf(Color.Transparent, Color.Black),
-        start = Offset(0f, 0f),
-        end = Offset(0f, Float.POSITIVE_INFINITY),
-        tileMode = TileMode.Clamp
+    var title by remember { mutableStateOf(navArg("playerHeader")) }
+    var artist by remember { mutableStateOf(cleanArtist(navArg("playerBottomSub"), title)) }
+
+    var mediaController by remember { mutableStateOf<MediaController?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
+    var isPlaying by remember { mutableStateOf(false) }
+    var positionMs by remember { mutableLongStateOf(0L) }
+    var durationMs by remember { mutableLongStateOf(0L) }
+    var seekFraction by remember { mutableStateOf<Float?>(null) } // non-null while the user drags the slider
+    var shuffleOn by remember { mutableStateOf(false) }
+    var repeatMode by remember { mutableIntStateOf(Player.REPEAT_MODE_OFF) }
+    var nextItem by remember { mutableStateOf<MediaItem?>(null) }
+    var playerMode by rememberSaveable { mutableStateOf(PlayerMode.Song) }
+    var showPlayListDialog by remember { mutableStateOf(false) }
+    var showMenu by remember { mutableStateOf(false) }
+    var palette by remember { mutableStateOf<Palette?>(null) }
+    val isFavouriteSong by viewModel.isFavouriteState.collectAsState()
+
+    LoadBitmapAndExtractPalette(albumArt) { palette = it }
+    val tint by animateColorAsState(
+        palette?.darkMutedSwatch?.rgb?.let { Color(it) }
+            ?: palette?.dominantSwatch?.rgb?.let { Color(it) }
+            ?: Color(0xFF2A2A2A),
+        label = "tint"
     )
 
-    LaunchedEffect(Unit) {
-        isBulk = navBackStackEntry?.arguments?.getString("isBulk")!!
-        videoId = URLDecoder.decode(
-            navBackStackEntry?.arguments?.getString("videoId"),
-            StandardCharsets.UTF_8.toString()
-        )
-        albumArt = "https://i.ytimg.com/vi/${
-            YoutubeCoreConstant.extractYoutubeVideoId(
-                URLDecoder.decode(
-                    navBackStackEntry?.arguments?.getString("videoId"),
-                    StandardCharsets.UTF_8.toString()
-                )
-            )
-        }/hq720.jpg"
-
-        playerHeader = URLDecoder.decode(
-            navBackStackEntry?.arguments?.getString("playerHeader"),
-            StandardCharsets.UTF_8.toString()
-        )
-        playerBottomHeader = URLDecoder.decode(
-            navBackStackEntry?.arguments?.getString("playerBottomHeader"),
-            StandardCharsets.UTF_8.toString()
-        )
-        playerBottomSub = URLDecoder.decode(
-            navBackStackEntry?.arguments?.getString("playerBottomSub"),
-            StandardCharsets.UTF_8.toString()
-        )
-
-        viewModel.isFavourite(YoutubeCoreConstant.extractYoutubeVideoId(videoId)!!)
-
-
+    LaunchedEffect(videoId) {
+        YoutubeCoreConstant.extractYoutubeVideoId(videoId)?.let { viewModel.isFavourite(it) }
     }
 
-    LaunchedEffect(mediaController?.isPlaying) {
-        while (true) {
-            if (mediaController?.isConnected == true && isPlaying) {
-                progress =
-                    (mediaController!!.currentPosition * 1.0f / mediaController!!.duration).coerceIn(
-                        0f,
-                        1f
-                    )
-//                currentTime="%02d:%02d:%02d".format(milliSec / 1000 / 60 / 60, milliSec / 1000 / 60 % 60, milliSec / 1000 % 60)
-                currentTime =
-                    if (mediaController!!.duration >= 3600000) "%02d:%02d:%02d".format(
-                        mediaController!!.currentPosition / 1000 / 60 / 60,
-                        mediaController!!.currentPosition / 1000 / 60 % 60,
-                        mediaController!!.currentPosition / 1000 % 60
-                    ) else "%02d:%02d".format(
-                        mediaController!!.currentPosition / 1000 / 60 % 60,
-                        mediaController!!.currentPosition / 1000 % 60
-                    )
+    // Position ticker
+    LaunchedEffect(mediaController, isPlaying) {
+        val controller = mediaController ?: return@LaunchedEffect
+        do {
+            positionMs = controller.currentPosition
+            if (controller.duration > 0) durationMs = controller.duration
+            delay(500L)
+        } while (isPlaying)
+    }
 
-                // Update progress every second
-                kotlinx.coroutines.delay(1000L)
-            } else {
-                // Stop updating if not playing
-                kotlinx.coroutines.delay(1000L)
-//                    break
-                if (mediaController?.isPlaying != true) {
-                    break
-                }
-            }
-
+    // Keep shuffle / repeat / up next in sync with the session player
+    DisposableEffect(mediaController) {
+        val controller = mediaController ?: return@DisposableEffect onDispose {}
+        fun sync(player: Player) {
+            shuffleOn = player.shuffleModeEnabled
+            repeatMode = player.repeatMode
+            nextItem = if (player.hasNextMediaItem()) player.getMediaItemAt(player.nextMediaItemIndex) else null
+            if (player.duration > 0) durationMs = player.duration
+            positionMs = player.currentPosition
         }
+        val listener = object : Player.Listener {
+            override fun onEvents(player: Player, events: Player.Events) = sync(player)
+        }
+        controller.addListener(listener)
+        sync(controller)
+        onDispose { controller.removeListener(listener) }
     }
 
     MediaControllerComposable(
         onPlayingChanged = { playing ->
             isPlaying = playing
-            if (playing) {
-                isLoading = false
-            }
-            totalTime = if (mediaController!!.duration >= 3600000) "%02d:%02d:%02d".format(
-                mediaController!!.duration / 1000 / 60 / 60,
-                mediaController!!.duration / 1000 / 60 % 60,
-                mediaController!!.duration / 1000 % 60
-            ) else "%02d:%02d".format(
-                mediaController!!.duration / 1000 / 60 % 60,
-                mediaController!!.duration / 1000 % 60
-            )
-//            totalTime="%02d:%02d:%02d".format(milliSec / 1000 / 60 / 60, milliSec / 1000 / 60 % 60, milliSec / 1000 % 60)
-            // Update progress every second
+            if (playing) isLoading = false
         },
         onMediaControllerInitialized = { controller ->
             mediaController = controller
-            isPlaying = mediaController!!.isPlaying
-            if (!isBulk.equals("true")) {
-                if (mediaController!!.currentMediaItem != null && mediaController!!.currentMediaItem?.mediaMetadata?.title!!.equals(
-                        playerHeader
-                    )
-                ) {
-                    isLoading = false
-                } else {
-                    isLoading = true
-
-
-                }
-            }
-            if (isBulk.equals("true")) {
-//            viewModel.getStreamUrl(videoId!!)
-//                viewModel.getBulkStreamUrl()
+            isPlaying = controller.isPlaying
+            val currentId = controller.currentMediaItem?.mediaId
+            if (isBulk) {
                 startFetchPlayListService(context)
+            } else if (controller.isConnected && currentId != null &&
+                currentId == YoutubeCoreConstant.extractYoutubeVideoId(videoId)
+            ) {
+                // Already playing this song: just reflect its state
+                isLoading = false
+                controller.mediaMetadata.let { meta ->
+                    title = meta.title?.toString() ?: title
+                    artist = cleanArtist(meta.artist?.toString(), title)
+                }
             } else {
-
-                var loadService=true
-                if(mediaController!=null&&mediaController!!.isConnected&&mediaController!!.currentMediaItem!=null&&mediaController!!.currentMediaItem?.mediaId.equals(YoutubeCoreConstant.extractYoutubeVideoId(videoId)))
-                {
-                    loadService=false
-                }
-
-                if(loadService)
-                {
-                    startFetchSongService(context, videoId, albumArt, playerHeader!!)
-
-                }else{
-                    totalTime = if (mediaController!!.duration >= 3600000) "%02d:%02d:%02d".format(
-                        mediaController!!.duration / 1000 / 60 / 60,
-                        mediaController!!.duration / 1000 / 60 % 60,
-                        mediaController!!.duration / 1000 % 60
-                    ) else "%02d:%02d".format(
-                        mediaController!!.duration / 1000 / 60 % 60,
-                        mediaController!!.duration / 1000 % 60
-                    )
-                }
-//                viewModel.getStreamUrl(videoId!!)
+                isLoading = true
+                startFetchSongService(context, videoId, albumArt, title)
             }
-
-        }, onMetaDataChangedValue = {
-
-            if (it != null) {
-                albumArt =
-                    it.artworkUri?.toString()!!
-                videoId=mediaController?.currentMediaItem?.mediaId!!
-
-                playerHeader = it.title.toString()
-
-                playerBottomHeader = it.title.toString()
-                playerBottomSub = it.title.toString()
-
-            }
+        },
+        onMetaDataChangedValue = { meta: MediaMetadata ->
+            meta.artworkUri?.toString()?.let { albumArt = it }
+            mediaController?.currentMediaItem?.mediaId?.let { videoId = it }
+            title = meta.title?.toString() ?: title
+            artist = cleanArtist(meta.artist?.toString(), title)
         }
     )
-    if (showPlaListDialog) {
-        if(mediaController?.currentMediaItem!=null) {
+
+    if (showPlayListDialog) {
+        val current = mediaController?.currentMediaItem
+        if (current != null) {
             PlayListDialogViewer(
                 viewModel = viewModel,
-                onDismiss = { showPlaListDialog = false },
-                TubeFyCoreTypeData(
-                    videoId = mediaController?.currentMediaItem!!.mediaId,
-                    videoImage = albumArt,
-                    videoTitle = playerHeader
-                )
-                // Reset the state when the dialog is dismissed
+                onDismiss = { showPlayListDialog = false },
+                TubeFyCoreTypeData(videoId = current.mediaId, videoImage = albumArt, videoTitle = title)
             )
-        }else
-        {
-            showPlaListDialog=false
+        } else {
+            showPlayListDialog = false
         }
     }
-    Column(
+
+    fun toggleFavourite() {
+        val id = YoutubeCoreConstant.extractYoutubeVideoId(videoId) ?: return
+        if (isFavouriteSong) {
+            viewModel.removeFromFavorites(id)
+        } else {
+            viewModel.addToFavorites(FavoritePlaylist(videoId = id, videoThump = albumArt, videoName = title))
+        }
+    }
+
+    fun comingSoon(feature: String) =
+        Toast.makeText(context, "$feature is coming soon", Toast.LENGTH_SHORT).show()
+
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(dominantColor)
+            .background(Color.Black)
     ) {
-        Row(modifier = Modifier.background(gradientBrush)) {
+        // Blurred artwork backdrop (blur is applied on Android 12+, the scrim keeps older versions readable)
+        AsyncImage(
+            model = YoutubeCoreConstant.decodeThumpUrl(albumArt),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .fillMaxSize()
+                .blur(80.dp)
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            tint.copy(alpha = 0.75f),
+                            Color.Black.copy(alpha = 0.82f),
+                            Color.Black.copy(alpha = 0.94f)
+                        )
+                    )
+                )
+        )
+
+        Column(modifier = Modifier.fillMaxSize()) {
             Column(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .padding(horizontal = 20.dp)
             ) {
-                Column(
+                // Top bar
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        .padding(top = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "Playing Now",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 10.dp, start = 10.dp, end = 10.dp),
-                        fontWeight = FontWeight.Thin,
-                        color = Color.White,
-                        textAlign = TextAlign.Center,
-                        maxLines = 2,
-                        fontSize = 16.sp
-                    )
-                    Text(
-                        text = playerHeader,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 2.dp, start = 10.dp, end = 10.dp),
-                        fontWeight = FontWeight.Medium,
-                        color = Color.White,
-                        textAlign = TextAlign.Center,
-                        maxLines = 2,
-                        fontSize = 16.sp
-                    )
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                            .padding(horizontal = 30.dp, vertical = 10.dp)
-                    ) {
-                        AsyncImage(
-                            model = ImageRequest.Builder(context)
-                                .data(YoutubeCoreConstant.decodeThumpUrl(albumArt))
-                                .crossfade(true)
-                                .placeholder(R.drawable.placeholder)
-                                .error(R.drawable.placeholder)
-                                .build(),
-                            contentDescription = "Drawable Image",
-                            modifier = Modifier
-                                .fillMaxSize() // Match the size of the Box
-                                .clip(RoundedCornerShape(16.dp))
-                                .clickable {
-                                    mediaController?.pause()
-                                    val currentMediaItem = mediaController?.currentMediaItem
-//                             currentMediaItem?.playbackProperties?.uri?.toString()
-                                    videoUrl =
-                                        currentMediaItem?.localConfiguration?.uri
-                                            ?.toString()
-                                            .toString() // Replace with actual video URL
-                                    showVideoPlayer = true
-                                },
-                            contentScale = ContentScale.Crop
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.Rounded.KeyboardArrowDown, "Close player", tint = Color.White, modifier = Modifier.size(30.dp))
+                    }
+                    Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                        SongVideoToggle(
+                            selected = playerMode,
+                            onSelect = { mode ->
+                                playerMode = mode
+                                if (mode == PlayerMode.Video) mediaController?.play()
+                            }
                         )
-                        if (showVideoPlayer) {
-                            VideoPlayerView(videoUrl)
+                    }
+                    Box {
+                        IconButton(onClick = { showMenu = true }) {
+                            Icon(Icons.Rounded.MoreVert, "More options", tint = Color.White)
+                        }
+                        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                            DropdownMenuItem(
+                                text = { Text("Add to playlist") },
+                                leadingIcon = { Icon(Icons.AutoMirrored.Rounded.PlaylistAdd, null) },
+                                onClick = {
+                                    showMenu = false
+                                    showPlayListDialog = true
+                                }
+                            )
                         }
                     }
-                    /* AsyncImage(
-                 model = ImageRequest.Builder(context)
-                     .data(YoutubeCoreConstant.decodeThumpUrl(albumArt))
-                     .crossfade(true)
-                     .placeholder(R.drawable.placeholder)
-                     .error(R.drawable.placeholder)
-                     .build(),
-                 contentDescription = "Drawable Image",
-                 modifier = Modifier
-                     .padding(horizontal = 30.dp, vertical = 10.dp)
-                     .fillMaxWidth()
-                     .fillMaxHeight()
-                     .align(Alignment.CenterHorizontally)
-                     .clip(RoundedCornerShape(16.dp)), // Add this line to apply rounded corners,
-                 contentScale = ContentScale.Crop
-             )*/
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Column(
+                // Artwork / video
+                Box(
                     modifier = Modifier
+                        .weight(1f)
                         .fillMaxWidth()
-                        .weight(1f),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                        .padding(vertical = 20.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = playerBottomHeader,
-                        fontSize = 20.sp,
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center,
-                        maxLines = 2,
-                        minLines = 2,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp)
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = playerBottomSub.replace("\n", ""),
-                        fontSize = 14.sp,
-                        color = Color.Gray,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .basicMarquee(),
-
-                        overflow = TextOverflow.Ellipsis,
-
-                        )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Slider(
-                        value = progress * 100f,
-                        onValueChange = { newValue ->
-                            progress = newValue / 100f
-                            mediaController?.seekTo((progress * mediaController?.duration!!).toLong())
-                        },
-                        colors = SliderDefaults.colors(
-                            activeTrackColor = Color.White,
-                            inactiveTrackColor = Color.Gray,
-                            thumbColor = Color.Red
-                        ),
-                        valueRange = 0f..100f,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp)
-
-                    )
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(text = currentTime, color = Color.Gray, fontSize = 12.sp)
-                        Text(text = totalTime, color = Color.Gray, fontSize = 12.sp)
-                    }
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 20.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.ic_add_playlist),
-                            contentDescription = "Previous",
-                            modifier = Modifier
-                                .size(30.dp)
-                                .clickable { showPlaListDialog = true }
-
-                        )
-                        Row(
-                            modifier = Modifier
-                                .wrapContentWidth(),
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            Image(
-                                painter = painterResource(id = R.drawable.ic_player_previous),
-                                contentDescription = "Previous",
-                                modifier = Modifier
-                                    .size(30.dp)
-                                    .clickable {
-                                        mediaController?.let {
-                                            if (it.hasPreviousMediaItem()) {
-                                                it.seekToPreviousMediaItem()
-                                            } else {
-                                                Log.d(
-                                                    "PlaybackService",
-                                                    "No prev media item available"
-                                                )
-                                            }
-                                        } ?: Log.d("PlaybackService", "MediaController is null")
-                                    }
-
-                            )
-                            Spacer(modifier = Modifier.width(40.dp))
-                            if (isLoading) {
-                                CircularProgressIndicator(
-                                    color = colorResource(id = R.color.tubefyred),
-                                    modifier = Modifier.size(30.dp)
-                                )
-                            } else {
-
-                                Image(
-                                    painter = painterResource(id = if (isPlaying) R.drawable.ic_player_pause else R.drawable.ic_player_play),
-                                    contentDescription = "Play/Pause",
+                    Crossfade(targetState = playerMode, label = "playerMode") { mode ->
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            when (mode) {
+                                PlayerMode.Song -> AsyncImage(
+                                    model = ImageRequest.Builder(context)
+                                        .data(YoutubeCoreConstant.decodeThumpUrl(albumArt))
+                                        .crossfade(true)
+                                        .placeholder(R.drawable.placeholder)
+                                        .error(R.drawable.placeholder)
+                                        .build(),
+                                    contentDescription = "Album art",
+                                    contentScale = ContentScale.Crop,
                                     modifier = Modifier
-                                        .size(30.dp)
-                                        .clickable {
+                                        .aspectRatio(1f, matchHeightConstraintsFirst = true)
+                                        .clip(RoundedCornerShape(24.dp))
+                                )
 
-                                            if (mediaController != null && mediaController!!.isConnected) {
-                                                if (isPlaying) {
-                                                    mediaController?.pause()
-                                                } else {
-                                                    mediaController?.play()
-                                                }
-                                            }
-                                            if (showVideoPlayer) {
-                                                showVideoPlayer = false
-                                            }
-                                        }
-
+                                PlayerMode.Video -> SessionVideoSurface(
+                                    controller = mediaController,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .aspectRatio(16f / 9f)
+                                        .clip(RoundedCornerShape(20.dp))
+                                        .background(Color.Black)
                                 )
                             }
-                            Spacer(modifier = Modifier.width(40.dp))
-                            Image(
-                                painter = painterResource(id = R.drawable.ic_player_next),
-                                contentDescription = "Next",
-                                modifier = Modifier
-                                    .size(30.dp)
-                                    .clickable {
-                                        mediaController?.let {
-                                            if (it.hasNextMediaItem()) {
-                                                it.seekToNextMediaItem()
-                                            } else {
-                                                Log.d(
-                                                    "PlaybackService",
-                                                    "No next media item available"
-                                                )
-                                            }
-                                        } ?: Log.d("PlaybackService", "MediaController is null")
-                                    }
+                        }
+                    }
+                }
+
+                // Title, artist, favourite
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = title,
+                            color = Color.White,
+                            fontSize = 26.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            modifier = Modifier.basicMarquee()
+                        )
+                        if (artist.isNotEmpty()) {
+                            Text(
+                                text = artist,
+                                color = SecondaryText,
+                                fontSize = 18.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.padding(top = 2.dp)
                             )
                         }
-                        Image(
-                            painter = painterResource(id = if (isFavouriteSong.value == true) R.drawable.ic_unfav else R.drawable.ic_fav),
-                            contentDescription = "Previous",
-                            modifier = Modifier
-                                .size(30.dp)
-                                .clickable {
-                                    if (isFavouriteSong.value) {
-                                        viewModel.removeFromFavorites(
-                                            YoutubeCoreConstant.extractYoutubeVideoId(
-                                                videoId
-                                            )!!
-                                        )
-                                    } else {
-                                        viewModel.addToFavorites(
-                                            FavoritePlaylist(
-                                                videoId = YoutubeCoreConstant.extractYoutubeVideoId(
-                                                    videoId
-                                                )!!, videoThump = albumArt, videoName = playerHeader
-                                            )
-                                        )
-
-                                    }
-
-                                }
-
+                    }
+                    IconButton(onClick = ::toggleFavourite) {
+                        Icon(
+                            imageVector = if (isFavouriteSong) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                            contentDescription = if (isFavouriteSong) "Remove from favourites" else "Add to favourites",
+                            tint = if (isFavouriteSong) FavouriteRed else Color.White,
+                            modifier = Modifier.size(30.dp)
                         )
                     }
-                    /*   Row(
-                   modifier = Modifier
-                       .fillMaxWidth()
-                       .align(Alignment.CenterHorizontally),
-                   horizontalArrangement = Arrangement.Center
-               ) {
-                   Image(
-                       painter = painterResource(id = R.drawable.ic_player_previous),
-                       contentDescription = "Previous",
-                       modifier = Modifier
-                           .size(30.dp)
-                           .clickable {
-                               mediaController?.let {
-                                   if (it.hasPreviousMediaItem()) {
-                                       it.seekToPreviousMediaItem()
-                                   } else {
-                                       Log.d("PlaybackService", "No prev media item available")
-                                   }
-                               } ?: Log.d("PlaybackService", "MediaController is null")
-                           }
-                   )
-                   Spacer(modifier = Modifier.width(40.dp))
-                   if (isLoading) {
-                       CircularProgressIndicator(
-                           color = colorResource(id = R.color.tubefyred),
-                           modifier = Modifier.size(30.dp)
-                       )
-                   } else {
+                }
 
-                       Image(
-                           painter = painterResource(id = if (isPlaying) R.drawable.ic_player_pause else R.drawable.ic_player_play),
-                           contentDescription = "Play/Pause",
-                           modifier = Modifier
-                               .size(30.dp)
-                               .clickable {
+                Spacer(modifier = Modifier.height(16.dp))
 
-                                   if (mediaController != null && mediaController!!.isConnected) {
-                                       if (isPlaying) {
-                                           mediaController?.pause()
-                                       } else {
-                                           mediaController?.play()
-                                       }
-                                   }
-                                   if(showVideoPlayer)
-                                   {
-                                       showVideoPlayer=false
-                                       Log.d("loading","<<<<"+isLoading+"<>")
-                                   }
-                               }
-                       )
-                   }
-                   Spacer(modifier = Modifier.width(40.dp))
-                   Image(
-                       painter = painterResource(id = R.drawable.ic_player_next),
-                       contentDescription = "Next",
-                       modifier = Modifier.size(30.dp).clickable { mediaController?.let {
-                           if (it.hasNextMediaItem()) {
-                               it.seekToNextMediaItem()
-                           } else {
-                               Log.d("PlaybackService", "No next media item available")
-                           }
-                       } ?: Log.d("PlaybackService", "MediaController is null") }
-                   )
-               }*/
+                // Seek bar
+                val shownFraction = seekFraction
+                    ?: if (durationMs > 0) (positionMs.toFloat() / durationMs).coerceIn(0f, 1f) else 0f
+                SeekBar(
+                    fraction = shownFraction,
+                    onSeek = { seekFraction = it },
+                    onSeekFinished = {
+                        val target = seekFraction
+                        val controller = mediaController
+                        if (target != null && controller != null && controller.duration > 0) {
+                            val newPosition = (target * controller.duration).toLong()
+                            controller.seekTo(newPosition)
+                            positionMs = newPosition
+                        }
+                        seekFraction = null
+                    }
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    val labelPosition = if (shownFraction > 0f && durationMs > 0) (shownFraction * durationMs).toLong() else positionMs
+                    Text(formatTime(labelPosition, durationMs), color = SecondaryText, fontSize = 13.sp)
+                    Text(formatTime(durationMs, durationMs), color = SecondaryText, fontSize = 13.sp)
+                }
+
+                // Transport controls
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    ModeButton(
+                        icon = Icons.Rounded.Shuffle,
+                        description = "Shuffle",
+                        active = shuffleOn,
+                        onClick = { mediaController?.let { it.shuffleModeEnabled = !it.shuffleModeEnabled } }
+                    )
+                    IconButton(onClick = { mediaController?.seekToPrevious() }, modifier = Modifier.size(56.dp)) {
+                        Icon(Icons.Rounded.SkipPrevious, "Previous", tint = Color.White, modifier = Modifier.size(42.dp))
+                    }
+                    Box(
+                        modifier = Modifier
+                            .size(84.dp)
+                            .clip(CircleShape)
+                            .border(1.5.dp, Color.White.copy(alpha = 0.7f), CircleShape)
+                            .clickable(enabled = !isLoading) {
+                                mediaController?.takeIf { it.isConnected }?.let {
+                                    if (isPlaying) it.pause() else it.play()
+                                }
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (isLoading) {
+                            CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(34.dp))
+                        } else {
+                            Icon(
+                                imageVector = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                                contentDescription = if (isPlaying) "Pause" else "Play",
+                                tint = Color.White,
+                                modifier = Modifier.size(46.dp)
+                            )
+                        }
+                    }
+                    IconButton(
+                        onClick = { mediaController?.takeIf { it.hasNextMediaItem() }?.seekToNextMediaItem() },
+                        modifier = Modifier.size(56.dp)
+                    ) {
+                        Icon(Icons.Rounded.SkipNext, "Next", tint = Color.White, modifier = Modifier.size(42.dp))
+                    }
+                    ModeButton(
+                        icon = if (repeatMode == Player.REPEAT_MODE_ONE) Icons.Rounded.RepeatOne else Icons.Rounded.Repeat,
+                        description = "Repeat",
+                        active = repeatMode != Player.REPEAT_MODE_OFF,
+                        onClick = {
+                            mediaController?.let {
+                                it.repeatMode = when (it.repeatMode) {
+                                    Player.REPEAT_MODE_OFF -> Player.REPEAT_MODE_ALL
+                                    Player.REPEAT_MODE_ALL -> Player.REPEAT_MODE_ONE
+                                    else -> Player.REPEAT_MODE_OFF
+                                }
+                            }
+                        }
+                    )
+                }
+
+                // Quick actions
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    ActionTile(
+                        icon = if (isFavouriteSong) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                        label = "Like",
+                        iconTint = if (isFavouriteSong) FavouriteRed else Color.White,
+                        onClick = ::toggleFavourite
+                    )
+                    ActionTile(Icons.Rounded.Download, "Download", onClick = { comingSoon("Download") })
+                    ActionTile(Icons.AutoMirrored.Rounded.PlaylistAdd, "Playlist", onClick = { showPlayListDialog = true })
+                    ActionTile(Icons.Rounded.Timer, "Sleep timer", onClick = { comingSoon("Sleep timer") })
                 }
             }
-        }}
+
+            UpNextBar(
+                nextItem = nextItem,
+                onSwipe = { mediaController?.takeIf { it.hasNextMediaItem() }?.seekToNextMediaItem() }
+            )
+        }
+    }
 }
 
-
-@Preview(showBackground = true)
 @Composable
-fun PlayerPreview() {
-    PlayerBaseView()
+private fun SongVideoToggle(selected: PlayerMode, onSelect: (PlayerMode) -> Unit) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .background(SurfaceTint)
+            .padding(4.dp)
+    ) {
+        PlayerMode.entries.forEach { mode ->
+            val isSelected = mode == selected
+            val background by animateColorAsState(
+                if (isSelected) Color.White.copy(alpha = 0.18f) else Color.Transparent, label = "toggleBg"
+            )
+            Text(
+                text = mode.name,
+                color = if (isSelected) Color.White else SecondaryText,
+                fontSize = 15.sp,
+                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(50))
+                    .background(background)
+                    .clickable { onSelect(mode) }
+                    .padding(horizontal = 22.dp, vertical = 8.dp)
+            )
+        }
+    }
 }
 
+/**
+ * Renders the video track of the song already playing in [PlaybackService], so switching
+ * between Song and Video never restarts or rebuffers playback.
+ */
+@OptIn(UnstableApi::class)
+@Composable
+private fun SessionVideoSurface(controller: MediaController?, modifier: Modifier = Modifier) {
+    AndroidView(
+        factory = { ctx ->
+            PlayerView(ctx).apply {
+                useController = false
+                resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
+                setShutterBackgroundColor(android.graphics.Color.BLACK)
+                setKeepContentOnPlayerReset(true)
+            }
+        },
+        update = { it.player = controller },
+        onRelease = { it.player = null },
+        modifier = modifier
+    )
+}
+
+@kotlin.OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SeekBar(fraction: Float, onSeek: (Float) -> Unit, onSeekFinished: () -> Unit) {
+    Slider(
+        value = fraction,
+        onValueChange = onSeek,
+        onValueChangeFinished = onSeekFinished,
+        colors = SliderDefaults.colors(thumbColor = Color.White),
+        thumb = {
+            Box(
+                modifier = Modifier
+                    .size(14.dp)
+                    .background(Color.White, CircleShape)
+            )
+        },
+        track = { state ->
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(4.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(Color.White.copy(alpha = 0.2f))
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(state.value.coerceIn(0f, 1f))
+                        .fillMaxHeight()
+                        .background(Color.White)
+                )
+            }
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(28.dp)
+    )
+}
+
+@Composable
+private fun ModeButton(icon: ImageVector, description: String, active: Boolean, onClick: () -> Unit) {
+    IconButton(onClick = onClick) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(
+                imageVector = icon,
+                contentDescription = description,
+                tint = if (active) Color.White else Color.White.copy(alpha = 0.5f),
+                modifier = Modifier.size(26.dp)
+            )
+            if (active) {
+                Box(
+                    modifier = Modifier
+                        .offset(y = 18.dp)
+                        .size(4.dp)
+                        .background(Color.White, CircleShape)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ActionTile(
+    icon: ImageVector,
+    label: String,
+    onClick: () -> Unit,
+    iconTint: Color = Color.White
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.width(76.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(56.dp)
+                .clip(RoundedCornerShape(18.dp))
+                .background(SurfaceTint)
+                .border(1.dp, Color.White.copy(alpha = 0.06f), RoundedCornerShape(18.dp))
+                .clickable(onClick = onClick),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(icon, contentDescription = label, tint = iconTint, modifier = Modifier.size(26.dp))
+        }
+        Text(
+            text = label,
+            color = Color.White.copy(alpha = 0.85f),
+            fontSize = 13.sp,
+            maxLines = 1,
+            modifier = Modifier.padding(top = 8.dp)
+        )
+    }
+}
+
+/** Bottom "Up next" panel; swiping it sideways skips to the next song in the queue. */
+@Composable
+private fun UpNextBar(nextItem: MediaItem?, onSwipe: () -> Unit) {
+    val scope = rememberCoroutineScope()
+    val offsetX = remember { Animatable(0f) }
+    var barWidth by remember { mutableFloatStateOf(1f) }
+    val hasNext = nextItem != null
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 10.dp)
+            .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+            .background(SurfaceTint)
+            .navigationBarsPadding()
+            .padding(top = 6.dp, bottom = 12.dp)
+    ) {
+        Icon(Icons.Rounded.KeyboardArrowUp, null, tint = SecondaryText, modifier = Modifier.size(20.dp))
+        Text("Up next", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 8.dp)
+                .onSizeChanged { barWidth = it.width.toFloat() }
+                .offset { IntOffset(offsetX.value.roundToInt(), 0) }
+                .draggable(
+                    enabled = hasNext,
+                    orientation = Orientation.Horizontal,
+                    state = rememberDraggableState { delta ->
+                        scope.launch { offsetX.snapTo(offsetX.value + delta) }
+                    },
+                    onDragStopped = {
+                        if (abs(offsetX.value) > barWidth * 0.3f) {
+                            onSwipe()
+                            offsetX.snapTo(0f)
+                        } else {
+                            offsetX.animateTo(0f)
+                        }
+                    }
+                )
+        ) {
+            if (nextItem != null) {
+                AsyncImage(
+                    model = YoutubeCoreConstant.decodeThumpUrl(nextItem.mediaMetadata.artworkUri?.toString() ?: ""),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                )
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 12.dp)
+                ) {
+                    Text(
+                        text = nextItem.mediaMetadata.title?.toString() ?: "",
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text("Swipe to play", color = SecondaryText, fontSize = 12.sp)
+                }
+            } else {
+                Text(
+                    text = "Nothing queued yet",
+                    color = SecondaryText,
+                    fontSize = 13.sp,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    }
+}
+
+/** The service falls back to "Artist :<title>" when it has no channel name; hide that placeholder. */
+private fun cleanArtist(rawArtist: String?, title: String): String {
+    val artist = rawArtist?.removePrefix("Artist :")?.replace("\n", " ")?.trim().orEmpty()
+    return if (artist.isEmpty() || artist == title.trim()) "" else artist
+}
+
+private fun formatTime(ms: Long, durationMs: Long): String {
+    if (ms <= 0L || ms == C.TIME_UNSET) return if (durationMs >= 3_600_000) "0:00:00" else "0:00"
+    val totalSeconds = ms / 1000
+    val hours = totalSeconds / 3600
+    val minutes = totalSeconds / 60 % 60
+    val seconds = totalSeconds % 60
+    return if (durationMs >= 3_600_000) "%d:%02d:%02d".format(hours, minutes, seconds)
+    else "%d:%02d".format(minutes, seconds)
+}
 
 @OptIn(UnstableApi::class)
 fun startFetchPlayListService(context: Context) {
@@ -626,9 +765,3 @@ fun startFetchSongService(context: Context, videoId: String, albumArt: String, t
     }
     context.startService(intent)
 }
-
-
-
-
-
-

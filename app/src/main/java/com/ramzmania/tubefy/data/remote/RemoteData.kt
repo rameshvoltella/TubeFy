@@ -108,6 +108,7 @@ constructor(
 
     override suspend fun getStreamUrl(videoId: String,mediaIndex:Int): Resource<StreamUrlData> {
         var streamUrl: String = ""
+        var artist: String = ""
 
         withContext(Dispatchers.IO)
         {
@@ -118,14 +119,14 @@ constructor(
 
                 if (extractor.videoStreams.isNotEmpty()) {
                     streamUrl = extractor.videoStreams.first().content ?: ""
-
+                    artist = extractor.uploaderName ?: ""
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
         return if (streamUrl.length > 0) {
-            Resource.Success(StreamUrlData(streamUrl,mediaIndex))
+            Resource.Success(StreamUrlData(streamUrl,mediaIndex,artist))
         } else {
             Resource.DataError(404)
         }
@@ -137,6 +138,7 @@ constructor(
         var videoThumpUrls: ArrayList<String> = ArrayList()
         var videoTitles: ArrayList<String> = ArrayList()
         var videoIdArray: ArrayList<String> = ArrayList()
+        var artists: ArrayList<String> = ArrayList()
         var mediaItems: List<MediaItem>? = null
 
 //         var mediaUris:Array<String> = listOf("http://example.com/audio1.mp3", "http://example.com/audio2.mp3")
@@ -169,6 +171,7 @@ constructor(
 
 //                        }
                         videoTitles.add(videoIds.videoTitle)
+                        artists.add(extractor.uploaderName ?: "")
                         videoThumpUrls.add(
                             "https://i.ytimg.com/vi/${
                                 YoutubeCoreConstant.extractYoutubeVideoId(
@@ -181,7 +184,7 @@ constructor(
 
                     }
                 }
-                mediaItems = createMediaItems(streamUrlArray, videoThumpUrls, videoTitles,videoIdArray)
+                mediaItems = createMediaItems(streamUrlArray, videoThumpUrls, videoTitles,videoIdArray,artists)
             }catch (e: CancellationException) {
                 // Handle the cancellation, e.g., clean up resources if needed
                 e.printStackTrace() // Re-throw the cancellation exception to properly handle coroutine cancellation

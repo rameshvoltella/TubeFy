@@ -4,7 +4,7 @@ import android.net.Uri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 
-fun createMediaItems(mediaUris: List<String>, videoThumpUrls: List<String>, videoTitles: List<String>,videoIdList: List<String>): List<MediaItem> {
+fun createMediaItems(mediaUris: List<String>, videoThumpUrls: List<String>, videoTitles: List<String>,videoIdList: List<String>, artists: List<String> = emptyList()): List<MediaItem> {
     return mediaUris.indices.map { index ->
         MediaItem.Builder()
             .setMediaId(videoIdList[index])
@@ -12,7 +12,7 @@ fun createMediaItems(mediaUris: List<String>, videoThumpUrls: List<String>, vide
             .setMediaMetadata(
                 MediaMetadata.Builder()
                     .setTitle(videoTitles.getOrElse(index) { "Unknown Title" })
-                    .setArtist("Artist :${videoTitles.getOrElse(index) { "Unknown Artist" }}")
+                    .setArtist(artists.getOrNull(index)?.takeIf { it.isNotBlank() } ?: "Artist :${videoTitles.getOrElse(index) { "Unknown Artist" }}")
                     .setIsBrowsable(false)
                     .setIsPlayable(true)
                     .setArtworkUri(Uri.parse(videoThumpUrls.getOrElse(index) { "" }))

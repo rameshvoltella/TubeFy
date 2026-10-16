@@ -1,7 +1,6 @@
 package com.ramzmania.tubefy.di
 
 import android.content.Context
-import android.webkit.WebView
 import com.ramzmania.tubefy.core.extractors.newpipeextractor.PipeDownloader
 import com.ramzmania.tubefy.core.extractors.yotubewebextractor.YoutubeJsonScrapping
 import com.ramzmania.tubefy.data.ContextModule
@@ -34,8 +33,8 @@ class AppModule {
 
     @Provides
     @Singleton
-    fun provideYoutubeJsonScrapping(@ApplicationContext context: Context): YoutubeJsonScrapping {
-        return YoutubeJsonScrapping(WebView(context),context)
+    fun provideYoutubeJsonScrapping(): YoutubeJsonScrapping {
+        return YoutubeJsonScrapping()
     }
 //    @Provides
 //    @Singleton
