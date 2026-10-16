@@ -121,7 +121,7 @@ fun MyLibraryPage(viewModel: TubeFyViewModel = hiltViewModel()) {
         } else {
             val songs = (favoriteSongs as? Resource.Success)?.data.orEmpty()
             if (songs.isNotEmpty()) {
-                LibraryListBaseView(songs)
+                LibraryListBaseView(songs, FAVORITES_PLAYLIST)
             } else {
                 Text(
                     text = "No liked songs yet. Tap ♥ on any song to save it here.",

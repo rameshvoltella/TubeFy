@@ -97,6 +97,10 @@ class DatabaseRepository @Inject constructor(
         return flow { emit(databaseData.isPlayListSaved(playlistName)) }
     }
 
+    override suspend fun savePlayListOrder(playlistName: String, songs: List<TubeFyCoreTypeData>): Flow<Resource<DatabaseResponse>> {
+        return flow { emit(databaseData.savePlayListOrder(playlistName, songs)) }
+    }
+
     override suspend fun deleteAllFavorites(): Flow<Resource<DatabaseResponse>> {
         return flow { emit(databaseData.deleteAllFavorites()) }
     }

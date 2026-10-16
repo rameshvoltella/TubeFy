@@ -305,6 +305,19 @@ class DatabaseData @Inject constructor(
         return Resource.Success(playlistDao.getCustomPlaylistEntryCount(playlistName) > 0)
     }
 
+    override suspend fun savePlayListOrder(playlistName: String, songs: List<TubeFyCoreTypeData>): Resource<DatabaseResponse> {
+        if (playlistName == "TubeFy-Favorites") {
+            playlistDao.replaceFavoritesOrder(songs.map {
+                FavoritePlaylist(videoId = it.videoId, videoThump = it.videoImage, videoName = it.videoTitle)
+            })
+        } else {
+            playlistDao.replaceCustomPlaylistOrder(playlistName, songs.map {
+                CustomPlaylist(playlistName = playlistName, videoId = it.videoId, videoThump = it.videoImage, videoName = it.videoTitle)
+            })
+        }
+        return Resource.Success(DatabaseResponse(200))
+    }
+
     override suspend fun deleteSpecificPlayList(playlistName:String): Resource<DatabaseResponse> {
         val result=playlistDao.deleteCustomPlaylistByName(playlistName)>0
         return if (result) {

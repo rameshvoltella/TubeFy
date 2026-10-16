@@ -104,7 +104,7 @@ interface PlaylistDao {
     @Query("SELECT COUNT(*) FROM FavoritePlaylist")
     suspend fun getFavoritesCount(): Int
 
-    @Query("SELECT * FROM FavoritePlaylist")
+    @Query("SELECT * FROM FavoritePlaylist ORDER BY id")
     suspend fun getAllFavorites(): List<FavoritePlaylist>
 
     @Query("SELECT COUNT(*) FROM FavoritePlaylist WHERE videoId = :videoId")
@@ -138,11 +138,24 @@ interface PlaylistDao {
     @Query("SELECT COUNT(*) FROM CustomPlaylist WHERE playlistName = :playlistName")
     suspend fun getCustomPlaylistEntryCount(playlistName: String): Int
 
+    /** Saves a new song order by re-inserting the playlist's rows in that order (rows are read by id). */
+    @Transaction
+    suspend fun replaceCustomPlaylistOrder(playlistName: String, entries: List<CustomPlaylist>) {
+        deleteCustomPlaylistByName(playlistName)
+        entries.forEach { insertCustomPlaylistEntry(it.copy(id = 0)) }
+    }
+
+    @Transaction
+    suspend fun replaceFavoritesOrder(entries: List<FavoritePlaylist>) {
+        deleteAllFavorites()
+        entries.forEach { insertFavorite(it.copy(id = 0)) }
+    }
+
     /** Repairs playlist names saved with leading/trailing newlines or spaces (shown blank in the library). */
     @Query("UPDATE CustomPlaylist SET playlistName = TRIM(playlistName, char(9, 10, 13, 32)) WHERE playlistName != TRIM(playlistName, char(9, 10, 13, 32))")
     suspend fun trimPlaylistNames()
 
-    @Query("SELECT * FROM CustomPlaylist WHERE playlistName = :playlistName")
+    @Query("SELECT * FROM CustomPlaylist WHERE playlistName = :playlistName ORDER BY id")
     suspend fun getCustomPlaylistByName(playlistName: String): List<CustomPlaylist>
 
     @Query("DELETE FROM CustomPlaylist WHERE playlistName = :playlistName AND videoId = :videoId")

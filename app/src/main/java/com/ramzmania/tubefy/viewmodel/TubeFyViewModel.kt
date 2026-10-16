@@ -731,6 +731,13 @@ class TubeFyViewModel @Inject constructor(
         }
     }
 
+    /** Persists a drag-and-drop reorder of a saved playlist (or favorites). */
+    fun savePlaylistOrder(playlistName: String, songs: List<TubeFyCoreTypeData?>) {
+        viewModelScope.launch {
+            playlistDatabaseRepository.savePlayListOrder(playlistName, songs.filterNotNull()).collect {}
+        }
+    }
+
     private val isAlbumSavedPrivate = MutableStateFlow(false)
 
     /** Whether the album currently open is saved as a playlist in "Your Library". */
