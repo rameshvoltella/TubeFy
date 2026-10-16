@@ -2,6 +2,22 @@ package com.ramzmania.tubefy.ui.components.screen.player
 
 import android.util.Log
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Pause
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.SkipNext
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.foundation.layout.size
+import com.ramzmania.tubefy.ui.theme.DiscoverAccent
+import com.ramzmania.tubefy.ui.theme.DiscoverBorder
+import com.ramzmania.tubefy.ui.theme.DiscoverSurface
+import com.ramzmania.tubefy.ui.theme.DiscoverTextSecondary
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -124,134 +140,107 @@ fun MiniPlayerView(viewModel: TubeFyViewModel = hiltViewModel()) {
             }
         }
     )
-    val dominantColor = palette?.dominantSwatch?.rgb?.let { Color(it) } ?: Color.DarkGray
-    Column {
-        // Top card item
-        MiniSeekBar(progress = progress)
-        Card(
-            modifier = Modifier
-//                .padding(8.dp)
-                .height(50.dp)
-                .fillMaxWidth()
-                .clickable {
-                    val encodedVideoId =
-                        URLEncoder.encode(videoId, StandardCharsets.UTF_8.toString())
-                    newNav!!.navigate(
-                        NavigationItem.AudioPlayer.createRoute(
-                            encodedVideoId,
-                            URLEncoder.encode(albumArt, StandardCharsets.UTF_8.toString()),
-                            URLEncoder.encode(songName, StandardCharsets.UTF_8.toString()),
-                            URLEncoder.encode(songName, StandardCharsets.UTF_8.toString()),
-                            URLEncoder.encode(songName, StandardCharsets.UTF_8.toString())
-                        )
-                    ) {
-                        newNav.graph.route?.let { route ->
-                            popUpTo(route) {
-                                saveState = true
-                            }
-                        }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                },
-            elevation = CardDefaults.cardElevation(4.dp), // Use CardDefaults.cardElevation for elevation
-            colors = CardDefaults.cardColors(containerColor = colorResource(id = R.color.colorPrimary)), // Set background color
-            shape = RoundedCornerShape(8.dp) // Adjust the corner radius for a rounded effect
+    fun openPlayer() {
+        val encodedVideoId = URLEncoder.encode(videoId, StandardCharsets.UTF_8.toString())
+        newNav.navigate(
+            NavigationItem.AudioPlayer.createRoute(
+                encodedVideoId,
+                URLEncoder.encode(albumArt, StandardCharsets.UTF_8.toString()),
+                URLEncoder.encode(songName, StandardCharsets.UTF_8.toString()),
+                URLEncoder.encode(songName, StandardCharsets.UTF_8.toString()),
+                URLEncoder.encode(songName, StandardCharsets.UTF_8.toString())
+            )
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(dominantColor),
-            ) {
-                // Left ImageView
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data(YoutubeCoreConstant.decodeThumpUrl(albumArt))
-                        .crossfade(true)
-                        .placeholder(R.drawable.placeholder)
-                        .error(R.drawable.placeholder)
-                        .build(),
-                    contentDescription = "Drawable Image",
-                    modifier = Modifier
-                        .height(50.dp)
-                        .width(50.dp),
-                    contentScale = ContentScale.Crop
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                // Text overlapping the right image
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .align(Alignment.CenterVertically),// Ensures the Box takes up remaining space
-                    contentAlignment = Alignment.CenterStart // Centers content within the Box
-                ) {
-                    Text(
-                        text = songName,
-                        fontSize = 16.sp,
-                        color = Color.White,
-                        maxLines = 1,
-                        textAlign = TextAlign.Left, // Centers text within its own bounds
-                        modifier = Modifier
-                            .align(Alignment.TopStart) // Aligns the Text within the Box
-                            .padding(4.dp)
-                    )
-                }
-                // Right ImageViews with Box to manage padding
-                Row(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .padding(end = 8.dp), // Padding for the entire Row
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // First Image with padding
-                    Box(modifier = Modifier.padding(end = 4.dp)) {
-                        Image(
-                            painter = painterResource(id = if (isFavouriteSong.value==true) R.drawable.ic_unfav else R.drawable.ic_fav), // Replace with your image resource
-                            contentDescription = null,
-                            modifier = Modifier
-                                .width(20.dp)
-                                .height(50.dp)
-                                .clickable {
-                                    if (isFavouriteSong.value) {
-                                        viewModel.removeFromFavorites(
-                                            YoutubeCoreConstant.extractYoutubeVideoId(
-                                                videoId
-                                            )!!
-                                        )
-                                    } else {
-                                        viewModel.addToFavorites(
-                                            FavoritePlaylist(
-                                                videoId = YoutubeCoreConstant.extractYoutubeVideoId(
-                                                    videoId
-                                                )!!, videoThump = albumArt, videoName = songName
-                                            )
-                                        )
-
-                                    }
-
-                                } // Ensure it matches the height of the Row
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(8.dp)) // Adjust the width as needed for the desired gap
-                    // Second Image
-                    Image(
-                        painter = painterResource(id = if (isPlaying) R.drawable.ic_player_pause else R.drawable.ic_player_play),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .width(20.dp)
-                            .height(50.dp)
-                            .clickable {
-                                if (mediaController != null && mediaController!!.isConnected) {
-                                    if (isPlaying) {
-                                        mediaController?.pause()
-                                    } else {
-                                        mediaController?.play()
-                                    }
-                                }
-                            } // Ensure it matches the height of the Row
-                    )
+            newNav.graph.route?.let { route ->
+                popUpTo(route) {
+                    saveState = true
                 }
             }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .padding(horizontal = 10.dp, vertical = 6.dp)
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(22.dp))
+            .background(DiscoverSurface)
+            .border(1.dp, DiscoverBorder, RoundedCornerShape(22.dp))
+            .clickable { openPlayer() }
+            .padding(10.dp)
+    ) {
+        AsyncImage(
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(YoutubeCoreConstant.decodeThumpUrl(albumArt))
+                .crossfade(true)
+                .placeholder(R.drawable.placeholder)
+                .error(R.drawable.placeholder)
+                .build(),
+            contentDescription = songName,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .size(52.dp)
+                .clip(RoundedCornerShape(10.dp))
+        )
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(horizontal = 14.dp)
+        ) {
+            Text(
+                text = songName,
+                color = Color.White,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = if (isPlaying) "Now playing" else "Paused",
+                color = DiscoverTextSecondary,
+                fontSize = 13.sp,
+                maxLines = 1
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(3.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(Color.White.copy(alpha = 0.15f))
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(progress)
+                        .fillMaxHeight()
+                        .background(DiscoverAccent)
+                )
+            }
+        }
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(46.dp)
+                .clip(CircleShape)
+                .border(1.5.dp, DiscoverAccent, CircleShape)
+                .clickable {
+                    mediaController?.takeIf { it.isConnected }?.let {
+                        if (isPlaying) it.pause() else it.play()
+                    }
+                }
+        ) {
+            Icon(
+                imageVector = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                contentDescription = if (isPlaying) "Pause" else "Play",
+                tint = Color.White,
+                modifier = Modifier.size(26.dp)
+            )
+        }
+        IconButton(onClick = { mediaController?.takeIf { it.hasNextMediaItem() }?.seekToNextMediaItem() }) {
+            Icon(Icons.Rounded.SkipNext, contentDescription = "Next", tint = Color.White, modifier = Modifier.size(30.dp))
         }
     }
 }

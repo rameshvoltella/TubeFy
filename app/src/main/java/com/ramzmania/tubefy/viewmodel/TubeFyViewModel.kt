@@ -38,6 +38,7 @@ import com.ramzmania.tubefy.ui.base.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.schabi.newpipe.extractor.Page
@@ -355,6 +356,25 @@ class TubeFyViewModel @Inject constructor(
                 .collect {
                     youTubeMusicCategoryDataPrivate.value = it
                 }
+        }
+    }
+
+    private val homeCategoryContentPrivate =
+        MutableStateFlow<Map<String, Resource<List<MusicCategoryPlayListBase?>>>>(emptyMap())
+
+    /** Playlists for the home screen chips, keyed by category id, cached for the session. */
+    val homeCategoryContent = homeCategoryContentPrivate.asStateFlow()
+
+    fun loadHomeCategory(category: PlayListCategory, forceRefresh: Boolean = false) {
+        val key = category.playListCategoryId ?: return
+        val browseId = category.playListBrowserId ?: return
+        val current = homeCategoryContentPrivate.value[key]
+        if (!forceRefresh && (current is Resource.Success || current is Resource.Loading)) return
+        homeCategoryContentPrivate.update { it + (key to Resource.Loading()) }
+        viewModelScope.launch {
+            remoteRepositorySource.getCategoryPlayList(browseId, key)
+                .catch { emit(Resource.DataError(YOUTUBE_SCRAP_ERROR)) }
+                .collect { result -> homeCategoryContentPrivate.update { it + (key to result) } }
         }
     }
 

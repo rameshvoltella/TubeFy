@@ -1,5 +1,6 @@
 package com.ramzmania.tubefy.ui.components
 
+import androidx.navigation.NavController
 import com.ramzmania.tubefy.R
 
 sealed class NavigationItem(var route: String, var icon: Int, var title: String) {
@@ -21,5 +22,18 @@ sealed class NavigationItem(var route: String, var icon: Int, var title: String)
 
     data object MyPlayList : NavigationItem("myPlayList/{playerListImage}/{playerListName}", R.drawable.library, "CategoryPlayList") {
         fun createRoute(playerListImage: String, playerListName: String) = "myPlayList/$playerListImage/$playerListName"
+    }
+}
+
+/** Switches bottom navigation tab, keeping each tab's back stack and state. */
+fun NavController.navigateToTab(route: String) {
+    navigate(route) {
+        graph.startDestinationRoute?.let { startRoute ->
+            popUpTo(startRoute) {
+                saveState = true
+            }
+        }
+        launchSingleTop = true
+        restoreState = true
     }
 }

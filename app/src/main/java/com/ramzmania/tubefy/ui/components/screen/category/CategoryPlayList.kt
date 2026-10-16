@@ -13,6 +13,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import com.ramzmania.tubefy.core.extractors.yotubewebextractor.YoutubeScrapType
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.base.playlist.PlayListCategory
@@ -151,59 +152,53 @@ fun HorizontalPlayList(playLists: List<MusicCategoryPlayList>) {
             val rowData = playLists[rowIndex]
 
             ContentPlayListItem(rowData) { selectedItem ->
-                if (selectedItem.videoId.length==11) {
+                openCategoryPlaylistItem(navController, selectedItem)
+            }
+        }
+    }
+}
 
-                    val encodedVideoThumpUrl = URLEncoder.encode(
-                        YoutubeCoreConstant.decodeThumpUrl(selectedItem.playListThump),
-                        StandardCharsets.UTF_8.toString()
-                    )
-                    val encodedVideoId =
-                        URLEncoder.encode(
-                            selectedItem.videoId,
-                            StandardCharsets.UTF_8.toString()
-                        )
-                    val videoTitle =
-                        URLEncoder.encode(
-                            selectedItem.playListName,
-                            StandardCharsets.UTF_8.toString()
-                        )
-//                LocalNavController.current
-                    navController!!.navigate(
-                        NavigationItem.AudioPlayer.createRoute(
-                            encodedVideoId,
-                            encodedVideoThumpUrl, videoTitle, videoTitle, videoTitle
-                        )
-                    ) {
-                        navController.graph.route?.let { route ->
-                            popUpTo(route) {
-                                saveState = true
-                            }
-                        }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-
-                } else {
-                    navController!!.navigate(
-                        NavigationItem.PlayList.createRoute(
-                            selectedItem.playListId!!,
-                            selectedItem.playListName!!, URLEncoder.encode(
-                                YoutubeCoreConstant.decodeThumpUrl(selectedItem.playListThump?.takeIf { it.isNotEmpty() }
-                                    ?: "nourl"),
-                                StandardCharsets.UTF_8.toString()
-                            )
-                        )
-                    ) {
-                        navController.graph.route?.let { route ->
-                            popUpTo(route) {
-                                saveState = true
-                            }
-                        }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
+/** Opens a category playlist entry: single songs go to the player, playlists to the playlist screen. */
+fun openCategoryPlaylistItem(navController: NavController, selectedItem: MusicCategoryPlayList) {
+    if (selectedItem.videoId.length == 11) {
+        val encodedVideoThumpUrl = URLEncoder.encode(
+            YoutubeCoreConstant.decodeThumpUrl(selectedItem.playListThump),
+            StandardCharsets.UTF_8.toString()
+        )
+        val encodedVideoId = URLEncoder.encode(selectedItem.videoId, StandardCharsets.UTF_8.toString())
+        val videoTitle = URLEncoder.encode(selectedItem.playListName, StandardCharsets.UTF_8.toString())
+        navController.navigate(
+            NavigationItem.AudioPlayer.createRoute(
+                encodedVideoId,
+                encodedVideoThumpUrl, videoTitle, videoTitle, videoTitle
+            )
+        ) {
+            navController.graph.route?.let { route ->
+                popUpTo(route) {
+                    saveState = true
                 }
             }
+            launchSingleTop = true
+            restoreState = true
+        }
+    } else {
+        navController.navigate(
+            NavigationItem.PlayList.createRoute(
+                selectedItem.playListId,
+                selectedItem.playListName, URLEncoder.encode(
+                    YoutubeCoreConstant.decodeThumpUrl(selectedItem.playListThump.takeIf { it.isNotEmpty() }
+                        ?: "nourl"),
+                    StandardCharsets.UTF_8.toString()
+                )
+            )
+        ) {
+            navController.graph.route?.let { route ->
+                popUpTo(route) {
+                    saveState = true
+                }
+            }
+            launchSingleTop = true
+            restoreState = true
         }
     }
 }

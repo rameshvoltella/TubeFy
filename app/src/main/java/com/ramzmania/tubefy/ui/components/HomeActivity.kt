@@ -25,8 +25,19 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Search
+import com.ramzmania.tubefy.ui.theme.DiscoverAccent
+import com.ramzmania.tubefy.ui.theme.DiscoverAccentContainer
+import com.ramzmania.tubefy.ui.theme.DiscoverBackground
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -183,7 +194,7 @@ fun MainScreen(mediaControllerState: MutableState<MediaController?>) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(colorResource(R.color.colorPrimary))
+            .background(DiscoverBackground)
     ) {
         // Content that extends behind the bottom bar
         CompositionLocalProvider(
@@ -210,6 +221,7 @@ fun MainScreen(mediaControllerState: MutableState<MediaController?>) {
                         Navigation(navController = navController)
                     }
                 },
+                containerColor = DiscoverBackground,
                 contentColor = colorResource(R.color.colorPrimary)
             )
         }
@@ -275,49 +287,40 @@ fun TopBarPreview() {
 
 @Composable
 fun BottomNavigationBar(navController: NavController) {
+    // (item, selected icon, unselected icon)
     val items = listOf(
-        NavigationItem.Home,
-        NavigationItem.Search,
-        NavigationItem.Books,
-        NavigationItem.Profile
+        Triple(NavigationItem.Home, Icons.Rounded.Home, Icons.Outlined.Home),
+        Triple(NavigationItem.Search, Icons.Rounded.Search, Icons.Outlined.Search),
+        Triple(NavigationItem.Books, LibraryIconFilled, LibraryIconOutlined),
+        Triple(NavigationItem.Profile, Icons.Rounded.Info, Icons.Outlined.Info)
     )
-    // Create a linear gradient brush
-    val gradientBrush = Brush.linearGradient(
-        colors = listOf(Color.Transparent, Color.Black),
-        start = Offset(0f, 0f),
-        end = Offset(0f, Float.POSITIVE_INFINITY),
-        tileMode = TileMode.Clamp
-    )
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
     NavigationBar(
-        containerColor = Color.Transparent, // Set container color to transparent
-        contentColor = Color.White,
-        modifier = Modifier.background(gradientBrush) // Apply gradient brush as background
+        containerColor = DiscoverBackground,
+        contentColor = Color.White
     ) {
-        val navBackStackEntry by navController.currentBackStackEntryAsState()
-        val currentRoute = navBackStackEntry?.destination?.route
-        items.forEach { item ->
+        items.forEach { (item, selectedIcon, unselectedIcon) ->
+            val selected = currentRoute == item.route
             NavigationBarItem(
-                icon = { Icon(painterResource(id = item.icon), contentDescription = item.title) },
-                label = { Text(text = item.title) },
+                icon = {
+                    Icon(
+                        if (selected) selectedIcon else unselectedIcon,
+                        contentDescription = item.title,
+                        modifier = Modifier.size(26.dp)
+                    )
+                },
+                label = { Text(text = item.title, fontSize = 13.sp) },
                 colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = Color.White,
-                    unselectedIconColor = Color.White.copy(0.4f),
-                    selectedTextColor = Color.White,
-                    unselectedTextColor = Color.White.copy(0.4f)
+                    selectedIconColor = DiscoverAccent,
+                    unselectedIconColor = Color.White.copy(alpha = 0.75f),
+                    selectedTextColor = DiscoverAccent,
+                    unselectedTextColor = Color.White.copy(alpha = 0.75f),
+                    indicatorColor = DiscoverAccentContainer
                 ),
                 alwaysShowLabel = true,
-                selected = currentRoute == item.route,
-                onClick = {
-                    navController.navigate(item.route) {
-                        navController.graph.startDestinationRoute?.let { route ->
-                            popUpTo(route) {
-                                saveState = true
-                            }
-                        }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                }
+                selected = selected,
+                onClick = { navController.navigateToTab(item.route) }
             )
         }
     }

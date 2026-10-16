@@ -1,6 +1,31 @@
 package com.ramzmania.tubefy.ui.components.screen.home
 
-import android.util.Log
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import com.ramzmania.tubefy.core.YoutubeCoreConstant
+import com.ramzmania.tubefy.data.dto.base.playlist.PlayListCategory
+import com.ramzmania.tubefy.ui.components.NavigationItem
+import com.ramzmania.tubefy.ui.components.navigateToTab
+import com.ramzmania.tubefy.ui.components.screen.category.openCategoryPlaylistItem
+import com.ramzmania.tubefy.ui.theme.DiscoverAccent
+import com.ramzmania.tubefy.ui.theme.DiscoverBackground
+import com.ramzmania.tubefy.ui.theme.DiscoverBorder
+import com.ramzmania.tubefy.ui.theme.DiscoverOnAccent
+import com.ramzmania.tubefy.ui.theme.DiscoverSurface
+import com.ramzmania.tubefy.ui.theme.DiscoverTextSecondary
+import com.ramzmania.tubefy.utils.LocalNavController
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -194,66 +219,194 @@ fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel(), navControlle
         }
     }
 
+    val categoryData by viewModel.youTubeMusicCategoryData.observeAsState()
+    val categories = (categoryData as? Resource.Success)?.data.orEmpty()
+    val chips = remember(categories) { buildHomeChips(categories) }
+    var selectedChip by rememberSaveable { mutableStateOf(FOR_YOU) }
+    val selectedCategory = chips.firstOrNull { it.label == selectedChip }?.category
+
+    LaunchedEffect(Unit) {
+        viewModel.loadMusicCategories()
+    }
+    LaunchedEffect(selectedCategory) {
+        selectedCategory?.let { viewModel.loadHomeCategory(it) }
+    }
+    // Back from a language / mood chip returns to "For you" instead of leaving the app
+    BackHandler(enabled = selectedChip != FOR_YOU) {
+        selectedChip = FOR_YOU
+    }
+
+    val onRefresh: () -> Unit = {
+        isDefaultDataLoaded = false
+        viewModel.callYoutubeiHome()
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(colorResource(id = R.color.colorPrimary))
-            .wrapContentSize(Alignment.Center)
+            .background(DiscoverBackground)
     ) {
-        /*  Text(
-              text = "Home View",
-              fontWeight = FontWeight.Bold,
-              color = Color.White,
-              modifier = Modifier.align(Alignment.CenterHorizontally),
-              textAlign = TextAlign.Center,
-              fontSize = 25.sp
-          )
+        DiscoverHeader(
+            onSearchClick = { navController?.navigateToTab(NavigationItem.Search.route) },
+            onProfileClick = { navController?.navigateToTab(NavigationItem.Profile.route) }
+        )
+        ChipRow(
+            chips = chips.map { it.label },
+            selected = selectedChip,
+            onSelect = { selectedChip = it }
+        )
 
-          Spacer(modifier = Modifier.height(16.dp))*/
-        if (!isDefaultDataLoaded) {
-            if(finalItems.isEmpty()) {
-                if (errorMode) {
+        Box(modifier = Modifier.weight(1f)) {
+            if (selectedCategory == null) {
+                when {
+                    finalItems.isNotEmpty() ->
+                        HomePageContentList(homePageResponses = finalItems, navController = navController, onRefresh = onRefresh)
 
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "Error loading data",
-                            color = Color.Red,
-                            fontSize = 18.sp,
-                            modifier = Modifier.align(Alignment.Center)
-                        )
+                    errorMode -> CenteredMessage("Error loading data")
+
+                    else -> CenteredLoader()
+                }
+            } else {
+                HomeCategoryContent(viewModel = viewModel, category = selectedCategory)
+            }
+        }
+    }
+}
+
+private const val FOR_YOU = "For you"
+
+/** Language & mood chips shown after "For you", matched by name against YouTube Music's categories. */
+private val HOME_CHIP_CATEGORIES = listOf(
+    "Malayalam", "Tamil", "Hindi", "Telugu", "Kannada", "Punjabi",
+    "Romance", "Chill", "Party", "Workout"
+)
+
+private data class HomeChip(val label: String, val category: PlayListCategory?)
+
+private fun buildHomeChips(categories: List<PlayListCategory?>): List<HomeChip> {
+    val byName = categories.filterNotNull().associateBy {
+        YoutubeCoreConstant.decodeTitle(it.playListName.orEmpty()).trim().lowercase()
+    }
+    return listOf(HomeChip(FOR_YOU, null)) + HOME_CHIP_CATEGORIES.mapNotNull { name ->
+        byName[name.lowercase()]?.let { HomeChip(name, it) }
+    }
+}
+
+@Composable
+private fun DiscoverHeader(onSearchClick: () -> Unit, onProfileClick: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 20.dp, end = 12.dp, top = 12.dp, bottom = 8.dp)
+    ) {
+        Text(
+            text = "Discover",
+            color = Color.White,
+            fontSize = 34.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.weight(1f)
+        )
+        IconButton(onClick = onSearchClick) {
+            Icon(Icons.Rounded.Search, contentDescription = "Search", tint = Color.White, modifier = Modifier.size(28.dp))
+        }
+        Spacer(modifier = Modifier.width(6.dp))
+        Image(
+            painter = painterResource(id = R.drawable.tubefy_icon),
+            contentDescription = "About TubeFy",
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .border(1.dp, DiscoverBorder, CircleShape)
+                .clickable(onClick = onProfileClick)
+        )
+    }
+}
+
+@Composable
+private fun ChipRow(chips: List<String>, selected: String, onSelect: (String) -> Unit) {
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        items(chips) { label ->
+            val isSelected = label == selected
+            Text(
+                text = label,
+                color = if (isSelected) DiscoverOnAccent else Color.White.copy(alpha = 0.85f),
+                fontSize = 15.sp,
+                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(50))
+                    .background(if (isSelected) DiscoverAccent else DiscoverSurface)
+                    .border(1.dp, if (isSelected) Color.Transparent else DiscoverBorder, RoundedCornerShape(50))
+                    .clickable { onSelect(label) }
+                    .padding(horizontal = 20.dp, vertical = 9.dp)
+            )
+        }
+    }
+}
+
+/** The playlists of a language / mood category, same data the Search tab's category grid opens. */
+@Composable
+private fun HomeCategoryContent(viewModel: TubeFyViewModel, category: PlayListCategory) {
+    val navController = LocalNavController.current
+    val content by viewModel.homeCategoryContent.collectAsState()
+    when (val result = content[category.playListCategoryId]) {
+        is Resource.Success -> {
+            val sections = result.data.orEmpty().filterNotNull().filter { it.musicCategoryPlayList.isNotEmpty() }
+            if (sections.isEmpty()) {
+                CenteredMessage("Nothing to show here yet")
+            } else {
+                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    items(sections) { section ->
+                        SectionHeader(section.plaListBaseName)
+                        LazyRow(
+                            contentPadding = PaddingValues(horizontal = 20.dp),
+                            horizontalArrangement = Arrangement.spacedBy(14.dp)
+                        ) {
+                            items(section.musicCategoryPlayList) { item ->
+                                ArtworkCard(
+                                    imageUrl = item.playListThump,
+                                    title = item.playListName,
+                                    onClick = { openCategoryPlaylistItem(navController, item) }
+                                )
+                            }
+                        }
                     }
-                } else {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(color = colorResource(id = R.color.tubefyred))
-                    }
+                    item { Spacer(modifier = Modifier.height(170.dp)) }
                 }
             }
         }
 
-        // Show loading indicators or error messages
-        val onRefresh: () -> Unit = {
-
-//            Log.d("tadadad","REFRESH CALLED")
-
-            isDefaultDataLoaded=false
-            viewModel.callYoutubeiHome()
-
+        is Resource.DataError -> Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 48.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text("Couldn't load ${category.playListName.orEmpty()}", color = Color.White, fontSize = 16.sp)
+            TextButton(onClick = { viewModel.loadHomeCategory(category, forceRefresh = true) }) {
+                Text("Retry", color = DiscoverAccent, fontSize = 16.sp)
+            }
         }
 
-        // Display the updated list
-        if (finalItems.isNotEmpty()) {
-            HomePageContentList(homePageResponses = finalItems, navController = navController,onRefresh=onRefresh)
-        }
+        else -> CenteredLoader()
+    }
+}
+
+@Composable
+private fun CenteredLoader() {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        CircularProgressIndicator(color = DiscoverAccent)
+    }
+}
+
+@Composable
+private fun CenteredMessage(text: String) {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text(text = text, color = DiscoverTextSecondary, fontSize = 16.sp)
     }
 }
 
