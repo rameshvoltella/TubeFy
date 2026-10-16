@@ -175,12 +175,27 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
             .fillMaxSize()
             .background(DiscoverBackground)
     ) {
+        Text(
+            text = "Search",
+            color = Color.White,
+            fontSize = 34.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 4.dp)
+        )
         OutlinedTextField(
             value = textFieldValue,
             onValueChange = { textFieldValue = it },
-            placeholder = { Text("Search songs, artists, videos", color = DiscoverTextSecondary, fontSize = 17.sp) },
+            placeholder = {
+                Text(
+                    "Search songs, artists, playlists...",
+                    color = DiscoverTextSecondary,
+                    fontSize = 17.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            },
             leadingIcon = {
-                Icon(Icons.Rounded.Search, contentDescription = null, tint = Color.White, modifier = Modifier.size(26.dp))
+                Icon(Icons.Rounded.Search, contentDescription = null, tint = DiscoverTextSecondary, modifier = Modifier.size(24.dp))
             },
             trailingIcon = {
                 if (textFieldValue.text.isNotEmpty()) {
@@ -196,14 +211,15 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
             shape = RoundedCornerShape(28.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = DiscoverAccent,
-                unfocusedBorderColor = DiscoverAccent.copy(alpha = 0.55f),
-                focusedContainerColor = DiscoverSurface,
-                unfocusedContainerColor = DiscoverSurface,
+                unfocusedBorderColor = DiscoverAccent.copy(alpha = 0.75f),
+                focusedContainerColor = SearchFieldFill,
+                unfocusedContainerColor = SearchFieldFill,
                 cursorColor = DiscoverAccent
             ),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(start = 16.dp, end = 16.dp, top = 12.dp)
+                .height(60.dp)
         )
 
         // Search source toggle
@@ -296,6 +312,8 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
         }
     }
 }
+
+private val SearchFieldFill = Color(0xFF15131D)
 
 /** Search result card: 16:9 thumbnail with duration badge, title, "channel • views", and ⋮. */
 @Composable

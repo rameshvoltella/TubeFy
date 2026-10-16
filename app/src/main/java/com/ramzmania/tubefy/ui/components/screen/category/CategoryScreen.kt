@@ -19,6 +19,13 @@ import com.ramzmania.tubefy.data.dto.base.playlist.PlayListCategory
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -60,12 +67,21 @@ fun CategoryScreenMain(viewModel: TubeFyViewModel = hiltViewModel()) {
 
     if (categoryItemsList.isNotEmpty()) {
         LazyVerticalGrid(
-            columns = GridCells.Adaptive(minSize = 150.dp),
+            columns = GridCells.Fixed(2),
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            contentPadding = PaddingValues(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                Text(
+                    text = "Browse by mood",
+                    color = Color.White,
+                    fontSize = 26.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 4.dp)
+                )
+            }
             items(categoryItemsList) { categoryItem ->
                 CategoryItemCard(categoryItem) { selectedItem ->
                     navController!!.navigate(
@@ -119,50 +135,98 @@ fun CategoryScreenMain(viewModel: TubeFyViewModel = hiltViewModel()) {
 
 @Composable
 fun CategoryItemCard(categoryItem: PlayListCategory?, onClick: (PlayListCategory) -> Unit) {
-    Card(
+    val item = categoryItem ?: return
+    val name = decodeTitle(item.playListName.orEmpty())
+    val style = categoryStyle(name)
+    val shape = RoundedCornerShape(18.dp)
+
+    Column(
+        verticalArrangement = Arrangement.Center,
         modifier = Modifier
-//                .padding(8.dp)
             .fillMaxWidth()
-            .clickable { onClick(categoryItem!!) },
-        elevation = CardDefaults.cardElevation(4.dp), // Use CardDefaults.cardElevation for elevation
-        colors = CardDefaults.cardColors(containerColor = Color.DarkGray), // Set background color
-        shape = RoundedCornerShape(8.dp) // Adjust the corner radius for a rounded effect
-
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(90.dp)
-        ) {
-            // This is the strip at the beginning of the content
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(4.dp) // Height of the strip
-                    .background(Color(categoryItem!!.stripColorCode)) // Change the color as needed
-            )
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color(categoryItem!!.stripColorCode)),
-                verticalArrangement = Arrangement.Center, // Center content vertically
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-
-                Text(
-                    text = decodeTitle(categoryItem?.playListName.orEmpty()),
-                    fontWeight = FontWeight.Medium,
-                    color = Color.White,
-                    maxLines = 2,
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally)
-                        .padding(horizontal = 8.dp),
-                    textAlign = TextAlign.Center,
-                    fontSize = 16.sp
-                )
+            .height(84.dp)
+            .clip(shape)
+            .drawBehind {
+                drawRect(Brush.linearGradient(listOf(style.start, style.end), start = Offset.Zero, end = Offset(size.width, size.height)))
+                // Soft lighter wave across the top-right corner
+                val wave = Path().apply {
+                    moveTo(size.width * 0.45f, 0f)
+                    cubicTo(
+                        size.width * 0.7f, size.height * 0.35f,
+                        size.width * 0.85f, size.height * 0.15f,
+                        size.width, size.height * 0.55f
+                    )
+                    lineTo(size.width, 0f)
+                    close()
+                }
+                drawPath(wave, Color.White.copy(alpha = 0.10f))
+                // Slight darkening toward the bottom for depth
+                drawRect(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.18f))))
             }
-        }
+            .clickable { onClick(item) }
+            .padding(horizontal = 18.dp)
+    ) {
+        Text(
+            text = name,
+            color = Color.White,
+            fontSize = 19.sp,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        Text(
+            text = style.subtitle,
+            color = Color.White.copy(alpha = 0.82f),
+            fontSize = 13.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(top = 4.dp)
+        )
     }
+}
+
+private data class CategoryStyle(val start: Color, val end: Color, val subtitle: String)
+
+private val CategoryPalette = listOf(
+    Color(0xFFB06AF0) to Color(0xFF4B2BB8), // purple
+    Color(0xFFF08A2C) to Color(0xFF8E3B2A), // orange
+    Color(0xFFFF7A45) to Color(0xFFC2183F), // red-orange
+    Color(0xFF2BB58A) to Color(0xFF0E6E6A), // green
+    Color(0xFF3AA0F0) to Color(0xFF1858A8), // blue
+    Color(0xFF4552D0) to Color(0xFF3A1A8C), // indigo
+    Color(0xFFE95BB0) to Color(0xFF8E1FB8), // magenta
+    Color(0xFFF0435E) to Color(0xFFA8203F), // pink-red
+    Color(0xFFE0A93A) to Color(0xFF8A5A14), // gold
+    Color(0xFF2AAFA8) to Color(0xFF0F5E6E), // teal
+)
+
+/** Colour + subtitle per category (moods & main languages as designed; others cycle the palette). */
+private val KnownCategories = mapOf(
+    "chill" to (0 to "Relax and unwind"),
+    "commute" to (1 to "Music for the road"),
+    "energize" to (2 to "Workout & get moving"),
+    "feel good" to (3 to "Positive vibes only"),
+    "focus" to (4 to "Stay in the zone"),
+    "gaming" to (5 to "Play with rhythm"),
+    "party" to (6 to "Turn up the energy"),
+    "romance" to (7 to "Love is in the air"),
+    "sad" to (5 to "Let it all out"),
+    "sleep" to (4 to "Drift off peacefully"),
+    "workout" to (2 to "Push your limits"),
+    "malayalam" to (9 to "Best of Mollywood"),
+    "tamil" to (1 to "Best of Kollywood"),
+    "telugu" to (6 to "Best of Tollywood"),
+    "hindi" to (8 to "Best of Bollywood"),
+    "kannada" to (3 to "Best of Sandalwood"),
+    "punjabi" to (2 to "Bhangra and beyond"),
+)
+
+private fun categoryStyle(name: String): CategoryStyle {
+    val key = name.trim().lowercase().replace('-', ' ')
+    val (paletteIndex, subtitle) = KnownCategories[key]
+        ?: ((key.hashCode() and Int.MAX_VALUE) % CategoryPalette.size to "Explore playlists")
+    val (start, end) = CategoryPalette[paletteIndex]
+    return CategoryStyle(start, end, subtitle)
 }
 
 @Preview(showBackground = true)
