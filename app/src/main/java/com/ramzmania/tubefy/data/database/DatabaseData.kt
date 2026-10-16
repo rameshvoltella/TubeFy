@@ -272,7 +272,7 @@ class DatabaseData @Inject constructor(
 
 //        if(getFavorites().data!=null&&getFavorites().data?.size!!>0)
 //        {
-            allSavedPlayList.add(0,PlaylistNameWithUrl("TubeFy-Favorites","Favorites"))
+            allSavedPlayList.add(0,PlaylistNameWithUrl("TubeFy-Favorites","Favorites", playlistDao.getFavoritesCount()))
 //        }
 
         return if(allSavedPlayList.isNotEmpty())

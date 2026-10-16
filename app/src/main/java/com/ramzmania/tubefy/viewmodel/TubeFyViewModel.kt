@@ -775,7 +775,7 @@ class TubeFyViewModel @Inject constructor(
 
             playlistDatabaseRepository.deleteSpecificPlayList(playListName).collect {
                 addingSongListPlayListOperationPrivate.value = it
-
+                reloadAllPlayListPrivate.value = true
             }
         }
     }
@@ -793,6 +793,7 @@ class TubeFyViewModel @Inject constructor(
 
             playlistDatabaseRepository.deleteAllFavorites().collect {
                 addingSongListPlayListOperationPrivate.value = it
+                reloadAllPlayListPrivate.value = true
 
             }
         }
