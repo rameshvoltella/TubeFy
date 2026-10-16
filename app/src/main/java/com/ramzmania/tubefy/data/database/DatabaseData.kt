@@ -265,6 +265,7 @@ class DatabaseData @Inject constructor(
 
 
     override suspend fun getAllSavedPlayList(): Resource<List<PlaylistNameWithUrl>> {
+        playlistDao.trimPlaylistNames()
         val allSavedPlayList: MutableList<PlaylistNameWithUrl> =
             playlistDao.getAllPlaylistNamesWithUrls().toMutableList()
 

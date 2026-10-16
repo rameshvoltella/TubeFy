@@ -99,7 +99,8 @@ fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
             StandardCharsets.UTF_8.toString()
         )
     }
-    val title = remember { decodeArg(navBackStackEntry?.arguments?.getString("playlistName").orEmpty()) }
+    // Titles can carry stray newlines from the feed; the title is also the saved playlist's name
+    val title = remember { decodeArg(navBackStackEntry?.arguments?.getString("playlistName").orEmpty()).trim() }
 
     LaunchedEffect(Unit) {
         val playlistId = navBackStackEntry?.arguments?.getString("playlistId")

@@ -135,6 +135,10 @@ interface PlaylistDao {
     @Query("SELECT COUNT(*) FROM CustomPlaylist WHERE playlistName = :playlistName")
     suspend fun getCustomPlaylistEntryCount(playlistName: String): Int
 
+    /** Repairs playlist names saved with leading/trailing newlines or spaces (shown blank in the library). */
+    @Query("UPDATE CustomPlaylist SET playlistName = TRIM(playlistName, char(9, 10, 13, 32)) WHERE playlistName != TRIM(playlistName, char(9, 10, 13, 32))")
+    suspend fun trimPlaylistNames()
+
     @Query("SELECT * FROM CustomPlaylist WHERE playlistName = :playlistName")
     suspend fun getCustomPlaylistByName(playlistName: String): List<CustomPlaylist>
 

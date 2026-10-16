@@ -96,7 +96,7 @@ class YoutubeMusicYoutubeiDataHomeFormatter @Inject constructor() :
                                             videoId,
                                             videoPlayList,
                                             videoThump,
-                                            videoName
+                                            videoName.trim()
                                         )
                                     )
                                 }
@@ -107,7 +107,7 @@ class YoutubeMusicYoutubeiDataHomeFormatter @Inject constructor() :
                                 var videoThump = ""
                                 isList = false
                                 for (runsData in musicCarouselShelfRendererContents.musicTwoRowItemRenderer.title?.runs!!) {
-                                    videoName = videoName + "\n" + runsData.text
+                                    videoName = if (videoName.isEmpty()) "${runsData.text}" else videoName + "\n" + runsData.text
                                     if (videoName.length > 1) {
                                         break
                                     }
@@ -132,7 +132,7 @@ class YoutubeMusicYoutubeiDataHomeFormatter @Inject constructor() :
                                             videoId,
                                             videoPlayList,
                                             videoThump,
-                                            videoName
+                                            videoName.trim()
                                         )
                                     )
                                 }
