@@ -16,6 +16,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -213,12 +214,16 @@ fun MainScreen(mediaControllerState: MutableState<MediaController?>) {
                         }
                     }
                 },
-                content = {
+                // Only the bottom bar (mini player + tabs) should push content up; screens handle the status bar
+                contentWindowInsets = WindowInsets(0, 0, 0, 0),
+                content = { innerPadding ->
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
                             // The player and album screens draw behind the status bar themselves
                             .then(if (currentRoute in edgeToEdgeRoutes) Modifier else Modifier.statusBarsPadding())
+                            // Keep content above the mini player and tabs so the last list item stays visible
+                            .padding(bottom = innerPadding.calculateBottomPadding())
                     ) {
                         Navigation(navController = navController)
                     }

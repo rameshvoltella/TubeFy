@@ -166,7 +166,7 @@ fun HomePageContentList(
                 }
             }
             item {
-                Spacer(modifier = Modifier.height(170.dp))
+                Spacer(modifier = Modifier.height(24.dp))
             }
         }
         PullRefreshIndicator(

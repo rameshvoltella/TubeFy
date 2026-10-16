@@ -119,7 +119,7 @@ fun CategoryPlaylistView(viewModel: TubeFyViewModel = hiltViewModel()) {
                     SectionHeader(section.plaListBaseName)
                     HorizontalPlayList(section.musicCategoryPlayList)
                 }
-                item { Spacer(modifier = Modifier.height(170.dp)) }
+                item { Spacer(modifier = Modifier.height(24.dp)) }
             }
 
             youTubeCategoryPlayListData is Resource.DataError -> Column(

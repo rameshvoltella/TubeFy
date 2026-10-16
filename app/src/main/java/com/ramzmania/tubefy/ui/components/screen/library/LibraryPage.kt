@@ -306,7 +306,7 @@ fun LibraryListBaseView(
 
         LazyColumn(
             state = lazyListState,
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 170.dp),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
             modifier = Modifier.fillMaxSize()
         ) {

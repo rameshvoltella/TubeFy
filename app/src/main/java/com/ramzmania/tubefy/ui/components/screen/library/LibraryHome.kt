@@ -150,7 +150,7 @@ fun LibraryHomeView(tracks: List<PlaylistNameWithUrl>, viewModel: TubeFyViewMode
     }
 
     LazyColumn(
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 170.dp),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
         modifier = Modifier.fillMaxSize()
     ) {

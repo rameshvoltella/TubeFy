@@ -182,7 +182,7 @@ fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
                     track?.let { TrackItem(trackName = it, viewModel = viewModel) }
                 }
             }
-            item { Spacer(modifier = Modifier.height(170.dp)) }
+            item { Spacer(modifier = Modifier.height(24.dp)) }
         }
 
         // Back button floats over the artwork
@@ -344,7 +344,7 @@ fun AlbumTrackList(
             track?.let { TrackItem(trackName = it, viewModel = viewModel) }
         }
         item {
-            Spacer(modifier = Modifier.height(140.dp))
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }

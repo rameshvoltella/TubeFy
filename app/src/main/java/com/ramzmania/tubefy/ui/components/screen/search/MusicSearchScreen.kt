@@ -296,7 +296,7 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
                             }
                         }
                     }
-                    item { Spacer(modifier = Modifier.height(170.dp)) }
+                    item { Spacer(modifier = Modifier.height(24.dp)) }
                 }
                 if (isFreshSearch) {
                     Box(

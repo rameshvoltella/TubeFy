@@ -352,7 +352,7 @@ private fun HomeCategoryContent(viewModel: TubeFyViewModel, category: PlayListCa
                             }
                         }
                     }
-                    item { Spacer(modifier = Modifier.height(170.dp)) }
+                    item { Spacer(modifier = Modifier.height(24.dp)) }
                 }
             }
         }
