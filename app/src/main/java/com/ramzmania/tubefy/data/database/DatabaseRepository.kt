@@ -89,6 +89,14 @@ class DatabaseRepository @Inject constructor(
         return flow { emit(databaseData.deleteSpecificPlayList(playlistName)) }
     }
 
+    override suspend fun saveAsPlayList(entries: List<CustomPlaylist>): Flow<Resource<DatabaseResponse>> {
+        return flow { emit(databaseData.saveAsPlayList(entries)) }
+    }
+
+    override suspend fun isPlayListSaved(playlistName: String): Flow<Resource<Boolean>> {
+        return flow { emit(databaseData.isPlayListSaved(playlistName)) }
+    }
+
     override suspend fun deleteAllFavorites(): Flow<Resource<DatabaseResponse>> {
         return flow { emit(databaseData.deleteAllFavorites()) }
     }

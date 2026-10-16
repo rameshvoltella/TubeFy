@@ -295,6 +295,15 @@ class DatabaseData @Inject constructor(
         }
     }
 
+    override suspend fun saveAsPlayList(entries: List<CustomPlaylist>): Resource<DatabaseResponse> {
+        playlistDao.insertCustomPlaylistEntriesIfNotExist(entries)
+        return Resource.Success(DatabaseResponse(200))
+    }
+
+    override suspend fun isPlayListSaved(playlistName: String): Resource<Boolean> {
+        return Resource.Success(playlistDao.getCustomPlaylistEntryCount(playlistName) > 0)
+    }
+
     override suspend fun deleteSpecificPlayList(playlistName:String): Resource<DatabaseResponse> {
         val result=playlistDao.deleteCustomPlaylistByName(playlistName)>0
         return if (result) {

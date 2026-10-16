@@ -46,7 +46,9 @@ class NewPipeDataFormatter<T> @Inject constructor(private val playlistDao: Playl
                                     TubeFyCoreTypeData(
                                         videoTitle = newPipeSearchData.name,
                                         videoImage = newPipeSearchData.thumbnails[0].url,
-                                        videoId = newPipeSearchData.url
+                                        videoId = newPipeSearchData.url,
+                                        artist = newPipeSearchData.uploaderName.orEmpty().removeSuffix(" - Topic"),
+                                        durationSeconds = newPipeSearchData.duration
                                     )
                                 )
                                 if (input?.contentFilter != null && input.contentFilter?.contains("all") != true) {

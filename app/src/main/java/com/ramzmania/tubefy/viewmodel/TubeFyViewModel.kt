@@ -731,6 +731,45 @@ class TubeFyViewModel @Inject constructor(
         }
     }
 
+    private val isAlbumSavedPrivate = MutableStateFlow(false)
+
+    /** Whether the album currently open is saved as a playlist in "Your Library". */
+    val isAlbumSaved = isAlbumSavedPrivate.asStateFlow()
+
+    fun checkAlbumSaved(albumName: String) {
+        viewModelScope.launch {
+            playlistDatabaseRepository.isPlayListSaved(albumName).collect {
+                isAlbumSavedPrivate.value = it is Resource.Success && it.data == true
+            }
+        }
+    }
+
+    /** Saves the album's songs as a new playlist named after the album, or removes that playlist. */
+    fun toggleAlbumSaved(albumName: String, tracks: List<TubeFyCoreTypeData?>) {
+        viewModelScope.launch {
+            if (isAlbumSavedPrivate.value) {
+                playlistDatabaseRepository.deleteSpecificPlayList(albumName).collect {
+                    if (it is Resource.Success) isAlbumSavedPrivate.value = false
+                }
+            } else {
+                val entries = tracks.filterNotNull()
+                    .filter { it.videoId.isNotEmpty() }
+                    .map {
+                        CustomPlaylist(
+                            playlistName = albumName,
+                            videoId = it.videoId,
+                            videoThump = it.videoImage,
+                            videoName = it.videoTitle
+                        )
+                    }
+                if (entries.isEmpty()) return@launch
+                playlistDatabaseRepository.saveAsPlayList(entries).collect {
+                    if (it is Resource.Success) isAlbumSavedPrivate.value = true
+                }
+            }
+        }
+    }
+
     fun deleteSpecificPlayList(playListName: String) {
         viewModelScope.launch {
 

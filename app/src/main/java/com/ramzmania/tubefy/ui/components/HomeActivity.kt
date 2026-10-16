@@ -184,6 +184,8 @@ ex.printStackTrace()
 
 
 
+private val edgeToEdgeRoutes = setOf(NavigationItem.AudioPlayer.route, NavigationItem.PlayList.route)
+
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun MainScreen(mediaControllerState: MutableState<MediaController?>) {
@@ -215,8 +217,8 @@ fun MainScreen(mediaControllerState: MutableState<MediaController?>) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            // The full-screen player draws behind the status bar itself
-                            .then(if (currentRoute != NavigationItem.AudioPlayer.route) Modifier.statusBarsPadding() else Modifier)
+                            // The player and album screens draw behind the status bar themselves
+                            .then(if (currentRoute in edgeToEdgeRoutes) Modifier else Modifier.statusBarsPadding())
                     ) {
                         Navigation(navController = navController)
                     }

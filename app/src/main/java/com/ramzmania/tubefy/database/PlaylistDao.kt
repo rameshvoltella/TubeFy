@@ -127,6 +127,14 @@ interface PlaylistDao {
         }
     }
 
+    @Transaction
+    suspend fun insertCustomPlaylistEntriesIfNotExist(entries: List<CustomPlaylist>) {
+        entries.forEach { insertCustomPlaylistEntryIfNotExists(it) }
+    }
+
+    @Query("SELECT COUNT(*) FROM CustomPlaylist WHERE playlistName = :playlistName")
+    suspend fun getCustomPlaylistEntryCount(playlistName: String): Int
+
     @Query("SELECT * FROM CustomPlaylist WHERE playlistName = :playlistName")
     suspend fun getCustomPlaylistByName(playlistName: String): List<CustomPlaylist>
 
