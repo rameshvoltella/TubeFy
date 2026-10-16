@@ -1,8 +1,6 @@
 package com.ramzmania.tubefy.data.remote.api
 
 import android.os.Build
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
 import com.ramzmania.tubefy.core.YoutubeCoreConstant.YOUTUBE_V3API_KEY
 import com.ramzmania.tubefy.core.YoutubeCoreConstant.YOUTUBE_V3_BASE_URL
 import com.squareup.moshi.Moshi
@@ -65,9 +63,6 @@ class ServiceGenerator @Inject constructor(){
         okHttpBuilder.connectTimeout(timeoutConnect.toLong(), TimeUnit.SECONDS)
         okHttpBuilder.readTimeout(timeoutRead.toLong(), TimeUnit.SECONDS)
         val client = okHttpBuilder.build()
-        var gson: Gson? = GsonBuilder()
-            .setLenient()
-            .create()
         retrofit = Retrofit.Builder()
             .baseUrl(YOUTUBE_V3_BASE_URL).client(client)
             .addConverterFactory(MoshiConverterFactory.create(getMoshi()).asLenient())

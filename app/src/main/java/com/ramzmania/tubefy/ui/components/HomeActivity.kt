@@ -10,6 +10,8 @@ import androidx.compose.ui.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -22,6 +24,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
@@ -84,6 +87,11 @@ class HomeActivity : ComponentActivity() {
     private val mediaControllerState = mutableStateOf<MediaController?>(null)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Edge-to-edge is enforced from targetSdk 35; keep light system bar icons on the black UI
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+        )
         setContent {
             MainScreen(mediaControllerState = mediaControllerState)
 
@@ -172,7 +180,11 @@ fun MainScreen(mediaControllerState: MutableState<MediaController?>) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(colorResource(R.color.colorPrimary))
+    ) {
         // Content that extends behind the bottom bar
         CompositionLocalProvider(
             LocalNavController provides navController // Added missing comma
@@ -189,7 +201,11 @@ fun MainScreen(mediaControllerState: MutableState<MediaController?>) {
                     }
                 },
                 content = {
-                    Box(modifier = Modifier.fillMaxSize()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .statusBarsPadding()
+                    ) {
                         Navigation(navController = navController)
                     }
                 },

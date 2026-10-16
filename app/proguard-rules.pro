@@ -51,3 +51,6 @@
 
 
 
+# Rhino (pulled in by NewPipeExtractor) references JVM-only APIs that don't exist on Android
+-dontwarn javax.script.**
+-dontwarn jdk.dynalink.**

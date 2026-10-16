@@ -1,7 +1,7 @@
 package com.ramzmania.tubefy.core.extractors.newpipeextractor
 
 import okhttp3.OkHttpClient
-import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.schabi.newpipe.extractor.downloader.Downloader
 import org.schabi.newpipe.extractor.downloader.Request
 import org.schabi.newpipe.extractor.downloader.Response
@@ -16,7 +16,7 @@ class PipeDownloader(private val client: OkHttpClient) : Downloader() {
         val url = request.url()
         val headers = request.headers()
         val dataToSend = request.dataToSend()
-        val requestBody = dataToSend?.let { RequestBody.create(null, it) }
+        val requestBody = dataToSend?.toRequestBody()
         val requestBuilder = okhttp3.Request.Builder()
             .method(httpMethod, requestBody)
             .url(url)

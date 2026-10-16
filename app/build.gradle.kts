@@ -1,23 +1,19 @@
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.jetbrains.kotlin.android)
-//    id("com.google.devtools.ksp")
-//    id("com.google.dagger.hilt.android")
-    id("kotlin-kapt")
-    id ("kotlin-parcelize")
-    id("com.google.dagger.hilt.android")
-    kotlin("kapt")
-
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.parcelize)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
 }
 
 android {
     namespace = "com.ramzmania.tubefy"
-    compileSdk = 34
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.ramzmania.tubefy"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
@@ -34,25 +30,20 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
-    }
-    kotlinOptions {
-        jvmTarget = "1.8"
+        // NewPipeExtractor relies on java.nio / java.time APIs that need desugaring below API 26
+        isCoreLibraryDesugaringEnabled = true
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     buildFeatures {
         viewBinding = true
-        dataBinding = true
         compose = true
-
+        buildConfig = true
     }
     lint {
         disable += "MissingTranslation" + "TypographyFractions"
         abortOnError = false
-        checkReleaseBuilds =  false
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.1"
+        checkReleaseBuilds = false
     }
     packaging {
         resources {
@@ -61,74 +52,74 @@ android {
     }
 }
 
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    }
+}
+
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 dependencies {
+    coreLibraryDesugaring(libs.desugar.jdk.libs.nio)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.androidx.activity.compose.v182)
-    implementation(libs.androidx.compose.bom.v20240201)
-    implementation (libs.androidx.navigation.compose)
-    implementation (libs.androidx.material)
-    implementation(libs.ui)
-    implementation(libs.ui.graphics)
-    implementation(libs.ui.tooling.preview)
-    implementation(libs.androidx.material3)
-    implementation(libs.androidx.runtime.livedata)
-    implementation(libs.androidx.palette.ktx)
-
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
-    implementation(libs.newpipeextractor)
-//    implementation ("com.github.kotvertolet:youtube-jextractor:v0.3.4")
-//    implementation("com.squareup.okhttp3:okhttp:2.3.0")
-//    implementation ("com.google.code.gson:gson:2.8.6")
-//    implementation  ("org.mozilla:rhino:1.7.13")
-    implementation (libs.okhttp)
-    implementation (libs.logging.interceptor)
-    implementation(libs.hilt.android)
-    debugImplementation(libs.ui.tooling)
-    kapt(libs.hilt.android.compiler)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.livedata.ktx)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.navigation.runtime.ktx)
     implementation(libs.androidx.work.runtime.ktx)
-    kapt(libs.moshi.kotlin.codegen)
-    implementation(libs.moshi.kotlin)
-    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.palette.ktx)
+
+    // Compose
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
-    // retrofit
-    implementation (libs.converter.moshi)
-    implementation (libs.converter.gson)
-    implementation (libs.converter.scalars)
-    implementation (libs.coil.compose)
-    // Hiltsa
-  /*  implementation("com.google.dagger:hilt-android:2.50")
-    implementation("androidx.navigation:navigation-runtime-ktx:2.7.7")
-    implementation("androidx.work:work-runtime-ktx:2.9.0")
-    implementation("androidx.hilt:hilt-common:1.2.0")
-    implementation("androidx.hilt:hilt-work:1.2.0")
-    ksp("com.google.dagger:hilt-android-compiler:2.50")*/
+    implementation(libs.androidx.material)
+    implementation(libs.androidx.material3)
+    implementation(libs.androidx.runtime.livedata)
+    debugImplementation(libs.androidx.ui.tooling)
 
-    implementation(libs.androidx.work.runtime.ktx)
+    // Hilt
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.android.compiler)
     implementation(libs.androidx.hilt.common)
     implementation(libs.androidx.hilt.work)
-    implementation (libs.androidx.hilt.navigation.compose)
-    implementation (libs.androidx.media3.session)
-    implementation (libs.androidx.media3.exoplayer)
-    implementation (libs.androidx.media3.exoplayer.dash)
-    implementation (libs.androidx.media3.exoplayer.hls)
-    implementation (libs.androidx.media3.ui)
+    ksp(libs.androidx.hilt.compiler)
+    implementation(libs.androidx.hilt.navigation.compose)
 
+    // Media3
+    implementation(libs.androidx.media3.session)
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.exoplayer.dash)
+    implementation(libs.androidx.media3.exoplayer.hls)
+    implementation(libs.androidx.media3.ui)
 
-    // Room components
-    implementation (libs.androidx.room.runtime)
-    implementation (libs.androidx.room.ktx)
-    kapt (libs.androidx.room.compiler)
-}
-kapt {
-    correctErrorTypes = true
+    // Room
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
+
+    // Networking / parsing
+    implementation(libs.newpipeextractor)
+    implementation(libs.okhttp)
+    implementation(libs.logging.interceptor)
+    implementation(libs.retrofit)
+    implementation(libs.converter.moshi)
+    implementation(libs.converter.scalars)
+    implementation(libs.moshi.kotlin)
+    ksp(libs.moshi.kotlin.codegen)
+    implementation(libs.coil.compose)
+
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
 }
