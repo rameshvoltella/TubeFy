@@ -54,3 +54,8 @@
 # Rhino (pulled in by NewPipeExtractor) references JVM-only APIs that don't exist on Android
 -dontwarn javax.script.**
 -dontwarn jdk.dynalink.**
+
+# NewPipeExtractor encodes YouTube continuation tokens with protobuf-lite, which reads message
+# fields (e.g. browseId_) by name via reflection: R8 must not rename or remove them
+-keep class org.schabi.newpipe.extractor.services.youtube.protos.** { *; }
+-keepclassmembers class * extends com.google.protobuf.GeneratedMessageLite { <fields>; }

@@ -1,5 +1,6 @@
 package com.ramzmania.tubefy.data.remote
 
+import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
 import androidx.media3.common.MediaItem
 import com.ramzmania.tubefy.data.dto.base.searchformat.StreamUrlData
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreUniversalData
@@ -28,6 +29,7 @@ interface RemoteRepositorySource {
                                 pageToken: String?): Flow<Resource<TubeFyCoreUniversalData>>
 
     suspend fun getPlayListInfo(playListUrl:String):Flow<Resource<PlayListData>>
+    suspend fun getMixQueue(videoId: String): Flow<Resource<List<TubeFyCoreTypeData>>>
 
     suspend fun  getStreamBulkUrl(youtubePlayerPlaylistListModel: YoutubePlayerPlaylistListModel):Flow<Resource<List<MediaItem>>>
 

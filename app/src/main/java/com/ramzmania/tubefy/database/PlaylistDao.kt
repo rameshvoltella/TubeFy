@@ -20,6 +20,10 @@ interface PlaylistDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertQuePlaylists(playlists: List<QuePlaylist>)
 
+    /** Clears the automated playlist (songs auto-queued after the one the user picked). */
+    @Query("DELETE FROM QuePlaylist")
+    suspend fun clearQuePlaylist(): Int
+
     @Query("SELECT COUNT(*) FROM QuePlaylist")
     suspend fun getQuePlaylistCount(): Int
 
@@ -101,7 +105,10 @@ interface PlaylistDao {
     @Query("DELETE FROM FavoritePlaylist")
     suspend fun deleteAllFavorites(): Int
 
-    @Query("SELECT * FROM FavoritePlaylist")
+    @Query("SELECT COUNT(*) FROM FavoritePlaylist")
+    suspend fun getFavoritesCount(): Int
+
+    @Query("SELECT * FROM FavoritePlaylist ORDER BY id")
     suspend fun getAllFavorites(): List<FavoritePlaylist>
 
     @Query("SELECT COUNT(*) FROM FavoritePlaylist WHERE videoId = :videoId")
@@ -127,7 +134,32 @@ interface PlaylistDao {
         }
     }
 
-    @Query("SELECT * FROM CustomPlaylist WHERE playlistName = :playlistName")
+    @Transaction
+    suspend fun insertCustomPlaylistEntriesIfNotExist(entries: List<CustomPlaylist>) {
+        entries.forEach { insertCustomPlaylistEntryIfNotExists(it) }
+    }
+
+    @Query("SELECT COUNT(*) FROM CustomPlaylist WHERE playlistName = :playlistName")
+    suspend fun getCustomPlaylistEntryCount(playlistName: String): Int
+
+    /** Saves a new song order by re-inserting the playlist's rows in that order (rows are read by id). */
+    @Transaction
+    suspend fun replaceCustomPlaylistOrder(playlistName: String, entries: List<CustomPlaylist>) {
+        deleteCustomPlaylistByName(playlistName)
+        entries.forEach { insertCustomPlaylistEntry(it.copy(id = 0)) }
+    }
+
+    @Transaction
+    suspend fun replaceFavoritesOrder(entries: List<FavoritePlaylist>) {
+        deleteAllFavorites()
+        entries.forEach { insertFavorite(it.copy(id = 0)) }
+    }
+
+    /** Repairs playlist names saved with leading/trailing newlines or spaces (shown blank in the library). */
+    @Query("UPDATE CustomPlaylist SET playlistName = TRIM(playlistName, char(9, 10, 13, 32)) WHERE playlistName != TRIM(playlistName, char(9, 10, 13, 32))")
+    suspend fun trimPlaylistNames()
+
+    @Query("SELECT * FROM CustomPlaylist WHERE playlistName = :playlistName ORDER BY id")
     suspend fun getCustomPlaylistByName(playlistName: String): List<CustomPlaylist>
 
     @Query("DELETE FROM CustomPlaylist WHERE playlistName = :playlistName AND videoId = :videoId")
@@ -143,6 +175,6 @@ interface PlaylistDao {
 //    @Query("SELECT DISTINCT playlistName, videoThump FROM CustomPlaylist")
 //    suspend fun getAllPlaylistNamesWithUrls(): List<PlaylistNameWithUrl>
 
-    @Query("SELECT playlistName, videoThump FROM CustomPlaylist GROUP BY playlistName")
+    @Query("SELECT playlistName, videoThump, COUNT(*) AS songCount FROM CustomPlaylist GROUP BY playlistName")
     suspend fun getAllPlaylistNamesWithUrls(): List<PlaylistNameWithUrl>
 }

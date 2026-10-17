@@ -4,16 +4,22 @@ package com.ramzmania.tubefy.player
 import android.app.PendingIntent
 import android.content.Intent
 import android.net.Uri
+import android.os.Bundle
 import android.util.Log
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.datasource.ResolvingDataSource
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
+import androidx.core.os.bundleOf
 import com.ramzmania.tubefy.core.YoutubeCoreConstant
+import com.ramzmania.tubefy.core.download.Downloads
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.database.DatabaseRepositorySource
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
@@ -26,6 +32,9 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -46,10 +55,32 @@ class PlaybackService(
     @Inject
     lateinit var dataBaseRepositorySource: DatabaseRepositorySource
     private lateinit var mediaLibrarySessionCallback: MediaLibrarySessionCallback
+    private val mainScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    private lateinit var sleepTimer: SleepTimer
+    private lateinit var smartShuffle: SmartShuffle
+
+    /** Session extras shared by the sleep timer and Smart Shuffle (read by the player screen). */
+    private val sessionExtras = Bundle()
+
+    private fun publishSessionExtras(values: Bundle) {
+        sessionExtras.putAll(values)
+        mediaSession?.setSessionExtras(Bundle(sessionExtras))
+    }
     private var mediaSession: MediaLibrarySession? = null
     private val serviceScope = CoroutineScope(Dispatchers.IO + Job())
     private var removeExistingPlayList: Boolean = false
     private var fetchRecentPlaylistQueue: Boolean = false
+
+    /** True while playing downloaded files: no network refetch and no auto-appended queue songs. */
+    private var offlineMode: Boolean = false
+
+    private val streamUrlRefresher = StreamUrlRefresher()
+
+    /** Songs already retried once with a fresh link after a playback error. */
+    private val linkRetriedIds = mutableSetOf<String>()
+
+    /** The running "what plays next" refill (Mix or cache), so it isn't started twice. */
+    private var autoQueueJob: Job? = null
     var path: String = ""
     private var apiPlaListBulkCallJob: Job? = null
 //    var currentPlayListQueue:Long=0L
@@ -58,11 +89,18 @@ class PlaybackService(
         super.onCreate()
 
 
-        val player = ExoPlayer.Builder(this).build().apply {
+        // Links of queued songs are refreshed just before use if they have expired (long pauses)
+        val dataSourceFactory = ResolvingDataSource.Factory(DefaultDataSource.Factory(this), streamUrlRefresher)
+        val player = ExoPlayer.Builder(this)
+            .setMediaSourceFactory(DefaultMediaSourceFactory(dataSourceFactory))
+            .build().apply {
             // Adding the error listener to the ExoPlayer instance
             addListener(object : Player.Listener {
                 override fun onPlaybackStateChanged(playbackState: Int) {
                     super.onPlaybackStateChanged(playbackState)
+                    if (playbackState == Player.STATE_READY) {
+                        currentMediaItem?.mediaId?.let { linkRetriedIds.remove(it) }
+                    }
                     if (playbackState == Player.STATE_READY && playWhenReady) {
                         // Playback has started
                         // Add your logic here for when playback starts
@@ -74,7 +112,34 @@ class PlaybackService(
 
                 }
 
+                override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+                    if (!playWhenReady && reason == Player.PLAY_WHEN_READY_CHANGE_REASON_END_OF_MEDIA_ITEM) {
+                        sleepTimer.onPausedAtEndOfSong()
+                    }
+                }
+
                 override fun onPlayerError(error: PlaybackException) {
+                    // A dead link (expired / rejected): retry the same song once with a fresh link,
+                    // keeping its position, before falling back to the skip logic below
+                    val failedId = currentMediaItem?.mediaId
+                    if (!offlineMode && failedId != null &&
+                        error.errorCode == PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS &&
+                        linkRetriedIds.add(failedId)
+                    ) {
+                        streamUrlRefresher.forceRefresh(failedId)
+                        playWhenReady = true
+                        prepare()
+                        return
+                    }
+                    if (offlineMode) {
+                        // A local file failed (e.g. deleted): just move on to the next download
+                        if (hasNextMediaItem()) {
+                            seekToNextMediaItem()
+                            prepare()
+                            playWhenReady = true
+                        }
+                        return
+                    }
                     val videoId = currentMediaItem?.mediaId // Assuming mediaId is the videoId
                     val albumArt = currentMediaItem?.mediaMetadata?.artworkUri.toString()
                     val playerHeader = currentMediaItem?.mediaMetadata?.title.toString()
@@ -106,6 +171,7 @@ class PlaybackService(
 
                 override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
 //                    mediaItem?.let {
+                    smartShuffle.onSongChanged()
                     handleMediaItemChange()
 //                    }
                 }
@@ -124,83 +190,113 @@ class PlaybackService(
         )
 
 
-        mediaLibrarySessionCallback = MediaLibrarySessionCallback()
+        sleepTimer = SleepTimer(mainScope, { mediaSession }, ::publishSessionExtras)
+        smartShuffle = SmartShuffle(
+            scope = serviceScope,
+            playerProvider = { mediaSession?.player },
+            remote = remoteRepositorySource,
+            publish = ::publishSessionExtras,
+            isOffline = { offlineMode }
+        )
+        mediaLibrarySessionCallback = MediaLibrarySessionCallback(SleepTimer.COMMANDS + SmartShuffle.COMMANDS) { action, args ->
+            when (action) {
+                SmartShuffle.CMD_SET -> smartShuffle.handleCommand(action, args)
+                else -> sleepTimer.handleCommand(action, args)
+            }
+        }
         mediaSession =
             MediaLibrarySession.Builder(this, player, mediaLibrarySessionCallback)
                 .setSessionActivity(pendingIntent).build()
     }
 
+    /**
+     * Keeps music going when the queue is about to run out: first YouTube's "Mix" for the
+     * current song (similar language / genre / artist), and if that fails or adds nothing new,
+     * the cached queue of songs from earlier playlists and searches ([queueFromCache]).
+     */
     private fun handleMediaItemChange() {
-        val player = mediaSession?.player
+        // Downloads play only the downloaded songs
+        if (offlineMode) return
+        val player = mediaSession?.player ?: return
+        // More songs are still on the way (a playlist is loading) or a refill is already running
+        if (player.hasNextMediaItem() || apiPlaListBulkCallJob?.isActive == true || autoQueueJob?.isActive == true) return
 
-        if (player != null) {
+        val seedId = player.currentMediaItem?.mediaId
+        val queuedIds = (0 until player.mediaItemCount).map { player.getMediaItemAt(it).mediaId }.toSet()
+        autoQueueJob = serviceScope.launch {
+            val mix = if (seedId.isNullOrBlank()) emptyList() else {
+                (remoteRepositorySource.getMixQueue(seedId).first() as? Resource.Success)?.data.orEmpty()
+            }.filter { YoutubeCoreConstant.extractYoutubeVideoId(it.videoId) !in queuedIds }
 
-            if (!player.hasNextMediaItem()) {
+            if (mix.isNotEmpty()) {
+                fetchFromQueue(mix.take(MIX_BATCH_SIZE))
+            } else {
+                withContext(Dispatchers.Main) { queueFromCache(player) }
+            }
+        }
+    }
 
-                serviceScope.launch {
-                    dataBaseRepositorySource.getPlaylists().collect {
-                        if (it is Resource.Success) {
-                            var mediaItemsList:List<MediaItem>?=null
-                            withContext(Dispatchers.Main) {
-                                mediaItemsList = (0 until player.mediaItemCount).map { player.getMediaItemAt(it) }
+    /** The original auto-queue: songs cached from playlists/searches the user opened. */
+    private fun queueFromCache(player: Player) {
+        serviceScope.launch {
+            dataBaseRepositorySource.getPlaylists().collect {
+                if (it is Resource.Success) {
+                    var mediaItemsList:List<MediaItem>?=null
+                    withContext(Dispatchers.Main) {
+                        mediaItemsList = (0 until player.mediaItemCount).map { player.getMediaItemAt(it) }
 
-                                withContext(Dispatchers.IO)
+                        withContext(Dispatchers.IO)
+                        {
+                            val listFromQueue: ArrayList<TubeFyCoreTypeData?> = ArrayList()
+
+                            for (data in it.data!!) {
+
+
+                                var isAlreadyInList =false
+
+                                if(mediaItemsList!=null)
                                 {
-                                    val listFromQueue: ArrayList<TubeFyCoreTypeData?> = ArrayList()
+                                    isAlreadyInList=mediaItemsList!!.any {
 
-                                    for (data in it.data!!) {
-
-
-                                        var isAlreadyInList =false
-
-                                        if(mediaItemsList!=null)
-                                        {
-                                            isAlreadyInList=mediaItemsList!!.any {
-
-                                                it.mediaId ==YoutubeCoreConstant.extractYoutubeVideoId(data.videoId) }
-                                        }
-
-
-                                        if (!isAlreadyInList) {
-                                            // If not already in the list, add the mediaItem
-//                                        player.addMediaItem(mediaItem)
-                                            listFromQueue.add(
-                                                TubeFyCoreTypeData(
-                                                    videoId = data.videoId,
-                                                    videoTitle = data.videoName,
-                                                    videoImage = data.videoThumbnail
-                                                )
-                                            )
-                                        } else {
-                                            // If it's already in the list, skip adding it
-                                            Log.d("MediaItem", "The media item is already in the playlist.")
-                                        }
-
-                                    }
-
-                                    if (listFromQueue.size > 0) {
-                                        apiPlaListBulkCallJob?.cancel()
-                                        listFromQueue.shuffle()
-                                        if (listFromQueue.size > 20) {
-                                            fetchFromQueue(listFromQueue.toMutableList().take(20))
-                                        } else {
-                                            fetchFromQueue(listFromQueue.toMutableList())
-
-                                        }
-
-                                    }
-
+                                        it.mediaId ==YoutubeCoreConstant.extractYoutubeVideoId(data.videoId) }
                                 }
+
+
+                                if (!isAlreadyInList) {
+                                    // If not already in the list, add the mediaItem
+//                                        player.addMediaItem(mediaItem)
+                                    listFromQueue.add(
+                                        TubeFyCoreTypeData(
+                                            videoId = data.videoId,
+                                            videoTitle = data.videoName,
+                                            videoImage = data.videoThumbnail
+                                        )
+                                    )
+                                } else {
+                                    // If it's already in the list, skip adding it
+                                    Log.d("MediaItem", "The media item is already in the playlist.")
+                                }
+
                             }
 
+                            if (listFromQueue.size > 0) {
+                                apiPlaListBulkCallJob?.cancel()
+                                listFromQueue.shuffle()
+                                if (listFromQueue.size > 20) {
+                                    fetchFromQueue(listFromQueue.toMutableList().take(20))
+                                } else {
+                                    fetchFromQueue(listFromQueue.toMutableList())
+
+                                }
+
+                            }
 
                         }
                     }
+
+
                 }
             }
-//            else {
-//                // Logic when there is no next media item
-//            }
         }
     }
 
@@ -208,7 +304,14 @@ class PlaybackService(
         super.onStartCommand(intent, flags, startId)
         intent?.let {
             when (it.action) {
+                ACTION_PLAY_DOWNLOADS -> {
+                    apiPlaListBulkCallJob?.cancel()
+                    offlineMode = true
+                    playDownloads()
+                }
+
                 ACTION_FETCH_PLAYLIST -> {
+                    offlineMode = false
                     apiPlaListBulkCallJob?.cancel()
                     preferenceManager.putLong("queue", System.currentTimeMillis())
                     removeExistingPlayList = true
@@ -217,6 +320,7 @@ class PlaybackService(
                 }
 
                 ACTION_FETCH_SONG -> {
+                    offlineMode = false
                     apiPlaListBulkCallJob?.cancel()
                     preferenceManager.putLong("queue", System.currentTimeMillis())
                     removeExistingPlayList = true
@@ -245,6 +349,41 @@ class PlaybackService(
             }
         }
         return START_STICKY
+    }
+
+    /** Queues the active playlist (set from the Downloads page) using the local files only. */
+    private fun playDownloads() {
+        serviceScope.launch {
+            dataBaseRepositorySource.getAllActivePlaylists().collect { result ->
+                if (result !is Resource.Success) return@collect
+                val items = result.data.orEmpty().filterNotNull()
+                    .filter { Downloads.isDownloaded(this@PlaybackService, it.videoId) }
+                    .map { song ->
+                        MediaItem.Builder()
+                            .setMediaId(Downloads.plainId(song.videoId))
+                            .setUri(Uri.fromFile(Downloads.file(this@PlaybackService, song.videoId)))
+                            .setMediaMetadata(
+                                MediaMetadata.Builder()
+                                    .setTitle(song.videoTitle)
+                                    .setArtworkUri(Uri.parse(song.videoImage))
+                                    .setIsBrowsable(false)
+                                    .setIsPlayable(true)
+                                    .setMediaType(MediaMetadata.MEDIA_TYPE_MUSIC)
+                                    .setExtras(bundleOf(Downloads.OFFLINE_EXTRA to true))
+                                    .build()
+                            )
+                            .build()
+                    }
+                if (items.isEmpty()) return@collect
+                withContext(Dispatchers.Main) {
+                    mediaSession?.player?.apply {
+                        setMediaItems(items)
+                        playWhenReady = true
+                        prepare()
+                    }
+                }
+            }
+        }
     }
 
     private fun fetchFromActiveDb() {
@@ -277,6 +416,8 @@ class PlaybackService(
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo) = mediaSession
 
     override fun onDestroy() {
+        sleepTimer.release()
+        mainScope.cancel()
         mediaSession?.run {
             player.release()
             release()
@@ -401,10 +542,12 @@ class PlaybackService(
                                     .setUri(
                                         Uri.parse(response.data?.streamUrl)
                                     )
+                                    // Lets StreamUrlRefresher re-fetch the link by song id once it expires
+                                    .setCustomCacheKey(YoutubeCoreConstant.extractYoutubeVideoId(videoId))
                                     .setMediaMetadata(
                                         MediaMetadata.Builder()
                                             .setTitle(playerHeader)
-                                            .setArtist("Artist :${playerHeader}")
+                                            .setArtist(response.data?.artist?.takeIf { it.isNotBlank() } ?: "Artist :${playerHeader}")
                                             .setIsBrowsable(false)
                                             .setIsPlayable(true)
                                             .setArtworkUri(Uri.parse(albumArt))
@@ -480,6 +623,9 @@ class PlaybackService(
     companion object {
         const val ACTION_FETCH_PLAYLIST = "com.ramzmania.tubefy.ACTION_FETCH_PLAYLIST"
         const val ACTION_FETCH_SONG = "com.ramzmania.tubefy.ACTION_FETCH_SONG"
+        const val ACTION_PLAY_DOWNLOADS = "com.ramzmania.tubefy.ACTION_PLAY_DOWNLOADS"
+        /** How many Mix songs to queue at once; the next refill seeds from the song playing then. */
+        private const val MIX_BATCH_SIZE = 10
         const val VIDEO_ID = "com.ramzmania.tubefy.VIDEO_ID"
         const val ALBUM_ART = "com.ramzmania.tubefy.ALBUM_ART"
         const val VIDEO_TITLE = "com.ramzmania.tubefy.VIDEO_TITLE"

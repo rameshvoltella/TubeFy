@@ -7,5 +7,5 @@ import kotlinx.parcelize.Parcelize
 
 @Parcelize
 
-data class TubeFyCoreTypeData(val videoId:String="", val videoTitle:String, val videoImage:String,val videoBackupThump:String="https://i.ytimg.com/vi/${YoutubeCoreConstant.extractYoutubeVideoId(videoId)}/maxresdefault.jpg",val plaListUrl:String?=null,val playListName:String=""):
+data class TubeFyCoreTypeData(val videoId:String="", val videoTitle:String, val videoImage:String,val videoBackupThump:String="https://i.ytimg.com/vi/${YoutubeCoreConstant.extractYoutubeVideoId(videoId)}/maxresdefault.jpg",val plaListUrl:String?=null,val playListName:String="",val artist:String="",val durationSeconds:Long=-1,val viewCount:Long=-1):
     Parcelable, PlaylistItem

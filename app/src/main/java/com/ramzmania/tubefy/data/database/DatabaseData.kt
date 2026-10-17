@@ -8,6 +8,7 @@ import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
 import com.ramzmania.tubefy.data.dto.database.PlaylistNameWithUrl
 import com.ramzmania.tubefy.database.ActivePlaylist
+import com.ramzmania.tubefy.core.download.Downloads
 import com.ramzmania.tubefy.database.CustomPlaylist
 import com.ramzmania.tubefy.database.DatabaseResponse
 import com.ramzmania.tubefy.database.FavoritePlaylist
@@ -265,13 +266,18 @@ class DatabaseData @Inject constructor(
 
 
     override suspend fun getAllSavedPlayList(): Resource<List<PlaylistNameWithUrl>> {
+        playlistDao.trimPlaylistNames()
         val allSavedPlayList: MutableList<PlaylistNameWithUrl> =
             playlistDao.getAllPlaylistNamesWithUrls().toMutableList()
 
 
 //        if(getFavorites().data!=null&&getFavorites().data?.size!!>0)
 //        {
-            allSavedPlayList.add(0,PlaylistNameWithUrl("TubeFy-Favorites","Favorites"))
+            allSavedPlayList.add(0,PlaylistNameWithUrl("TubeFy-Favorites","Favorites", playlistDao.getFavoritesCount()))
+            // Downloads (if any) come right after Favorites
+            allSavedPlayList.indexOfFirst { it.playlistName == Downloads.PLAYLIST }.takeIf { it > 1 }?.let {
+                allSavedPlayList.add(1, allSavedPlayList.removeAt(it))
+            }
 //        }
 
         return if(allSavedPlayList.isNotEmpty())
@@ -293,6 +299,32 @@ class DatabaseData @Inject constructor(
         } else {
             Resource.DataError(DATABASE_INSERTION_ERROR)
         }
+    }
+
+    override suspend fun saveAsPlayList(entries: List<CustomPlaylist>): Resource<DatabaseResponse> {
+        playlistDao.insertCustomPlaylistEntriesIfNotExist(entries)
+        return Resource.Success(DatabaseResponse(200))
+    }
+
+    override suspend fun isPlayListSaved(playlistName: String): Resource<Boolean> {
+        return Resource.Success(playlistDao.getCustomPlaylistEntryCount(playlistName) > 0)
+    }
+
+    override suspend fun savePlayListOrder(playlistName: String, songs: List<TubeFyCoreTypeData>): Resource<DatabaseResponse> {
+        if (playlistName == "TubeFy-Favorites") {
+            playlistDao.replaceFavoritesOrder(songs.map {
+                FavoritePlaylist(videoId = it.videoId, videoThump = it.videoImage, videoName = it.videoTitle)
+            })
+        } else {
+            playlistDao.replaceCustomPlaylistOrder(playlistName, songs.map {
+                CustomPlaylist(playlistName = playlistName, videoId = it.videoId, videoThump = it.videoImage, videoName = it.videoTitle)
+            })
+        }
+        return Resource.Success(DatabaseResponse(200))
+    }
+
+    override suspend fun clearAutomatedPlaylist(): Resource<Int> {
+        return Resource.Success(playlistDao.clearQuePlaylist())
     }
 
     override suspend fun deleteSpecificPlayList(playlistName:String): Resource<DatabaseResponse> {

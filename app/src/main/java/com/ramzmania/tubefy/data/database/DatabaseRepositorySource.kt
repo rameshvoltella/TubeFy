@@ -31,6 +31,10 @@ interface DatabaseRepositorySource {
     suspend fun deleteSongFromPlayList(playlistName:String,songName:String):Flow< Resource<DatabaseResponse>>
     suspend fun deleteSpecificPlayList(playlistName:String): Flow<Resource<DatabaseResponse>>
     suspend fun deleteAllFavorites(): Flow<Resource<DatabaseResponse>>
+    suspend fun clearAutomatedPlaylist(): Flow<Resource<Int>>
+    suspend fun saveAsPlayList(entries: List<CustomPlaylist>): Flow<Resource<DatabaseResponse>>
+    suspend fun isPlayListSaved(playlistName: String): Flow<Resource<Boolean>>
+    suspend fun savePlayListOrder(playlistName: String, songs: List<TubeFyCoreTypeData>): Flow<Resource<DatabaseResponse>>
 
 
 }

@@ -1,5 +1,6 @@
 package com.ramzmania.tubefy.data.remote
 
+import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
 import androidx.media3.common.MediaItem
 import com.ramzmania.tubefy.data.dto.base.searchformat.StreamUrlData
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreUniversalData
@@ -18,6 +19,7 @@ interface RemoteDataSource {
     suspend fun getStreamUrl(videoId:String,mediaIndex:Int=-1):Resource<StreamUrlData>
 
     suspend fun getPlayListInfo(playListUrl:String):Resource<PlayListData>
+    suspend fun getMixQueue(videoId: String): Resource<List<TubeFyCoreTypeData>>
 
 
     /*NewPipe search sources*/

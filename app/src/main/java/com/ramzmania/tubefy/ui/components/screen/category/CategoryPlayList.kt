@@ -13,6 +13,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import com.ramzmania.tubefy.core.extractors.yotubewebextractor.YoutubeScrapType
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.base.playlist.PlayListCategory
@@ -20,6 +21,17 @@ import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.text.style.TextOverflow
+import com.ramzmania.tubefy.ui.components.screen.home.ArtworkCard
+import com.ramzmania.tubefy.ui.components.screen.home.SectionHeader
+import com.ramzmania.tubefy.ui.theme.DiscoverAccent
+import com.ramzmania.tubefy.ui.theme.DiscoverBackground
 
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
@@ -73,190 +85,126 @@ fun CategoryPlaylistView(viewModel: TubeFyViewModel = hiltViewModel()) {
             isDefaultDataLoaded=true
         }
     }
+    val title = URLDecoder.decode(categoryName, StandardCharsets.UTF_8.toString())
+    val sections = musicCategoryPlayListBaseList.filterNotNull().filter { it.musicCategoryPlayList.isNotEmpty() }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black)
+            .background(DiscoverBackground)
     ) {
-        Text(
-            text = URLDecoder.decode(
-                categoryName,
-                StandardCharsets.UTF_8.toString()
-            ),
-            fontWeight = FontWeight.Bold,
-            color = Color.White,
-            modifier = Modifier.padding(10.dp, 30.dp, 10.dp,10.dp),
-            textAlign = TextAlign.Left,
-            maxLines = 2,
-            fontSize = 40.sp
-        )
-        Box(
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black)
+                .fillMaxWidth()
+                .padding(start = 8.dp, end = 20.dp, top = 8.dp, bottom = 4.dp)
         ) {
-            if (musicCategoryPlayListBaseList.isNotEmpty()) {
+            IconButton(onClick = { navController.popBackStack() }) {
+                Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = Color.White)
+            }
+            Text(
+                text = title,
+                color = Color.White,
+                fontSize = 32.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(start = 4.dp)
+            )
+        }
 
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(bottom = 16.dp) // Padding for the whole LazyColumn
-                )  {
-                    items(musicCategoryPlayListBaseList.size) { rowIndex ->
-                        val rowData = musicCategoryPlayListBaseList[rowIndex]
-
-                        rowData?.let {
-
-                            Text(
-                                text = it.plaListBaseName,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White,
-                                modifier = Modifier.padding(10.dp, 30.dp, 10.dp),
-                                textAlign = TextAlign.Left,
-                                maxLines = 2,
-                                fontSize = 20.sp
-                            )
-                            HorizontalPlayList(it.musicCategoryPlayList)
-                        }
-
-
-                    }
-                    // Add extra padding at the bottom of the last item
-                    item {
-                        Spacer(modifier = Modifier.height(55.dp))
-                    }
+        when {
+            sections.isNotEmpty() -> LazyColumn(modifier = Modifier.fillMaxSize()) {
+                items(sections) { section ->
+                    SectionHeader(section.plaListBaseName)
+                    HorizontalPlayList(section.musicCategoryPlayList)
                 }
+                item { Spacer(modifier = Modifier.height(24.dp)) }
+            }
 
-            } else {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(color = colorResource(id = R.color.tubefyred))
+            youTubeCategoryPlayListData is Resource.DataError -> Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 48.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text("Couldn't load $title", color = Color.White, fontSize = 16.sp)
+                TextButton(onClick = {
+                    viewModel.callCategoryPlayList(
+                        navBackStackEntry?.arguments?.getString("browserId").orEmpty(),
+                        navBackStackEntry?.arguments?.getString("playerListId").orEmpty()
+                    )
+                }) {
+                    Text("Retry", color = DiscoverAccent, fontSize = 16.sp)
                 }
+            }
+
+            else -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = DiscoverAccent)
             }
         }
     }
 }
+
 @Composable
 fun HorizontalPlayList(playLists: List<MusicCategoryPlayList>) {
     val navController = LocalNavController.current
 
     LazyRow(
-        contentPadding = PaddingValues(horizontal = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        contentPadding = PaddingValues(horizontal = 20.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        items(playLists.size) { rowIndex ->
-            val rowData = playLists[rowIndex]
-
-            ContentPlayListItem(rowData) { selectedItem ->
-                if (selectedItem.videoId.length==11) {
-
-                    val encodedVideoThumpUrl = URLEncoder.encode(
-                        YoutubeCoreConstant.decodeThumpUrl(selectedItem.playListThump),
-                        StandardCharsets.UTF_8.toString()
-                    )
-                    val encodedVideoId =
-                        URLEncoder.encode(
-                            selectedItem.videoId,
-                            StandardCharsets.UTF_8.toString()
-                        )
-                    val videoTitle =
-                        URLEncoder.encode(
-                            selectedItem.playListName,
-                            StandardCharsets.UTF_8.toString()
-                        )
-//                LocalNavController.current
-                    navController!!.navigate(
-                        NavigationItem.AudioPlayer.createRoute(
-                            encodedVideoId,
-                            encodedVideoThumpUrl, videoTitle, videoTitle, videoTitle
-                        )
-                    ) {
-                        navController.graph.route?.let { route ->
-                            popUpTo(route) {
-                                saveState = true
-                            }
-                        }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-
-                } else {
-                    navController!!.navigate(
-                        NavigationItem.PlayList.createRoute(
-                            selectedItem.playListId!!,
-                            selectedItem.playListName!!, URLEncoder.encode(
-                                YoutubeCoreConstant.decodeThumpUrl(selectedItem.playListThump?.takeIf { it.isNotEmpty() }
-                                    ?: "nourl"),
-                                StandardCharsets.UTF_8.toString()
-                            )
-                        )
-                    ) {
-                        navController.graph.route?.let { route ->
-                            popUpTo(route) {
-                                saveState = true
-                            }
-                        }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                }
-            }
+        items(playLists) { item ->
+            ArtworkCard(
+                imageUrl = item.playListThump,
+                title = item.playListName,
+                onClick = { openCategoryPlaylistItem(navController, item) }
+            )
         }
     }
 }
-@Composable
-fun ContentPlayListItem(data: MusicCategoryPlayList, onClick: (MusicCategoryPlayList) -> Unit) {
-    Column(
-        modifier = Modifier
-            .padding(2.dp)
-            .wrapContentWidth()
-            .clickable { onClick(data) }
-    ) {
-//        Log.d("incoming", "" + data.thumbnail)
 
-        data.playListThump?.let { thumbnailUrl ->
-            AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(YoutubeCoreConstant.decodeThumpUrl(thumbnailUrl))
-                    .crossfade(true)
-                    .placeholder(R.drawable.placeholder)
-                    .error(R.drawable.placeholder)
-                    .build(),
-                contentDescription = "Drawable Image",
-                modifier = Modifier
-                    .padding(10.dp)
-                    .height(200.dp)
-                    .width(200.dp),
-                contentScale = ContentScale.Crop
+/** Opens a category playlist entry: single songs go to the player, playlists to the playlist screen. */
+fun openCategoryPlaylistItem(navController: NavController, selectedItem: MusicCategoryPlayList) {
+    if (selectedItem.videoId.length == 11) {
+        val encodedVideoThumpUrl = URLEncoder.encode(
+            YoutubeCoreConstant.decodeThumpUrl(selectedItem.playListThump),
+            StandardCharsets.UTF_8.toString()
+        )
+        val encodedVideoId = URLEncoder.encode(selectedItem.videoId, StandardCharsets.UTF_8.toString())
+        val videoTitle = URLEncoder.encode(selectedItem.playListName, StandardCharsets.UTF_8.toString())
+        navController.navigate(
+            NavigationItem.AudioPlayer.createRoute(
+                encodedVideoId,
+                encodedVideoThumpUrl, videoTitle, videoTitle, videoTitle
             )
-        } ?: AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-                .data(R.drawable.images)
-                .crossfade(true)
-                .placeholder(R.drawable.placeholder)
-                .error(R.drawable.placeholder)
-                .build(),
-            contentDescription = "Placeholder Image",
-            modifier = Modifier
-                .padding(20.dp)
-                .height(200.dp)
-                .width(200.dp),
-            contentScale = ContentScale.Crop
-        )
-        Text(
-            text = data.playListName!!,
-            fontWeight = FontWeight.Thin,
-            color = Color.White,
-            modifier = Modifier
-                .padding(horizontal = 10.dp)
-                .width(200.dp),
-            textAlign = TextAlign.Left,
-            maxLines = 2,
-            fontSize = 16.sp
-        )
-
+        ) {
+            navController.graph.route?.let { route ->
+                popUpTo(route) {
+                    saveState = true
+                }
+            }
+            launchSingleTop = true
+            restoreState = true
+        }
+    } else {
+        navController.navigate(
+            NavigationItem.PlayList.createRoute(
+                selectedItem.playListId,
+                selectedItem.playListName, URLEncoder.encode(
+                    YoutubeCoreConstant.decodeThumpUrl(selectedItem.playListThump.takeIf { it.isNotEmpty() }
+                        ?: "nourl"),
+                    StandardCharsets.UTF_8.toString()
+                )
+            )
+        ) {
+            navController.graph.route?.let { route ->
+                popUpTo(route) {
+                    saveState = true
+                }
+            }
+            launchSingleTop = true
+            restoreState = true
+        }
     }
 }

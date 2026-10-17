@@ -1,26 +1,36 @@
 package com.ramzmania.tubefy.core.extractors.yotubewebextractor
 
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
 import android.util.Log
-import android.webkit.WebView
-import android.webkit.WebViewClient
 import com.ramzmania.tubefy.core.YoutubeCoreConstant
 import com.ramzmania.tubefy.data.dto.youtubemusic.category.YtMusicCategoryBase
-import com.ramzmania.tubefy.data.dto.youtubemusic.category.YtMusicCategoryContent
 import com.ramzmania.tubefy.data.dto.youtubemusic.playlist.YoutubeMusicPlayListContent
 import com.ramzmania.tubefy.data.dto.youtubestripper.ApiResponse
 import com.ramzmania.tubefy.data.dto.youtubestripper.MusicHomeResponse2
 import com.ramzmania.tubefy.utils.parseJson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import java.util.concurrent.TimeUnit
 
-class YoutubeJsonScrapping constructor(val webView: WebView, val context: Context) {
+/**
+ * Scrapes the JSON that YouTube / YouTube Music embed in their server-rendered HTML.
+ *
+ * The page is fetched directly with OkHttp (no WebView), so concurrent requests can't cancel
+ * each other and the result doesn't depend on WebView page-load callbacks.
+ */
+class YoutubeJsonScrapping(
+    private val client: OkHttpClient = OkHttpClient.Builder()
+        .connectTimeout(15, TimeUnit.SECONDS)
+        .readTimeout(20, TimeUnit.SECONDS)
+        .build()
+) {
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     private val sharedJsonContentPrivate = MutableSharedFlow<ApiResponse?>()
     val sharedJsonContent: SharedFlow<ApiResponse?> = sharedJsonContentPrivate
     private val sharedJsonMusicHomeContentPrivate = MutableSharedFlow<MusicHomeResponse2?>()
@@ -35,326 +45,136 @@ class YoutubeJsonScrapping constructor(val webView: WebView, val context: Contex
     val sharedJsonMusicCategoryPlayListContent: SharedFlow<YtMusicCategoryBase?> =
         sharedJsonMusicCategoryPlayListContentPrivate
 
-    var alreadyEvaluated = false;
-
     fun fetchPageSource(url: String, type: YoutubeScrapType) {
-//        val webView=WebView(context)
-//        var url="https://music.youtube.com"
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                withContext(Dispatchers.Main) {
-                    webView.settings.javaScriptEnabled = true
-
-                    webView.webViewClient = object : WebViewClient() {
-                        override fun onPageFinished(view: WebView?, url: String?) {
-                            super.onPageFinished(view, url)
-//                            CoroutineScope(Dispatchers.IO).launch {
-                            if (type == YoutubeScrapType.YOUTUBE_MUSIC) {
-                                getMusicHomeHtmlContent(webView)
-                            } else if (type == YoutubeScrapType.YOUTUBE_PLAYLIST) {
-                                getMusicPlayListHtmlContent(webView)
-                            } else if (type == YoutubeScrapType.YOUTUBE_HOME) {
-                                getYoutubeContent(webView)
-                            } else if (type == YoutubeScrapType.YOUTUBE_MUSIC_CATEGORY) {
-                                getMusicCategoryHtmlContent(webView)
-                            }
-//                            }
-                        }
-                    }
-                    webView.loadUrl(url)
-                }
+        scope.launch {
+            val json = try {
+                val html = downloadPage(url)
+                if (type == YoutubeScrapType.YOUTUBE_HOME) extractYtInitialData(html)
+                else extractYtMusicInitialData(html)
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.e(TAG, "Failed to scrape $url", e)
+                null
+            }
+
+            when (type) {
+                YoutubeScrapType.YOUTUBE_HOME ->
+                    json?.let { safeParse<ApiResponse>(it) }?.let { sharedJsonContentPrivate.emit(it) }
+
+                YoutubeScrapType.YOUTUBE_MUSIC ->
+                    json?.let { safeParse<MusicHomeResponse2>(it) }?.let { sharedJsonMusicHomeContentPrivate.emit(it) }
+
+                YoutubeScrapType.YOUTUBE_PLAYLIST ->
+                    json?.let { safeParse<YoutubeMusicPlayListContent>(it) }?.let { sharedJsonMusicHomePlayListContentPrivate.emit(it) }
+
+                // Always emit for categories, so the UI can show an error instead of spinning forever
+                YoutubeScrapType.YOUTUBE_MUSIC_CATEGORY ->
+                    sharedJsonMusicCategoryPlayListContentPrivate.emit(json?.let { safeParse<YtMusicCategoryBase>(it) })
             }
         }
     }
 
-    private fun getYoutubeContent(webView: WebView) {
-        if (!alreadyEvaluated) {
-            alreadyEvaluated = true
-            webView.evaluateJavascript("(function() { return document.documentElement.outerHTML; })();") { html ->
-                val cleanHtml = html.replace("\\u003C", "<").replace("\\u003E", ">")
-                var result = decodeHexString(
-                    extractDataBetween(
-                        cleanHtml,
-                        YoutubeCoreConstant.START_TAG,
-                        YoutubeCoreConstant.END_TAG
-                    ) + ""
-                )
-                result = result.replaceFirst("= '{", "{").replaceFirst("';", "")
-                    .replace("\\\\\\\\\"", "")
-//                webViewModel.setHtmlContent(result)
-                CoroutineScope(Dispatchers.IO).launch {
-                    if (result.startsWith("{")&&result.endsWith("}")) {
+    private fun downloadPage(url: String): String {
+        val request = Request.Builder()
+            .url(url)
+            .header("User-Agent", USER_AGENT)
+            .header("Accept-Language", "en-US,en;q=0.9")
+            .build()
+        client.newCall(request).execute().use { response ->
+            check(response.isSuccessful) { "HTTP ${response.code}" }
+            return response.body?.string().orEmpty()
+        }
+    }
 
-                        passYtVideoHomeData(parseJson(result))
-                    }
+    private inline fun <reified T> safeParse(json: String): T? = try {
+        parseJson<T>(json)
+    } catch (e: Exception) {
+        Log.e(TAG, "Failed to parse ${T::class.java.simpleName}", e)
+        null
+    }
 
+    companion object {
+        private const val TAG = "YoutubeJsonScrapping"
+
+        // A desktop Chrome UA: music.youtube.com serves its full page (with initial data) to it
+        private const val USER_AGENT =
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
+
+        /**
+         * YouTube Music pages embed their data as
+         * `initialData.push({path: '\/browse', params: ..., data: '<escaped JSON>'});`
+         * A page can push several entries (e.g. the guide); this returns the decoded JSON of the
+         * entry for [path], or null if the page doesn't contain it.
+         */
+        fun extractYtMusicInitialData(html: String, path: String = "/browse"): String? {
+            val pathMarker = "path: '" + path.replace("/", "\\/") + "'"
+            var pushIndex = html.indexOf("initialData.push(")
+            while (pushIndex != -1) {
+                val nextPush = html.indexOf("initialData.push(", pushIndex + 1)
+                val entryEnd = if (nextPush == -1) html.length else nextPush
+                val pathIndex = html.indexOf(pathMarker, pushIndex)
+                if (pathIndex != -1 && pathIndex < entryEnd) {
+                    val dataIndex = html.indexOf("data: '", pathIndex)
+                    if (dataIndex == -1 || dataIndex > entryEnd) return null
+                    return readJsStringLiteral(html, dataIndex + "data: ".length)
+                        ?.takeIf { it.startsWith("{") }
                 }
+                pushIndex = nextPush
             }
-        } else {
-            alreadyEvaluated = false
+            return null
         }
 
-    }
-
-    private fun getMusicSearchHtmlContent(webView: WebView) {
-        if (!alreadyEvaluated) {
-            alreadyEvaluated = true
-            webView.evaluateJavascript("(function() { return document.documentElement.outerHTML; })();") { html ->
-                val cleanHtml = html.replace("\\u003C", "<").replace("\\u003E", ">")
-                var result = decodeHexString(
-                    extractDataBetween(
-                        cleanHtml,
-                        "initialData.push({path: '\\\\/search', params",
-                        "'});ytcfg.set"
-                    ) + ""
-                )
-                result = getDataSubstring(result)
-                result = result.replace("\\\\\\\\\"", "")
-                val clipboard =
-                    context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                val clip = ClipData.newPlainText("label", result)
-                clipboard.setPrimaryClip(clip)
-//                getDataSubstring
-                result = result.replaceFirst("= '{", "{").replaceFirst("';", "")
-                    .replace("\\\\\\\\\"", "")
-////                webViewModel.setHtmlContent(result)
-//                CoroutineScope(Dispatchers.IO).launch {
-//
-//                    passDatas(parseJson(result))
-//
-//                }
+        /** www.youtube.com embeds `var ytInitialData = {...};` or `var ytInitialData = '<escaped JSON>';` */
+        fun extractYtInitialData(html: String): String? {
+            val start = html.indexOf(YoutubeCoreConstant.START_TAG)
+            if (start == -1) return null
+            val valueStart = html.indexOf('=', start) + 1
+            var i = valueStart
+            while (i < html.length && html[i].isWhitespace()) i++
+            if (i >= html.length) return null
+            return when (html[i]) {
+                '\'', '"' -> readJsStringLiteral(html, i)
+                '{' -> html.indexOf(";</script>", i).takeIf { it != -1 }?.let { html.substring(i, it) }
+                else -> null
             }
-        } else {
-            alreadyEvaluated = false
         }
 
-    }
-
-    private fun getMusicHomeHtmlContent(webView: WebView) {
-        if (!alreadyEvaluated) {
-            alreadyEvaluated = true
-            webView.evaluateJavascript("(function() { return document.documentElement.outerHTML; })();") { html ->
-                val cleanHtml = html.replace("\\u003C", "<").replace("\\u003E", ">")
-                var result = decodeHexString(
-                    extractDataBetween(
-                        cleanHtml,
-                        "initialData.push({path: '\\\\/browse', params",
-                        "'});ytcfg.set"
-                    ) + ""
-                )
-                result = getDataSubstring(result)
-                result = result.replace("\\\\\\\\\"", "")
-//                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-//                val clip = ClipData.newPlainText("label", result)
-//                clipboard.setPrimaryClip(clip)
-////                getDataSubstring
-//                result = result.replaceFirst("= '{", "{").replaceFirst("';", "")
-//                    .replace("\\\\\\\\\"", "")
-////                webViewModel.setHtmlContent(result)
-                CoroutineScope(Dispatchers.IO).launch {
-                    if (result.startsWith("{")&&result.endsWith("}")) {
-
-                        passYtMusicHomeData(parseJson(result))
-                    }
-
-                }
-            }
-        } else {
-            alreadyEvaluated = false
-        }
-
-    }
-
-    private fun getMusicPlayListHtmlContent(webView: WebView) {
-        try {
-            if (!alreadyEvaluated) {
-                alreadyEvaluated = true
-                webView.evaluateJavascript("(function() { return document.documentElement.outerHTML; })();") { html ->
-                    val cleanHtml = html.replace("\\u003C", "<").replace("\\u003E", ">")
-                    var result = decodeHexString(
-                        extractDataBetween(
-                            cleanHtml,
-                            "initialData.push({path: '\\\\/browse', params",
-                            "'});ytcfg.set"
-                        ) + ""
-                    )
-                    result = getDataSubstring(result)
-                    result = result.replace("\\\\\\\\\"", "")
-//                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-//                val clip = ClipData.newPlainText("label", result)
-//                clipboard.setPrimaryClip(clip)
-////                getDataSubstring
-//                result = result.replaceFirst("= '{", "{").replaceFirst("';", "")
-//                    .replace("\\\\\\\\\"", "")
-////                webViewModel.setHtmlContent(result)
-                    CoroutineScope(Dispatchers.IO).launch {
-                        if (result.startsWith("{")&&result.endsWith("}")) {
-                            passYTMusicPlayListData(parseJson(result))
-                        }
-
-                    }
-                }
-            } else {
-                alreadyEvaluated = false
-            }
-        }catch (ex:Exception)
-        {
-
-        }
-    }
-
-    /* private  fun getMusicPlayListHtmlContent(webView: WebView) {
-         if (!alreadyEvaluated) {
-             alreadyEvaluated = true
-             webView.evaluateJavascript("(function() { return document.documentElement.outerHTML; })();") { html ->
-                 val cleanHtml = html.replace("\\u003C", "<").replace("\\u003E", ">")
-                 var result = decodeHexString(
-                     extractDataBetween(
-                         cleanHtml,
-                         "initialData.push({path: '\\\\/browse', params",
-                         "'});ytcfg.set"
-                     ) + ""
-                 )
-                 result=getDataSubstring(result)
-                 result=result.replace("\\\\\\\\\"", "")
-                 val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                 val clip = ClipData.newPlainText("label", result)
-                 clipboard.setPrimaryClip(clip)
- //                getDataSubstring
-                 result = result.replaceFirst("= '{", "{").replaceFirst("';", "")
-                     .replace("\\\\\\\\\"", "")
- ////                webViewModel.setHtmlContent(result)
- //                CoroutineScope(Dispatchers.IO).launch {
- //
- //                    passDatas(parseJson(result))
- //
- //                }
-             }
-         } else {
-             alreadyEvaluated = false
-         }
-
-     }*/
-
-
-    private fun getMusicCategoryHtmlContent(webView: WebView) {
-        try {
-            if (!alreadyEvaluated) {
-                alreadyEvaluated = true
-                webView.evaluateJavascript("(function() { return document.documentElement.outerHTML; })();") { html ->
-                    val cleanHtml = html.replace("\\u003C", "<").replace("\\u003E", ">")
-                    var result = decodeHexString(
-                        extractDataBetween(
-                            cleanHtml,
-                            "initialData.push({path: '\\\\/browse', params",
-                            "'});ytcfg.set"
-                        ) + ""
-                    )
-                    result = getDataSubstring(result)
-                    result = result.replace("\\\\\\\\\"", "")
-
-//                getDataSubstring
-                    result = result.replaceFirst("= '{", "{").replaceFirst("';", "")
-                        .replace("\\\\\\\\\"", "")
-                    result = decodeHexString(result)
-//                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-//                val clip = ClipData.newPlainText("label", result)
-//                clipboard.setPrimaryClip(clip)
-                    CoroutineScope(Dispatchers.IO).launch {
-                            if (result.startsWith("{")&&result.endsWith("}")) {
-
-                                passYTMusicPlayCategory(parseJson(result))
+        /** Reads the JavaScript string literal whose opening quote is at [quoteIndex] and unescapes it. */
+        fun readJsStringLiteral(source: String, quoteIndex: Int): String? {
+            val quote = source.getOrNull(quoteIndex)?.takeIf { it == '\'' || it == '"' } ?: return null
+            val out = StringBuilder()
+            var i = quoteIndex + 1
+            while (i < source.length) {
+                val c = source[i]
+                when {
+                    c == quote -> return out.toString()
+                    c == '\\' && i + 1 < source.length -> {
+                        val e = source[i + 1]
+                        i += 2
+                        when (e) {
+                            'x' -> {
+                                out.append(source.substring(i, i + 2).toInt(16).toChar())
+                                i += 2
                             }
-
-
+                            'u' -> {
+                                out.append(source.substring(i, i + 4).toInt(16).toChar())
+                                i += 4
+                            }
+                            'n' -> out.append('\n')
+                            'r' -> out.append('\r')
+                            't' -> out.append('\t')
+                            'b' -> out.append('\b')
+                            'f' -> out.append('\u000C')
+                            'v' -> out.append('\u000B')
+                            '0' -> out.append('\u0000')
+                            else -> out.append(e) // \\ \' \" \/ and any other escaped char
+                        }
+                        continue
                     }
-////                webViewModel.setHtmlContent(result)
-//                CoroutineScope(Dispatchers.IO).launch {
-//
-//                    passDatas(parseJson(result))
-//
-//                }
+                    else -> out.append(c)
                 }
-            } else {
-                alreadyEvaluated = false
+                i++
             }
-        } catch (ex: Exception) {
-
-        }
-
-    }
-
-
-    fun decodeHexString(input: String): String {
-        // Regular expression to find \xHH patterns
-        /*val hexPattern = Regex("""\\\\x([0-9A-Fa-f]{2})""")
-//            val hexPattern = Regex("""\\x([0-9A-Fa-f]{2})""")
-        // Replace each match with the corresponding character
-        return hexPattern.replace(input) { matchResult ->
-            val hexValue = matchResult.groupValues[1]
-            val charValue = Hex.decodeHex(hexValue)[0]
-            charValue.toChar().toString()
-        }*/
-        return input.replace("\\\\x22", "\"")
-            .replace("\\\\x20", " ")
-            .replace("\\\\x21", "!")
-            .replace("\\\\x26", "&")
-            .replace("\\\\x28", "(")
-            .replace("\\\\x29", ")")
-            .replace("\\\\x2c", ",")
-            .replace("\\\\x3a", ":")
-            .replace("\\\\x7b", "{")
-            .replace("\\\\x7d", "}")
-            .replace("\\\\x5b", "[")
-            .replace("\\\\x5d", "]")
-            .replace("\\x3d", "=")
-
-    }
-
-    fun extractDataBetween(input: String, start: String, end: String): String? {
-        val startIndex = input.indexOf(start)
-        val endIndex = input.indexOf(end, startIndex + start.length)
-
-        return if (startIndex != -1 && endIndex != -1) {
-            input.substring(startIndex + start.length, endIndex).trim()
-        } else {
-            null
-        }
-    }
-
-    private suspend fun passYtVideoHomeData(data: ApiResponse?) {
-        sharedJsonContentPrivate.emit(data)
-    }
-
-    private suspend fun passYtMusicHomeData(data: MusicHomeResponse2?) {
-        sharedJsonMusicHomeContentPrivate.emit(data)
-    }
-
-    private suspend fun passYTMusicPlayListData(data: YoutubeMusicPlayListContent?) {
-        sharedJsonMusicHomePlayListContentPrivate.emit(data)
-    }
-
-    private suspend fun passYTMusicPlayCategory(data: YtMusicCategoryBase?) {
-        sharedJsonMusicCategoryPlayListContentPrivate.emit(data)
-    }
-
-
-    /*    inline fun <reified T> parseJsons(jsonString: String): T? {
-            val moshi = Moshi.Builder()
-                .add(KotlinJsonAdapterFactory())
-                .build()
-            val jsonAdapter = moshi.adapter(T::class.java)
-            return jsonAdapter.fromJson(jsonString)
-        }*/
-    fun getDataSubstring(jsonString: String): String {
-        val key = "data: '"
-        val startIndex = jsonString.indexOf(key)
-        return if (startIndex != -1) {
-            jsonString.substring(startIndex + key.length)
-        } else {
-            ""
+            return null // unterminated literal
         }
     }
 }

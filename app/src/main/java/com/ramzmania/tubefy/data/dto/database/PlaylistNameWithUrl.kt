@@ -6,5 +6,6 @@ import kotlinx.parcelize.Parcelize
 @Parcelize
 data class PlaylistNameWithUrl(
     val playlistName: String,
-    val videoThump: String
+    val videoThump: String,
+    val songCount: Int = 0
 ):Parcelable

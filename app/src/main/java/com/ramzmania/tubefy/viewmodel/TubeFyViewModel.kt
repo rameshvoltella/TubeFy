@@ -11,7 +11,10 @@ import com.ramzmania.tubefy.core.YoutubeCoreConstant.extractYoutubeVideoId
 import com.ramzmania.tubefy.data.dto.base.searchformat.StreamUrlData
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreUniversalData
 import com.ramzmania.tubefy.core.extractors.yotubewebextractor.YoutubeJsonScrapping
+import com.ramzmania.tubefy.core.download.Downloads
+import com.ramzmania.tubefy.data.local.RecentSearches
 import com.ramzmania.tubefy.core.extractors.yotubewebextractor.YoutubeScrapType
+import com.ramzmania.tubefy.errors.YOUTUBE_SCRAP_ERROR
 import com.ramzmania.tubefy.data.ContextModule
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.database.DatabaseRepository
@@ -36,6 +39,8 @@ import com.ramzmania.tubefy.database.QuePlaylist
 import com.ramzmania.tubefy.ui.base.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.schabi.newpipe.extractor.Page
@@ -47,8 +52,18 @@ class TubeFyViewModel @Inject constructor(
     val scrapping: YoutubeJsonScrapping,
     private val localRepositorySource: LocalRepositorySource,
     private val remoteRepositorySource: RemoteRepositorySource,
-    private val playlistDatabaseRepository: DatabaseRepository
+    private val playlistDatabaseRepository: DatabaseRepository,
+    private val recentSearches: RecentSearches
 ) : BaseViewModel() {
+
+    /** Songs/playlists picked from search results, newest first. */
+    val recentSearchItems = recentSearches.items
+
+    fun addRecentSearch(item: TubeFyCoreTypeData) = recentSearches.add(item)
+
+    fun removeRecentSearch(item: TubeFyCoreTypeData) = recentSearches.remove(item)
+
+    fun clearRecentSearches() = recentSearches.clear()
 
     private var nextYoutubeV3PageToken: String? = null
     private var reloadHomeScreen = true
@@ -343,14 +358,46 @@ class TubeFyViewModel @Inject constructor(
 //    }
 
     private fun setHtmlMusicCategoryContent(result: YtMusicCategoryBase?) {
-
-        viewModelScope.launch {
-            localRepositorySource.manipulateYoutubeMusicCategorySearchStripData(result!!).collect {
-
-                youTubeMusicCategoryDataPrivate.value = it
-            }
+        if (result == null) {
+            youTubeMusicCategoryDataPrivate.value = Resource.DataError(YOUTUBE_SCRAP_ERROR)
+            return
         }
+        viewModelScope.launch {
+            localRepositorySource.manipulateYoutubeMusicCategorySearchStripData(result)
+                .catch { emit(Resource.DataError(YOUTUBE_SCRAP_ERROR)) }
+                .collect {
+                    youTubeMusicCategoryDataPrivate.value = it
+                }
+        }
+    }
 
+    private val homeCategoryContentPrivate =
+        MutableStateFlow<Map<String, Resource<List<MusicCategoryPlayListBase?>>>>(emptyMap())
+
+    /** Playlists for the home screen chips, keyed by category id, cached for the session. */
+    val homeCategoryContent = homeCategoryContentPrivate.asStateFlow()
+
+    fun loadHomeCategory(category: PlayListCategory, forceRefresh: Boolean = false) {
+        val key = category.playListCategoryId ?: return
+        val browseId = category.playListBrowserId ?: return
+        val current = homeCategoryContentPrivate.value[key]
+        if (!forceRefresh && (current is Resource.Success || current is Resource.Loading)) return
+        homeCategoryContentPrivate.update { it + (key to Resource.Loading()) }
+        viewModelScope.launch {
+            remoteRepositorySource.getCategoryPlayList(browseId, key)
+                .catch { emit(Resource.DataError(YOUTUBE_SCRAP_ERROR)) }
+                .collect { result -> homeCategoryContentPrivate.update { it + (key to result) } }
+        }
+    }
+
+    /** Loads the search tab's mood & genre categories unless they are already loaded. */
+    fun loadMusicCategories(forceRefresh: Boolean = false) {
+        if (!forceRefresh && youTubeMusicCategoryDataPrivate.value is Resource.Success) return
+        youTubeMusicCategoryDataPrivate.value = Resource.Loading()
+        startWebScrapping(
+            "https://music.youtube.com/moods_and_genres",
+            YoutubeScrapType.YOUTUBE_MUSIC_CATEGORY
+        )
     }
 
     fun setHtmlMusicPlayListContent(content: YoutubeMusicPlayListContent?) {
@@ -686,6 +733,31 @@ class TubeFyViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Removes a song from a saved playlist (or favorites) and then reloads that list.
+     * Both steps run in one coroutine so the reload always sees the deletion.
+     */
+    fun removeSongFromSavedList(playListName: String, videoId: String) {
+        viewModelScope.launch {
+            if (playListName == "TubeFy-Favorites") {
+                playlistDatabaseRepository.removeFromFavorites(videoId).collect {
+                    addingSongListPlayListOperationPrivate.value = it
+                }
+                playlistDatabaseRepository.getFavorites().collect {
+                    gettingSongPlayListOperationPrivate.value = it
+                }
+            } else {
+                if (playListName == Downloads.PLAYLIST) Downloads.delete(contextModule.context, videoId)
+                playlistDatabaseRepository.deleteSongFromPlayList(playListName, videoId).collect {
+                    addingSongListPlayListOperationPrivate.value = it
+                }
+                playlistDatabaseRepository.getSpecificPlayList(playListName).collect {
+                    gettingSongPlayListOperationPrivate.value = it
+                }
+            }
+        }
+    }
+
     fun deleteSongFromPlayList(playListName: String, videoId: String) {
         viewModelScope.launch {
 
@@ -696,12 +768,69 @@ class TubeFyViewModel @Inject constructor(
         }
     }
 
+    /** Clears the automated playlist; [onCleared] runs on the main thread when done. */
+    fun clearAutomatedPlaylist(onCleared: () -> Unit) {
+        viewModelScope.launch {
+            playlistDatabaseRepository.clearAutomatedPlaylist().collect { onCleared() }
+        }
+    }
+
+    /** Persists a drag-and-drop reorder of a saved playlist (or favorites). */
+    fun savePlaylistOrder(playlistName: String, songs: List<TubeFyCoreTypeData?>) {
+        viewModelScope.launch {
+            playlistDatabaseRepository.savePlayListOrder(playlistName, songs.filterNotNull()).collect {}
+        }
+    }
+
+    private val isAlbumSavedPrivate = MutableStateFlow(false)
+
+    /** Whether the album currently open is saved as a playlist in "Your Library". */
+    val isAlbumSaved = isAlbumSavedPrivate.asStateFlow()
+
+    fun checkAlbumSaved(albumName: String) {
+        val playlistName = if (Downloads.isReservedName(albumName)) "$albumName (Album)" else albumName
+        viewModelScope.launch {
+            playlistDatabaseRepository.isPlayListSaved(playlistName).collect {
+                isAlbumSavedPrivate.value = it is Resource.Success && it.data == true
+            }
+        }
+    }
+
+    /** Saves the album's songs as a new playlist named after the album, or removes that playlist. */
+    fun toggleAlbumSaved(albumName: String, tracks: List<TubeFyCoreTypeData?>) {
+        // "Download(s)" is reserved for offline downloads
+        val playlistName = if (Downloads.isReservedName(albumName)) "$albumName (Album)" else albumName
+        viewModelScope.launch {
+            if (isAlbumSavedPrivate.value) {
+                playlistDatabaseRepository.deleteSpecificPlayList(playlistName).collect {
+                    if (it is Resource.Success) isAlbumSavedPrivate.value = false
+                }
+            } else {
+                val entries = tracks.filterNotNull()
+                    .filter { it.videoId.isNotEmpty() }
+                    .map {
+                        CustomPlaylist(
+                            playlistName = playlistName,
+                            videoId = it.videoId,
+                            videoThump = it.videoImage,
+                            videoName = it.videoTitle
+                        )
+                    }
+                if (entries.isEmpty()) return@launch
+                playlistDatabaseRepository.saveAsPlayList(entries).collect {
+                    if (it is Resource.Success) isAlbumSavedPrivate.value = true
+                }
+            }
+        }
+    }
+
     fun deleteSpecificPlayList(playListName: String) {
         viewModelScope.launch {
 
+            if (playListName == Downloads.PLAYLIST) Downloads.deleteAll(contextModule.context)
             playlistDatabaseRepository.deleteSpecificPlayList(playListName).collect {
                 addingSongListPlayListOperationPrivate.value = it
-
+                reloadAllPlayListPrivate.value = true
             }
         }
     }
@@ -719,6 +848,7 @@ class TubeFyViewModel @Inject constructor(
 
             playlistDatabaseRepository.deleteAllFavorites().collect {
                 addingSongListPlayListOperationPrivate.value = it
+                reloadAllPlayListPrivate.value = true
 
             }
         }

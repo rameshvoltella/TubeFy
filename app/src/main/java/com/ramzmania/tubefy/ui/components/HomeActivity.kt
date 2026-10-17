@@ -8,6 +8,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 
 import android.os.Bundle
+import android.content.res.Configuration
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.ui.platform.LocalConfiguration
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -16,6 +23,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -25,8 +33,19 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.Search
+import com.ramzmania.tubefy.ui.theme.DiscoverAccent
+import com.ramzmania.tubefy.ui.theme.DiscoverAccentContainer
+import com.ramzmania.tubefy.ui.theme.DiscoverBackground
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -69,7 +88,7 @@ import com.ramzmania.tubefy.R
 import com.ramzmania.tubefy.player.PlaybackService
 import com.ramzmania.tubefy.ui.components.screen.BooksScreen
 import com.ramzmania.tubefy.ui.components.screen.home.HomeInitialScreen
-import com.ramzmania.tubefy.ui.components.screen.ProfileScreen
+import com.ramzmania.tubefy.ui.components.screen.settings.SettingsScreen
 import com.ramzmania.tubefy.ui.components.screen.album.AlbumScreen
 import com.ramzmania.tubefy.ui.components.screen.category.CategoryPlaylistView
 import com.ramzmania.tubefy.ui.components.screen.library.LibraryDetailPage
@@ -173,17 +192,20 @@ ex.printStackTrace()
 
 
 
+private val edgeToEdgeRoutes = setOf(NavigationItem.AudioPlayer.route, NavigationItem.PlayList.route)
+
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun MainScreen(mediaControllerState: MutableState<MediaController?>) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
+    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(colorResource(R.color.colorPrimary))
+            .background(DiscoverBackground)
     ) {
         // Content that extends behind the bottom bar
         CompositionLocalProvider(
@@ -192,23 +214,53 @@ fun MainScreen(mediaControllerState: MutableState<MediaController?>) {
             Scaffold(
                 bottomBar = {
                     if (currentRoute != NavigationItem.AudioPlayer.route) {
-                        Column {
-                            if (mediaControllerState.value != null&&mediaControllerState.value!!.currentMediaItem!=null) {
-                                MiniPlayerView()
+                        val showMiniPlayer = mediaControllerState.value?.currentMediaItem != null
+                        if (isLandscape) {
+                            // Landscape: mini player and a compact tab bar share one row to save height
+                            Row(
+                                verticalAlignment = Alignment.Bottom,
+                                modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
+                            ) {
+                                if (showMiniPlayer) {
+                                    MiniPlayerView(
+                                        Modifier
+                                            .weight(1f)
+                                            .navigationBarsPadding()
+                                            .padding(bottom = 2.dp)
+                                    )
+                                }
+                                BottomNavigationBar(navController, Modifier.weight(1f), compact = true)
                             }
-                            BottomNavigationBar(navController)
+                        } else {
+                            Column {
+                                if (showMiniPlayer) {
+                                    MiniPlayerView()
+                                }
+                                BottomNavigationBar(navController)
+                            }
                         }
                     }
                 },
-                content = {
+                // Only the bottom bar (mini player + tabs) should push content up; screens handle the status bar
+                contentWindowInsets = WindowInsets(0, 0, 0, 0),
+                content = { innerPadding ->
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .statusBarsPadding()
+                            // The player and album screens draw behind the status bar themselves
+                            .then(if (currentRoute in edgeToEdgeRoutes) Modifier else Modifier.statusBarsPadding())
+                            // Keep content above the mini player and tabs so the last list item stays visible
+                            .padding(bottom = innerPadding.calculateBottomPadding())
+                            // In landscape keep content clear of side system bars / camera cutouts
+                            .then(
+                                if (currentRoute == NavigationItem.AudioPlayer.route) Modifier
+                                else Modifier.windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
+                            )
                     ) {
                         Navigation(navController = navController)
                     }
                 },
+                containerColor = DiscoverBackground,
                 contentColor = colorResource(R.color.colorPrimary)
             )
         }
@@ -237,7 +289,7 @@ fun Navigation(navController: NavHostController) {
             MyLibraryPage()
         }
         composable(NavigationItem.Profile.route) {
-            ProfileScreen()
+            SettingsScreen()
         }
         composable(NavigationItem.PlayList.route) { backStackEntry ->
             AlbumScreen()
@@ -273,51 +325,19 @@ fun TopBarPreview() {
 }
 
 @Composable
-fun BottomNavigationBar(navController: NavController) {
-    val items = listOf(
-        NavigationItem.Home,
-        NavigationItem.Search,
-        NavigationItem.Books,
-        NavigationItem.Profile
+fun BottomNavigationBar(navController: NavController, modifier: Modifier = Modifier, compact: Boolean = false) {
+    val tabs = listOf(
+        BottomTab(NavigationItem.Home.route, NavigationItem.Home.title, HomeIconFilled, HomeIconOutlined),
+        BottomTab(NavigationItem.Search.route, NavigationItem.Search.title, SearchIconBold, SearchIconRegular),
+        BottomTab(NavigationItem.Books.route, NavigationItem.Books.title, LibraryIconFilled, LibraryIconOutlined),
+        BottomTab(NavigationItem.Profile.route, NavigationItem.Profile.title, Icons.Rounded.Settings, Icons.Outlined.Settings)
     )
-    // Create a linear gradient brush
-    val gradientBrush = Brush.linearGradient(
-        colors = listOf(Color.Transparent, Color.Black),
-        start = Offset(0f, 0f),
-        end = Offset(0f, Float.POSITIVE_INFINITY),
-        tileMode = TileMode.Clamp
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    FloatingBottomBar(
+        tabs = tabs,
+        selectedRoute = navBackStackEntry?.destination?.route,
+        onSelect = { navController.navigateToTab(it.route) },
+        modifier = modifier,
+        compact = compact
     )
-    NavigationBar(
-        containerColor = Color.Transparent, // Set container color to transparent
-        contentColor = Color.White,
-        modifier = Modifier.background(gradientBrush) // Apply gradient brush as background
-    ) {
-        val navBackStackEntry by navController.currentBackStackEntryAsState()
-        val currentRoute = navBackStackEntry?.destination?.route
-        items.forEach { item ->
-            NavigationBarItem(
-                icon = { Icon(painterResource(id = item.icon), contentDescription = item.title) },
-                label = { Text(text = item.title) },
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = Color.White,
-                    unselectedIconColor = Color.White.copy(0.4f),
-                    selectedTextColor = Color.White,
-                    unselectedTextColor = Color.White.copy(0.4f)
-                ),
-                alwaysShowLabel = true,
-                selected = currentRoute == item.route,
-                onClick = {
-                    navController.navigate(item.route) {
-                        navController.graph.startDestinationRoute?.let { route ->
-                            popUpTo(route) {
-                                saveState = true
-                            }
-                        }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                }
-            )
-        }
-    }
 }

@@ -13,6 +13,7 @@ import com.ramzmania.tubefy.database.PlaylistDao
 import com.ramzmania.tubefy.database.QuePlaylist
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.schabi.newpipe.extractor.Image
 import org.schabi.newpipe.extractor.InfoItem
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
 import javax.inject.Inject
@@ -36,7 +37,7 @@ class NewPipeDataFormatter<T> @Inject constructor(private val playlistDao: Playl
                                 sortedVideoList.add(
                                     TubeFyCoreTypeData(
                                         videoTitle = newPipeSearchData.name,
-                                        videoImage = newPipeSearchData.thumbnails[0].url,
+                                        videoImage = bestThumbnailUrl(newPipeSearchData.thumbnails),
                                         plaListUrl = newPipeSearchData.url
                                     )
                                 )
@@ -45,8 +46,11 @@ class NewPipeDataFormatter<T> @Inject constructor(private val playlistDao: Playl
                                 sortedVideoList.add(
                                     TubeFyCoreTypeData(
                                         videoTitle = newPipeSearchData.name,
-                                        videoImage = newPipeSearchData.thumbnails[0].url,
-                                        videoId = newPipeSearchData.url
+                                        videoImage = bestThumbnailUrl(newPipeSearchData.thumbnails),
+                                        videoId = newPipeSearchData.url,
+                                        artist = newPipeSearchData.uploaderName.orEmpty().removeSuffix(" - Topic"),
+                                        durationSeconds = newPipeSearchData.duration,
+                                        viewCount = newPipeSearchData.viewCount
                                     )
                                 )
                                 if (input?.contentFilter != null && input.contentFilter?.contains("all") != true) {
@@ -54,7 +58,7 @@ class NewPipeDataFormatter<T> @Inject constructor(private val playlistDao: Playl
                                         QuePlaylist(
                                             videoId = newPipeSearchData.url,
                                             videoName = newPipeSearchData.name,
-                                            videoThumbnail = newPipeSearchData.thumbnails[0].url
+                                            videoThumbnail = bestThumbnailUrl(newPipeSearchData.thumbnails)
                                         )
                                     )
                                 }
@@ -71,7 +75,7 @@ class NewPipeDataFormatter<T> @Inject constructor(private val playlistDao: Playl
                                 sortedVideoList.add(
                                     TubeFyCoreTypeData(
                                         videoTitle = newPipeSearchData.name,
-                                        videoImage = newPipeSearchData.thumbnails[0].url,
+                                        videoImage = bestThumbnailUrl(newPipeSearchData.thumbnails),
                                         plaListUrl = newPipeSearchData.url
                                     )
                                 )
@@ -80,7 +84,7 @@ class NewPipeDataFormatter<T> @Inject constructor(private val playlistDao: Playl
                                 sortedVideoList.add(
                                     TubeFyCoreTypeData(
                                         videoTitle = newPipeSearchData.name,
-                                        videoImage = newPipeSearchData.thumbnails[0].url,
+                                        videoImage = bestThumbnailUrl(newPipeSearchData.thumbnails),
                                         videoId = newPipeSearchData.url
                                     )
                                 )
@@ -90,7 +94,7 @@ class NewPipeDataFormatter<T> @Inject constructor(private val playlistDao: Playl
                                         QuePlaylist(
                                             videoId = newPipeSearchData.url,
                                             videoName = newPipeSearchData.name,
-                                            videoThumbnail = newPipeSearchData.thumbnails[0].url
+                                            videoThumbnail = bestThumbnailUrl(newPipeSearchData.thumbnails)
                                         )
                                     )
                                 }
@@ -119,3 +123,18 @@ class NewPipeDataFormatter<T> @Inject constructor(private val playlistDao: Playl
 
     }
 }
+
+/**
+ * NewPipe lists thumbnails smallest first, so take the largest one. YouTube Music artwork
+ * (googleusercontent) tops out at 120px; its URL encodes the size, so ask for a bigger one.
+ */
+internal fun bestThumbnailUrl(thumbnails: List<Image>): String {
+    val url = thumbnails.maxByOrNull { it.width.toLong() * it.height }?.url ?: return ""
+    return if (url.contains("googleusercontent.com") || url.contains("ggpht.com")) {
+        GOOGLE_IMAGE_SIZE.replace(url, "=w544-h544")
+    } else {
+        url
+    }
+}
+
+private val GOOGLE_IMAGE_SIZE = Regex("=w\\d+-h\\d+")
