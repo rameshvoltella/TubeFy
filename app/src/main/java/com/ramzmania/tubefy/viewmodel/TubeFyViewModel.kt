@@ -12,6 +12,7 @@ import com.ramzmania.tubefy.data.dto.base.searchformat.StreamUrlData
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreUniversalData
 import com.ramzmania.tubefy.core.extractors.yotubewebextractor.YoutubeJsonScrapping
 import com.ramzmania.tubefy.core.download.Downloads
+import com.ramzmania.tubefy.data.local.RecentSearches
 import com.ramzmania.tubefy.core.extractors.yotubewebextractor.YoutubeScrapType
 import com.ramzmania.tubefy.errors.YOUTUBE_SCRAP_ERROR
 import com.ramzmania.tubefy.data.ContextModule
@@ -51,8 +52,18 @@ class TubeFyViewModel @Inject constructor(
     val scrapping: YoutubeJsonScrapping,
     private val localRepositorySource: LocalRepositorySource,
     private val remoteRepositorySource: RemoteRepositorySource,
-    private val playlistDatabaseRepository: DatabaseRepository
+    private val playlistDatabaseRepository: DatabaseRepository,
+    private val recentSearches: RecentSearches
 ) : BaseViewModel() {
+
+    /** Songs/playlists picked from search results, newest first. */
+    val recentSearchItems = recentSearches.items
+
+    fun addRecentSearch(item: TubeFyCoreTypeData) = recentSearches.add(item)
+
+    fun removeRecentSearch(item: TubeFyCoreTypeData) = recentSearches.remove(item)
+
+    fun clearRecentSearches() = recentSearches.clear()
 
     private var nextYoutubeV3PageToken: String? = null
     private var reloadHomeScreen = true

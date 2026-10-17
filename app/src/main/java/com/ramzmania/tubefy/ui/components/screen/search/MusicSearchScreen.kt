@@ -1,5 +1,10 @@
 package com.ramzmania.tubefy.ui.components.screen.search
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.remember
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -115,6 +120,18 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
     val showPlayListDialog = viewModel.showPlayListDialog.collectAsState()
     val currentSongItemSelected = viewModel.selectedTrack.collectAsState()
     val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
+    val navController = LocalNavController.current
+    var searchFocused by remember { mutableStateOf(false) }
+    val recentItems by viewModel.recentSearchItems.collectAsState()
+
+    fun cancelSearch() {
+        focusManager.clearFocus()
+        keyboardController?.hide()
+    }
+
+    // Back while the empty search box is focused returns to the default search page
+    BackHandler(enabled = searchFocused && textFieldValue.text.isEmpty()) { cancelSearch() }
 
     fun search() {
         if (textFieldValue.text.isBlank()) return
@@ -198,9 +215,16 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
                 Icon(Icons.Rounded.Search, contentDescription = null, tint = DiscoverTextSecondary, modifier = Modifier.size(24.dp))
             },
             trailingIcon = {
-                if (textFieldValue.text.isNotEmpty()) {
-                    IconButton(onClick = { textFieldValue = TextFieldValue() }) {
-                        Icon(Icons.Rounded.Close, contentDescription = "Clear", tint = Color.White.copy(alpha = 0.8f))
+                if (textFieldValue.text.isNotEmpty() || searchFocused) {
+                    IconButton(onClick = {
+                        // First tap clears the text (recent picks show); on an empty box it cancels search
+                        if (textFieldValue.text.isNotEmpty()) textFieldValue = TextFieldValue() else cancelSearch()
+                    }) {
+                        Icon(
+                            Icons.Rounded.Close,
+                            contentDescription = if (textFieldValue.text.isNotEmpty()) "Clear" else "Cancel search",
+                            tint = Color.White.copy(alpha = 0.8f)
+                        )
                     }
                 }
             },
@@ -220,6 +244,7 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
                 .fillMaxWidth()
                 .padding(start = 16.dp, end = 16.dp, top = 12.dp)
                 .height(60.dp)
+                .onFocusChanged { searchFocused = it.isFocused }
         )
 
         // Search source toggle
@@ -261,7 +286,20 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
         }
 
         if (textFieldValue.text.isEmpty()) {
-            CategoryScreenMain()
+            if (searchFocused) {
+                RecentSearchList(
+                    items = recentItems,
+                    onOpen = { item ->
+                        viewModel.addRecentSearch(item)
+                        cancelSearch()
+                        openTrack(navController, item)
+                    },
+                    onRemove = { viewModel.removeRecentSearch(it) },
+                    onClearAll = { viewModel.clearRecentSearches() }
+                )
+            } else {
+                CategoryScreenMain()
+            }
         } else {
             ChipRow(
                 chips = SearchFilter.entries.map { it.label },
@@ -315,6 +353,109 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
 
 private val SearchFieldFill = Color(0xFF161314)
 
+/** Songs and playlists the user picked from earlier searches, newest first. */
+@Composable
+private fun RecentSearchList(
+    items: List<TubeFyCoreTypeData>,
+    onOpen: (TubeFyCoreTypeData) -> Unit,
+    onRemove: (TubeFyCoreTypeData) -> Unit,
+    onClearAll: () -> Unit
+) {
+    if (items.isEmpty()) {
+        Text(
+            text = "Songs you pick from search results will show up here",
+            color = DiscoverTextSecondary,
+            fontSize = 15.sp,
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
+        )
+        return
+    }
+    Column {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 20.dp, end = 8.dp)
+        ) {
+            Text(
+                text = "Recent",
+                color = Color.White,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.weight(1f)
+            )
+            TextButton(onClick = onClearAll) {
+                Text("Clear all", color = DiscoverAccent, fontSize = 14.sp)
+            }
+        }
+        LazyColumn(
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxSize()
+        ) {
+            items(items.size) { index ->
+                val item = items[index]
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(DiscoverSurface)
+                        .clickable { onOpen(item) }
+                        .padding(8.dp)
+                ) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(decodeThumpUrl(item.videoImage))
+                            .crossfade(true)
+                            .placeholder(R.drawable.placeholder)
+                            .error(R.drawable.placeholder)
+                            .build(),
+                        contentDescription = item.videoTitle,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(52.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                    )
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 12.dp)
+                    ) {
+                        Text(
+                            text = item.videoTitle,
+                            color = Color.White,
+                            fontSize = 15.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        val subtitle = if (item.videoId.isEmpty()) "Playlist" else item.artist
+                        if (subtitle.isNotBlank()) {
+                            Text(
+                                text = subtitle,
+                                color = DiscoverTextSecondary,
+                                fontSize = 13.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                    Icon(
+                        Icons.Rounded.Close,
+                        contentDescription = "Remove from recent",
+                        tint = DiscoverTextSecondary,
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .clickable { onRemove(item) }
+                            .padding(8.dp)
+                            .size(18.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
 /** Search result card: 16:9 thumbnail with duration badge, title, "channel • views", and ⋮. */
 @Composable
 private fun SearchResultItem(item: TubeFyCoreTypeData, viewModel: TubeFyViewModel) {
@@ -329,7 +470,10 @@ private fun SearchResultItem(item: TubeFyCoreTypeData, viewModel: TubeFyViewMode
             .clip(RoundedCornerShape(14.dp))
             .background(DiscoverSurface)
             .border(1.dp, DiscoverBorder, RoundedCornerShape(14.dp))
-            .clickable { openTrack(navController, item) }
+            .clickable {
+                viewModel.addRecentSearch(item)
+                openTrack(navController, item)
+            }
     ) {
         Box(
             modifier = Modifier
