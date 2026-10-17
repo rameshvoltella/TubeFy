@@ -349,7 +349,7 @@ fun ArtworkCard(
     ) {
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
-                .data(imageUrl?.let { YoutubeCoreConstant.decodeThumpUrl(it) } ?: R.drawable.images)
+                .data(imageUrl?.let { YoutubeCoreConstant.decodeThumpUrl(it) } ?: R.drawable.placeholder)
                 .crossfade(true)
                 .placeholder(R.drawable.placeholder)
                 .error(R.drawable.placeholder)
@@ -393,7 +393,7 @@ fun QuickPickCard(
     ) {
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
-                .data(data.thumbnail?.let { YoutubeCoreConstant.decodeThumpUrl(it) } ?: R.drawable.images)
+                .data(data.thumbnail?.let { YoutubeCoreConstant.decodeThumpUrl(it) } ?: R.drawable.placeholder)
                 .crossfade(true)
                 .placeholder(R.drawable.placeholder)
                 .error(R.drawable.placeholder)

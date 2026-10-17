@@ -1,5 +1,6 @@
 package com.ramzmania.tubefy.ui.components.screen.library
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -7,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -43,7 +45,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -117,20 +121,68 @@ fun MyLibraryPage(viewModel: TubeFyViewModel = hiltViewModel()) {
         )
 
         if (selectedTab == TAB_PLAYLISTS) {
-            LibraryHomeView(playListItems.filterNotNull(), viewModel)
+            val items = playListItems.filterNotNull()
+            // The Favorite card is always listed; the library only counts as empty if it has 0 songs too
+            val libraryIsEmpty = gettingMyPlayList is Resource.Success && items.all {
+                it.playlistName == FAVORITES_PLAYLIST && it.songCount == 0
+            }
+            if (libraryIsEmpty) {
+                EmptyLibraryState(
+                    title = "Your library is empty",
+                    message = "Save your favorite songs and playlists\nand they'll appear here"
+                )
+            } else {
+                LibraryHomeView(items, viewModel)
+            }
         } else {
             val songs = (favoriteSongs as? Resource.Success)?.data.orEmpty()
             if (songs.isNotEmpty()) {
                 LibraryListBaseView(songs, FAVORITES_PLAYLIST)
-            } else {
-                Text(
-                    text = "No liked songs yet. Tap ♥ on any song to save it here.",
-                    color = DiscoverTextSecondary,
-                    fontSize = 15.sp,
-                    modifier = Modifier.padding(20.dp)
+            } else if (favoriteSongs != null) {
+                EmptyLibraryState(
+                    title = "No liked songs yet",
+                    message = "Tap ♥ on any song\nand it'll appear here"
                 )
             }
         }
+    }
+}
+
+/** Empty state with the broken-cassette illustration. */
+@Composable
+fun EmptyLibraryState(title: String, message: String) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 32.dp)
+            .padding(bottom = 48.dp)
+    ) {
+        Image(
+            painter = painterResource(id = R.drawable.empty_library),
+            contentDescription = null,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier
+                .fillMaxWidth(0.8f)
+                .aspectRatio(490f / 330f)
+        )
+        Text(
+            text = title,
+            color = Color.White,
+            fontSize = 22.sp,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 12.dp)
+        )
+        Text(
+            text = message,
+            color = DiscoverTextSecondary,
+            fontSize = 15.sp,
+            lineHeight = 21.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 8.dp)
+        )
     }
 }
 
