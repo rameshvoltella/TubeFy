@@ -18,16 +18,17 @@ import com.google.common.util.concurrent.ListenableFuture
 
 @UnstableApi
 class MediaLibrarySessionCallback(
-    private val sleepTimer: SleepTimer
+    private val customCommands: List<SessionCommand>,
+    private val onCustomCommand: (action: String, args: Bundle) -> Unit
 ) : MediaLibraryService.MediaLibrarySession.Callback {
 
     override fun onConnect(
         session: MediaSession,
         controller: MediaSession.ControllerInfo
     ): MediaSession.ConnectionResult {
-        // Allow controllers (the player screen) to drive the sleep timer
+        // Allow controllers (the player screen) to drive the sleep timer and Smart Shuffle
         val commands = MediaSession.ConnectionResult.DEFAULT_SESSION_AND_LIBRARY_COMMANDS.buildUpon()
-            .apply { SleepTimer.COMMANDS.forEach { add(it) } }
+            .apply { customCommands.forEach { add(it) } }
             .build()
         return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
             .setAvailableSessionCommands(commands)
@@ -40,7 +41,7 @@ class MediaLibrarySessionCallback(
         customCommand: SessionCommand,
         args: Bundle
     ): ListenableFuture<SessionResult> {
-        sleepTimer.handleCommand(customCommand.customAction, args)
+        onCustomCommand(customCommand.customAction, args)
         return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
     }
 

@@ -19,7 +19,8 @@ import kotlinx.coroutines.launch
 @UnstableApi
 class SleepTimer(
     private val scope: CoroutineScope,
-    private val sessionProvider: () -> MediaSession?
+    private val sessionProvider: () -> MediaSession?,
+    private val publishExtras: (Bundle) -> Unit
 ) {
     private var job: Job? = null
     private var endAt = 0L
@@ -112,9 +113,7 @@ class SleepTimer(
     }
 
     private fun publish() {
-        sessionProvider()?.setSessionExtras(
-            bundleOf(EXTRA_END_AT to endAt, EXTRA_END_OF_SONG to endOfSong)
-        )
+        publishExtras(bundleOf(EXTRA_END_AT to endAt, EXTRA_END_OF_SONG to endOfSong))
     }
 
     companion object {

@@ -18,6 +18,8 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.core.os.bundleOf
 import androidx.media3.session.SessionCommand
 import com.ramzmania.tubefy.player.SleepTimer
+import com.ramzmania.tubefy.player.SmartShuffle
+import androidx.compose.material.icons.rounded.AutoAwesome
 import com.ramzmania.tubefy.ui.theme.DiscoverAccent
 import androidx.annotation.OptIn
 import androidx.compose.animation.Crossfade
@@ -186,6 +188,7 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
     var showSleepSheet by remember { mutableStateOf(false) }
     var sleepEndAt by remember { mutableLongStateOf(0L) }
     var sleepEndOfSong by remember { mutableStateOf(false) }
+    var smartShuffleOn by remember { mutableStateOf(false) }
     var nowMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
     val sleepRemainingMs = if (sleepEndAt > 0) (sleepEndAt - nowMs).coerceAtLeast(0L) else 0L
     val sleepActive = sleepEndOfSong || sleepRemainingMs > 0
@@ -222,6 +225,7 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
             val extras = controller.sessionExtras
             sleepEndAt = extras.getLong(SleepTimer.EXTRA_END_AT, 0L)
             sleepEndOfSong = extras.getBoolean(SleepTimer.EXTRA_END_OF_SONG, false)
+            smartShuffleOn = extras.getBoolean(SmartShuffle.EXTRA_ENABLED, false)
             nowMs = System.currentTimeMillis()
             delay(1000L)
         }
@@ -497,11 +501,36 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                ModeButton(
-                    icon = Icons.Rounded.Shuffle,
-                    description = "Shuffle",
-                    active = shuffleOn,
-                    onClick = { mediaController?.let { it.shuffleModeEnabled = !it.shuffleModeEnabled } }
+                // Off -> Shuffle -> Smart Shuffle -> Off
+                ShuffleButton(
+                    shuffleOn = shuffleOn,
+                    smartOn = smartShuffleOn,
+                    onClick = {
+                        val controller = mediaController ?: return@ShuffleButton
+                        when {
+                            smartShuffleOn -> {
+                                smartShuffleOn = false
+                                controller.sendCustomCommand(
+                                    SessionCommand(SmartShuffle.CMD_SET, Bundle.EMPTY),
+                                    bundleOf(SmartShuffle.KEY_ENABLED to false)
+                                )
+                                controller.shuffleModeEnabled = false
+                                Toast.makeText(context, "Shuffle off", Toast.LENGTH_SHORT).show()
+                            }
+                            shuffleOn -> {
+                                smartShuffleOn = true
+                                controller.sendCustomCommand(
+                                    SessionCommand(SmartShuffle.CMD_SET, Bundle.EMPTY),
+                                    bundleOf(SmartShuffle.KEY_ENABLED to true)
+                                )
+                                Toast.makeText(context, "Smart Shuffle: similar songs mixed in", Toast.LENGTH_SHORT).show()
+                            }
+                            else -> {
+                                controller.shuffleModeEnabled = true
+                                Toast.makeText(context, "Shuffle on", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
                 )
                 IconButton(onClick = { mediaController?.seekToPrevious() }, modifier = Modifier.size(56.dp)) {
                     Icon(Icons.Rounded.SkipPrevious, "Previous", tint = Color.White, modifier = Modifier.size(42.dp))
@@ -733,6 +762,47 @@ private fun SeekBar(fraction: Float, onSeek: (Float) -> Unit, onSeekFinished: ()
             .fillMaxWidth()
             .height(28.dp)
     )
+}
+
+@Composable
+private fun ShuffleButton(shuffleOn: Boolean, smartOn: Boolean, onClick: () -> Unit) {
+    val active = shuffleOn || smartOn
+    IconButton(onClick = onClick) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(
+                imageVector = Icons.Rounded.Shuffle,
+                contentDescription = when {
+                    smartOn -> "Smart Shuffle on"
+                    shuffleOn -> "Shuffle on"
+                    else -> "Shuffle off"
+                },
+                tint = when {
+                    smartOn -> DiscoverAccent
+                    shuffleOn -> Color.White
+                    else -> Color.White.copy(alpha = 0.5f)
+                },
+                modifier = Modifier.size(26.dp)
+            )
+            if (smartOn) {
+                Icon(
+                    imageVector = Icons.Rounded.AutoAwesome,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier
+                        .offset(x = 12.dp, y = (-11).dp)
+                        .size(12.dp)
+                )
+            }
+            if (active) {
+                Box(
+                    modifier = Modifier
+                        .offset(y = 18.dp)
+                        .size(4.dp)
+                        .background(if (smartOn) DiscoverAccent else Color.White, CircleShape)
+                )
+            }
+        }
+    }
 }
 
 @Composable

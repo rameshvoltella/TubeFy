@@ -4,6 +4,7 @@ package com.ramzmania.tubefy.player
 import android.app.PendingIntent
 import android.content.Intent
 import android.net.Uri
+import android.os.Bundle
 import android.util.Log
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
@@ -56,6 +57,15 @@ class PlaybackService(
     private lateinit var mediaLibrarySessionCallback: MediaLibrarySessionCallback
     private val mainScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private lateinit var sleepTimer: SleepTimer
+    private lateinit var smartShuffle: SmartShuffle
+
+    /** Session extras shared by the sleep timer and Smart Shuffle (read by the player screen). */
+    private val sessionExtras = Bundle()
+
+    private fun publishSessionExtras(values: Bundle) {
+        sessionExtras.putAll(values)
+        mediaSession?.setSessionExtras(Bundle(sessionExtras))
+    }
     private var mediaSession: MediaLibrarySession? = null
     private val serviceScope = CoroutineScope(Dispatchers.IO + Job())
     private var removeExistingPlayList: Boolean = false
@@ -161,6 +171,7 @@ class PlaybackService(
 
                 override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
 //                    mediaItem?.let {
+                    smartShuffle.onSongChanged()
                     handleMediaItemChange()
 //                    }
                 }
@@ -179,8 +190,20 @@ class PlaybackService(
         )
 
 
-        sleepTimer = SleepTimer(mainScope) { mediaSession }
-        mediaLibrarySessionCallback = MediaLibrarySessionCallback(sleepTimer)
+        sleepTimer = SleepTimer(mainScope, { mediaSession }, ::publishSessionExtras)
+        smartShuffle = SmartShuffle(
+            scope = serviceScope,
+            playerProvider = { mediaSession?.player },
+            remote = remoteRepositorySource,
+            publish = ::publishSessionExtras,
+            isOffline = { offlineMode }
+        )
+        mediaLibrarySessionCallback = MediaLibrarySessionCallback(SleepTimer.COMMANDS + SmartShuffle.COMMANDS) { action, args ->
+            when (action) {
+                SmartShuffle.CMD_SET -> smartShuffle.handleCommand(action, args)
+                else -> sleepTimer.handleCommand(action, args)
+            }
+        }
         mediaSession =
             MediaLibrarySession.Builder(this, player, mediaLibrarySessionCallback)
                 .setSessionActivity(pendingIntent).build()
