@@ -22,15 +22,15 @@ Click here -> https://youtu.be/YrhG8T8gbU4
 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
     <div style="text-align: center;">
         <h3>Tubefy</h3>
-        <img src="https://github.com/rameshvoltella/TubeFy/blob/beta/screenshots/new/home.jpeg" alt="List" style="width: 40%; height: 40%;">
-        <img src="https://github.com/rameshvoltella/TubeFy/blob/beta/screenshots/new/playeaudio.jpeg" alt="Player" style="width: 40%; height: 40%;">
+        <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/home.jpeg" alt="List" style="width: 40%; height: 40%;">
+        <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/playeaudio.jpeg" alt="Player" style="width: 40%; height: 40%;">
     </div>
 </div>
 
 <div style="text-align: center;">
         <h3>Search and Playlist</h3>
-     <img src="https://github.com/rameshvoltella/TubeFy/blob/beta/screenshots/new/search.jpeg" alt="Search" style="width: 40%; height: 40%;">
-          <img src="https://github.com/rameshvoltella/TubeFy/blob/beta/screenshots/new/album.jpeg" alt="Search" style="width: 40%; height: 40%;">
+     <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/search.jpeg" alt="Search" style="width: 40%; height: 40%;">
+          <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/album.jpeg" alt="Search" style="width: 40%; height: 40%;">
    
 
 </div>
@@ -38,8 +38,8 @@ Click here -> https://youtu.be/YrhG8T8gbU4
 <div style="text-align: center;">
         <h3>Notification, VideoView,Library</h3>
      <img src="https://github.com/rameshvoltella/TubeFy/blob/beta/screenshots/WhatsApp%20Image%202024-08-28%20at%209.09.38%20PM(1).jpeg" alt="Notification" style="width: 40%; height: 40%;">
-    <img src="https://github.com/rameshvoltella/TubeFy/blob/beta/screenshots/new/player.jpeg" alt="MiniPlayer" style="width: 40%; height: 40%;">
-        <img src="https://github.com/rameshvoltella/TubeFy/blob/beta/screenshots/new/lib.jpeg" alt="Playlist" style="width: 40%; height: 40%;">
+    <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/player.jpeg" alt="MiniPlayer" style="width: 40%; height: 40%;">
+        <img src="https://github.com/rameshvoltella/TubeFy/redesign/beta/screenshots/new/lib.jpeg" alt="Playlist" style="width: 40%; height: 40%;">
 
 </div>
 
