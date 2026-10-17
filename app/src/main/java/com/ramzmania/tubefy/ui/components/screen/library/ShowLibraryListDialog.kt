@@ -2,6 +2,10 @@ package com.ramzmania.tubefy.ui.components.screen.library
 
 import android.util.Log
 import android.widget.Toast
+import android.content.res.Configuration
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.runtime.Composable
 
 import androidx.compose.foundation.Image
@@ -127,7 +131,12 @@ fun PlaylistDialog(currentSongDetails: TubeFyCoreTypeData,viewModel: TubeFyViewM
             )
         }
     ) {
-        Column(modifier = Modifier.navigationBarsPadding()) {
+        val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+        Column(
+            modifier = Modifier
+                .navigationBarsPadding()
+                .verticalScroll(rememberScrollState())
+        ) {
             // Header: the song being added
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -220,7 +229,7 @@ fun PlaylistDialog(currentSongDetails: TubeFyCoreTypeData,viewModel: TubeFyViewM
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier.padding(start = 20.dp, top = 14.dp, bottom = 4.dp)
             )
-            LazyColumn(modifier = Modifier.heightIn(max = 380.dp)) {
+            LazyColumn(modifier = Modifier.heightIn(max = if (isLandscape) 200.dp else 380.dp)) {
                 items(playlists.filterNotNull()) { playlist ->
                     val isFavorites = playlist.playlistName == "TubeFy-Favorites"
                     SheetRow(

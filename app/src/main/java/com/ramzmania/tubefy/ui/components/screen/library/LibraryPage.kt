@@ -1,6 +1,8 @@
 package com.ramzmania.tubefy.ui.components.screen.library
 
 import androidx.compose.foundation.background
+import android.content.res.Configuration
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -248,6 +250,7 @@ fun LibraryListBaseView(
     val visibleSongs = if (filter.isBlank()) songs else songs.filter { it.videoTitle.contains(filter.trim(), ignoreCase = true) }
 
     val lazyListState = rememberLazyListState()
+    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
     val reorderState = rememberReorderableLazyListState(lazyListState) { from, to ->
         songs = songs.toMutableList().apply { add(to.index, removeAt(from.index)) }
     }
@@ -303,9 +306,9 @@ fun LibraryListBaseView(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center,
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 18.dp)
+                .padding(horizontal = 16.dp, vertical = if (isLandscape) 8.dp else 18.dp)
                 .fillMaxWidth()
-                .height(58.dp)
+                .height(if (isLandscape) 46.dp else 58.dp)
                 .shadow(14.dp, RoundedCornerShape(50), spotColor = Color(0xFFFF2D55))
                 .clip(RoundedCornerShape(50))
                 .background(Brush.horizontalGradient(listOf(Color(0xFFFF3B3B), Color(0xFFFF1F6E))))

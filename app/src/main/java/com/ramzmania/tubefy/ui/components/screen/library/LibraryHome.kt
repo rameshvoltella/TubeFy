@@ -9,6 +9,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -158,6 +161,7 @@ fun EmptyLibraryState(title: String, message: String) {
         verticalArrangement = Arrangement.Center,
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = 32.dp)
             .padding(bottom = 48.dp)
     ) {
@@ -167,6 +171,7 @@ fun EmptyLibraryState(title: String, message: String) {
             contentScale = ContentScale.Fit,
             modifier = Modifier
                 .fillMaxWidth(0.8f)
+                .widthIn(max = 320.dp)
                 .aspectRatio(490f / 330f)
         )
         Text(

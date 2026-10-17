@@ -72,7 +72,7 @@ import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
 @Composable
-fun MiniPlayerView(viewModel: TubeFyViewModel = hiltViewModel()) {
+fun MiniPlayerView(modifier: Modifier = Modifier, viewModel: TubeFyViewModel = hiltViewModel()) {
     var mediaController by remember { mutableStateOf<MediaController?>(null) }
     var albumArt by remember { mutableStateOf("") }
     var songName by remember { mutableStateOf("") }
@@ -163,7 +163,7 @@ fun MiniPlayerView(viewModel: TubeFyViewModel = hiltViewModel()) {
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
+        modifier = modifier
             .padding(horizontal = 10.dp, vertical = 6.dp)
             .fillMaxWidth()
             .clip(RoundedCornerShape(22.dp))

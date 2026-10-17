@@ -1,6 +1,8 @@
 package com.ramzmania.tubefy.ui.components.screen.category
 
+import android.content.res.Configuration
 import androidx.compose.foundation.Image
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.foundation.background
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.foundation.clickable
@@ -60,6 +62,7 @@ fun CategoryScreenMain(viewModel: TubeFyViewModel = hiltViewModel()) {
     val categoryData by viewModel.youTubeMusicCategoryData.observeAsState()
     val categoryItemsList = (categoryData as? Resource.Success)?.data.orEmpty()
     val navController = LocalNavController.current
+    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
 
     LaunchedEffect(Unit) {
         viewModel.loadMusicCategories()
@@ -67,7 +70,8 @@ fun CategoryScreenMain(viewModel: TubeFyViewModel = hiltViewModel()) {
 
     if (categoryItemsList.isNotEmpty()) {
         LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
+            // Portrait keeps the original 2 columns; landscape fits more
+            columns = if (isLandscape) GridCells.Adaptive(minSize = 160.dp) else GridCells.Fixed(2),
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),

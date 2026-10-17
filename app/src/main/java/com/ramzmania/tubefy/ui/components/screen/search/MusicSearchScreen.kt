@@ -1,6 +1,8 @@
 package com.ramzmania.tubefy.ui.components.screen.search
 
+import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.remember
 import androidx.compose.ui.focus.onFocusChanged
@@ -120,6 +122,7 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
     val showPlayListDialog = viewModel.showPlayListDialog.collectAsState()
     val currentSongItemSelected = viewModel.selectedTrack.collectAsState()
     val keyboardController = LocalSoftwareKeyboardController.current
+    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
     val focusManager = LocalFocusManager.current
     val navController = LocalNavController.current
     var searchFocused by remember { mutableStateOf(false) }
@@ -192,97 +195,108 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
             .fillMaxSize()
             .background(DiscoverBackground)
     ) {
-        Text(
+        // The big title is dropped in landscape to save height
+        if (!isLandscape) Text(
             text = "Search",
             color = Color.White,
             fontSize = 34.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 4.dp)
         )
-        OutlinedTextField(
-            value = textFieldValue,
-            onValueChange = { textFieldValue = it },
-            placeholder = {
-                Text(
-                    "Search songs, artists, playlists...",
-                    color = DiscoverTextSecondary,
-                    fontSize = 17.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            },
-            leadingIcon = {
-                Icon(Icons.Rounded.Search, contentDescription = null, tint = DiscoverTextSecondary, modifier = Modifier.size(24.dp))
-            },
-            trailingIcon = {
-                if (textFieldValue.text.isNotEmpty() || searchFocused) {
-                    IconButton(onClick = {
-                        // First tap clears the text (recent picks show); on an empty box it cancels search
-                        if (textFieldValue.text.isNotEmpty()) textFieldValue = TextFieldValue() else cancelSearch()
-                    }) {
-                        Icon(
-                            Icons.Rounded.Close,
-                            contentDescription = if (textFieldValue.text.isNotEmpty()) "Clear" else "Cancel search",
-                            tint = Color.White.copy(alpha = 0.8f)
-                        )
-                    }
-                }
-            },
-            singleLine = true,
-            textStyle = TextStyle(color = Color.White, fontSize = 18.sp),
-            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Search),
-            keyboardActions = KeyboardActions(onSearch = { search() }, onDone = { search() }),
-            shape = RoundedCornerShape(28.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = DiscoverAccent,
-                unfocusedBorderColor = DiscoverAccent.copy(alpha = 0.75f),
-                focusedContainerColor = SearchFieldFill,
-                unfocusedContainerColor = SearchFieldFill,
-                cursorColor = DiscoverAccent
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 16.dp, end = 16.dp, top = 12.dp)
-                .height(60.dp)
-                .onFocusChanged { searchFocused = it.isFocused }
-        )
 
-        // Search source toggle
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp)
-        ) {
-            Switch(
-                checked = isChecked,
-                onCheckedChange = { checked ->
-                    isChecked = checked
-                    search()
+        val searchField: @Composable (Modifier) -> Unit = { fieldModifier ->
+            OutlinedTextField(
+                value = textFieldValue,
+                onValueChange = { textFieldValue = it },
+                placeholder = {
+                    Text(
+                        "Search songs, artists, playlists...",
+                        color = DiscoverTextSecondary,
+                        fontSize = 17.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 },
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor = Color.White,
-                    checkedTrackColor = DiscoverAccent,
-                    checkedBorderColor = DiscoverAccent,
-                    uncheckedThumbColor = Color.White.copy(alpha = 0.8f),
-                    uncheckedTrackColor = DiscoverSurface,
-                    uncheckedBorderColor = DiscoverBorder
-                )
+                leadingIcon = {
+                    Icon(Icons.Rounded.Search, contentDescription = null, tint = DiscoverTextSecondary, modifier = Modifier.size(24.dp))
+                },
+                trailingIcon = {
+                    if (textFieldValue.text.isNotEmpty() || searchFocused) {
+                        IconButton(onClick = {
+                            // First tap clears the text (recent picks show); on an empty box it cancels search
+                            if (textFieldValue.text.isNotEmpty()) textFieldValue = TextFieldValue() else cancelSearch()
+                        }) {
+                            Icon(
+                                Icons.Rounded.Close,
+                                contentDescription = if (textFieldValue.text.isNotEmpty()) "Clear" else "Cancel search",
+                                tint = Color.White.copy(alpha = 0.8f)
+                            )
+                        }
+                    }
+                },
+                singleLine = true,
+                textStyle = TextStyle(color = Color.White, fontSize = 18.sp),
+                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Search),
+                keyboardActions = KeyboardActions(onSearch = { search() }, onDone = { search() }),
+                shape = RoundedCornerShape(28.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = DiscoverAccent,
+                    unfocusedBorderColor = DiscoverAccent.copy(alpha = 0.75f),
+                    focusedContainerColor = SearchFieldFill,
+                    unfocusedContainerColor = SearchFieldFill,
+                    cursorColor = DiscoverAccent
+                ),
+                modifier = fieldModifier
+                    .padding(start = 16.dp, end = 16.dp, top = 12.dp)
+                    .height(60.dp)
+                    .onFocusChanged { searchFocused = it.isFocused }
             )
-            Column(modifier = Modifier.padding(start = 16.dp)) {
-                Text(
-                    text = "Search from YouTube videos",
-                    color = Color.White,
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.Medium
+        }
+        val sourceToggle: @Composable (Modifier, Boolean) -> Unit = { toggleModifier, compact ->
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = toggleModifier.padding(horizontal = 16.dp, vertical = if (compact) 8.dp else 14.dp)
+            ) {
+                Switch(
+                    checked = isChecked,
+                    onCheckedChange = { checked ->
+                        isChecked = checked
+                        search()
+                    },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.White,
+                        checkedTrackColor = DiscoverAccent,
+                        checkedBorderColor = DiscoverAccent,
+                        uncheckedThumbColor = Color.White.copy(alpha = 0.8f),
+                        uncheckedTrackColor = DiscoverSurface,
+                        uncheckedBorderColor = DiscoverBorder
+                    )
                 )
-                Text(
-                    text = if (isChecked) "Find and play songs directly from YouTube" else "Turn on to include YouTube videos",
-                    color = DiscoverTextSecondary,
-                    fontSize = 13.sp,
-                    modifier = Modifier.padding(top = 2.dp)
-                )
+                Column(modifier = Modifier.padding(start = 16.dp)) {
+                    Text(
+                        text = if (compact) "YouTube videos" else "Search from YouTube videos",
+                        color = Color.White,
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                    if (!compact) Text(
+                        text = if (isChecked) "Find and play songs directly from YouTube" else "Turn on to include YouTube videos",
+                        color = DiscoverTextSecondary,
+                        fontSize = 13.sp,
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
+                }
             }
+        }
+        if (isLandscape) {
+            // Landscape: search box and source toggle share one row
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                searchField(Modifier.weight(1.5f))
+                sourceToggle(Modifier.weight(1f).padding(top = 12.dp), true)
+            }
+        } else {
+            searchField(Modifier.fillMaxWidth())
+            sourceToggle(Modifier.fillMaxWidth(), false)
         }
 
         if (textFieldValue.text.isEmpty()) {

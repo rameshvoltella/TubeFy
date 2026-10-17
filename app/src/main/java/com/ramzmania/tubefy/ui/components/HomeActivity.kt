@@ -8,6 +8,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 
 import android.os.Bundle
+import android.content.res.Configuration
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.ui.platform.LocalConfiguration
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -193,6 +200,7 @@ fun MainScreen(mediaControllerState: MutableState<MediaController?>) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
+    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
 
     Box(
         modifier = Modifier
@@ -206,11 +214,30 @@ fun MainScreen(mediaControllerState: MutableState<MediaController?>) {
             Scaffold(
                 bottomBar = {
                     if (currentRoute != NavigationItem.AudioPlayer.route) {
-                        Column {
-                            if (mediaControllerState.value != null&&mediaControllerState.value!!.currentMediaItem!=null) {
-                                MiniPlayerView()
+                        val showMiniPlayer = mediaControllerState.value?.currentMediaItem != null
+                        if (isLandscape) {
+                            // Landscape: mini player and a compact tab bar share one row to save height
+                            Row(
+                                verticalAlignment = Alignment.Bottom,
+                                modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
+                            ) {
+                                if (showMiniPlayer) {
+                                    MiniPlayerView(
+                                        Modifier
+                                            .weight(1f)
+                                            .navigationBarsPadding()
+                                            .padding(bottom = 2.dp)
+                                    )
+                                }
+                                BottomNavigationBar(navController, Modifier.weight(1f), compact = true)
                             }
-                            BottomNavigationBar(navController)
+                        } else {
+                            Column {
+                                if (showMiniPlayer) {
+                                    MiniPlayerView()
+                                }
+                                BottomNavigationBar(navController)
+                            }
                         }
                     }
                 },
@@ -224,6 +251,11 @@ fun MainScreen(mediaControllerState: MutableState<MediaController?>) {
                             .then(if (currentRoute in edgeToEdgeRoutes) Modifier else Modifier.statusBarsPadding())
                             // Keep content above the mini player and tabs so the last list item stays visible
                             .padding(bottom = innerPadding.calculateBottomPadding())
+                            // In landscape keep content clear of side system bars / camera cutouts
+                            .then(
+                                if (currentRoute == NavigationItem.AudioPlayer.route) Modifier
+                                else Modifier.windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
+                            )
                     ) {
                         Navigation(navController = navController)
                     }
@@ -293,7 +325,7 @@ fun TopBarPreview() {
 }
 
 @Composable
-fun BottomNavigationBar(navController: NavController) {
+fun BottomNavigationBar(navController: NavController, modifier: Modifier = Modifier, compact: Boolean = false) {
     val tabs = listOf(
         BottomTab(NavigationItem.Home.route, NavigationItem.Home.title, HomeIconFilled, HomeIconOutlined),
         BottomTab(NavigationItem.Search.route, NavigationItem.Search.title, SearchIconBold, SearchIconRegular),
@@ -304,6 +336,8 @@ fun BottomNavigationBar(navController: NavController) {
     FloatingBottomBar(
         tabs = tabs,
         selectedRoute = navBackStackEntry?.destination?.route,
-        onSelect = { navController.navigateToTab(it.route) }
+        onSelect = { navController.navigateToTab(it.route) },
+        modifier = modifier,
+        compact = compact
     )
 }

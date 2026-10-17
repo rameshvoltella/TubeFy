@@ -4,6 +4,15 @@ import android.content.Context
 import android.content.Intent
 import android.widget.Toast
 import android.os.Bundle
+import android.content.res.Configuration
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.core.os.bundleOf
@@ -173,6 +182,7 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
     var palette by remember { mutableStateOf<Palette?>(null) }
     val isFavouriteSong by viewModel.isFavouriteState.collectAsState()
     val downloadState by rememberDownloadState(videoId)
+    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
     var showSleepSheet by remember { mutableStateOf(false) }
     var sleepEndAt by remember { mutableLongStateOf(0L) }
     var sleepEndOfSong by remember { mutableStateOf(false) }
@@ -345,251 +355,286 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                 )
         )
 
-        Column(modifier = Modifier.fillMaxSize()) {
-            Column(
+        // Pieces shared by the portrait and landscape layouts
+        val topBar: @Composable () -> Unit = {
+            Row(
                 modifier = Modifier
-                    .weight(1f)
                     .fillMaxWidth()
-                    .statusBarsPadding()
-                    .padding(horizontal = 20.dp)
+                    .padding(top = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Top bar
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Rounded.KeyboardArrowDown, "Close player", tint = Color.White, modifier = Modifier.size(30.dp))
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(Icons.Rounded.KeyboardArrowDown, "Close player", tint = Color.White, modifier = Modifier.size(30.dp))
+                }
+                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    if (playingOffline) {
+                        OfflineBadge()
+                    } else {
+                        SongVideoToggle(
+                            selected = playerMode,
+                            onSelect = { mode ->
+                                playerMode = mode
+                                if (mode == PlayerMode.Video) mediaController?.play()
+                            }
+                        )
                     }
-                    Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                        if (playingOffline) {
-                            OfflineBadge()
-                        } else {
-                            SongVideoToggle(
-                                selected = playerMode,
-                                onSelect = { mode ->
-                                    playerMode = mode
-                                    if (mode == PlayerMode.Video) mediaController?.play()
-                                }
+                }
+                Box {
+                    IconButton(onClick = { showMenu = true }) {
+                        Icon(Icons.Rounded.MoreVert, "More options", tint = Color.White)
+                    }
+                    DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                        DropdownMenuItem(
+                            text = { Text("Add to playlist") },
+                            leadingIcon = { Icon(Icons.AutoMirrored.Rounded.PlaylistAdd, null) },
+                            onClick = {
+                                showMenu = false
+                                showPlayListDialog = true
+                            }
+                        )
+                    }
+                }
+            }
+        }
+        val artwork: @Composable (Modifier) -> Unit = { boxModifier ->
+            Box(modifier = boxModifier, contentAlignment = Alignment.Center) {
+                Crossfade(targetState = playerMode, label = "playerMode") { mode ->
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        when (mode) {
+                            PlayerMode.Song -> AsyncImage(
+                                model = ImageRequest.Builder(context)
+                                    .data(YoutubeCoreConstant.decodeThumpUrl(albumArt))
+                                    .crossfade(true)
+                                    .placeholder(R.drawable.placeholder)
+                                    .error(R.drawable.placeholder)
+                                    .build(),
+                                contentDescription = "Album art",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .aspectRatio(1f, matchHeightConstraintsFirst = true)
+                                    .clip(RoundedCornerShape(24.dp))
                             )
-                        }
-                    }
-                    Box {
-                        IconButton(onClick = { showMenu = true }) {
-                            Icon(Icons.Rounded.MoreVert, "More options", tint = Color.White)
-                        }
-                        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                            DropdownMenuItem(
-                                text = { Text("Add to playlist") },
-                                leadingIcon = { Icon(Icons.AutoMirrored.Rounded.PlaylistAdd, null) },
-                                onClick = {
-                                    showMenu = false
-                                    showPlayListDialog = true
-                                }
+
+                            PlayerMode.Video -> SessionVideoSurface(
+                                controller = mediaController,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .aspectRatio(16f / 9f)
+                                    .clip(RoundedCornerShape(20.dp))
+                                    .background(Color.Black)
                             )
                         }
                     }
                 }
+            }
+        }
+        val details: @Composable () -> Unit = {
+            // Title, artist, favourite
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = title,
+                        color = Color.White,
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        modifier = Modifier.basicMarquee()
+                    )
+                    if (artist.isNotEmpty()) {
+                        Text(
+                            text = artist,
+                            color = SecondaryText,
+                            fontSize = 18.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(top = 2.dp)
+                        )
+                    }
+                }
+                IconButton(onClick = ::toggleFavourite) {
+                    Icon(
+                        imageVector = if (isFavouriteSong) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                        contentDescription = if (isFavouriteSong) "Remove from favourites" else "Add to favourites",
+                        tint = if (isFavouriteSong) FavouriteRed else Color.White,
+                        modifier = Modifier.size(30.dp)
+                    )
+                }
+            }
 
-                // Artwork / video
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Seek bar
+            val shownFraction = seekFraction
+                ?: if (durationMs > 0) (positionMs.toFloat() / durationMs).coerceIn(0f, 1f) else 0f
+            SeekBar(
+                fraction = shownFraction,
+                onSeek = { seekFraction = it },
+                onSeekFinished = {
+                    val target = seekFraction
+                    val controller = mediaController
+                    if (target != null && controller != null && controller.duration > 0) {
+                        val newPosition = (target * controller.duration).toLong()
+                        controller.seekTo(newPosition)
+                        positionMs = newPosition
+                    }
+                    seekFraction = null
+                }
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                val labelPosition = if (shownFraction > 0f && durationMs > 0) (shownFraction * durationMs).toLong() else positionMs
+                Text(formatTime(labelPosition, durationMs), color = SecondaryText, fontSize = 13.sp)
+                Text(formatTime(durationMs, durationMs), color = SecondaryText, fontSize = 13.sp)
+            }
+
+            // Transport controls
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                ModeButton(
+                    icon = Icons.Rounded.Shuffle,
+                    description = "Shuffle",
+                    active = shuffleOn,
+                    onClick = { mediaController?.let { it.shuffleModeEnabled = !it.shuffleModeEnabled } }
+                )
+                IconButton(onClick = { mediaController?.seekToPrevious() }, modifier = Modifier.size(56.dp)) {
+                    Icon(Icons.Rounded.SkipPrevious, "Previous", tint = Color.White, modifier = Modifier.size(42.dp))
+                }
                 Box(
+                    modifier = Modifier
+                        .size(84.dp)
+                        .clip(CircleShape)
+                        .border(1.5.dp, Color.White.copy(alpha = 0.7f), CircleShape)
+                        .clickable(enabled = !isLoading) {
+                            mediaController?.takeIf { it.isConnected }?.let {
+                                if (isPlaying) it.pause() else it.play()
+                            }
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(34.dp))
+                    } else {
+                        Icon(
+                            imageVector = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                            contentDescription = if (isPlaying) "Pause" else "Play",
+                            tint = Color.White,
+                            modifier = Modifier.size(46.dp)
+                        )
+                    }
+                }
+                IconButton(
+                    onClick = { mediaController?.takeIf { it.hasNextMediaItem() }?.seekToNextMediaItem() },
+                    modifier = Modifier.size(56.dp)
+                ) {
+                    Icon(Icons.Rounded.SkipNext, "Next", tint = Color.White, modifier = Modifier.size(42.dp))
+                }
+                ModeButton(
+                    icon = if (repeatMode == Player.REPEAT_MODE_ONE) Icons.Rounded.RepeatOne else Icons.Rounded.Repeat,
+                    description = "Repeat",
+                    active = repeatMode != Player.REPEAT_MODE_OFF,
+                    onClick = {
+                        mediaController?.let {
+                            it.repeatMode = when (it.repeatMode) {
+                                Player.REPEAT_MODE_OFF -> Player.REPEAT_MODE_ALL
+                                Player.REPEAT_MODE_ALL -> Player.REPEAT_MODE_ONE
+                                else -> Player.REPEAT_MODE_OFF
+                            }
+                        }
+                    }
+                )
+            }
+
+            // Quick actions
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                ActionTile(
+                    icon = if (isFavouriteSong) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                    label = "Like",
+                    iconTint = if (isFavouriteSong) FavouriteRed else Color.White,
+                    onClick = ::toggleFavourite
+                )
+                DownloadTile(
+                    state = downloadState,
+                    onClick = {
+                        when (downloadState) {
+                            DownloadState.Done -> Toast.makeText(context, "Already downloaded", Toast.LENGTH_SHORT).show()
+                            is DownloadState.Downloading -> Toast.makeText(context, "Downloading…", Toast.LENGTH_SHORT).show()
+                            else -> {
+                                Downloads.enqueue(context, videoId, title, albumArt)
+                                Toast.makeText(context, "Download started", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                )
+                ActionTile(Icons.AutoMirrored.Rounded.PlaylistAdd, "Playlist", onClick = { showPlayListDialog = true })
+                ActionTile(
+                    icon = Icons.Rounded.Timer,
+                    label = when {
+                        sleepEndOfSong -> "End of song"
+                        sleepRemainingMs > 0 -> formatTime(sleepRemainingMs, 0)
+                        else -> "Sleep timer"
+                    },
+                    onClick = { showSleepSheet = true },
+                    iconTint = if (sleepActive) DiscoverAccent else Color.White
+                )
+            }
+        }
+
+        Column(modifier = Modifier.fillMaxSize()) {
+            if (isLandscape) {
+                // Landscape: artwork / video on the left, scrollable details on the right
+                Row(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
-                        .padding(vertical = 20.dp),
-                    contentAlignment = Alignment.Center
+                        .statusBarsPadding()
+                        .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
+                        .padding(horizontal = 20.dp)
                 ) {
-                    Crossfade(targetState = playerMode, label = "playerMode") { mode ->
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            when (mode) {
-                                PlayerMode.Song -> AsyncImage(
-                                    model = ImageRequest.Builder(context)
-                                        .data(YoutubeCoreConstant.decodeThumpUrl(albumArt))
-                                        .crossfade(true)
-                                        .placeholder(R.drawable.placeholder)
-                                        .error(R.drawable.placeholder)
-                                        .build(),
-                                    contentDescription = "Album art",
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier
-                                        .aspectRatio(1f, matchHeightConstraintsFirst = true)
-                                        .clip(RoundedCornerShape(24.dp))
-                                )
-
-                                PlayerMode.Video -> SessionVideoSurface(
-                                    controller = mediaController,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .aspectRatio(16f / 9f)
-                                        .clip(RoundedCornerShape(20.dp))
-                                        .background(Color.Black)
-                                )
-                            }
-                        }
-                    }
-                }
-
-                // Title, artist, favourite
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = title,
-                            color = Color.White,
-                            fontSize = 26.sp,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                            modifier = Modifier.basicMarquee()
-                        )
-                        if (artist.isNotEmpty()) {
-                            Text(
-                                text = artist,
-                                color = SecondaryText,
-                                fontSize = 18.sp,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.padding(top = 2.dp)
-                            )
-                        }
-                    }
-                    IconButton(onClick = ::toggleFavourite) {
-                        Icon(
-                            imageVector = if (isFavouriteSong) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
-                            contentDescription = if (isFavouriteSong) "Remove from favourites" else "Add to favourites",
-                            tint = if (isFavouriteSong) FavouriteRed else Color.White,
-                            modifier = Modifier.size(30.dp)
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Seek bar
-                val shownFraction = seekFraction
-                    ?: if (durationMs > 0) (positionMs.toFloat() / durationMs).coerceIn(0f, 1f) else 0f
-                SeekBar(
-                    fraction = shownFraction,
-                    onSeek = { seekFraction = it },
-                    onSeekFinished = {
-                        val target = seekFraction
-                        val controller = mediaController
-                        if (target != null && controller != null && controller.duration > 0) {
-                            val newPosition = (target * controller.duration).toLong()
-                            controller.seekTo(newPosition)
-                            positionMs = newPosition
-                        }
-                        seekFraction = null
-                    }
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    val labelPosition = if (shownFraction > 0f && durationMs > 0) (shownFraction * durationMs).toLong() else positionMs
-                    Text(formatTime(labelPosition, durationMs), color = SecondaryText, fontSize = 13.sp)
-                    Text(formatTime(durationMs, durationMs), color = SecondaryText, fontSize = 13.sp)
-                }
-
-                // Transport controls
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    ModeButton(
-                        icon = Icons.Rounded.Shuffle,
-                        description = "Shuffle",
-                        active = shuffleOn,
-                        onClick = { mediaController?.let { it.shuffleModeEnabled = !it.shuffleModeEnabled } }
+                    artwork(
+                        Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .padding(vertical = 16.dp)
                     )
-                    IconButton(onClick = { mediaController?.seekToPrevious() }, modifier = Modifier.size(56.dp)) {
-                        Icon(Icons.Rounded.SkipPrevious, "Previous", tint = Color.White, modifier = Modifier.size(42.dp))
-                    }
-                    Box(
+                    Spacer(modifier = Modifier.width(24.dp))
+                    Column(
                         modifier = Modifier
-                            .size(84.dp)
-                            .clip(CircleShape)
-                            .border(1.5.dp, Color.White.copy(alpha = 0.7f), CircleShape)
-                            .clickable(enabled = !isLoading) {
-                                mediaController?.takeIf { it.isConnected }?.let {
-                                    if (isPlaying) it.pause() else it.play()
-                                }
-                            },
-                        contentAlignment = Alignment.Center
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .verticalScroll(rememberScrollState())
                     ) {
-                        if (isLoading) {
-                            CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(34.dp))
-                        } else {
-                            Icon(
-                                imageVector = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-                                contentDescription = if (isPlaying) "Pause" else "Play",
-                                tint = Color.White,
-                                modifier = Modifier.size(46.dp)
-                            )
-                        }
+                        topBar()
+                        details()
                     }
-                    IconButton(
-                        onClick = { mediaController?.takeIf { it.hasNextMediaItem() }?.seekToNextMediaItem() },
-                        modifier = Modifier.size(56.dp)
-                    ) {
-                        Icon(Icons.Rounded.SkipNext, "Next", tint = Color.White, modifier = Modifier.size(42.dp))
-                    }
-                    ModeButton(
-                        icon = if (repeatMode == Player.REPEAT_MODE_ONE) Icons.Rounded.RepeatOne else Icons.Rounded.Repeat,
-                        description = "Repeat",
-                        active = repeatMode != Player.REPEAT_MODE_OFF,
-                        onClick = {
-                            mediaController?.let {
-                                it.repeatMode = when (it.repeatMode) {
-                                    Player.REPEAT_MODE_OFF -> Player.REPEAT_MODE_ALL
-                                    Player.REPEAT_MODE_ALL -> Player.REPEAT_MODE_ONE
-                                    else -> Player.REPEAT_MODE_OFF
-                                }
-                            }
-                        }
-                    )
                 }
-
-                // Quick actions
-                Row(
+            } else {
+                Column(
                     modifier = Modifier
+                        .weight(1f)
                         .fillMaxWidth()
-                        .padding(bottom = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                        .statusBarsPadding()
+                        .padding(horizontal = 20.dp)
                 ) {
-                    ActionTile(
-                        icon = if (isFavouriteSong) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
-                        label = "Like",
-                        iconTint = if (isFavouriteSong) FavouriteRed else Color.White,
-                        onClick = ::toggleFavourite
+                    topBar()
+                    artwork(
+                        Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            .padding(vertical = 20.dp)
                     )
-                    DownloadTile(
-                        state = downloadState,
-                        onClick = {
-                            when (downloadState) {
-                                DownloadState.Done -> Toast.makeText(context, "Already downloaded", Toast.LENGTH_SHORT).show()
-                                is DownloadState.Downloading -> Toast.makeText(context, "Downloading…", Toast.LENGTH_SHORT).show()
-                                else -> {
-                                    Downloads.enqueue(context, videoId, title, albumArt)
-                                    Toast.makeText(context, "Download started", Toast.LENGTH_SHORT).show()
-                                }
-                            }
-                        }
-                    )
-                    ActionTile(Icons.AutoMirrored.Rounded.PlaylistAdd, "Playlist", onClick = { showPlayListDialog = true })
-                    ActionTile(
-                        icon = Icons.Rounded.Timer,
-                        label = when {
-                            sleepEndOfSong -> "End of song"
-                            sleepRemainingMs > 0 -> formatTime(sleepRemainingMs, 0)
-                            else -> "Sleep timer"
-                        },
-                        onClick = { showSleepSheet = true },
-                        iconTint = if (sleepActive) DiscoverAccent else Color.White
-                    )
+                    details()
                 }
             }
 
@@ -732,6 +777,7 @@ private fun SleepTimerSheet(
         Column(
             modifier = Modifier
                 .navigationBarsPadding()
+                .verticalScroll(rememberScrollState())
                 .padding(bottom = 16.dp)
         ) {
             Text(
