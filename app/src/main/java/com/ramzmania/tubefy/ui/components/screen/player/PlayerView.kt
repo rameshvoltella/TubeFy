@@ -162,6 +162,8 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
     // Opened from the Downloads playlist: play the downloaded files only
     val startOffline = remember { navArgs?.getString("isBulk") == "offline" }
     var playingOffline by remember { mutableStateOf(startOffline) }
+    // Survives rotation, so the song/playlist is only started the first time this screen opens
+    var playbackRequested by rememberSaveable { mutableStateOf(false) }
     var videoId by remember { mutableStateOf(navArg("videoId")) }
     var albumArt by remember {
         mutableStateOf("https://i.ytimg.com/vi/${YoutubeCoreConstant.extractYoutubeVideoId(videoId)}/hq720.jpg")
@@ -282,6 +284,19 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
             mediaController = controller
             isPlaying = controller.isPlaying
             val currentId = controller.currentMediaItem?.mediaId
+            if (playbackRequested) {
+                // Screen recreated (e.g. rotation): keep what's playing now instead of
+                // restarting the song / playlist this screen was originally opened with
+                isLoading = !controller.isPlaying && controller.playbackState != Player.STATE_READY
+                controller.currentMediaItem?.let { item ->
+                    videoId = item.mediaId
+                    item.mediaMetadata.artworkUri?.toString()?.let { albumArt = it }
+                    title = item.mediaMetadata.title?.toString() ?: title
+                    artist = cleanArtist(item.mediaMetadata.artist?.toString(), title)
+                }
+                return@MediaControllerComposable
+            }
+            playbackRequested = true
             if (startOffline) {
                 startPlayDownloadsService(context)
             } else if (isBulk) {

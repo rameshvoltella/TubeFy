@@ -14,6 +14,7 @@ Transform your YouTube experience into a seamless music streaming journey with o
 - **User-Friendly Interface:** Navigate your music library and playlists with an intuitive and sleek interface designed for ease of use.
 - **Offline Downloads:** Download songs to your device and listen without an internet connection. Downloaded songs are collected in their own Downloads playlist, and playing from it queues only your downloaded songs.
 - **Smart Queueing:** When a song ends, TubeFy automatically queues similar songs that match your taste, in the same language, genre and artist style as what you're listening to, so the music keeps flowing without breaking your mood.
+- **Smart Shuffle:** Tap shuffle once for a normal shuffle, and tap it again for Smart Shuffle. It reshuffles your queue so songs by the same artist flow together, and mixes in recommended songs that match the language, mood and style of what's playing. Tap once more to turn shuffle off, which also removes any recommended songs that haven't played yet.
 
 
 Elevate your music experience and enjoy YouTube's vast music library like never before. Download now and start listening!
@@ -33,6 +34,13 @@ Click here -> https://youtu.be/YrhG8T8gbU4
         <h3>Search and Playlist</h3>
      <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/search.jpeg" alt="Search" style="width: 40%; height: 40%;">
           <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/album.jpeg" alt="Search" style="width: 40%; height: 40%;">
+   
+
+</div>
+<div style="text-align: center;">
+        <h3>Smart Shuffle</h3>
+     <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/smart.jpeg" alt="Search" style="width: 40%; height: 40%;">
+         
    
 
 </div>
