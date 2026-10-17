@@ -643,6 +643,8 @@ private fun SessionVideoSurface(controller: MediaController?, modifier: Modifier
                 resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
                 setShutterBackgroundColor(android.graphics.Color.BLACK)
                 setKeepContentOnPlayerReset(true)
+                // Screen stays awake while the Video tab is showing; released when this view goes away
+                keepScreenOn = true
             }
         },
         update = { it.player = controller },
