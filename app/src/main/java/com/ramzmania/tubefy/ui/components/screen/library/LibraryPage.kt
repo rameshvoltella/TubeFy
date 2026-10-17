@@ -66,6 +66,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.ramzmania.tubefy.R
 import com.ramzmania.tubefy.core.YoutubeCoreConstant
+import com.ramzmania.tubefy.core.download.Downloads
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
 import com.ramzmania.tubefy.ui.components.NavigationItem
@@ -93,6 +94,7 @@ fun LibraryDetailPage(viewModel: TubeFyViewModel = hiltViewModel()) {
         navController.currentBackStackEntry?.arguments?.getString("playerListName").orEmpty()
     }
     val isFavorites = playlistName == FAVORITES_PLAYLIST
+    val isDownloads = playlistName == Downloads.PLAYLIST
     val playListItems = when (val result = gettingPlayListSongs) {
         is Resource.Success -> result.data.orEmpty()
         else -> emptyList()
@@ -108,8 +110,12 @@ fun LibraryDetailPage(viewModel: TubeFyViewModel = hiltViewModel()) {
 
     if (confirmDeletePlaylist) {
         DeleteSongConfirmationDialog(
-            title = if (isFavorites) "Clear favorites" else "Delete playlist",
-            message = if (isFavorites) "Remove all songs from your favorites?" else "Delete \"$playlistName\" and all its songs?",
+            title = when { isFavorites -> "Clear favorites"; isDownloads -> "Delete all downloads"; else -> "Delete playlist" },
+            message = when {
+                isFavorites -> "Remove all songs from your favorites?"
+                isDownloads -> "Delete all downloaded songs from this device?"
+                else -> "Delete \"$playlistName\" and all its songs?"
+            },
             onConfirm = {
                 confirmDeletePlaylist = false
                 deletePlayList(playlistName, viewModel)
@@ -144,7 +150,11 @@ fun LibraryDetailPage(viewModel: TubeFyViewModel = hiltViewModel()) {
                     .padding(horizontal = 16.dp)
             ) {
                 Text(
-                    text = if (isFavorites) "Favorites" else playlistName.trim(),
+                    text = when {
+                        isFavorites -> "Favorites"
+                        isDownloads -> "Downloads"
+                        else -> playlistName.trim()
+                    },
                     color = Color.White,
                     fontSize = 32.sp,
                     fontWeight = FontWeight.Bold,
@@ -170,7 +180,7 @@ fun LibraryDetailPage(viewModel: TubeFyViewModel = hiltViewModel()) {
                 CircleIconButton(icon = Icons.Rounded.MoreVert, description = "More options", onClick = { showMenu = true })
                 DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                     DropdownMenuItem(
-                        text = { Text(if (isFavorites) "Clear favorites" else "Delete playlist") },
+                        text = { Text(when { isFavorites -> "Clear favorites"; isDownloads -> "Delete all downloads"; else -> "Delete playlist" }) },
                         leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null) },
                         onClick = {
                             showMenu = false
@@ -253,7 +263,9 @@ fun LibraryListBaseView(
                         URLEncoder.encode(song.videoTitle, StandardCharsets.UTF_8.toString()),
                         URLEncoder.encode(song.videoTitle, StandardCharsets.UTF_8.toString()),
                         URLEncoder.encode(song.videoTitle, StandardCharsets.UTF_8.toString()),
-                        true
+                        isBulk = true,
+                        // Songs started from Downloads play offline, queueing only downloaded songs
+                        offline = playlistName == Downloads.PLAYLIST
                     )
                 ) {
                     newNav.graph.route?.let { route ->

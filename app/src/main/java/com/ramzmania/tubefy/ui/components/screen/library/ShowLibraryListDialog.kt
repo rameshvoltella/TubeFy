@@ -9,6 +9,30 @@ import androidx.compose.foundation.background
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextOverflow
+import com.ramzmania.tubefy.ui.theme.DiscoverAccent
+import com.ramzmania.tubefy.ui.theme.DiscoverAccentContainer
+import com.ramzmania.tubefy.ui.theme.DiscoverBorder
+import com.ramzmania.tubefy.ui.theme.DiscoverSurface
+import com.ramzmania.tubefy.ui.theme.DiscoverTextSecondary
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -54,230 +78,222 @@ import com.ramzmania.tubefy.core.YoutubeCoreConstant
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
 import com.ramzmania.tubefy.data.dto.database.PlaylistNameWithUrl
+import com.ramzmania.tubefy.core.download.Downloads
 import com.ramzmania.tubefy.database.CustomPlaylist
 import com.ramzmania.tubefy.database.FavoritePlaylist
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
 
 
+/** "Add to playlist" bottom sheet: create a new playlist or add the song to an existing one. */
+@kotlin.OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlaylistDialog(currentSongDetails: TubeFyCoreTypeData,viewModel: TubeFyViewModel = hiltViewModel(),
     playlists: List<PlaylistNameWithUrl?>,
     onDismiss: () -> Unit,
     onItemClick: (PlaylistNameWithUrl?) -> Unit
 ) {
-    var showPlayListEditText by remember { mutableStateOf(false) }
-    val textFieldValueSaver = Saver<TextFieldValue, String>(
-        save = { it.text },  // Save only the text part
-        restore = { TextFieldValue(it) }  // Restore TextFieldValue from the text
-    )
-    val context= LocalContext.current
+    val context = LocalContext.current
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var creating by rememberSaveable { mutableStateOf(false) }
+    var newName by rememberSaveable { mutableStateOf("") }
 
-    // Use rememberSaveable with the custom Saver
-    var textFieldValue by rememberSaveable(stateSaver = textFieldValueSaver) {
-        mutableStateOf(TextFieldValue())
+    fun createPlaylist() {
+        val name = newName.trim()
+        when {
+            name.isEmpty() -> Unit
+            Downloads.isReservedName(name) ->
+                Toast.makeText(context, "\"$name\" is reserved for downloads", Toast.LENGTH_LONG).show()
+            playlists.any { it?.playlistName.equals(name, ignoreCase = true) } ->
+                Toast.makeText(context, "Playlist already exists", Toast.LENGTH_LONG).show()
+            else -> {
+                addToPlayList(currentSongDetails, viewModel, name)
+                Toast.makeText(context, "Added to $name", Toast.LENGTH_SHORT).show()
+                viewModel.dismissPlaListDialog(true)
+            }
+        }
     }
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-                .background(color = colorResource(id = R.color.colorPrimary)),
-            shape = RoundedCornerShape(8.dp)
-        ) {
-            Column(modifier = Modifier.background(color = colorResource(id = R.color.colorPrimary))) {
-                Column(
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = SheetBackground,
+        dragHandle = {
+            Box(
+                modifier = Modifier
+                    .padding(top = 10.dp, bottom = 6.dp)
+                    .size(width = 40.dp, height = 4.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(Color.White.copy(alpha = 0.25f))
+            )
+        }
+    ) {
+        Column(modifier = Modifier.navigationBarsPadding()) {
+            // Header: the song being added
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
+            ) {
+                AsyncImage(
+                    model = ImageRequest.Builder(context)
+                        .data(YoutubeCoreConstant.decodeThumpUrl(currentSongDetails.videoImage))
+                        .crossfade(true)
+                        .placeholder(R.drawable.placeholder)
+                        .error(R.drawable.placeholder)
+                        .build(),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
                     modifier = Modifier
-                        .padding(16.dp)
-                        .background(color = colorResource(id = R.color.colorPrimary))
-                ) {
-                    if (!showPlayListEditText) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(color = colorResource(id = R.color.colorPrimary)),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            // Text on the left
-                            Text(
-                                text = "Playlist",
-                                modifier = Modifier.weight(1f),
-                                color = colorResource(id = R.color.white),
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 20.sp
-                            )
-
-                            // Spacer to push the image to the right
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Image(
-                                painter = painterResource(id = R.drawable.ic_add_playlist),
-                                contentDescription = "Right Image",
-                                modifier = Modifier
-                                    .height(50.dp)
-                                    .width(50.dp)
-                                    .padding(horizontal = 5.dp, vertical = 10.dp)
-                                    .clickable { showPlayListEditText = true },
-                                contentScale = ContentScale.Crop
-                            )
-
-
-                        }
-                    } else {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(color = colorResource(id = R.color.colorPrimary)),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-
-                            TextField(
-                                modifier = Modifier.weight(1f),
-                                value = textFieldValue,
-                                placeholder = { Text("Add new playlist") },
-                                onValueChange = { newValue -> textFieldValue = newValue },
-                                keyboardOptions = KeyboardOptions.Default.copy(
-                                    imeAction = ImeAction.Done
-                                ),
-                                keyboardActions = KeyboardActions(onDone = {
-
-                                    if (!(playlists.any { it?.playlistName == textFieldValue.text })) {
-                                        // Handle text input
-                                        showPlayListEditText=false
-                                        addToPlayList(
-                                            currentSongDetails,
-                                            viewModel,
-                                            textFieldValue.text
-                                        )
-                                        viewModel.dismissPlaListDialog(true)
-                                    } else {
-                                        Toast.makeText(
-                                            context,
-                                            "Playlist Already Available",
-                                            Toast.LENGTH_LONG
-                                        ).show()
-                                    }
-
-                                })
-                            )
-
-                            // Spacer to push the image to the right
-                            Spacer(modifier = Modifier.width(8.dp))
-
-                            Image(
-                                painter = painterResource(id = R.drawable.ic_remove),
-                                contentDescription = "Right Image 1",
-                                modifier = Modifier
-                                    .height(30.dp)
-                                    .width(30.dp)
-                                    .padding(horizontal = 2.dp, vertical = 2.dp)
-                                    .clickable { showPlayListEditText = false },
-                                contentScale = ContentScale.Crop
-                            )
-
-                            // Second Image on the right
-                            Image(
-                                painter = painterResource(id = R.drawable.ic_correct), // Replace with the appropriate drawable resource
-                                contentDescription = "Right Image 2",
-                                modifier = Modifier
-                                    .height(30.dp)
-                                    .width(30.dp)
-                                    .padding(horizontal = 2.dp, vertical = 2.dp)
-                                    .clickable {
-                                        if(!( playlists.any { it?.playlistName == textFieldValue.text})) {
-                                            showPlayListEditText=false
-                                            // Handle text input
-                                            addToPlayList(
-                                                currentSongDetails,
-                                                viewModel,
-                                                textFieldValue.text
-                                            )
-                                            viewModel.dismissPlaListDialog(true)
-                                        }else
-                                        {
-                                            Toast.makeText(context,"Playlist Already Available",Toast.LENGTH_LONG).show()
-                                        }
-
-                                     /*   showPlayListEditText = false
-                                        addToPlayList(
-                                            currentSongDetails,
-                                            viewModel,
-                                            textFieldValue.text
-                                        )
-                                        viewModel.dismissPlaListDialog(true)*/
-                                    },
-                                contentScale = ContentScale.Crop
-                            )
-
-                        }
-                    }
-                    // Top Text
-
-
-                    // List of Playlists
-                    Column {
-                        playlists.forEach { playlist ->
-                            Card(
-                                shape = RoundedCornerShape(8.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color.DarkGray),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 8.dp)
-                                    .clickable { onItemClick(playlist) }
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    // Thumbnail Image on the Left
-                                    if(playlist?.videoThump.equals("Favorites"))
-                                    {
-                                        Image(
-                                            painter = painterResource(id = R.drawable.fav_playlist),
-                                            contentDescription = "Right Image",
-                                            modifier = Modifier
-                                                .height(50.dp)
-                                                .width(50.dp),
-                                            contentScale = ContentScale.Crop
-                                        )
-
-                                    }else {
-                                        AsyncImage(
-                                            model = ImageRequest.Builder(LocalContext.current)
-                                                .data(YoutubeCoreConstant.decodeThumpUrl(playlist?.videoThump!!))
-                                                .crossfade(true)
-                                                .placeholder(R.drawable.placeholder)
-                                                .error(R.drawable.placeholder)
-                                                .build(),
-                                            contentDescription = "Drawable Image",
-                                            modifier = Modifier
-                                                .height(50.dp)
-                                                .width(50.dp),
-                                            contentScale = ContentScale.Crop
-                                        )
-                                    }
-
-                                    Spacer(modifier = Modifier.width(16.dp))
-
-                                    // Playlist Name on the Right
-                                    Text(
-                                        text = if (playlist?.playlistName!! == "TubeFy-Favorites") "Favorite" else playlist.playlistName!!,
-//                                        text = playlist?.playlistName!!,
-                                        color = colorResource(id = R.color.white),
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                }
-                            }
-                        }
-                    }
+                        .size(52.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                )
+                Column(modifier = Modifier.padding(start = 14.dp)) {
+                    Text("Add to playlist", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    Text(
+                        text = currentSongDetails.videoTitle,
+                        color = DiscoverTextSecondary,
+                        fontSize = 14.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
+            }
+
+            // New playlist
+            if (creating) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 4.dp)
+                ) {
+                    OutlinedTextField(
+                        value = newName,
+                        onValueChange = { newName = it },
+                        placeholder = { Text("Playlist name", color = DiscoverTextSecondary) },
+                        singleLine = true,
+                        textStyle = TextStyle(color = Color.White, fontSize = 16.sp),
+                        keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = { createPlaylist() }),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = DiscoverAccent,
+                            unfocusedBorderColor = DiscoverBorder,
+                            focusedContainerColor = DiscoverSurface,
+                            unfocusedContainerColor = DiscoverSurface,
+                            cursorColor = DiscoverAccent
+                        ),
+                        modifier = Modifier.weight(1f)
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        text = "Create",
+                        color = Color.White,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(50))
+                            .background(if (newName.isBlank()) DiscoverAccent.copy(alpha = 0.4f) else DiscoverAccent)
+                            .clickable(enabled = newName.isNotBlank()) { createPlaylist() }
+                            .padding(horizontal = 18.dp, vertical = 12.dp)
+                    )
+                }
+            } else {
+                SheetRow(
+                    onClick = { creating = true },
+                    leading = {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .size(52.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(DiscoverAccentContainer)
+                        ) {
+                            Icon(Icons.Rounded.Add, contentDescription = null, tint = DiscoverAccent, modifier = Modifier.size(28.dp))
+                        }
+                    },
+                    title = "New playlist",
+                    subtitle = "Create and add this song"
+                )
+            }
+
+            Text(
+                text = "Your playlists",
+                color = DiscoverTextSecondary,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.padding(start = 20.dp, top = 14.dp, bottom = 4.dp)
+            )
+            LazyColumn(modifier = Modifier.heightIn(max = 380.dp)) {
+                items(playlists.filterNotNull()) { playlist ->
+                    val isFavorites = playlist.playlistName == "TubeFy-Favorites"
+                    SheetRow(
+                        onClick = { onItemClick(playlist) },
+                        leading = {
+                            if (isFavorites) {
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier
+                                        .size(52.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(Brush.linearGradient(listOf(Color(0xFFD6334A), Color(0xFF3A1219))))
+                                ) {
+                                    Icon(Icons.Rounded.Star, contentDescription = null, tint = Color(0xFFFFD54F), modifier = Modifier.size(28.dp))
+                                }
+                            } else {
+                                AsyncImage(
+                                    model = ImageRequest.Builder(context)
+                                        .data(YoutubeCoreConstant.decodeThumpUrl(playlist.videoThump))
+                                        .crossfade(true)
+                                        .placeholder(R.drawable.placeholder)
+                                        .error(R.drawable.placeholder)
+                                        .build(),
+                                    contentDescription = null,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier
+                                        .size(52.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                )
+                            }
+                        },
+                        title = if (isFavorites) "Favorite" else playlist.playlistName.trim(),
+                        subtitle = if (playlist.songCount == 1) "1 song" else "${playlist.songCount} songs"
+                    )
+                }
+                item { Spacer(modifier = Modifier.height(12.dp)) }
             }
         }
     }
 }
 
 @Composable
+private fun SheetRow(
+    onClick: () -> Unit,
+    leading: @Composable () -> Unit,
+    title: String,
+    subtitle: String
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 20.dp, vertical = 8.dp)
+    ) {
+        leading()
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 14.dp)
+        ) {
+            Text(title, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(subtitle, color = DiscoverTextSecondary, fontSize = 13.sp, maxLines = 1)
+        }
+    }
+}
+
+private val SheetBackground = Color(0xFF121011)
+
+@Composable
 fun PlayListDialogViewer(viewModel: TubeFyViewModel = hiltViewModel(),onDismiss: () -> Unit ,currentSongDetails: TubeFyCoreTypeData) {
     viewModel.dismissPlaListDialog(false)
+    val context = LocalContext.current
     var showDialog by remember { mutableStateOf(true) }
     val gettingMyPlayList by viewModel.gettingPrivatePlayList.observeAsState()
     var playListItems by rememberSaveable { mutableStateOf<List<PlaylistNameWithUrl?>>(emptyList()) }
@@ -325,14 +341,19 @@ fun PlayListDialogViewer(viewModel: TubeFyViewModel = hiltViewModel(),onDismiss:
     if (showDialog) {
         PlaylistDialog(
             currentSongDetails=currentSongDetails,
-            playlists = playListItems,
+            playlists = playListItems.filter { it?.playlistName != Downloads.PLAYLIST },
             onDismiss = {
                 showDialog = false
                 onDismiss() // Notify parent to reset the state
             },
             onItemClick = { playlist ->
-                // Handle item click
-                addToPlayList(currentSongDetails,viewModel,playlist?.playlistName!!)
+                val name = playlist?.playlistName ?: return@PlaylistDialog
+                addToPlayList(currentSongDetails, viewModel, name)
+                Toast.makeText(
+                    context,
+                    "Added to ${if (name == "TubeFy-Favorites") "Favorite" else name.trim()}",
+                    Toast.LENGTH_SHORT
+                ).show()
                 showDialog = false
                 onDismiss() // Notify parent to reset the state
 

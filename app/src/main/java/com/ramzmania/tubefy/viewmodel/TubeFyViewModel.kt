@@ -11,6 +11,7 @@ import com.ramzmania.tubefy.core.YoutubeCoreConstant.extractYoutubeVideoId
 import com.ramzmania.tubefy.data.dto.base.searchformat.StreamUrlData
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreUniversalData
 import com.ramzmania.tubefy.core.extractors.yotubewebextractor.YoutubeJsonScrapping
+import com.ramzmania.tubefy.core.download.Downloads
 import com.ramzmania.tubefy.core.extractors.yotubewebextractor.YoutubeScrapType
 import com.ramzmania.tubefy.errors.YOUTUBE_SCRAP_ERROR
 import com.ramzmania.tubefy.data.ContextModule
@@ -735,6 +736,7 @@ class TubeFyViewModel @Inject constructor(
                     gettingSongPlayListOperationPrivate.value = it
                 }
             } else {
+                if (playListName == Downloads.PLAYLIST) Downloads.delete(contextModule.context, videoId)
                 playlistDatabaseRepository.deleteSongFromPlayList(playListName, videoId).collect {
                     addingSongListPlayListOperationPrivate.value = it
                 }
@@ -768,8 +770,9 @@ class TubeFyViewModel @Inject constructor(
     val isAlbumSaved = isAlbumSavedPrivate.asStateFlow()
 
     fun checkAlbumSaved(albumName: String) {
+        val playlistName = if (Downloads.isReservedName(albumName)) "$albumName (Album)" else albumName
         viewModelScope.launch {
-            playlistDatabaseRepository.isPlayListSaved(albumName).collect {
+            playlistDatabaseRepository.isPlayListSaved(playlistName).collect {
                 isAlbumSavedPrivate.value = it is Resource.Success && it.data == true
             }
         }
@@ -777,9 +780,11 @@ class TubeFyViewModel @Inject constructor(
 
     /** Saves the album's songs as a new playlist named after the album, or removes that playlist. */
     fun toggleAlbumSaved(albumName: String, tracks: List<TubeFyCoreTypeData?>) {
+        // "Download(s)" is reserved for offline downloads
+        val playlistName = if (Downloads.isReservedName(albumName)) "$albumName (Album)" else albumName
         viewModelScope.launch {
             if (isAlbumSavedPrivate.value) {
-                playlistDatabaseRepository.deleteSpecificPlayList(albumName).collect {
+                playlistDatabaseRepository.deleteSpecificPlayList(playlistName).collect {
                     if (it is Resource.Success) isAlbumSavedPrivate.value = false
                 }
             } else {
@@ -787,7 +792,7 @@ class TubeFyViewModel @Inject constructor(
                     .filter { it.videoId.isNotEmpty() }
                     .map {
                         CustomPlaylist(
-                            playlistName = albumName,
+                            playlistName = playlistName,
                             videoId = it.videoId,
                             videoThump = it.videoImage,
                             videoName = it.videoTitle
@@ -804,6 +809,7 @@ class TubeFyViewModel @Inject constructor(
     fun deleteSpecificPlayList(playListName: String) {
         viewModelScope.launch {
 
+            if (playListName == Downloads.PLAYLIST) Downloads.deleteAll(contextModule.context)
             playlistDatabaseRepository.deleteSpecificPlayList(playListName).collect {
                 addingSongListPlayListOperationPrivate.value = it
                 reloadAllPlayListPrivate.value = true

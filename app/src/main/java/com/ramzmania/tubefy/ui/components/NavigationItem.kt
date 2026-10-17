@@ -13,7 +13,9 @@ sealed class NavigationItem(var route: String, var icon: Int, var title: String)
         fun createRoute(playlistId: String, playlistName: String,playlistImage: String) = "playlist/$playlistId/$playlistName/$playlistImage"
     }
     data object AudioPlayer : NavigationItem("audioPlayer/{videoId}/{encodedVideoThumpUrl}/{playerHeader}/{playerBottomHeader}/{playerBottomSub}/{isBulk}", R.drawable.ic_home, "AudioPlayer") {
-        fun createRoute(videoId: String, encodedVideoThumpUrl: String, playerHeader: String, playerBottomHeader: String, playerBottomSub: String,isBulk:Boolean=false) = "audioPlayer/$videoId/$encodedVideoThumpUrl/$playerHeader/$playerBottomHeader/$playerBottomSub/$isBulk"
+        /** [offline] plays the queued Downloads from local files (the last segment becomes "offline"). */
+        fun createRoute(videoId: String, encodedVideoThumpUrl: String, playerHeader: String, playerBottomHeader: String, playerBottomSub: String,isBulk:Boolean=false, offline: Boolean = false) =
+            "audioPlayer/$videoId/$encodedVideoThumpUrl/$playerHeader/$playerBottomHeader/$playerBottomSub/${if (offline) "offline" else isBulk}"
     }
 
     data object CategoryPlayList : NavigationItem("categoryPlayList/{browserId}/{playerListId}/{categoryName}", R.drawable.ic_search, "CategoryPlayList") {
