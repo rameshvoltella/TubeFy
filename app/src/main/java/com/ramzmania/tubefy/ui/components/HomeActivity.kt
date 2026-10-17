@@ -294,41 +294,16 @@ fun TopBarPreview() {
 
 @Composable
 fun BottomNavigationBar(navController: NavController) {
-    // (item, selected icon, unselected icon)
-    val items = listOf(
-        Triple(NavigationItem.Home, Icons.Rounded.Home, Icons.Outlined.Home),
-        Triple(NavigationItem.Search, Icons.Rounded.Search, Icons.Outlined.Search),
-        Triple(NavigationItem.Books, LibraryIconFilled, LibraryIconOutlined),
-        Triple(NavigationItem.Profile, Icons.Rounded.Settings, Icons.Outlined.Settings)
+    val tabs = listOf(
+        BottomTab(NavigationItem.Home.route, NavigationItem.Home.title, HomeIconFilled, HomeIconOutlined),
+        BottomTab(NavigationItem.Search.route, NavigationItem.Search.title, SearchIconBold, SearchIconRegular),
+        BottomTab(NavigationItem.Books.route, NavigationItem.Books.title, LibraryIconFilled, LibraryIconOutlined),
+        BottomTab(NavigationItem.Profile.route, NavigationItem.Profile.title, Icons.Rounded.Settings, Icons.Outlined.Settings)
     )
     val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
-    NavigationBar(
-        containerColor = DiscoverBackground,
-        contentColor = Color.White
-    ) {
-        items.forEach { (item, selectedIcon, unselectedIcon) ->
-            val selected = currentRoute == item.route
-            NavigationBarItem(
-                icon = {
-                    Icon(
-                        if (selected) selectedIcon else unselectedIcon,
-                        contentDescription = item.title,
-                        modifier = Modifier.size(26.dp)
-                    )
-                },
-                label = { Text(text = item.title, fontSize = 13.sp) },
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = DiscoverAccent,
-                    unselectedIconColor = Color.White.copy(alpha = 0.75f),
-                    selectedTextColor = DiscoverAccent,
-                    unselectedTextColor = Color.White.copy(alpha = 0.75f),
-                    indicatorColor = DiscoverAccentContainer
-                ),
-                alwaysShowLabel = true,
-                selected = selected,
-                onClick = { navController.navigateToTab(item.route) }
-            )
-        }
-    }
+    FloatingBottomBar(
+        tabs = tabs,
+        selectedRoute = navBackStackEntry?.destination?.route,
+        onSelect = { navController.navigateToTab(it.route) }
+    )
 }
