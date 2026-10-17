@@ -13,6 +13,7 @@ Transform your YouTube experience into a seamless music streaming journey with o
 - **Seamless Playback:** Enjoy uninterrupted music playback with background support, so you can listen while using other apps.
 - **User-Friendly Interface:** Navigate your music library and playlists with an intuitive and sleek interface designed for ease of use.
 
+
 Elevate your music experience and enjoy YouTube's vast music library like never before. Download now and start listening!
 ## Video Preview
 
@@ -21,22 +22,24 @@ Click here -> https://youtu.be/YrhG8T8gbU4
 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
     <div style="text-align: center;">
         <h3>Tubefy</h3>
-        <img src="https://github.com/rameshvoltella/TubeFy/blob/beta/screenshots/WhatsApp%20Image%202024-08-28%20at%209.08.59%20PM.jpeg" alt="List" style="width: 40%; height: 40%;">
-        <img src="https://github.com/rameshvoltella/TubeFy/blob/beta/screenshots/WhatsApp%20Image%202024-08-28%20at%209.09.37%20PM(1).jpeg" alt="Player" style="width: 40%; height: 40%;">
+        <img src="https://github.com/rameshvoltella/TubeFy/blob/beta/screenshots/new/home.jpeg" alt="List" style="width: 40%; height: 40%;">
+        <img src="https://github.com/rameshvoltella/TubeFy/blob/beta/screenshots/new/playeaudio.jpeg" alt="Player" style="width: 40%; height: 40%;">
     </div>
 </div>
 
 <div style="text-align: center;">
         <h3>Search and Playlist</h3>
-     <img src="https://github.com/rameshvoltella/TubeFy/blob/beta/screenshots/WhatsApp%20Image%202024-08-28%20at%209.09.36%20PM(1).jpeg" alt="Search" style="width: 40%; height: 40%;">
-    <img src="https://github.com/rameshvoltella/TubeFy/blob/beta/screenshots/WhatsApp%20Image%202024-08-28%20at%209.09.40%20PM.jpeg" alt="Playlist" style="width: 40%; height: 40%;">
+     <img src="https://github.com/rameshvoltella/TubeFy/blob/beta/screenshots/new/search.jpeg" alt="Search" style="width: 40%; height: 40%;">
+          <img src="https://github.com/rameshvoltella/TubeFy/blob/beta/screenshots/new/album.jpeg" alt="Search" style="width: 40%; height: 40%;">
+   
 
 </div>
 
 <div style="text-align: center;">
-        <h3>Notification and MiniPlayer</h3>
+        <h3>Notification, VideoView,Library</h3>
      <img src="https://github.com/rameshvoltella/TubeFy/blob/beta/screenshots/WhatsApp%20Image%202024-08-28%20at%209.09.38%20PM(1).jpeg" alt="Notification" style="width: 40%; height: 40%;">
-    <img src="https://github.com/rameshvoltella/TubeFy/blob/beta/screenshots/WhatsApp%20Image%202024-08-28%20at%209.09.38%20PM.jpeg" alt="MiniPlayer" style="width: 40%; height: 40%;">
+    <img src="https://github.com/rameshvoltella/TubeFy/blob/beta/screenshots/new/player.jpeg" alt="MiniPlayer" style="width: 40%; height: 40%;">
+        <img src="https://github.com/rameshvoltella/TubeFy/blob/beta/screenshots/new/lib.jpeg" alt="Playlist" style="width: 40%; height: 40%;">
 
 </div>
 
