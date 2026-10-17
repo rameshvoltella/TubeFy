@@ -9,6 +9,8 @@ fun createMediaItems(mediaUris: List<String>, videoThumpUrls: List<String>, vide
         MediaItem.Builder()
             .setMediaId(videoIdList[index])
             .setUri(Uri.parse(mediaUris[index]))
+            // Lets StreamUrlRefresher re-fetch the link by song id once it expires
+            .setCustomCacheKey(videoIdList[index])
             .setMediaMetadata(
                 MediaMetadata.Builder()
                     .setTitle(videoTitles.getOrElse(index) { "Unknown Title" })

@@ -10,7 +10,10 @@ import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.datasource.ResolvingDataSource
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
 import androidx.core.os.bundleOf
@@ -61,6 +64,11 @@ class PlaybackService(
     /** True while playing downloaded files: no network refetch and no auto-appended queue songs. */
     private var offlineMode: Boolean = false
 
+    private val streamUrlRefresher = StreamUrlRefresher()
+
+    /** Songs already retried once with a fresh link after a playback error. */
+    private val linkRetriedIds = mutableSetOf<String>()
+
     /** The running "what plays next" refill (Mix or cache), so it isn't started twice. */
     private var autoQueueJob: Job? = null
     var path: String = ""
@@ -71,11 +79,18 @@ class PlaybackService(
         super.onCreate()
 
 
-        val player = ExoPlayer.Builder(this).build().apply {
+        // Links of queued songs are refreshed just before use if they have expired (long pauses)
+        val dataSourceFactory = ResolvingDataSource.Factory(DefaultDataSource.Factory(this), streamUrlRefresher)
+        val player = ExoPlayer.Builder(this)
+            .setMediaSourceFactory(DefaultMediaSourceFactory(dataSourceFactory))
+            .build().apply {
             // Adding the error listener to the ExoPlayer instance
             addListener(object : Player.Listener {
                 override fun onPlaybackStateChanged(playbackState: Int) {
                     super.onPlaybackStateChanged(playbackState)
+                    if (playbackState == Player.STATE_READY) {
+                        currentMediaItem?.mediaId?.let { linkRetriedIds.remove(it) }
+                    }
                     if (playbackState == Player.STATE_READY && playWhenReady) {
                         // Playback has started
                         // Add your logic here for when playback starts
@@ -94,6 +109,18 @@ class PlaybackService(
                 }
 
                 override fun onPlayerError(error: PlaybackException) {
+                    // A dead link (expired / rejected): retry the same song once with a fresh link,
+                    // keeping its position, before falling back to the skip logic below
+                    val failedId = currentMediaItem?.mediaId
+                    if (!offlineMode && failedId != null &&
+                        error.errorCode == PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS &&
+                        linkRetriedIds.add(failedId)
+                    ) {
+                        streamUrlRefresher.forceRefresh(failedId)
+                        playWhenReady = true
+                        prepare()
+                        return
+                    }
                     if (offlineMode) {
                         // A local file failed (e.g. deleted): just move on to the next download
                         if (hasNextMediaItem()) {
@@ -492,6 +519,8 @@ class PlaybackService(
                                     .setUri(
                                         Uri.parse(response.data?.streamUrl)
                                     )
+                                    // Lets StreamUrlRefresher re-fetch the link by song id once it expires
+                                    .setCustomCacheKey(YoutubeCoreConstant.extractYoutubeVideoId(videoId))
                                     .setMediaMetadata(
                                         MediaMetadata.Builder()
                                             .setTitle(playerHeader)
