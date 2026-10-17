@@ -1,5 +1,6 @@
 package com.ramzmania.tubefy.data.remote
 
+import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
 import android.util.Log
 import androidx.media3.common.MediaItem
 import com.ramzmania.tubefy.core.YoutubeCoreConstant
@@ -8,6 +9,7 @@ import com.ramzmania.tubefy.core.dataformatter.FormattingResult
 import com.ramzmania.tubefy.data.dto.base.searchformat.NewPipeSortingData
 import com.ramzmania.tubefy.core.dataformatter.newpipe.NewPipeDataFormatter
 import com.ramzmania.tubefy.core.dataformatter.newpipe.NewPipeDataFormatterFactory
+import com.ramzmania.tubefy.core.dataformatter.newpipe.bestThumbnailUrl
 import com.ramzmania.tubefy.data.dto.base.searchformat.StreamUrlData
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreUniversalData
 import com.ramzmania.tubefy.core.dataformatter.youtubeV3.YoutubeV3Formatter
@@ -461,6 +463,41 @@ constructor(
 //        {
 //            Resource.DataError(NEW_PIPE_SEARCH_ERROR)
 //        }
+    }
+
+    /**
+     * Songs similar to [videoId] from YouTube's auto-generated "Mix" (the radio YouTube Music
+     * plays after a song): YouTube Music's mix first, the regular YouTube mix as a backup.
+     * Not saved anywhere, so it can't mix contexts like the cached queue does.
+     */
+    override suspend fun getMixQueue(videoId: String): Resource<List<TubeFyCoreTypeData>> {
+        return withContext(Dispatchers.IO) {
+            val id = YoutubeCoreConstant.extractYoutubeVideoId(videoId) ?: videoId
+            for (mixId in listOf("RDAMVM$id", "RD$id")) {
+                try {
+                    val songs = newPipePlayListData("${YoutubeCoreConstant.YOUTUBE_WATCH_URL}$id&list=$mixId")
+                        .relatedItems
+                        .filterIsInstance<StreamInfoItem>()
+                        .filter { item ->
+                            YoutubeCoreConstant.extractYoutubeVideoId(item.url) != id &&
+                                (item.duration <= 0 || item.duration in 60..600)
+                        }
+                        .map { item ->
+                            TubeFyCoreTypeData(
+                                videoId = item.url,
+                                videoTitle = item.name,
+                                videoImage = bestThumbnailUrl(item.thumbnails),
+                                artist = item.uploaderName.orEmpty().removeSuffix(" - Topic").trim(),
+                                durationSeconds = item.duration
+                            )
+                        }
+                    if (songs.isNotEmpty()) return@withContext Resource.Success(songs)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+            Resource.DataError(NEW_PIPE_SEARCH_ERROR)
+        }
     }
 
     override suspend fun getPlayListInfo(playListUrl: String): Resource<PlayListData> {

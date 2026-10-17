@@ -30,6 +30,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -59,6 +60,9 @@ class PlaybackService(
 
     /** True while playing downloaded files: no network refetch and no auto-appended queue songs. */
     private var offlineMode: Boolean = false
+
+    /** The running "what plays next" refill (Mix or cache), so it isn't started twice. */
+    private var autoQueueJob: Job? = null
     var path: String = ""
     private var apiPlaListBulkCallJob: Job? = null
 //    var currentPlayListQueue:Long=0L
@@ -155,79 +159,94 @@ class PlaybackService(
                 .setSessionActivity(pendingIntent).build()
     }
 
+    /**
+     * Keeps music going when the queue is about to run out: first YouTube's "Mix" for the
+     * current song (similar language / genre / artist), and if that fails or adds nothing new,
+     * the cached queue of songs from earlier playlists and searches ([queueFromCache]).
+     */
     private fun handleMediaItemChange() {
         // Downloads play only the downloaded songs
         if (offlineMode) return
-        val player = mediaSession?.player
+        val player = mediaSession?.player ?: return
+        // More songs are still on the way (a playlist is loading) or a refill is already running
+        if (player.hasNextMediaItem() || apiPlaListBulkCallJob?.isActive == true || autoQueueJob?.isActive == true) return
 
-        if (player != null) {
+        val seedId = player.currentMediaItem?.mediaId
+        val queuedIds = (0 until player.mediaItemCount).map { player.getMediaItemAt(it).mediaId }.toSet()
+        autoQueueJob = serviceScope.launch {
+            val mix = if (seedId.isNullOrBlank()) emptyList() else {
+                (remoteRepositorySource.getMixQueue(seedId).first() as? Resource.Success)?.data.orEmpty()
+            }.filter { YoutubeCoreConstant.extractYoutubeVideoId(it.videoId) !in queuedIds }
 
-            if (!player.hasNextMediaItem()) {
+            if (mix.isNotEmpty()) {
+                fetchFromQueue(mix.take(MIX_BATCH_SIZE))
+            } else {
+                withContext(Dispatchers.Main) { queueFromCache(player) }
+            }
+        }
+    }
 
-                serviceScope.launch {
-                    dataBaseRepositorySource.getPlaylists().collect {
-                        if (it is Resource.Success) {
-                            var mediaItemsList:List<MediaItem>?=null
-                            withContext(Dispatchers.Main) {
-                                mediaItemsList = (0 until player.mediaItemCount).map { player.getMediaItemAt(it) }
+    /** The original auto-queue: songs cached from playlists/searches the user opened. */
+    private fun queueFromCache(player: Player) {
+        serviceScope.launch {
+            dataBaseRepositorySource.getPlaylists().collect {
+                if (it is Resource.Success) {
+                    var mediaItemsList:List<MediaItem>?=null
+                    withContext(Dispatchers.Main) {
+                        mediaItemsList = (0 until player.mediaItemCount).map { player.getMediaItemAt(it) }
 
-                                withContext(Dispatchers.IO)
+                        withContext(Dispatchers.IO)
+                        {
+                            val listFromQueue: ArrayList<TubeFyCoreTypeData?> = ArrayList()
+
+                            for (data in it.data!!) {
+
+
+                                var isAlreadyInList =false
+
+                                if(mediaItemsList!=null)
                                 {
-                                    val listFromQueue: ArrayList<TubeFyCoreTypeData?> = ArrayList()
+                                    isAlreadyInList=mediaItemsList!!.any {
 
-                                    for (data in it.data!!) {
-
-
-                                        var isAlreadyInList =false
-
-                                        if(mediaItemsList!=null)
-                                        {
-                                            isAlreadyInList=mediaItemsList!!.any {
-
-                                                it.mediaId ==YoutubeCoreConstant.extractYoutubeVideoId(data.videoId) }
-                                        }
-
-
-                                        if (!isAlreadyInList) {
-                                            // If not already in the list, add the mediaItem
-//                                        player.addMediaItem(mediaItem)
-                                            listFromQueue.add(
-                                                TubeFyCoreTypeData(
-                                                    videoId = data.videoId,
-                                                    videoTitle = data.videoName,
-                                                    videoImage = data.videoThumbnail
-                                                )
-                                            )
-                                        } else {
-                                            // If it's already in the list, skip adding it
-                                            Log.d("MediaItem", "The media item is already in the playlist.")
-                                        }
-
-                                    }
-
-                                    if (listFromQueue.size > 0) {
-                                        apiPlaListBulkCallJob?.cancel()
-                                        listFromQueue.shuffle()
-                                        if (listFromQueue.size > 20) {
-                                            fetchFromQueue(listFromQueue.toMutableList().take(20))
-                                        } else {
-                                            fetchFromQueue(listFromQueue.toMutableList())
-
-                                        }
-
-                                    }
-
+                                        it.mediaId ==YoutubeCoreConstant.extractYoutubeVideoId(data.videoId) }
                                 }
+
+
+                                if (!isAlreadyInList) {
+                                    // If not already in the list, add the mediaItem
+//                                        player.addMediaItem(mediaItem)
+                                    listFromQueue.add(
+                                        TubeFyCoreTypeData(
+                                            videoId = data.videoId,
+                                            videoTitle = data.videoName,
+                                            videoImage = data.videoThumbnail
+                                        )
+                                    )
+                                } else {
+                                    // If it's already in the list, skip adding it
+                                    Log.d("MediaItem", "The media item is already in the playlist.")
+                                }
+
                             }
 
+                            if (listFromQueue.size > 0) {
+                                apiPlaListBulkCallJob?.cancel()
+                                listFromQueue.shuffle()
+                                if (listFromQueue.size > 20) {
+                                    fetchFromQueue(listFromQueue.toMutableList().take(20))
+                                } else {
+                                    fetchFromQueue(listFromQueue.toMutableList())
+
+                                }
+
+                            }
 
                         }
                     }
+
+
                 }
             }
-//            else {
-//                // Logic when there is no next media item
-//            }
         }
     }
 
@@ -553,6 +572,8 @@ class PlaybackService(
         const val ACTION_FETCH_PLAYLIST = "com.ramzmania.tubefy.ACTION_FETCH_PLAYLIST"
         const val ACTION_FETCH_SONG = "com.ramzmania.tubefy.ACTION_FETCH_SONG"
         const val ACTION_PLAY_DOWNLOADS = "com.ramzmania.tubefy.ACTION_PLAY_DOWNLOADS"
+        /** How many Mix songs to queue at once; the next refill seeds from the song playing then. */
+        private const val MIX_BATCH_SIZE = 10
         const val VIDEO_ID = "com.ramzmania.tubefy.VIDEO_ID"
         const val ALBUM_ART = "com.ramzmania.tubefy.ALBUM_ART"
         const val VIDEO_TITLE = "com.ramzmania.tubefy.VIDEO_TITLE"
