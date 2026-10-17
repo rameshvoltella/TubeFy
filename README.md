@@ -12,6 +12,8 @@ Transform your YouTube experience into a seamless music streaming journey with o
 - **Discover New Music:** Explore new music and discover trending songs easily with personalized recommendations.
 - **Seamless Playback:** Enjoy uninterrupted music playback with background support, so you can listen while using other apps.
 - **User-Friendly Interface:** Navigate your music library and playlists with an intuitive and sleek interface designed for ease of use.
+- **Offline Downloads:** Download songs to your device and listen without an internet connection. Downloaded songs are collected in their own Downloads playlist, and playing from it queues only your downloaded songs.
+- **Smart Queueing:** When a song ends, TubeFy automatically queues similar songs that match your taste, in the same language, genre and artist style as what you're listening to, so the music keeps flowing without breaking your mood.
 
 
 Elevate your music experience and enjoy YouTube's vast music library like never before. Download now and start listening!
