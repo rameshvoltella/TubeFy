@@ -3,6 +3,7 @@ package com.ramzmania.tubefy.player
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.os.Bundle
 import android.view.KeyEvent
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
@@ -10,11 +11,39 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.LibraryResult
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
+import androidx.media3.session.SessionCommand
+import androidx.media3.session.SessionResult
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 
 @UnstableApi
-class MediaLibrarySessionCallback: MediaLibraryService.MediaLibrarySession.Callback {
+class MediaLibrarySessionCallback(
+    private val sleepTimer: SleepTimer
+) : MediaLibraryService.MediaLibrarySession.Callback {
+
+    override fun onConnect(
+        session: MediaSession,
+        controller: MediaSession.ControllerInfo
+    ): MediaSession.ConnectionResult {
+        // Allow controllers (the player screen) to drive the sleep timer
+        val commands = MediaSession.ConnectionResult.DEFAULT_SESSION_AND_LIBRARY_COMMANDS.buildUpon()
+            .apply { SleepTimer.COMMANDS.forEach { add(it) } }
+            .build()
+        return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
+            .setAvailableSessionCommands(commands)
+            .build()
+    }
+
+    override fun onCustomCommand(
+        session: MediaSession,
+        controller: MediaSession.ControllerInfo,
+        customCommand: SessionCommand,
+        args: Bundle
+    ): ListenableFuture<SessionResult> {
+        sleepTimer.handleCommand(customCommand.customAction, args)
+        return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
+    }
+
 
     override fun onGetLibraryRoot(
         session: MediaLibraryService.MediaLibrarySession,

@@ -28,6 +28,8 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -48,6 +50,8 @@ class PlaybackService(
     @Inject
     lateinit var dataBaseRepositorySource: DatabaseRepositorySource
     private lateinit var mediaLibrarySessionCallback: MediaLibrarySessionCallback
+    private val mainScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    private lateinit var sleepTimer: SleepTimer
     private var mediaSession: MediaLibrarySession? = null
     private val serviceScope = CoroutineScope(Dispatchers.IO + Job())
     private var removeExistingPlayList: Boolean = false
@@ -77,6 +81,12 @@ class PlaybackService(
                         }
                     }
 
+                }
+
+                override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+                    if (!playWhenReady && reason == Player.PLAY_WHEN_READY_CHANGE_REASON_END_OF_MEDIA_ITEM) {
+                        sleepTimer.onPausedAtEndOfSong()
+                    }
                 }
 
                 override fun onPlayerError(error: PlaybackException) {
@@ -138,7 +148,8 @@ class PlaybackService(
         )
 
 
-        mediaLibrarySessionCallback = MediaLibrarySessionCallback()
+        sleepTimer = SleepTimer(mainScope) { mediaSession }
+        mediaLibrarySessionCallback = MediaLibrarySessionCallback(sleepTimer)
         mediaSession =
             MediaLibrarySession.Builder(this, player, mediaLibrarySessionCallback)
                 .setSessionActivity(pendingIntent).build()
@@ -336,6 +347,8 @@ class PlaybackService(
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo) = mediaSession
 
     override fun onDestroy() {
+        sleepTimer.release()
+        mainScope.cancel()
         mediaSession?.run {
             player.release()
             release()

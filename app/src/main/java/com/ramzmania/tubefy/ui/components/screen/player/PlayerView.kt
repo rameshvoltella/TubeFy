@@ -3,6 +3,13 @@ package com.ramzmania.tubefy.ui.components.screen.player
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
+import android.os.Bundle
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.core.os.bundleOf
+import androidx.media3.session.SessionCommand
+import com.ramzmania.tubefy.player.SleepTimer
+import com.ramzmania.tubefy.ui.theme.DiscoverAccent
 import androidx.annotation.OptIn
 import androidx.compose.animation.Crossfade
 import androidx.compose.ui.draw.rotate
@@ -166,6 +173,12 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
     var palette by remember { mutableStateOf<Palette?>(null) }
     val isFavouriteSong by viewModel.isFavouriteState.collectAsState()
     val downloadState by rememberDownloadState(videoId)
+    var showSleepSheet by remember { mutableStateOf(false) }
+    var sleepEndAt by remember { mutableLongStateOf(0L) }
+    var sleepEndOfSong by remember { mutableStateOf(false) }
+    var nowMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    val sleepRemainingMs = if (sleepEndAt > 0) (sleepEndAt - nowMs).coerceAtLeast(0L) else 0L
+    val sleepActive = sleepEndOfSong || sleepRemainingMs > 0
 
     LoadBitmapAndExtractPalette(albumArt) { palette = it }
     val tint by animateColorAsState(
@@ -190,6 +203,39 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
             if (controller.duration > 0) durationMs = controller.duration
             delay(500L)
         } while (isPlaying)
+    }
+
+    // Sleep timer state is published by the playback service as session extras
+    LaunchedEffect(mediaController) {
+        val controller = mediaController ?: return@LaunchedEffect
+        while (true) {
+            val extras = controller.sessionExtras
+            sleepEndAt = extras.getLong(SleepTimer.EXTRA_END_AT, 0L)
+            sleepEndOfSong = extras.getBoolean(SleepTimer.EXTRA_END_OF_SONG, false)
+            nowMs = System.currentTimeMillis()
+            delay(1000L)
+        }
+    }
+
+    fun sendSleepCommand(action: String, args: Bundle = Bundle.EMPTY) {
+        mediaController?.sendCustomCommand(SessionCommand(action, Bundle.EMPTY), args)
+        showSleepSheet = false
+    }
+
+    if (showSleepSheet) {
+        SleepTimerSheet(
+            active = sleepActive,
+            status = when {
+                sleepEndOfSong -> "Stopping at the end of this song"
+                sleepRemainingMs > 0 -> "Stopping in ${formatTime(sleepRemainingMs, 0)}"
+                else -> null
+            },
+            onMinutes = { minutes -> sendSleepCommand(SleepTimer.CMD_SET, bundleOf(SleepTimer.KEY_MINUTES to minutes)) },
+            onEndOfSong = { sendSleepCommand(SleepTimer.CMD_SET, bundleOf(SleepTimer.KEY_END_OF_SONG to true)) },
+            onExtend = { sendSleepCommand(SleepTimer.CMD_EXTEND, bundleOf(SleepTimer.KEY_MINUTES to 5)) },
+            onCancel = { sendSleepCommand(SleepTimer.CMD_CANCEL) },
+            onDismiss = { showSleepSheet = false }
+        )
     }
 
     // Keep shuffle / repeat / up next in sync with the session player
@@ -270,8 +316,6 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
         }
     }
 
-    fun comingSoon(feature: String) =
-        Toast.makeText(context, "$feature is coming soon", Toast.LENGTH_SHORT).show()
 
     Box(
         modifier = Modifier
@@ -536,7 +580,16 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                         }
                     )
                     ActionTile(Icons.AutoMirrored.Rounded.PlaylistAdd, "Playlist", onClick = { showPlayListDialog = true })
-                    ActionTile(Icons.Rounded.Timer, "Sleep timer", onClick = { comingSoon("Sleep timer") })
+                    ActionTile(
+                        icon = Icons.Rounded.Timer,
+                        label = when {
+                            sleepEndOfSong -> "End of song"
+                            sleepRemainingMs > 0 -> formatTime(sleepRemainingMs, 0)
+                            else -> "Sleep timer"
+                        },
+                        onClick = { showSleepSheet = true },
+                        iconTint = if (sleepActive) DiscoverAccent else Color.White
+                    )
                 }
             }
 
@@ -655,6 +708,67 @@ private fun ModeButton(icon: ImageVector, description: String, active: Boolean, 
             }
         }
     }
+}
+
+/** Sleep timer options: presets and end-of-song when idle; extend or turn off while running. */
+@kotlin.OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SleepTimerSheet(
+    active: Boolean,
+    status: String?,
+    onMinutes: (Int) -> Unit,
+    onEndOfSong: () -> Unit,
+    onExtend: () -> Unit,
+    onCancel: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = Color(0xFF121011)
+    ) {
+        Column(
+            modifier = Modifier
+                .navigationBarsPadding()
+                .padding(bottom = 16.dp)
+        ) {
+            Text(
+                text = "Sleep timer",
+                color = Color.White,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(horizontal = 24.dp)
+            )
+            Text(
+                text = status ?: "Music fades out and pauses when the timer ends",
+                color = if (active) DiscoverAccent else SecondaryText,
+                fontSize = 14.sp,
+                modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 4.dp, bottom = 12.dp)
+            )
+            if (active) {
+                SleepOption("+5 minutes", onClick = onExtend)
+                SleepOption("Turn off timer", color = DiscoverAccent, onClick = onCancel)
+            } else {
+                listOf(15, 30, 45, 60).forEach { minutes ->
+                    SleepOption(if (minutes == 60) "1 hour" else "$minutes minutes") { onMinutes(minutes) }
+                }
+                SleepOption("End of this song", onClick = onEndOfSong)
+            }
+        }
+    }
+}
+
+@Composable
+private fun SleepOption(label: String, color: Color = Color.White, onClick: () -> Unit) {
+    Text(
+        text = label,
+        color = color,
+        fontSize = 17.sp,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 24.dp, vertical = 15.dp)
+    )
 }
 
 private sealed interface DownloadState {

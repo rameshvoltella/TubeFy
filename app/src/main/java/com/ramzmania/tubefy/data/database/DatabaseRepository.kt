@@ -101,6 +101,10 @@ class DatabaseRepository @Inject constructor(
         return flow { emit(databaseData.savePlayListOrder(playlistName, songs)) }
     }
 
+    override suspend fun clearAutomatedPlaylist(): Flow<Resource<Int>> {
+        return flow { emit(databaseData.clearAutomatedPlaylist()) }
+    }
+
     override suspend fun deleteAllFavorites(): Flow<Resource<DatabaseResponse>> {
         return flow { emit(databaseData.deleteAllFavorites()) }
     }

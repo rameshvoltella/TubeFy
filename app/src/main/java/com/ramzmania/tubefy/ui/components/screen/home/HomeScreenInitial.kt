@@ -314,7 +314,7 @@ private fun DiscoverHeader(onSearchClick: () -> Unit, onProfileClick: () -> Unit
         Spacer(modifier = Modifier.width(6.dp))
         Image(
             painter = painterResource(id = R.drawable.tubefy_icon),
-            contentDescription = "About TubeFy",
+            contentDescription = "Settings",
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .size(40.dp)

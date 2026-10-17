@@ -757,6 +757,13 @@ class TubeFyViewModel @Inject constructor(
         }
     }
 
+    /** Clears the automated playlist; [onCleared] runs on the main thread when done. */
+    fun clearAutomatedPlaylist(onCleared: () -> Unit) {
+        viewModelScope.launch {
+            playlistDatabaseRepository.clearAutomatedPlaylist().collect { onCleared() }
+        }
+    }
+
     /** Persists a drag-and-drop reorder of a saved playlist (or favorites). */
     fun savePlaylistOrder(playlistName: String, songs: List<TubeFyCoreTypeData?>) {
         viewModelScope.launch {

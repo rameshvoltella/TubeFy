@@ -20,6 +20,10 @@ interface PlaylistDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertQuePlaylists(playlists: List<QuePlaylist>)
 
+    /** Clears the automated playlist (songs auto-queued after the one the user picked). */
+    @Query("DELETE FROM QuePlaylist")
+    suspend fun clearQuePlaylist(): Int
+
     @Query("SELECT COUNT(*) FROM QuePlaylist")
     suspend fun getQuePlaylistCount(): Int
 

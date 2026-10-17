@@ -323,6 +323,10 @@ class DatabaseData @Inject constructor(
         return Resource.Success(DatabaseResponse(200))
     }
 
+    override suspend fun clearAutomatedPlaylist(): Resource<Int> {
+        return Resource.Success(playlistDao.clearQuePlaylist())
+    }
+
     override suspend fun deleteSpecificPlayList(playlistName:String): Resource<DatabaseResponse> {
         val result=playlistDao.deleteCustomPlaylistByName(playlistName)>0
         return if (result) {

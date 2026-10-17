@@ -30,11 +30,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Search
 import com.ramzmania.tubefy.ui.theme.DiscoverAccent
 import com.ramzmania.tubefy.ui.theme.DiscoverAccentContainer
@@ -81,7 +81,7 @@ import com.ramzmania.tubefy.R
 import com.ramzmania.tubefy.player.PlaybackService
 import com.ramzmania.tubefy.ui.components.screen.BooksScreen
 import com.ramzmania.tubefy.ui.components.screen.home.HomeInitialScreen
-import com.ramzmania.tubefy.ui.components.screen.ProfileScreen
+import com.ramzmania.tubefy.ui.components.screen.settings.SettingsScreen
 import com.ramzmania.tubefy.ui.components.screen.album.AlbumScreen
 import com.ramzmania.tubefy.ui.components.screen.category.CategoryPlaylistView
 import com.ramzmania.tubefy.ui.components.screen.library.LibraryDetailPage
@@ -257,7 +257,7 @@ fun Navigation(navController: NavHostController) {
             MyLibraryPage()
         }
         composable(NavigationItem.Profile.route) {
-            ProfileScreen()
+            SettingsScreen()
         }
         composable(NavigationItem.PlayList.route) { backStackEntry ->
             AlbumScreen()
@@ -299,7 +299,7 @@ fun BottomNavigationBar(navController: NavController) {
         Triple(NavigationItem.Home, Icons.Rounded.Home, Icons.Outlined.Home),
         Triple(NavigationItem.Search, Icons.Rounded.Search, Icons.Outlined.Search),
         Triple(NavigationItem.Books, LibraryIconFilled, LibraryIconOutlined),
-        Triple(NavigationItem.Profile, Icons.Rounded.Info, Icons.Outlined.Info)
+        Triple(NavigationItem.Profile, Icons.Rounded.Settings, Icons.Outlined.Settings)
     )
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
