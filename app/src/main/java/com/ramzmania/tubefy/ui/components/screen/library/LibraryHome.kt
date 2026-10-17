@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.DownloadDone
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material3.DropdownMenu
@@ -56,6 +57,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.ramzmania.tubefy.R
 import com.ramzmania.tubefy.core.YoutubeCoreConstant
+import com.ramzmania.tubefy.core.download.Downloads
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.database.PlaylistNameWithUrl
 import com.ramzmania.tubefy.ui.components.ChipRow
@@ -240,6 +242,7 @@ fun LibraryHomeItem(
     onDeleteClick: (PlaylistNameWithUrl) -> Unit
 ) {
     val isFavorites = playListItem.playlistName == FAVORITES_PLAYLIST
+    val isDownloads = playListItem.playlistName == Downloads.PLAYLIST
     var showMenu by remember { mutableStateOf(false) }
 
     Row(
@@ -252,7 +255,17 @@ fun LibraryHomeItem(
             .clickable { onClick(playListItem) }
             .padding(12.dp)
     ) {
-        if (isFavorites) {
+        if (isDownloads) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(84.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(Brush.linearGradient(listOf(Color(0xFF27AE60), Color(0xFF0E3B22))))
+            ) {
+                Icon(Icons.Rounded.DownloadDone, contentDescription = null, tint = Color.White, modifier = Modifier.size(40.dp))
+            }
+        } else if (isFavorites) {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
@@ -284,7 +297,11 @@ fun LibraryHomeItem(
                 .padding(start = 16.dp, end = 8.dp)
         ) {
             Text(
-                text = if (isFavorites) "Favorite" else playListItem.playlistName.trim().replaceFirstChar { it.uppercase() },
+                text = when {
+                    isFavorites -> "Favorite"
+                    isDownloads -> "Downloads"
+                    else -> playListItem.playlistName.trim().replaceFirstChar { it.uppercase() }
+                },
                 color = Color.White,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -292,7 +309,11 @@ fun LibraryHomeItem(
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                text = if (isFavorites) "All your liked songs" else "Your playlist",
+                text = when {
+                    isFavorites -> "All your liked songs"
+                    isDownloads -> "Available offline"
+                    else -> "Your playlist"
+                },
                 color = DiscoverTextSecondary,
                 fontSize = 14.sp,
                 maxLines = 1,

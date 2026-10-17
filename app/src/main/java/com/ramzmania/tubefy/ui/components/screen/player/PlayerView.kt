@@ -39,6 +39,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.DownloadDone
+import androidx.compose.runtime.State
+import androidx.compose.runtime.produceState
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
+import com.ramzmania.tubefy.core.download.DownloadWorker
+import com.ramzmania.tubefy.core.download.Downloads
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
@@ -134,6 +141,9 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
         URLDecoder.decode(navArgs?.getString(key) ?: "", StandardCharsets.UTF_8.toString())
 
     val isBulk = remember { navArgs?.getString("isBulk") == "true" }
+    // Opened from the Downloads playlist: play the downloaded files only
+    val startOffline = remember { navArgs?.getString("isBulk") == "offline" }
+    var playingOffline by remember { mutableStateOf(startOffline) }
     var videoId by remember { mutableStateOf(navArg("videoId")) }
     var albumArt by remember {
         mutableStateOf("https://i.ytimg.com/vi/${YoutubeCoreConstant.extractYoutubeVideoId(videoId)}/hq720.jpg")
@@ -155,6 +165,7 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
     var showMenu by remember { mutableStateOf(false) }
     var palette by remember { mutableStateOf<Palette?>(null) }
     val isFavouriteSong by viewModel.isFavouriteState.collectAsState()
+    val downloadState by rememberDownloadState(videoId)
 
     LoadBitmapAndExtractPalette(albumArt) { palette = it }
     val tint by animateColorAsState(
@@ -166,6 +177,9 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
 
     LaunchedEffect(videoId) {
         YoutubeCoreConstant.extractYoutubeVideoId(videoId)?.let { viewModel.isFavourite(it) }
+    }
+    LaunchedEffect(playingOffline) {
+        if (playingOffline) playerMode = PlayerMode.Song
     }
 
     // Position ticker
@@ -182,6 +196,9 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
     DisposableEffect(mediaController) {
         val controller = mediaController ?: return@DisposableEffect onDispose {}
         fun sync(player: Player) {
+            if (player.currentMediaItem != null) {
+                playingOffline = player.mediaMetadata.extras?.getBoolean(Downloads.OFFLINE_EXTRA) == true
+            }
             shuffleOn = player.shuffleModeEnabled
             repeatMode = player.repeatMode
             nextItem = if (player.hasNextMediaItem()) player.getMediaItemAt(player.nextMediaItemIndex) else null
@@ -205,7 +222,9 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
             mediaController = controller
             isPlaying = controller.isPlaying
             val currentId = controller.currentMediaItem?.mediaId
-            if (isBulk) {
+            if (startOffline) {
+                startPlayDownloadsService(context)
+            } else if (isBulk) {
                 startFetchPlayListService(context)
             } else if (controller.isConnected && currentId != null &&
                 currentId == YoutubeCoreConstant.extractYoutubeVideoId(videoId)
@@ -301,13 +320,17 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                         Icon(Icons.Rounded.KeyboardArrowDown, "Close player", tint = Color.White, modifier = Modifier.size(30.dp))
                     }
                     Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                        SongVideoToggle(
-                            selected = playerMode,
-                            onSelect = { mode ->
-                                playerMode = mode
-                                if (mode == PlayerMode.Video) mediaController?.play()
-                            }
-                        )
+                        if (playingOffline) {
+                            OfflineBadge()
+                        } else {
+                            SongVideoToggle(
+                                selected = playerMode,
+                                onSelect = { mode ->
+                                    playerMode = mode
+                                    if (mode == PlayerMode.Video) mediaController?.play()
+                                }
+                            )
+                        }
                     }
                     Box {
                         IconButton(onClick = { showMenu = true }) {
@@ -499,7 +522,19 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                         iconTint = if (isFavouriteSong) FavouriteRed else Color.White,
                         onClick = ::toggleFavourite
                     )
-                    ActionTile(Icons.Rounded.Download, "Download", onClick = { comingSoon("Download") })
+                    DownloadTile(
+                        state = downloadState,
+                        onClick = {
+                            when (downloadState) {
+                                DownloadState.Done -> Toast.makeText(context, "Already downloaded", Toast.LENGTH_SHORT).show()
+                                is DownloadState.Downloading -> Toast.makeText(context, "Downloading…", Toast.LENGTH_SHORT).show()
+                                else -> {
+                                    Downloads.enqueue(context, videoId, title, albumArt)
+                                    Toast.makeText(context, "Download started", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        }
+                    )
                     ActionTile(Icons.AutoMirrored.Rounded.PlaylistAdd, "Playlist", onClick = { showPlayListDialog = true })
                     ActionTile(Icons.Rounded.Timer, "Sleep timer", onClick = { comingSoon("Sleep timer") })
                 }
@@ -622,12 +657,90 @@ private fun ModeButton(icon: ImageVector, description: String, active: Boolean, 
     }
 }
 
+private sealed interface DownloadState {
+    data object Idle : DownloadState
+    data object Failed : DownloadState
+    data class Downloading(val progress: Int) : DownloadState
+    data object Done : DownloadState
+}
+
+private val DownloadedGreen = Color(0xFF2ECC71)
+
+/** Tracks the song's file and its download work, so the button reflects progress and completion. */
+@Composable
+private fun rememberDownloadState(videoId: String): State<DownloadState> {
+    val context = LocalContext.current
+    return produceState<DownloadState>(
+        initialValue = if (videoId.isNotBlank() && Downloads.isDownloaded(context, videoId)) DownloadState.Done else DownloadState.Idle,
+        key1 = videoId
+    ) {
+        if (videoId.isBlank()) return@produceState
+        WorkManager.getInstance(context)
+            .getWorkInfosForUniqueWorkFlow(Downloads.workName(videoId))
+            .collect { infos ->
+                val info = infos.firstOrNull()
+                value = when {
+                    info?.state == WorkInfo.State.RUNNING ->
+                        DownloadState.Downloading(info.progress.getInt(DownloadWorker.KEY_PROGRESS, 0))
+                    info?.state == WorkInfo.State.ENQUEUED || info?.state == WorkInfo.State.BLOCKED ->
+                        DownloadState.Downloading(0)
+                    Downloads.isDownloaded(context, videoId) -> DownloadState.Done
+                    info?.state == WorkInfo.State.FAILED -> DownloadState.Failed
+                    else -> DownloadState.Idle
+                }
+            }
+    }
+}
+
+@Composable
+private fun DownloadTile(state: DownloadState, onClick: () -> Unit) {
+    when (state) {
+        DownloadState.Done -> ActionTile(Icons.Rounded.DownloadDone, "Downloaded", onClick, iconTint = DownloadedGreen)
+        DownloadState.Failed -> ActionTile(Icons.Rounded.Download, "Retry", onClick)
+        DownloadState.Idle -> ActionTile(Icons.Rounded.Download, "Download", onClick)
+        is DownloadState.Downloading -> ActionTile(
+            icon = Icons.Rounded.Download,
+            label = if (state.progress > 0) "${state.progress}%" else "Waiting…",
+            onClick = onClick,
+            content = {
+                if (state.progress > 0) {
+                    CircularProgressIndicator(
+                        progress = { state.progress / 100f },
+                        color = DownloadedGreen,
+                        trackColor = Color.White.copy(alpha = 0.15f),
+                        strokeWidth = 3.dp,
+                        modifier = Modifier.size(30.dp)
+                    )
+                } else {
+                    CircularProgressIndicator(color = DownloadedGreen, strokeWidth = 3.dp, modifier = Modifier.size(30.dp))
+                }
+            }
+        )
+    }
+}
+
+/** Shown instead of the Song/Video toggle while playing downloaded files. */
+@Composable
+private fun OfflineBadge() {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .background(SurfaceTint)
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+    ) {
+        Icon(Icons.Rounded.DownloadDone, contentDescription = null, tint = DownloadedGreen, modifier = Modifier.size(18.dp))
+        Text("Offline", color = Color.White, fontSize = 15.sp, modifier = Modifier.padding(start = 6.dp))
+    }
+}
+
 @Composable
 private fun ActionTile(
     icon: ImageVector,
     label: String,
     onClick: () -> Unit,
-    iconTint: Color = Color.White
+    iconTint: Color = Color.White,
+    content: (@Composable () -> Unit)? = null
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -642,7 +755,7 @@ private fun ActionTile(
                 .clickable(onClick = onClick),
             contentAlignment = Alignment.Center
         ) {
-            Icon(icon, contentDescription = label, tint = iconTint, modifier = Modifier.size(26.dp))
+            if (content != null) content() else Icon(icon, contentDescription = label, tint = iconTint, modifier = Modifier.size(26.dp))
         }
         Text(
             text = label,
@@ -768,6 +881,14 @@ private fun formatTime(ms: Long, durationMs: Long): String {
     val seconds = totalSeconds % 60
     return if (durationMs >= 3_600_000) "%d:%02d:%02d".format(hours, minutes, seconds)
     else "%d:%02d".format(minutes, seconds)
+}
+
+@OptIn(UnstableApi::class)
+fun startPlayDownloadsService(context: Context) {
+    val intent = Intent(context, PlaybackService::class.java).apply {
+        action = PlaybackService.ACTION_PLAY_DOWNLOADS
+    }
+    context.startService(intent)
 }
 
 @OptIn(UnstableApi::class)

@@ -13,7 +13,9 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
+import androidx.core.os.bundleOf
 import com.ramzmania.tubefy.core.YoutubeCoreConstant
+import com.ramzmania.tubefy.core.download.Downloads
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.database.DatabaseRepositorySource
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
@@ -50,6 +52,9 @@ class PlaybackService(
     private val serviceScope = CoroutineScope(Dispatchers.IO + Job())
     private var removeExistingPlayList: Boolean = false
     private var fetchRecentPlaylistQueue: Boolean = false
+
+    /** True while playing downloaded files: no network refetch and no auto-appended queue songs. */
+    private var offlineMode: Boolean = false
     var path: String = ""
     private var apiPlaListBulkCallJob: Job? = null
 //    var currentPlayListQueue:Long=0L
@@ -75,6 +80,15 @@ class PlaybackService(
                 }
 
                 override fun onPlayerError(error: PlaybackException) {
+                    if (offlineMode) {
+                        // A local file failed (e.g. deleted): just move on to the next download
+                        if (hasNextMediaItem()) {
+                            seekToNextMediaItem()
+                            prepare()
+                            playWhenReady = true
+                        }
+                        return
+                    }
                     val videoId = currentMediaItem?.mediaId // Assuming mediaId is the videoId
                     val albumArt = currentMediaItem?.mediaMetadata?.artworkUri.toString()
                     val playerHeader = currentMediaItem?.mediaMetadata?.title.toString()
@@ -131,6 +145,8 @@ class PlaybackService(
     }
 
     private fun handleMediaItemChange() {
+        // Downloads play only the downloaded songs
+        if (offlineMode) return
         val player = mediaSession?.player
 
         if (player != null) {
@@ -208,7 +224,14 @@ class PlaybackService(
         super.onStartCommand(intent, flags, startId)
         intent?.let {
             when (it.action) {
+                ACTION_PLAY_DOWNLOADS -> {
+                    apiPlaListBulkCallJob?.cancel()
+                    offlineMode = true
+                    playDownloads()
+                }
+
                 ACTION_FETCH_PLAYLIST -> {
+                    offlineMode = false
                     apiPlaListBulkCallJob?.cancel()
                     preferenceManager.putLong("queue", System.currentTimeMillis())
                     removeExistingPlayList = true
@@ -217,6 +240,7 @@ class PlaybackService(
                 }
 
                 ACTION_FETCH_SONG -> {
+                    offlineMode = false
                     apiPlaListBulkCallJob?.cancel()
                     preferenceManager.putLong("queue", System.currentTimeMillis())
                     removeExistingPlayList = true
@@ -245,6 +269,41 @@ class PlaybackService(
             }
         }
         return START_STICKY
+    }
+
+    /** Queues the active playlist (set from the Downloads page) using the local files only. */
+    private fun playDownloads() {
+        serviceScope.launch {
+            dataBaseRepositorySource.getAllActivePlaylists().collect { result ->
+                if (result !is Resource.Success) return@collect
+                val items = result.data.orEmpty().filterNotNull()
+                    .filter { Downloads.isDownloaded(this@PlaybackService, it.videoId) }
+                    .map { song ->
+                        MediaItem.Builder()
+                            .setMediaId(Downloads.plainId(song.videoId))
+                            .setUri(Uri.fromFile(Downloads.file(this@PlaybackService, song.videoId)))
+                            .setMediaMetadata(
+                                MediaMetadata.Builder()
+                                    .setTitle(song.videoTitle)
+                                    .setArtworkUri(Uri.parse(song.videoImage))
+                                    .setIsBrowsable(false)
+                                    .setIsPlayable(true)
+                                    .setMediaType(MediaMetadata.MEDIA_TYPE_MUSIC)
+                                    .setExtras(bundleOf(Downloads.OFFLINE_EXTRA to true))
+                                    .build()
+                            )
+                            .build()
+                    }
+                if (items.isEmpty()) return@collect
+                withContext(Dispatchers.Main) {
+                    mediaSession?.player?.apply {
+                        setMediaItems(items)
+                        playWhenReady = true
+                        prepare()
+                    }
+                }
+            }
+        }
     }
 
     private fun fetchFromActiveDb() {
@@ -480,6 +539,7 @@ class PlaybackService(
     companion object {
         const val ACTION_FETCH_PLAYLIST = "com.ramzmania.tubefy.ACTION_FETCH_PLAYLIST"
         const val ACTION_FETCH_SONG = "com.ramzmania.tubefy.ACTION_FETCH_SONG"
+        const val ACTION_PLAY_DOWNLOADS = "com.ramzmania.tubefy.ACTION_PLAY_DOWNLOADS"
         const val VIDEO_ID = "com.ramzmania.tubefy.VIDEO_ID"
         const val ALBUM_ART = "com.ramzmania.tubefy.ALBUM_ART"
         const val VIDEO_TITLE = "com.ramzmania.tubefy.VIDEO_TITLE"

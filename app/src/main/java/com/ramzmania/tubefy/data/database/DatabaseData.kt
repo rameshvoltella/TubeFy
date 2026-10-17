@@ -8,6 +8,7 @@ import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
 import com.ramzmania.tubefy.data.dto.database.PlaylistNameWithUrl
 import com.ramzmania.tubefy.database.ActivePlaylist
+import com.ramzmania.tubefy.core.download.Downloads
 import com.ramzmania.tubefy.database.CustomPlaylist
 import com.ramzmania.tubefy.database.DatabaseResponse
 import com.ramzmania.tubefy.database.FavoritePlaylist
@@ -273,6 +274,10 @@ class DatabaseData @Inject constructor(
 //        if(getFavorites().data!=null&&getFavorites().data?.size!!>0)
 //        {
             allSavedPlayList.add(0,PlaylistNameWithUrl("TubeFy-Favorites","Favorites", playlistDao.getFavoritesCount()))
+            // Downloads (if any) come right after Favorites
+            allSavedPlayList.indexOfFirst { it.playlistName == Downloads.PLAYLIST }.takeIf { it > 1 }?.let {
+                allSavedPlayList.add(1, allSavedPlayList.removeAt(it))
+            }
 //        }
 
         return if(allSavedPlayList.isNotEmpty())
