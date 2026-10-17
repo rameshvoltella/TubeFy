@@ -39,7 +39,7 @@ Click here -> https://youtu.be/YrhG8T8gbU4
         <h3>Notification, VideoView,Library</h3>
      <img src="https://github.com/rameshvoltella/TubeFy/blob/beta/screenshots/WhatsApp%20Image%202024-08-28%20at%209.09.38%20PM(1).jpeg" alt="Notification" style="width: 40%; height: 40%;">
     <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/player.jpeg" alt="MiniPlayer" style="width: 40%; height: 40%;">
-        <img src="https://github.com/rameshvoltella/TubeFy/redesign/beta/screenshots/new/lib.jpeg" alt="Playlist" style="width: 40%; height: 40%;">
+        <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/lib.jpeg" alt="Playlist" style="width: 40%; height: 40%;">
 
 </div>
 
