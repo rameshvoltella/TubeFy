@@ -15,12 +15,13 @@ Transform your YouTube experience into a seamless music streaming journey with o
 - **Offline Downloads:** Download songs to your device and listen without an internet connection. Downloaded songs are collected in their own Downloads playlist, and playing from it queues only your downloaded songs.
 - **Smart Queueing:** When a song ends, TubeFy automatically queues similar songs that match your taste, in the same language, genre and artist style as what you're listening to, so the music keeps flowing without breaking your mood.
 - **Smart Shuffle:** Tap shuffle once for a normal shuffle, and tap it again for Smart Shuffle. It reshuffles your queue so songs by the same artist flow together, and mixes in recommended songs that match the language, mood and style of what's playing. Tap once more to turn shuffle off, which also removes any recommended songs that haven't played yet.
+- **Sleep Timer:** Fall asleep to your music. Choose 15, 30, 45 or 60 minutes, or "End of this song", and the music gently fades out and pauses when time is up. The countdown shows on the player, and you can add 5 more minutes or turn the timer off at any time. It keeps running even when your screen is off.
 
 
 Elevate your music experience and enjoy YouTube's vast music library like never before. Download now and start listening!
 ## Video Preview
 
-Click here -> https://youtu.be/YrhG8T8gbU4
+Click here -> https://youtu.be/YrhG8T8gbU4 (oldplayer)
 
 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
     <div style="text-align: center;">
