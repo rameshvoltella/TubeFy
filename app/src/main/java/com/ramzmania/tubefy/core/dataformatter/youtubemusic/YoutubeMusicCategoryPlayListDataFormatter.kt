@@ -32,44 +32,36 @@ class YoutubeMusicCategoryPlayListDataFormatter @Inject constructor() :
                     var checkingPlayerId = ""
 //                                tabContents.musicCarouselShelfRenderer.contents[0].musicTwoRowItemRenderer.thumbnailRenderer.musicThumbnailRenderer.thumbnail.thumbnails[0].url
                     categoryPlayListBaseName =
-                        tabContents.musicCarouselShelfRenderer?.header?.musicCarouselShelfBasicHeaderRenderer?.accessibilityData?.accessibilityData?.label!!
+                        tabContents.musicCarouselShelfRenderer?.header?.musicCarouselShelfBasicHeaderRenderer?.accessibilityData?.accessibilityData?.label
+                            ?: continue
                     val musicCategoryPlayListContentList = mutableListOf<MusicCategoryPlayList>()
                     for (shelfContent in tabContents.musicCarouselShelfRenderer?.contents!!) {
                         if (shelfContent.musicTwoRowItemRenderer != null) {
-
-                            for (thumpNail in shelfContent.musicTwoRowItemRenderer?.thumbnailRenderer?.musicThumbnailRenderer?.thumbnail?.thumbnails!!) {
-                                plaListThumpNail = thumpNail.url
-                                break
-                            }
-                            if (shelfContent.musicTwoRowItemRenderer.title?.runs!!.isNotEmpty()) {
-                                plaListName =
-                                    shelfContent.musicTwoRowItemRenderer.title?.runs!![0].text
-                            }
-                            try {
-                                checkingPlayerId =
-                                    shelfContent.musicTwoRowItemRenderer.thumbnailOverlay?.musicItemThumbnailOverlayRenderer?.content?.musicPlayButtonRenderer?.playNavigationEndpoint?.watchPlaylistEndpoint?.playlistId!!
-                            } catch (ex: Exception) {
-                                checkingPlayerId = "exception"
-                            }
-                            for (menuItem in shelfContent.musicTwoRowItemRenderer?.menu?.menuRenderer?.items!!) {
-
-
-                                if (checkingPlayerId.equals("exception")) {
-                                    plaListId =
-                                        menuItem.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint?.playlistId
-                                    break
-                                } else if (checkingPlayerId.contains(menuItem.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint?.playlistId!!)) {
-                                    plaListId =
-                                        menuItem.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint?.playlistId
-                                    break
-                                }
-                            }
-                            if (plaListId != null) {
+                            val item = shelfContent.musicTwoRowItemRenderer
+                            val name = item.title?.runs?.firstOrNull()?.text
+                            val thumb = item.thumbnailRenderer?.musicThumbnailRenderer?.thumbnail?.thumbnails?.firstOrNull()?.url
+                            val itemPlaylistId = twoRowPlaylistId(item)
+                            if (!name.isNullOrBlank() && !itemPlaylistId.isNullOrBlank()) {
                                 musicCategoryPlayListContentList.add(
                                     MusicCategoryPlayList(
-                                        playListId = plaListId!!,
-                                        playListName = plaListName!!,
-                                        playListThump = plaListThumpNail!!
+                                        playListId = itemPlaylistId,
+                                        playListName = name,
+                                        playListThump = thumb.orEmpty()
+                                    )
+                                )
+                            }
+                        } else if (shelfContent.musicMultiRowListItemRenderer != null) {
+                            // Podcast episode: plays directly
+                            val episode = shelfContent.musicMultiRowListItemRenderer
+                            val episodeId = episode.onTap?.watchEndpoint?.videoId
+                            val name = episode.title?.runs?.firstOrNull()?.text
+                            if (!episodeId.isNullOrBlank() && !name.isNullOrBlank()) {
+                                musicCategoryPlayListContentList.add(
+                                    MusicCategoryPlayList(
+                                        videoId = episodeId,
+                                        playListName = name,
+                                        playListThump = episode.thumbnail?.musicThumbnailRenderer?.thumbnail?.thumbnails?.lastOrNull()?.url
+                                            ?: "https://i.ytimg.com/vi/$episodeId/hqdefault.jpg"
                                     )
                                 )
                             }
@@ -143,4 +135,19 @@ class YoutubeMusicCategoryPlayListDataFormatter @Inject constructor() :
         }
 
     }
+}
+
+/**
+ * The playlist a two-row card opens. Podcast shows link to "MPSP<playlistId>"; music playlists
+ * expose it through their play button / menu. Null-safe: some menu items have no navigation.
+ */
+private fun twoRowPlaylistId(item: com.ramzmania.tubefy.data.dto.youtubemusic.playlist.categoryplaylist.MusicTwoRowItemRenderer): String? {
+    val browseId = item.navigationEndpoint?.browseEndpoint?.browseId
+    if (browseId != null && browseId.startsWith("MPSP")) return browseId.removePrefix("MPSP")
+    val playButtonId = item.thumbnailOverlay?.musicItemThumbnailOverlayRenderer?.content
+        ?.musicPlayButtonRenderer?.playNavigationEndpoint?.watchPlaylistEndpoint?.playlistId
+    val menuIds = item.menu?.menuRenderer?.items.orEmpty()
+        .mapNotNull { it.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint?.playlistId }
+    return if (playButtonId != null) menuIds.firstOrNull { playButtonId.contains(it) } ?: playButtonId
+    else menuIds.firstOrNull()
 }

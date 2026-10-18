@@ -17,6 +17,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import com.ramzmania.tubefy.core.YoutubeCoreConstant
+import com.ramzmania.tubefy.core.recommendation.DailyRecommendations
 import com.ramzmania.tubefy.data.dto.base.playlist.PlayListCategory
 import com.ramzmania.tubefy.ui.components.NavigationItem
 import com.ramzmania.tubefy.ui.components.ChipRow
@@ -230,6 +231,12 @@ fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel(), navControlle
     // Songs and playlists the user chose to play: last 15, shuffled per launch, shown from 5 items
     val playedSongs by viewModel.playedSongs.collectAsState()
     val jumpBackIn = remember(playedSongs, playlistVisits) { jumpBackInItems(playedSongs, playlistVisits) }
+    // Built once a day from the songs the user starts; loads once there's enough history
+    val recommendedToday by viewModel.recommendedToday.collectAsState()
+    val hasEnoughHistory = playedSongs.size >= DailyRecommendations.MIN_HISTORY
+    LaunchedEffect(hasEnoughHistory) {
+        if (hasEnoughHistory) viewModel.loadRecommendedToday()
+    }
     val categories = (categoryData as? Resource.Success)?.data.orEmpty()
     val chips = remember(categories) { buildHomeChips(categories) }
     var selectedChip by rememberSaveable { mutableStateOf(FOR_YOU) }
@@ -286,11 +293,12 @@ fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel(), navControlle
                                     )
                                 }
                             },
-                            // "Jump back in" is the 4th item on Home (or after the last section if fewer)
-                            inlineContent = if (jumpBackIn.isEmpty()) null else {
-                                { JumpBackInRow(jumpBackIn, navController) }
-                            },
-                            inlinePosition = 4
+                            // "Jump back in" is the 4th item and "Recommended for today" the 6th
+                            // (each after the last section when there are fewer)
+                            inlineBlocks = buildList {
+                                if (jumpBackIn.isNotEmpty()) add(4 to @Composable { JumpBackInRow(jumpBackIn, navController) })
+                                if (recommendedToday.isNotEmpty()) add(6 to @Composable { RecommendedTodayRow(recommendedToday, navController) })
+                            }
                         )
 
                     errorMode -> CenteredMessage("Error loading data")
@@ -298,7 +306,11 @@ fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel(), navControlle
                     else -> CenteredLoader()
                 }
             } else {
-                HomeCategoryContent(viewModel = viewModel, category = selectedCategory)
+                if (selectedCategory.playListCategoryId == TubeFyViewModel.PODCASTS_CATEGORY_ID) {
+                    PodcastsContent(viewModel)
+                } else {
+                    HomeCategoryContent(viewModel = viewModel, category = selectedCategory)
+                }
             }
         }
     }
@@ -318,7 +330,8 @@ private fun buildHomeChips(categories: List<PlayListCategory?>): List<HomeChip> 
     val byName = categories.filterNotNull().associateBy {
         YoutubeCoreConstant.decodeTitle(it.playListName.orEmpty()).trim().lowercase()
     }
-    return listOf(HomeChip(FOR_YOU, null)) + HOME_CHIP_CATEGORIES.mapNotNull { name ->
+    return listOf(HomeChip(FOR_YOU, null), HomeChip("Podcasts", TubeFyViewModel.PodcastsCategory)) +
+        HOME_CHIP_CATEGORIES.mapNotNull { name ->
         byName[name.lowercase()]?.let { HomeChip(name, it) }
     }
 }
@@ -357,7 +370,7 @@ private fun DiscoverHeader(onSearchClick: () -> Unit, onProfileClick: () -> Unit
 
 /** The playlists of a language / mood category, same data the Search tab's category grid opens. */
 @Composable
-private fun HomeCategoryContent(viewModel: TubeFyViewModel, category: PlayListCategory) {
+internal fun HomeCategoryContent(viewModel: TubeFyViewModel, category: PlayListCategory) {
     val navController = LocalNavController.current
     val content by viewModel.homeCategoryContent.collectAsState()
     when (val result = content[category.playListCategoryId]) {

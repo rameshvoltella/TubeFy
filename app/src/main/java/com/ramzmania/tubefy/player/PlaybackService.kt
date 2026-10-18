@@ -4,8 +4,12 @@ package com.ramzmania.tubefy.player
 import android.app.PendingIntent
 import android.content.Intent
 import android.net.Uri
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.os.Bundle
 import android.util.Log
+import androidx.media3.common.AudioAttributes
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
@@ -32,6 +36,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
@@ -55,19 +60,30 @@ class PlaybackService(
     @Inject
     lateinit var dataBaseRepositorySource: DatabaseRepositorySource
     private lateinit var mediaLibrarySessionCallback: MediaLibrarySessionCallback
-    private val mainScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    /** Background failures are logged instead of crashing the app (and stopping the music). */
+    private val crashGuard = CoroutineExceptionHandler { _, error ->
+        Log.e("PlaybackService", "Background task failed", error)
+    }
+    private val mainScope = CoroutineScope(Dispatchers.Main + SupervisorJob() + crashGuard)
     private lateinit var sleepTimer: SleepTimer
     private lateinit var smartShuffle: SmartShuffle
 
     /** Session extras shared by the sleep timer and Smart Shuffle (read by the player screen). */
     private val sessionExtras = Bundle()
 
+    private fun loadErrorMessage(): String {
+        val connectivity = getSystemService(ConnectivityManager::class.java)
+        val online = connectivity?.getNetworkCapabilities(connectivity.activeNetwork)
+            ?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
+        return if (online) "Couldn't load this song" else "No internet connection"
+    }
+
     private fun publishSessionExtras(values: Bundle) {
         sessionExtras.putAll(values)
         mediaSession?.setSessionExtras(Bundle(sessionExtras))
     }
     private var mediaSession: MediaLibrarySession? = null
-    private val serviceScope = CoroutineScope(Dispatchers.IO + Job())
+    private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob() + crashGuard)
     private var removeExistingPlayList: Boolean = false
     private var fetchRecentPlaylistQueue: Boolean = false
 
@@ -93,6 +109,16 @@ class PlaybackService(
         val dataSourceFactory = ResolvingDataSource.Factory(DefaultDataSource.Factory(this), streamUrlRefresher)
         val player = ExoPlayer.Builder(this)
             .setMediaSourceFactory(DefaultMediaSourceFactory(dataSourceFactory))
+            // Pause when the audio output goes away (Bluetooth/car disconnects, headphones unplugged)
+            .setHandleAudioBecomingNoisy(true)
+            // Take audio focus as music: pause for calls / other players, duck for short sounds
+            .setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setUsage(C.USAGE_MEDIA)
+                    .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
+                    .build(),
+                /* handleAudioFocus = */ true
+            )
             .build().apply {
             // Adding the error listener to the ExoPlayer instance
             addListener(object : Player.Listener {
@@ -321,6 +347,7 @@ class PlaybackService(
 
                 ACTION_FETCH_SONG -> {
                     offlineMode = false
+                    publishSessionExtras(bundleOf(EXTRA_LOAD_ERROR to ""))
                     apiPlaListBulkCallJob?.cancel()
                     preferenceManager.putLong("queue", System.currentTimeMillis())
                     removeExistingPlayList = true
@@ -529,6 +556,13 @@ class PlaybackService(
                         videoId
                     )!!, mediaIndex
                 ).collect { response ->
+                    // Tell the player screen whether the song the user picked could be loaded
+                    if (mediaIndex == -1) {
+                        val error = if (response is Resource.Success) "" else loadErrorMessage()
+                        withContext(Dispatchers.Main) {
+                            publishSessionExtras(bundleOf(EXTRA_LOAD_ERROR to error))
+                        }
+                    }
                     if (response is Resource.Success) {
                         withContext(Dispatchers.Main) {
                             mediaSession?.player?.let {
@@ -624,6 +658,9 @@ class PlaybackService(
         const val ACTION_FETCH_PLAYLIST = "com.ramzmania.tubefy.ACTION_FETCH_PLAYLIST"
         const val ACTION_FETCH_SONG = "com.ramzmania.tubefy.ACTION_FETCH_SONG"
         const val ACTION_PLAY_DOWNLOADS = "com.ramzmania.tubefy.ACTION_PLAY_DOWNLOADS"
+
+        /** Session extra: why the selected song couldn't load ("" when it's fine). */
+        const val EXTRA_LOAD_ERROR = "com.ramzmania.tubefy.LOAD_ERROR"
         /** How many Mix songs to queue at once; the next refill seeds from the song playing then. */
         private const val MIX_BATCH_SIZE = 10
         const val VIDEO_ID = "com.ramzmania.tubefy.VIDEO_ID"

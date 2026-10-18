@@ -12,9 +12,14 @@ import com.ramzmania.tubefy.data.dto.base.searchformat.StreamUrlData
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreUniversalData
 import com.ramzmania.tubefy.core.extractors.yotubewebextractor.YoutubeJsonScrapping
 import com.ramzmania.tubefy.core.download.Downloads
+import com.ramzmania.tubefy.core.recommendation.DailyRecommendations
 import com.ramzmania.tubefy.data.local.PlaylistHistory
 import com.ramzmania.tubefy.data.local.PlaylistVisit
+import com.ramzmania.tubefy.data.local.PodcastLanguages
 import com.ramzmania.tubefy.data.local.RecentSearches
+import com.ramzmania.tubefy.data.remote.PodcastSearch
+import com.ramzmania.tubefy.data.remote.PodcastShow
+import com.ramzmania.tubefy.errors.NETWORK_ERROR
 import com.ramzmania.tubefy.data.local.SongHistory
 import com.ramzmania.tubefy.core.extractors.yotubewebextractor.YoutubeScrapType
 import com.ramzmania.tubefy.errors.YOUTUBE_SCRAP_ERROR
@@ -58,8 +63,78 @@ class TubeFyViewModel @Inject constructor(
     private val playlistDatabaseRepository: DatabaseRepository,
     private val recentSearches: RecentSearches,
     private val playlistHistory: PlaylistHistory,
-    private val songHistory: SongHistory
+    private val songHistory: SongHistory,
+    private val podcastSearch: PodcastSearch,
+    private val podcastLanguages: PodcastLanguages,
+    private val dailyRecommendations: DailyRecommendations
 ) : BaseViewModel() {
+
+    private val recommendedTodayPrivate = MutableStateFlow<List<TubeFyCoreTypeData>>(emptyList())
+
+    /** Home's "Recommended for today" (empty until there's enough listening history). */
+    val recommendedToday = recommendedTodayPrivate.asStateFlow()
+
+    fun loadRecommendedToday() {
+        viewModelScope.launch {
+            try {
+                recommendedTodayPrivate.value = dailyRecommendations.today()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    /** Languages the user added on the Podcasts page (built-ins are [PodcastLanguages.DEFAULTS]). */
+    val customPodcastLanguages = podcastLanguages.custom
+
+    private val podcastShowsPrivate = MutableStateFlow<Map<String, Resource<List<PodcastShow>>>>(emptyMap())
+
+    /** Podcast shows per language (lower-cased key), cached for the session. */
+    val podcastShows = podcastShowsPrivate.asStateFlow()
+
+    fun loadPodcastsFor(language: String, forceRefresh: Boolean = false) {
+        val key = language.lowercase()
+        val current = podcastShowsPrivate.value[key]
+        if (!forceRefresh && (current is Resource.Success || current is Resource.Loading)) return
+        podcastShowsPrivate.update { it + (key to Resource.Loading()) }
+        viewModelScope.launch {
+            val result = try {
+                Resource.Success(podcastSearch.search("$language podcast"))
+            } catch (e: Exception) {
+                Resource.DataError<List<PodcastShow>>(NETWORK_ERROR)
+            }
+            podcastShowsPrivate.update { it + (key to result) }
+        }
+    }
+
+    /**
+     * Adds a language to the Podcasts page if YouTube has podcasts for it.
+     * [onResult] gets true when it was added (or already exists), false when none were found.
+     */
+    fun addPodcastLanguage(language: String, onResult: (added: Boolean) -> Unit) {
+        val name = language.trim()
+        if (name.isEmpty()) return
+        if (podcastLanguages.isKnown(name)) {
+            onResult(true)
+            return
+        }
+        viewModelScope.launch {
+            val shows = try {
+                podcastSearch.search("$name podcast")
+            } catch (e: Exception) {
+                null
+            }
+            if (!shows.isNullOrEmpty()) {
+                podcastShowsPrivate.update { it + (name.lowercase() to Resource.Success(shows)) }
+                podcastLanguages.add(name)
+                onResult(true)
+            } else {
+                onResult(false)
+            }
+        }
+    }
+
+    fun removePodcastLanguage(language: String) = podcastLanguages.remove(language)
 
     /** Songs the user started themselves (not auto-queued), newest first. */
     val playedSongs = songHistory.songs
@@ -402,6 +477,12 @@ class TubeFyViewModel @Inject constructor(
     /** Playlists for the home screen chips, keyed by category id, cached for the session. */
     val homeCategoryContent = homeCategoryContentPrivate.asStateFlow()
 
+    companion object {
+        /** Home's Podcasts chip: YouTube Music's podcasts page, loaded like a category. */
+        const val PODCASTS_CATEGORY_ID = "tubefy-podcasts"
+        val PodcastsCategory = PlayListCategory(PODCASTS_CATEGORY_ID, "Podcasts", "FEmusic_podcasts")
+    }
+
     fun loadHomeCategory(category: PlayListCategory, forceRefresh: Boolean = false) {
         val key = category.playListCategoryId ?: return
         val browseId = category.playListBrowserId ?: return
@@ -409,7 +490,7 @@ class TubeFyViewModel @Inject constructor(
         if (!forceRefresh && (current is Resource.Success || current is Resource.Loading)) return
         homeCategoryContentPrivate.update { it + (key to Resource.Loading()) }
         viewModelScope.launch {
-            remoteRepositorySource.getCategoryPlayList(browseId, key)
+            remoteRepositorySource.getCategoryPlayList(browseId, if (key == PODCASTS_CATEGORY_ID) "" else key)
                 .catch { emit(Resource.DataError(YOUTUBE_SCRAP_ERROR)) }
                 .collect { result -> homeCategoryContentPrivate.update { it + (key to result) } }
         }

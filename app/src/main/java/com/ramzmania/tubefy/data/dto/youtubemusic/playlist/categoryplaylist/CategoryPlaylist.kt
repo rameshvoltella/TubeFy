@@ -90,7 +90,32 @@ data class MusicContent(
     @Json(name = "musicTwoRowItemRenderer")
     val musicTwoRowItemRenderer: MusicTwoRowItemRenderer?,
     @Json(name = "musicResponsiveListItemRenderer")
-    val musicResponsiveListItemRenderer: MusicResponsiveListItemRenderer?
+    val musicResponsiveListItemRenderer: MusicResponsiveListItemRenderer?,
+    /** Podcast episodes (YouTube Music's podcasts page). */
+    @Json(name = "musicMultiRowListItemRenderer")
+    val musicMultiRowListItemRenderer: MusicMultiRowListItemRenderer? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class MusicMultiRowListItemRenderer(
+    @Json(name = "title")
+    val title: Title?,
+    @Json(name = "thumbnail")
+    val thumbnail: ThumbnailRenderer?,
+    @Json(name = "onTap")
+    val onTap: EpisodeTap?
+)
+
+@JsonClass(generateAdapter = true)
+data class EpisodeTap(
+    @Json(name = "watchEndpoint")
+    val watchEndpoint: EpisodeWatchEndpoint?
+)
+
+@JsonClass(generateAdapter = true)
+data class EpisodeWatchEndpoint(
+    @Json(name = "videoId")
+    val videoId: String?
 )
 
 @JsonClass(generateAdapter = true)

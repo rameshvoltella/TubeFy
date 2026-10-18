@@ -51,6 +51,7 @@ import androidx.compose.material.icons.rounded.Star
 import androidx.compose.ui.graphics.Brush
 import com.ramzmania.tubefy.core.download.Downloads
 import com.ramzmania.tubefy.data.local.PlaylistVisit
+import com.ramzmania.tubefy.ui.components.screen.album.openTrack
 import com.ramzmania.tubefy.data.local.PlayedSong
 import kotlin.random.Random
 import androidx.compose.material3.CircularProgressIndicator
@@ -100,8 +101,8 @@ fun HomePageContentList(
     homePageResponses: List<HomePageResponse?>,
     viewModel: TubeFyViewModel = hiltViewModel(), navController: NavController?, onRefresh: () -> Unit,
     header: (@Composable () -> Unit)? = null,
-    inlineContent: (@Composable () -> Unit)? = null,
-    inlinePosition: Int = 4
+    /** Extra rows placed between the sections: (1-based position in the list, content). */
+    inlineBlocks: List<Pair<Int, @Composable () -> Unit>> = emptyList()
 ) {
     val streamUrlData by viewModel.streamUrlData.observeAsState()
     val playListData by viewModel.youTubePlayListData.observeAsState()
@@ -152,12 +153,18 @@ fun HomePageContentList(
     ) {
         LazyColumn(state = lazyListState) {
             header?.let { item { it() } }
-            // The inline block (e.g. "Jump back in") becomes item number [inlinePosition] of the list,
-            // or follows the last section when there are fewer. take/drop never go out of range.
-            val splitAt = inlineSplitIndex(inlinePosition, hasHeader = header != null, sectionCount = homePageResponses.size)
-            items(homePageResponses.take(splitAt)) { response -> HomeSection(response, navController) }
-            inlineContent?.let { item { it() } }
-            items(homePageResponses.drop(splitAt)) { response -> HomeSection(response, navController) }
+            // Each inline block (e.g. "Jump back in", "Recommended for today") becomes the item at its
+            // position, or follows the last section when there are fewer. take/drop never go out of range.
+            val blocks = inlineBlocks.sortedBy { it.first }
+            val splits = inlineSplitIndices(blocks.map { it.first }, hasHeader = header != null, sectionCount = homePageResponses.size)
+            var start = 0
+            blocks.forEachIndexed { index, (_, content) ->
+                val split = splits[index]
+                items(homePageResponses.drop(start).take(split - start)) { response -> HomeSection(response, navController) }
+                item { content() }
+                start = split
+            }
+            items(homePageResponses.drop(start)) { response -> HomeSection(response, navController) }
             if (isLoading.value) {
                 item {
                     Box(
@@ -203,6 +210,19 @@ fun HomePageContentList(
  */
 internal fun inlineSplitIndex(inlinePosition: Int, hasHeader: Boolean, sectionCount: Int): Int =
     (inlinePosition - 1 - (if (hasHeader) 1 else 0)).coerceIn(0, maxOf(sectionCount, 0))
+
+/**
+ * For inline blocks at 1-based [positions] (ascending; counting the header and earlier blocks),
+ * how many sections come before each one. Non-decreasing and always within 0..[sectionCount].
+ */
+internal fun inlineSplitIndices(positions: List<Int>, hasHeader: Boolean, sectionCount: Int): List<Int> {
+    var previous = 0
+    return positions.mapIndexed { blocksBefore, position ->
+        val split = inlineSplitIndex(position - blocksBefore, hasHeader, sectionCount).coerceAtLeast(previous)
+        previous = split
+        split
+    }
+}
 
 @Composable
 private fun HomeSection(response: HomePageResponse?, navController: NavController?) {
@@ -882,3 +902,61 @@ fun openPlaylistVisit(navController: NavController, visit: PlaylistVisit) {
 }
 
 private const val FAVORITES_PLAYLIST_NAME = "TubeFy-Favorites"
+
+/** Home's "Recommended for today": songs and artist playlists picked for the user's taste. */
+@Composable
+fun RecommendedTodayRow(items: List<TubeFyCoreTypeData>, navController: NavController?) {
+    Column {
+        SectionHeader("Recommended for today")
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = 20.dp),
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            items(items, key = { it.videoId.ifEmpty { it.plaListUrl.orEmpty() } }) { item ->
+                val isPlaylist = item.videoId.isEmpty()
+                val cardSize = 150.dp
+                Column(
+                    modifier = Modifier
+                        .width(cardSize)
+                        .clip(RoundedCornerShape(14.dp))
+                        .clickable { navController?.let { openTrack(it, item) } }
+                ) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(item.videoImage.takeIf { it.isNotBlank() }?.let { YoutubeCoreConstant.decodeThumpUrl(it) } ?: R.drawable.placeholder)
+                            .crossfade(true)
+                            .placeholder(R.drawable.placeholder)
+                            .error(R.drawable.placeholder)
+                            .build(),
+                        contentDescription = item.videoTitle,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(cardSize)
+                            .clip(RoundedCornerShape(14.dp))
+                    )
+                    Text(
+                        text = item.videoTitle,
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                    Text(
+                        text = when {
+                            isPlaylist -> "Playlist"
+                            item.artist.isNotBlank() -> item.artist
+                            else -> "Song"
+                        },
+                        color = DiscoverTextSecondary,
+                        fontSize = 12.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(top = 2.dp, bottom = 4.dp)
+                    )
+                }
+            }
+        }
+    }
+}

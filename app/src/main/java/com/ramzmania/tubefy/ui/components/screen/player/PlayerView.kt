@@ -20,6 +20,7 @@ import androidx.media3.session.SessionCommand
 import com.ramzmania.tubefy.player.SleepTimer
 import com.ramzmania.tubefy.player.SmartShuffle
 import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.WifiOff
 import com.ramzmania.tubefy.ui.theme.DiscoverAccent
 import androidx.annotation.OptIn
 import androidx.compose.animation.Crossfade
@@ -86,6 +87,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -191,6 +193,8 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
     var sleepEndAt by remember { mutableLongStateOf(0L) }
     var sleepEndOfSong by remember { mutableStateOf(false) }
     var smartShuffleOn by remember { mutableStateOf(false) }
+    // Set by the service when the selected song couldn't load (e.g. no internet)
+    var loadError by remember { mutableStateOf("") }
     var nowMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
     val sleepRemainingMs = if (sleepEndAt > 0) (sleepEndAt - nowMs).coerceAtLeast(0L) else 0L
     val sleepActive = sleepEndOfSong || sleepRemainingMs > 0
@@ -228,6 +232,8 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
             sleepEndAt = extras.getLong(SleepTimer.EXTRA_END_AT, 0L)
             sleepEndOfSong = extras.getBoolean(SleepTimer.EXTRA_END_OF_SONG, false)
             smartShuffleOn = extras.getBoolean(SmartShuffle.EXTRA_ENABLED, false)
+            loadError = extras.getString(PlaybackService.EXTRA_LOAD_ERROR).orEmpty()
+            if (loadError.isNotEmpty()) isLoading = false
             nowMs = System.currentTimeMillis()
             delay(1000L)
         }
@@ -510,6 +516,17 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                 Text(formatTime(durationMs, durationMs), color = SecondaryText, fontSize = 13.sp)
             }
 
+            if (loadError.isNotEmpty()) {
+                LoadErrorBanner(
+                    message = loadError,
+                    onRetry = {
+                        loadError = ""
+                        isLoading = true
+                        startFetchSongService(context, videoId, albumArt, title)
+                    }
+                )
+            }
+
             // Transport controls
             Row(
                 modifier = Modifier
@@ -779,6 +796,34 @@ private fun SeekBar(fraction: Float, onSeek: (Float) -> Unit, onSeekFinished: ()
             .fillMaxWidth()
             .height(28.dp)
     )
+}
+
+/** Shown when the song couldn't load (no internet, timeout), with a way to try again. */
+@Composable
+private fun LoadErrorBanner(message: String, onRetry: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .padding(top = 12.dp)
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(DiscoverAccent.copy(alpha = 0.15f))
+            .border(1.dp, DiscoverAccent.copy(alpha = 0.4f), RoundedCornerShape(14.dp))
+            .padding(start = 14.dp, end = 4.dp, top = 4.dp, bottom = 4.dp)
+    ) {
+        Icon(Icons.Rounded.WifiOff, contentDescription = null, tint = DiscoverAccent, modifier = Modifier.size(20.dp))
+        Text(
+            text = message,
+            color = Color.White,
+            fontSize = 14.sp,
+            modifier = Modifier
+                .weight(1f)
+                .padding(horizontal = 10.dp)
+        )
+        TextButton(onClick = onRetry) {
+            Text("Retry", color = DiscoverAccent, fontWeight = FontWeight.SemiBold)
+        }
+    }
 }
 
 @Composable

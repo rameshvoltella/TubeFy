@@ -12,6 +12,9 @@ import com.ramzmania.tubefy.data.dto.youtubemusic.category.MusicCategoryPlayList
 import com.ramzmania.tubefy.player.YoutubePlayerPlaylistListModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.CancellationException
+import com.ramzmania.tubefy.errors.NETWORK_ERROR
 import org.schabi.newpipe.extractor.Page
 import javax.inject.Inject
 
@@ -23,30 +26,30 @@ class RemoteRepository @Inject constructor(
         searchQuery: String,
         pageToken: String?
     ): Flow<Resource<TubeFyCoreUniversalData>> {
-       return flow {emit(remoteRepository.requestYoutubeV3(part, searchQuery, pageToken))  }
+       return safeFlow { remoteRepository.requestYoutubeV3(part, searchQuery, pageToken) }
     }
 
     override suspend fun getPlayListInfo(playListUrl: String): Flow<Resource<PlayListData>> {
-        return flow {emit(remoteRepository.getPlayListInfo(playListUrl))  }
+        return safeFlow { remoteRepository.getPlayListInfo(playListUrl) }
     }
 
     override suspend fun getMixQueue(videoId: String): Flow<Resource<List<TubeFyCoreTypeData>>> {
-        return flow { emit(remoteRepository.getMixQueue(videoId)) }
+        return safeFlow { remoteRepository.getMixQueue(videoId) }
     }
 
     override suspend fun getStreamBulkUrl(youtubePlayerPlaylistListModel: YoutubePlayerPlaylistListModel): Flow<Resource<List<MediaItem>>> {
-        return flow {emit(remoteRepository.getStreamBulkUrl(youtubePlayerPlaylistListModel))  }
+        return safeFlow { remoteRepository.getStreamBulkUrl(youtubePlayerPlaylistListModel) }
     }
 
     override suspend fun getCategoryPlayList(
         browseId: String,
         playerId: String
     ): Flow<Resource<List<MusicCategoryPlayListBase?>>> {
-        return flow {emit(remoteRepository.getCategoryPlayList(browseId,playerId))  }
+        return safeFlow { remoteRepository.getCategoryPlayList(browseId,playerId) }
     }
 
     override suspend fun getMusicHomeYoutubei(): Flow<Resource<YoutubeiHomeBaseResponse>> {
-        return flow {emit(remoteRepository.getMusicHomeYoutubei())  }
+        return safeFlow { remoteRepository.getMusicHomeYoutubei() }
     }
 
     override suspend fun getMusicHomePaginationYoutubei(
@@ -54,13 +57,13 @@ class RemoteRepository @Inject constructor(
         paginationId: String,
         visitorData: String
     ): Flow<Resource<YoutubeiHomeBaseResponse>> {
-        return flow {emit(remoteRepository.getMusicHomePaginationYoutubei(paginationHex,paginationId,visitorData))  }
+        return safeFlow { remoteRepository.getMusicHomePaginationYoutubei(paginationHex,paginationId,visitorData) }
 
     }
 
 
     override suspend fun getStreamUrl(videoId: String,mediaIndex: Int): Flow<Resource<StreamUrlData>> {
-        return flow { emit(remoteRepository.getStreamUrl(videoId,mediaIndex)) }
+        return safeFlow { remoteRepository.getStreamUrl(videoId,mediaIndex) }
     }
 
     override suspend fun getNewPipePageSearch(
@@ -69,7 +72,7 @@ class RemoteRepository @Inject constructor(
         contentFilter: List<String?>,
         sortFilter: String
     ): Flow<Resource<TubeFyCoreUniversalData>> {
-        return flow { emit(remoteRepository.getNewPipePageSearch(serviceId,searchString,contentFilter, sortFilter)) }
+        return safeFlow { remoteRepository.getNewPipePageSearch(serviceId,searchString,contentFilter, sortFilter) }
     }
 
     override suspend fun getNewPipePageNextSearch(
@@ -79,7 +82,17 @@ class RemoteRepository @Inject constructor(
         sortFilter: String,
         page: Page
     ): Flow<Resource<TubeFyCoreUniversalData>> {
-        return flow { emit(remoteRepository.getNewPipePageNextSearch(serviceId, searchString, contentFilter, sortFilter, page)) }
+        return safeFlow { remoteRepository.getNewPipePageNextSearch(serviceId, searchString, contentFilter, sortFilter, page) }
     }
 
+    /**
+     * Network failures (no signal, timeouts, dropped connections) become a [Resource.DataError]
+     * instead of an exception that would crash the app.
+     */
+    private fun <T> safeFlow(block: suspend () -> Resource<T>): Flow<Resource<T>> =
+        flow { emit(block()) }.catch { error ->
+            if (error is CancellationException) throw error
+            error.printStackTrace()
+            emit(Resource.DataError(NETWORK_ERROR))
+        }
 }
