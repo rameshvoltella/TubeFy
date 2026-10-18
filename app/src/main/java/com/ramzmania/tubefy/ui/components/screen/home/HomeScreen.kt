@@ -30,6 +30,11 @@ import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.DownloadDone
+import androidx.compose.material.icons.rounded.Star
+import androidx.compose.ui.graphics.Brush
+import com.ramzmania.tubefy.core.download.Downloads
+import com.ramzmania.tubefy.data.local.PlaylistVisit
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -75,7 +80,8 @@ import java.nio.charset.StandardCharsets
 @Composable
 fun HomePageContentList(
     homePageResponses: List<HomePageResponse?>,
-    viewModel: TubeFyViewModel = hiltViewModel(), navController: NavController?, onRefresh: () -> Unit
+    viewModel: TubeFyViewModel = hiltViewModel(), navController: NavController?, onRefresh: () -> Unit,
+    header: (@Composable () -> Unit)? = null
 ) {
     val streamUrlData by viewModel.streamUrlData.observeAsState()
     val playListData by viewModel.youTubePlayListData.observeAsState()
@@ -125,6 +131,7 @@ fun HomePageContentList(
             .pullRefresh(pullRefreshState)
     ) {
         LazyColumn(state = lazyListState) {
+            header?.let { item { it() } }
             items(homePageResponses) { response ->
                 response?.let {
                     when (it.cellType) {
@@ -482,3 +489,112 @@ private fun openPlaylist(navController: NavController, selectedItem: BaseContent
         restoreState = true
     }
 }
+
+/** Home's first item: the user's top playlists (most played, recently) as a compact 2-column grid. */
+@Composable
+fun TopPlaylistsGrid(visits: List<PlaylistVisit>, onOpen: (PlaylistVisit) -> Unit) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 4.dp)
+    ) {
+        visits.chunked(2).forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                row.forEach { visit ->
+                    TopPlaylistCard(visit, Modifier.weight(1f)) { onOpen(visit) }
+                }
+                if (row.size == 1) Spacer(modifier = Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun TopPlaylistCard(visit: PlaylistVisit, modifier: Modifier, onClick: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .height(60.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(DiscoverSurface)
+            .border(1.dp, DiscoverBorder, RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(6.dp)
+    ) {
+        when (visit.id) {
+            FAVORITES_PLAYLIST_NAME -> PlaylistTile(Brush.linearGradient(listOf(Color(0xFFD6334A), Color(0xFF3A1219)))) {
+                Icon(Icons.Rounded.Star, contentDescription = null, tint = Color(0xFFFFD54F), modifier = Modifier.size(26.dp))
+            }
+            Downloads.PLAYLIST -> PlaylistTile(Brush.linearGradient(listOf(Color(0xFF27AE60), Color(0xFF0E3B22)))) {
+                Icon(Icons.Rounded.DownloadDone, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
+            }
+            else -> AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(visit.thumbnail.takeIf { it.isNotBlank() }?.let { YoutubeCoreConstant.decodeThumpUrl(it) } ?: R.drawable.placeholder)
+                    .crossfade(true)
+                    .placeholder(R.drawable.placeholder)
+                    .error(R.drawable.placeholder)
+                    .build(),
+                contentDescription = visit.title,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(8.dp))
+            )
+        }
+        Text(
+            text = when (visit.id) {
+                FAVORITES_PLAYLIST_NAME -> "Favorites"
+                Downloads.PLAYLIST -> "Downloads"
+                else -> visit.title
+            },
+            color = Color.White,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            lineHeight = 16.sp,
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 10.dp, end = 4.dp)
+        )
+    }
+}
+
+@Composable
+private fun PlaylistTile(background: Brush, icon: @Composable () -> Unit) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .size(48.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(background)
+    ) { icon() }
+}
+
+/** Opens a top playlist: the user's own playlists in the library page, YouTube ones in the album screen. */
+fun openPlaylistVisit(navController: NavController, visit: PlaylistVisit) {
+    val thumbnail = URLEncoder.encode(
+        YoutubeCoreConstant.decodeThumpUrl(visit.thumbnail.takeIf { it.isNotEmpty() } ?: "nourl"),
+        StandardCharsets.UTF_8.toString()
+    )
+    val route = if (visit.isCustom) {
+        NavigationItem.MyPlayList.createRoute(thumbnail, visit.id)
+    } else {
+        NavigationItem.PlayList.createRoute(
+            visit.id,
+            URLEncoder.encode(visit.title, StandardCharsets.UTF_8.toString()),
+            thumbnail
+        )
+    }
+    navController.navigate(route) {
+        navController.graph.startDestinationRoute?.let { startRoute ->
+            popUpTo(startRoute) {
+                saveState = true
+            }
+        }
+        launchSingleTop = true
+        restoreState = true
+    }
+}
+
+private const val FAVORITES_PLAYLIST_NAME = "TubeFy-Favorites"

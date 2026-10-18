@@ -221,6 +221,9 @@ fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel(), navControlle
     }
 
     val categoryData by viewModel.youTubeMusicCategoryData.observeAsState()
+    // Top 4 playlists the user plays from; shown once they've used at least 4 different ones
+    val playlistVisits by viewModel.playlistVisits.collectAsState()
+    val topPlaylists = remember(playlistVisits) { viewModel.topPlaylists(playlistVisits, 4) }
     val categories = (categoryData as? Resource.Success)?.data.orEmpty()
     val chips = remember(categories) { buildHomeChips(categories) }
     var selectedChip by rememberSaveable { mutableStateOf(FOR_YOU) }
@@ -261,7 +264,18 @@ fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel(), navControlle
             if (selectedCategory == null) {
                 when {
                     finalItems.isNotEmpty() ->
-                        HomePageContentList(homePageResponses = finalItems, navController = navController, onRefresh = onRefresh)
+                        HomePageContentList(
+                            homePageResponses = finalItems,
+                            navController = navController,
+                            onRefresh = onRefresh,
+                            header = if (topPlaylists.isEmpty()) null else {
+                                {
+                                    TopPlaylistsGrid(topPlaylists) { visit ->
+                                        navController?.let { openPlaylistVisit(it, visit) }
+                                    }
+                                }
+                            }
+                        )
 
                     errorMode -> CenteredMessage("Error loading data")
 

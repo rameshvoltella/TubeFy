@@ -101,6 +101,9 @@ fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
     }
     // Titles can carry stray newlines from the feed; the title is also the saved playlist's name
     val title = remember { decodeArg(navBackStackEntry?.arguments?.getString("playlistName").orEmpty()).trim() }
+    val playlistId = remember { navBackStackEntry?.arguments?.getString("playlistId").orEmpty() }
+    // Playing anything from this playlist counts towards Home's top playlists grid
+    val recordPlayed = { viewModel.recordYoutubePlaylistPlayed(playlistId, title, imageUrl) }
 
     LaunchedEffect(Unit) {
         val playlistId = navBackStackEntry?.arguments?.getString("playlistId")
@@ -163,7 +166,8 @@ fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
                     imageUrl = imageUrl,
                     title = title,
                     finalItems = videoAudioItems,
-                    viewModel = viewModel
+                    viewModel = viewModel,
+                    onPlay = recordPlayed
                 )
             }
             if (isLoading) {
@@ -179,7 +183,7 @@ fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
                 }
             } else {
                 items(videoAudioItems) { track ->
-                    track?.let { TrackItem(trackName = it, viewModel = viewModel) }
+                    track?.let { TrackItem(trackName = it, viewModel = viewModel, onPlay = recordPlayed) }
                 }
             }
             item { Spacer(modifier = Modifier.height(24.dp)) }
@@ -232,7 +236,8 @@ fun AlbumHeader(
     imageUrl: String,
     title: String,
     viewModel: TubeFyViewModel = hiltViewModel(),
-    finalItems: List<TubeFyCoreTypeData?>
+    finalItems: List<TubeFyCoreTypeData?>,
+    onPlay: () -> Unit = {}
 ) {
     val newNav = LocalNavController.current
     val isSaved by viewModel.isAlbumSaved.collectAsState()
@@ -291,7 +296,10 @@ fun AlbumHeader(
                     .shadow(16.dp, RoundedCornerShape(50), spotColor = PlayRed)
                     .clip(RoundedCornerShape(50))
                     .background(PlayRed)
-                    .clickable(enabled = finalItems.isNotEmpty()) { playAll(newNav, finalItems) }
+                    .clickable(enabled = finalItems.isNotEmpty()) {
+                        onPlay()
+                        playAll(newNav, finalItems)
+                    }
             ) {
                 Icon(Icons.Rounded.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
                 Spacer(modifier = Modifier.width(8.dp))
@@ -350,7 +358,11 @@ fun AlbumTrackList(
 }
 
 @Composable
-fun TrackItem(trackName: TubeFyCoreTypeData, viewModel: TubeFyViewModel = hiltViewModel()) {
+fun TrackItem(
+    trackName: TubeFyCoreTypeData,
+    viewModel: TubeFyViewModel = hiltViewModel(),
+    onPlay: () -> Unit = {}
+) {
     val newNav = LocalNavController.current
     val isPlaylist = trackName.videoId.isEmpty()
 
@@ -363,7 +375,10 @@ fun TrackItem(trackName: TubeFyCoreTypeData, viewModel: TubeFyViewModel = hiltVi
             .clip(RoundedCornerShape(14.dp))
             .background(DiscoverSurface)
             .border(1.dp, DiscoverBorder, RoundedCornerShape(14.dp))
-            .clickable { openTrack(newNav, trackName) }
+            .clickable {
+                if (!isPlaylist) onPlay()
+                openTrack(newNav, trackName)
+            }
     ) {
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)

@@ -12,6 +12,8 @@ import com.ramzmania.tubefy.data.dto.base.searchformat.StreamUrlData
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreUniversalData
 import com.ramzmania.tubefy.core.extractors.yotubewebextractor.YoutubeJsonScrapping
 import com.ramzmania.tubefy.core.download.Downloads
+import com.ramzmania.tubefy.data.local.PlaylistHistory
+import com.ramzmania.tubefy.data.local.PlaylistVisit
 import com.ramzmania.tubefy.data.local.RecentSearches
 import com.ramzmania.tubefy.core.extractors.yotubewebextractor.YoutubeScrapType
 import com.ramzmania.tubefy.errors.YOUTUBE_SCRAP_ERROR
@@ -53,8 +55,20 @@ class TubeFyViewModel @Inject constructor(
     private val localRepositorySource: LocalRepositorySource,
     private val remoteRepositorySource: RemoteRepositorySource,
     private val playlistDatabaseRepository: DatabaseRepository,
-    private val recentSearches: RecentSearches
+    private val recentSearches: RecentSearches,
+    private val playlistHistory: PlaylistHistory
 ) : BaseViewModel() {
+
+    /** Playlists the user plays from, ranked by recent + frequent use. */
+    val playlistVisits = playlistHistory.visits
+
+    fun topPlaylists(visits: List<PlaylistVisit>, count: Int) = playlistHistory.top(visits, count)
+
+    fun recordYoutubePlaylistPlayed(playlistId: String, title: String, thumbnail: String) =
+        playlistHistory.recordYoutubePlaylist(playlistId, title, thumbnail)
+
+    fun recordCustomPlaylistPlayed(name: String, thumbnail: String) =
+        playlistHistory.recordCustomPlaylist(name, thumbnail)
 
     /** Songs/playlists picked from search results, newest first. */
     val recentSearchItems = recentSearches.items
@@ -828,6 +842,7 @@ class TubeFyViewModel @Inject constructor(
         viewModelScope.launch {
 
             if (playListName == Downloads.PLAYLIST) Downloads.deleteAll(contextModule.context)
+            playlistHistory.removeCustomPlaylist(playListName)
             playlistDatabaseRepository.deleteSpecificPlayList(playListName).collect {
                 addingSongListPlayListOperationPrivate.value = it
                 reloadAllPlayListPrivate.value = true

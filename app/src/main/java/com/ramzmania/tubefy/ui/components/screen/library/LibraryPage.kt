@@ -285,6 +285,8 @@ fun LibraryListBaseView(
 
     fun play(index: Int) {
         if (songs.isEmpty()) return
+        // Counts towards Home's top playlists grid (own playlists, Favorites and Downloads)
+        viewModel.recordCustomPlaylistPlayed(playlistName, songs.first().videoImage)
         clickedPosition = index
         doLoadData = true
         viewModel.setActiveSongsList(songs, index)
