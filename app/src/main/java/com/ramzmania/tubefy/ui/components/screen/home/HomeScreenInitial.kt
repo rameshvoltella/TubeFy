@@ -1,6 +1,8 @@
 package com.ramzmania.tubefy.ui.components.screen.home
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -221,9 +223,13 @@ fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel(), navControlle
     }
 
     val categoryData by viewModel.youTubeMusicCategoryData.observeAsState()
-    // Top 4 playlists the user plays from; shown once they've used at least 4 different ones
+    // Up to 6 top playlists, most recently played first; shown once at least 4 have been used
     val playlistVisits by viewModel.playlistVisits.collectAsState()
-    val topPlaylists = remember(playlistVisits) { viewModel.topPlaylists(playlistVisits, 4) }
+    val context = LocalContext.current
+    val topPlaylists = remember(playlistVisits) { viewModel.topPlaylists(playlistVisits, minCount = 4, maxCount = 6) }
+    // Songs and playlists the user chose to play: last 15, shuffled per launch, shown from 5 items
+    val playedSongs by viewModel.playedSongs.collectAsState()
+    val jumpBackIn = remember(playedSongs, playlistVisits) { jumpBackInItems(playedSongs, playlistVisits) }
     val categories = (categoryData as? Resource.Success)?.data.orEmpty()
     val chips = remember(categories) { buildHomeChips(categories) }
     var selectedChip by rememberSaveable { mutableStateOf(FOR_YOU) }
@@ -270,11 +276,21 @@ fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel(), navControlle
                             onRefresh = onRefresh,
                             header = if (topPlaylists.isEmpty()) null else {
                                 {
-                                    TopPlaylistsGrid(topPlaylists) { visit ->
-                                        navController?.let { openPlaylistVisit(it, visit) }
-                                    }
+                                    TopPlaylistsGrid(
+                                        visits = topPlaylists,
+                                        onOpen = { visit -> navController?.let { openPlaylistVisit(it, visit) } },
+                                        onRemove = { visit ->
+                                            viewModel.removePlaylistVisit(visit)
+                                            Toast.makeText(context, "Removed from your top playlists", Toast.LENGTH_SHORT).show()
+                                        }
+                                    )
                                 }
-                            }
+                            },
+                            // "Jump back in" is the 4th item on Home (or after the last section if fewer)
+                            inlineContent = if (jumpBackIn.isEmpty()) null else {
+                                { JumpBackInRow(jumpBackIn, navController) }
+                            },
+                            inlinePosition = 4
                         )
 
                     errorMode -> CenteredMessage("Error loading data")

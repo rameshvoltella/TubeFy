@@ -313,6 +313,8 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
             } else {
                 isLoading = true
                 startFetchSongService(context, videoId, albumArt, title)
+                // A song the user chose themselves: shows up in Home's "Jump back in"
+                viewModel.recordSongPlayed(videoId, title, albumArt)
             }
         },
         onMetaDataChangedValue = { meta: MediaMetadata ->

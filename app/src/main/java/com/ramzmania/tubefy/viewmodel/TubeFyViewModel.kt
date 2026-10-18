@@ -15,6 +15,7 @@ import com.ramzmania.tubefy.core.download.Downloads
 import com.ramzmania.tubefy.data.local.PlaylistHistory
 import com.ramzmania.tubefy.data.local.PlaylistVisit
 import com.ramzmania.tubefy.data.local.RecentSearches
+import com.ramzmania.tubefy.data.local.SongHistory
 import com.ramzmania.tubefy.core.extractors.yotubewebextractor.YoutubeScrapType
 import com.ramzmania.tubefy.errors.YOUTUBE_SCRAP_ERROR
 import com.ramzmania.tubefy.data.ContextModule
@@ -56,19 +57,29 @@ class TubeFyViewModel @Inject constructor(
     private val remoteRepositorySource: RemoteRepositorySource,
     private val playlistDatabaseRepository: DatabaseRepository,
     private val recentSearches: RecentSearches,
-    private val playlistHistory: PlaylistHistory
+    private val playlistHistory: PlaylistHistory,
+    private val songHistory: SongHistory
 ) : BaseViewModel() {
+
+    /** Songs the user started themselves (not auto-queued), newest first. */
+    val playedSongs = songHistory.songs
+
+    fun recordSongPlayed(videoId: String, title: String, thumbnail: String) =
+        songHistory.record(videoId, title, thumbnail)
 
     /** Playlists the user plays from, ranked by recent + frequent use. */
     val playlistVisits = playlistHistory.visits
 
-    fun topPlaylists(visits: List<PlaylistVisit>, count: Int) = playlistHistory.top(visits, count)
+    fun topPlaylists(visits: List<PlaylistVisit>, minCount: Int, maxCount: Int) =
+        playlistHistory.top(visits, minCount, maxCount)
 
     fun recordYoutubePlaylistPlayed(playlistId: String, title: String, thumbnail: String) =
         playlistHistory.recordYoutubePlaylist(playlistId, title, thumbnail)
 
     fun recordCustomPlaylistPlayed(name: String, thumbnail: String) =
         playlistHistory.recordCustomPlaylist(name, thumbnail)
+
+    fun removePlaylistVisit(visit: PlaylistVisit) = playlistHistory.remove(visit.key)
 
     /** Songs/playlists picked from search results, newest first. */
     val recentSearchItems = recentSearches.items

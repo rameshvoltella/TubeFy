@@ -40,16 +40,26 @@ class PlaylistHistory @Inject constructor(@ApplicationContext context: Context) 
     fun recordCustomPlaylist(name: String, thumbnail: String) =
         record("my:$name", isCustom = true, id = name, title = name, thumbnail = thumbnail)
 
+    /** Hide a playlist from the top playlists (the playlist itself is untouched). */
+    fun remove(key: String) = update(visitsPrivate.value.filter { it.key != key })
+
     /** Forget a playlist of the user's own (e.g. after it was deleted). */
     fun removeCustomPlaylist(name: String) = update(visitsPrivate.value.filter { it.key != "my:$name" })
 
     /**
-     * The [count] top playlists, but only once the user has played from at least [count]
-     * different playlists; otherwise empty.
+     * Up to [maxCount] top playlists (by frequent + recent use), most recently played first.
+     * Empty until the user has played from at least [minCount] different playlists.
      */
-    fun top(visits: List<PlaylistVisit>, count: Int, now: Long = System.currentTimeMillis()): List<PlaylistVisit> {
-        if (visits.size < count) return emptyList()
-        return visits.sortedByDescending { decayed(it, now) }.take(count)
+    fun top(
+        visits: List<PlaylistVisit>,
+        minCount: Int,
+        maxCount: Int,
+        now: Long = System.currentTimeMillis()
+    ): List<PlaylistVisit> {
+        if (visits.size < minCount) return emptyList()
+        return visits.sortedByDescending { decayed(it, now) }
+            .take(maxCount)
+            .sortedByDescending { it.lastPlayedAt }
     }
 
     private fun record(key: String, isCustom: Boolean, id: String, title: String, thumbnail: String) {
