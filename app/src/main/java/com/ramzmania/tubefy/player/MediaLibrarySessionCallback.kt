@@ -15,10 +15,18 @@ import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionResult
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
+import com.google.common.util.concurrent.SettableFuture
+import com.google.common.collect.ImmutableList
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 @UnstableApi
 class MediaLibrarySessionCallback(
     private val customCommands: List<SessionCommand>,
+    private val carLibrary: CarLibrary,
+    private val scope: CoroutineScope,
+    /** Called when a car/browser starts a queue; true when it's offline (Downloads) playback. */
+    private val onBrowserQueue: (offline: Boolean) -> Unit,
     private val onCustomCommand: (action: String, args: Bundle) -> Unit
 ) : MediaLibraryService.MediaLibrarySession.Callback {
 
@@ -51,8 +59,51 @@ class MediaLibrarySessionCallback(
         browser: MediaSession.ControllerInfo,
         params: MediaLibraryService.LibraryParams?
     ): ListenableFuture<LibraryResult<MediaItem>> {
-        return Futures.immediateFuture(LibraryResult.ofItem(browsableItem(Root), params))
+        return Futures.immediateFuture(LibraryResult.ofItem(carLibrary.root(), params))
     }
+
+    override fun onGetChildren(
+        session: MediaLibraryService.MediaLibrarySession,
+        browser: MediaSession.ControllerInfo,
+        parentId: String,
+        page: Int,
+        pageSize: Int,
+        params: MediaLibraryService.LibraryParams?
+    ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
+        val future = SettableFuture.create<LibraryResult<ImmutableList<MediaItem>>>()
+        scope.launch {
+            val children = try {
+                carLibrary.children(parentId)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                emptyList()
+            }
+            future.set(LibraryResult.ofItemList(ImmutableList.copyOf(children), params))
+        }
+        return future
+    }
+
+    /** A song picked in the car: queue it with the rest of its folder, ready to play. */
+    override fun onSetMediaItems(
+        mediaSession: MediaSession,
+        controller: MediaSession.ControllerInfo,
+        mediaItems: MutableList<MediaItem>,
+        startIndex: Int,
+        startPositionMs: Long
+    ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> {
+        val (items, start, offline) = carLibrary.resolveQueue(mediaItems, startIndex)
+        onBrowserQueue(offline)
+        return Futures.immediateFuture(
+            MediaSession.MediaItemsWithStartPosition(items, start, startPositionMs)
+        )
+    }
+
+    override fun onAddMediaItems(
+        mediaSession: MediaSession,
+        controller: MediaSession.ControllerInfo,
+        mediaItems: MutableList<MediaItem>
+    ): ListenableFuture<MutableList<MediaItem>> =
+        Futures.immediateFuture(mediaItems.map(carLibrary::playable).toMutableList())
 
 
     override fun onMediaButtonEvent(

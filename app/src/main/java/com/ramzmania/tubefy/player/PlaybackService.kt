@@ -24,6 +24,8 @@ import androidx.media3.session.MediaSession
 import androidx.core.os.bundleOf
 import com.ramzmania.tubefy.core.YoutubeCoreConstant
 import com.ramzmania.tubefy.core.download.Downloads
+import com.ramzmania.tubefy.core.recommendation.DailyRecommendations
+import com.ramzmania.tubefy.data.local.SongHistory
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.database.DatabaseRepositorySource
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
@@ -59,6 +61,12 @@ class PlaybackService(
 
     @Inject
     lateinit var dataBaseRepositorySource: DatabaseRepositorySource
+
+    @Inject
+    lateinit var songHistory: SongHistory
+
+    @Inject
+    lateinit var dailyRecommendations: DailyRecommendations
     private lateinit var mediaLibrarySessionCallback: MediaLibrarySessionCallback
     /** Background failures are logged instead of crashing the app (and stopping the music). */
     private val crashGuard = CoroutineExceptionHandler { _, error ->
@@ -224,7 +232,17 @@ class PlaybackService(
             publish = ::publishSessionExtras,
             isOffline = { offlineMode }
         )
-        mediaLibrarySessionCallback = MediaLibrarySessionCallback(SleepTimer.COMMANDS + SmartShuffle.COMMANDS) { action, args ->
+        val carLibrary = CarLibrary(this, songHistory, dailyRecommendations, dataBaseRepositorySource, remoteRepositorySource)
+        mediaLibrarySessionCallback = MediaLibrarySessionCallback(
+            customCommands = SleepTimer.COMMANDS + SmartShuffle.COMMANDS,
+            carLibrary = carLibrary,
+            scope = serviceScope,
+            onBrowserQueue = { offline ->
+                // Picked in the car: a fresh queue (Downloads play offline, others get the Mix later)
+                apiPlaListBulkCallJob?.cancel()
+                offlineMode = offline
+            }
+        ) { action, args ->
             when (action) {
                 SmartShuffle.CMD_SET -> smartShuffle.handleCommand(action, args)
                 else -> sleepTimer.handleCommand(action, args)

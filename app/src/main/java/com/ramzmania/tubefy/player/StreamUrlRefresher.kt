@@ -7,6 +7,7 @@ import androidx.media3.datasource.ResolvingDataSource
 import com.ramzmania.tubefy.core.YoutubeCoreConstant
 import org.schabi.newpipe.extractor.services.youtube.YoutubeService
 import org.schabi.newpipe.extractor.services.youtube.extractors.YoutubeStreamExtractor
+import java.io.IOException
 import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
 
@@ -32,6 +33,16 @@ class StreamUrlRefresher : ResolvingDataSource.Resolver {
     override fun resolveDataSpec(dataSpec: DataSpec): DataSpec {
         val uri = dataSpec.uri
         val videoId = dataSpec.key
+
+        // Songs queued without a link (e.g. from Android Auto): fetch one now, by song id
+        if (uri.scheme == CarLibrary.LAZY_SCHEME) {
+            val id = videoId?.takeIf { it.isNotBlank() } ?: uri.lastPathSegment ?: throw IOException("No song id")
+            val link = refreshed[id]?.takeIf { !isExpiring(it) }
+                ?: fetchFreshLink(id, itag = null)?.also { refreshed[id] = it }
+                ?: throw IOException("No stream for $id")
+            return dataSpec.withUri(link)
+        }
+
         if (videoId.isNullOrBlank() || uri.host?.endsWith("googlevideo.com") != true) return dataSpec
 
         val force = forced.remove(videoId)
