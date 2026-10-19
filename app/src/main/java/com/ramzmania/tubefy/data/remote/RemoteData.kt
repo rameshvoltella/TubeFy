@@ -219,7 +219,7 @@ constructor(
         val request = BrowseRequest(
             context = context,
             browseId = browseId,
-            params = playerId
+            params = playerId.ifBlank { null }
         )
         return when (val response = processCall {
             categoryPlaylistService.getCategoryPlaylistInfo(

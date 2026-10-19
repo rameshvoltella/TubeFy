@@ -25,7 +25,8 @@ data class ContextPagination(
 data class BrowseRequest(
     val context: Context,
     val browseId: String,
-    val params: String
+    /** Left out of the request when null (e.g. the podcasts page has no params). */
+    val params: String? = null
 )
 
 data class BrowseHomeRequest(

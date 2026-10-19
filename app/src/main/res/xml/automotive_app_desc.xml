@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Lets Android Auto list TubeFy as a media (music) app -->
+<automotiveApp>
+    <uses name="media" />
+</automotiveApp>
