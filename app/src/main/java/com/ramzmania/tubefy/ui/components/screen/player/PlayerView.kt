@@ -19,6 +19,7 @@ import androidx.core.os.bundleOf
 import androidx.media3.session.SessionCommand
 import com.ramzmania.tubefy.player.SleepTimer
 import com.ramzmania.tubefy.player.SmartShuffle
+import com.ramzmania.tubefy.player.NotificationFavorite
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.WifiOff
 import com.ramzmania.tubefy.ui.theme.DiscoverAccent
@@ -195,6 +196,15 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
     var smartShuffleOn by remember { mutableStateOf(false) }
     // Set by the service when the selected song couldn't load (e.g. no internet)
     var loadError by remember { mutableStateOf("") }
+    // Bumped when Favorites changed from the notification: re-check the heart
+    var favoriteChangedAt by remember { mutableLongStateOf(0L) }
+    // The heart changes only after the database write, so then the notification's button re-checks too
+    LaunchedEffect(isFavouriteSong, mediaController) {
+        mediaController?.sendCustomCommand(SessionCommand(NotificationFavorite.CMD_REFRESH, Bundle.EMPTY), Bundle.EMPTY)
+    }
+    LaunchedEffect(favoriteChangedAt) {
+        if (favoriteChangedAt > 0L) YoutubeCoreConstant.extractYoutubeVideoId(videoId)?.let { viewModel.isFavourite(it) }
+    }
     var nowMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
     val sleepRemainingMs = if (sleepEndAt > 0) (sleepEndAt - nowMs).coerceAtLeast(0L) else 0L
     val sleepActive = sleepEndOfSong || sleepRemainingMs > 0
@@ -233,6 +243,7 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
             sleepEndOfSong = extras.getBoolean(SleepTimer.EXTRA_END_OF_SONG, false)
             smartShuffleOn = extras.getBoolean(SmartShuffle.EXTRA_ENABLED, false)
             loadError = extras.getString(PlaybackService.EXTRA_LOAD_ERROR).orEmpty()
+            favoriteChangedAt = extras.getLong(NotificationFavorite.EXTRA_FAVORITE_CHANGED_AT, 0L)
             if (loadError.isNotEmpty()) isLoading = false
             nowMs = System.currentTimeMillis()
             delay(1000L)

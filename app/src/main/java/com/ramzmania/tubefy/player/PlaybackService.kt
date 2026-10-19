@@ -75,6 +75,7 @@ class PlaybackService(
     private val mainScope = CoroutineScope(Dispatchers.Main + SupervisorJob() + crashGuard)
     private lateinit var sleepTimer: SleepTimer
     private lateinit var smartShuffle: SmartShuffle
+    private lateinit var favoriteButton: NotificationFavorite
 
     /** Session extras shared by the sleep timer and Smart Shuffle (read by the player screen). */
     private val sessionExtras = Bundle()
@@ -206,6 +207,7 @@ class PlaybackService(
                 override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
 //                    mediaItem?.let {
                     smartShuffle.onSongChanged()
+                    favoriteButton.refresh()
                     handleMediaItemChange()
 //                    }
                 }
@@ -234,7 +236,7 @@ class PlaybackService(
         )
         val carLibrary = CarLibrary(this, songHistory, dailyRecommendations, dataBaseRepositorySource, remoteRepositorySource)
         mediaLibrarySessionCallback = MediaLibrarySessionCallback(
-            customCommands = SleepTimer.COMMANDS + SmartShuffle.COMMANDS,
+            customCommands = SleepTimer.COMMANDS + SmartShuffle.COMMANDS + NotificationFavorite.COMMANDS,
             carLibrary = carLibrary,
             scope = serviceScope,
             onBrowserQueue = { offline ->
@@ -245,12 +247,15 @@ class PlaybackService(
         ) { action, args ->
             when (action) {
                 SmartShuffle.CMD_SET -> smartShuffle.handleCommand(action, args)
+                NotificationFavorite.CMD_TOGGLE, NotificationFavorite.CMD_REFRESH -> favoriteButton.handleCommand(action)
                 else -> sleepTimer.handleCommand(action, args)
             }
         }
         mediaSession =
             MediaLibrarySession.Builder(this, player, mediaLibrarySessionCallback)
                 .setSessionActivity(pendingIntent).build()
+        favoriteButton = NotificationFavorite(serviceScope, { mediaSession }, dataBaseRepositorySource, ::publishSessionExtras)
+        favoriteButton.refresh()
     }
 
     /**
