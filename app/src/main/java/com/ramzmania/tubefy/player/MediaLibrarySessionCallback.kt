@@ -6,6 +6,7 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.KeyEvent
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.util.UnstableApi
@@ -19,6 +20,8 @@ import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.SettableFuture
 import com.google.common.collect.ImmutableList
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
@@ -89,15 +92,68 @@ class MediaLibrarySessionCallback(
             } catch (e: Throwable) {
                 Log.e(TAG, "Browsing $parentId failed", e)
             } finally {
-                // Cars ask long lists page by page; answer only the requested page
-                val pageItems = if (pageSize in 1 until Int.MAX_VALUE) {
-                    children.drop((page.toLong() * pageSize).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()).take(pageSize)
-                } else children
+                val pageItems = pageOf(children, page, pageSize)
                 Log.d(TAG, "Browse $parentId page $page/$pageSize: ${pageItems.size} of ${children.size} items in ${System.currentTimeMillis() - started} ms")
                 future.set(LibraryResult.ofItemList(ImmutableList.copyOf(pageItems), params))
             }
         }
         return future
+    }
+
+    /** Car search: runs the search, then tells the car how many results there are. */
+    override fun onSearch(
+        session: MediaLibraryService.MediaLibrarySession,
+        browser: MediaSession.ControllerInfo,
+        query: String,
+        params: MediaLibraryService.LibraryParams?
+    ): ListenableFuture<LibraryResult<Void>> {
+        scope.launch {
+            val results = searchSafely(query)
+            searchResults[query] = results
+            withContext(Dispatchers.Main) { session.notifySearchResultChanged(browser, query, results.size, params) }
+        }
+        return Futures.immediateFuture(LibraryResult.ofVoid())
+    }
+
+    override fun onGetSearchResult(
+        session: MediaLibraryService.MediaLibrarySession,
+        browser: MediaSession.ControllerInfo,
+        query: String,
+        page: Int,
+        pageSize: Int,
+        params: MediaLibraryService.LibraryParams?
+    ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
+        val cached = searchResults[query]
+        if (cached != null) {
+            return Futures.immediateFuture(LibraryResult.ofItemList(ImmutableList.copyOf(pageOf(cached, page, pageSize)), params))
+        }
+        val future = SettableFuture.create<LibraryResult<ImmutableList<MediaItem>>>()
+        scope.launch {
+            val results = searchSafely(query).also { searchResults[query] = it }
+            future.set(LibraryResult.ofItemList(ImmutableList.copyOf(pageOf(results, page, pageSize)), params))
+        }
+        return future
+    }
+
+    /** Search results by query (only the latest few are kept). */
+    private val searchResults = object : LinkedHashMap<String, List<MediaItem>>() {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, List<MediaItem>>?) = size > 5
+    }.let { java.util.Collections.synchronizedMap(it) }
+
+    private suspend fun searchSafely(query: String): List<MediaItem> = try {
+        val searching = scope.async { carLibrary.search(query) }
+        withTimeoutOrNull(BROWSE_TIMEOUT_MS) { searching.await() }
+            ?: emptyList<MediaItem>().also { searching.cancel() }
+    } catch (e: Throwable) {
+        Log.e(TAG, "Search \"$query\" failed", e)
+        emptyList()
+    }.also { Log.d(TAG, "Search \"$query\": ${it.size} songs") }
+
+    /** Cars ask long lists page by page; answer only the requested page. */
+    private fun pageOf(items: List<MediaItem>, page: Int, pageSize: Int): List<MediaItem> {
+        if (pageSize !in 1 until Int.MAX_VALUE) return items
+        val from = (page.coerceAtLeast(0).toLong() * pageSize).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+        return items.drop(from).take(pageSize)
     }
 
     /** Some cars look items up by id (e.g. to resume); answer instead of leaving it pending. */
@@ -120,6 +176,20 @@ class MediaLibrarySessionCallback(
         startIndex: Int,
         startPositionMs: Long
     ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> {
+        // Voice: "play <song> on TubeFy" arrives as an item with only a search query
+        val voiceQuery = mediaItems.singleOrNull()
+            ?.takeIf { it.mediaId.isEmpty() }
+            ?.requestMetadata?.searchQuery?.trim()
+        if (!voiceQuery.isNullOrEmpty()) {
+            val future = SettableFuture.create<MediaSession.MediaItemsWithStartPosition>()
+            scope.launch {
+                val found = searchSafely(voiceQuery)
+                val (items, start, _) = carLibrary.resolveQueue(found.take(1), 0)
+                withContext(Dispatchers.Main) { onBrowserQueue(false) }
+                future.set(MediaSession.MediaItemsWithStartPosition(items, start, C.TIME_UNSET))
+            }
+            return future
+        }
         val (items, start, offline) = carLibrary.resolveQueue(mediaItems, startIndex)
         onBrowserQueue(offline)
         return Futures.immediateFuture(
