@@ -17,6 +17,7 @@ import com.ramzmania.tubefy.data.dto.home.HomePageResponse
 import com.ramzmania.tubefy.data.local.SongHistory
 import com.ramzmania.tubefy.data.remote.RemoteRepositorySource
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeoutOrNull
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -126,10 +127,27 @@ class CarLibrary(
     private suspend fun homeSections(): List<HomePageResponse> {
         val fresh = System.currentTimeMillis() - homeLoadedAt < HOME_CACHE_MS
         if (fresh && homeSections.isNotEmpty()) return homeSections
-        val result = remote.getMusicHomeYoutubei().first()
-        val sections = (result as? Resource.Success)?.data?.homePageContentDataList.orEmpty()
+        // The first page only has the top sections (e.g. Quick picks); the app loads the rest while
+        // scrolling, so follow a few continuation pages here
+        val first = (remote.getMusicHomeYoutubei().first() as? Resource.Success)?.data
+        val all = first?.homePageContentDataList.orEmpty().toMutableList()
+        val visitorData = first?.paginationContent?.visitorData.orEmpty()
+        var next = first?.paginationContent
+        // Extra pages are a bonus: on a slow connection stop early and show what we have
+        withTimeoutOrNull(MORE_PAGES_TIMEOUT_MS) {
+            repeat(MAX_HOME_PAGES) {
+                val hex = next?.paginationHex?.takeIf { it.isNotBlank() && it != "null" } ?: return@withTimeoutOrNull
+                val id = next?.paginationId?.takeIf { it.isNotBlank() } ?: return@withTimeoutOrNull
+                val page = (remote.getMusicHomePaginationYoutubei(hex, id, visitorData).first() as? Resource.Success)?.data
+                    ?: return@withTimeoutOrNull
+                all += page.homePageContentDataList.orEmpty()
+                next = page.paginationContent
+            }
+        }
+        val sections = all
             .filterNotNull()
             .filter { !it.contentData.isNullOrEmpty() }
+            .distinctBy { it.heading.trim() }
         if (sections.isNotEmpty()) {
             homeSections = sections
             homeLoadedAt = System.currentTimeMillis()
@@ -239,6 +257,8 @@ class CarLibrary(
         private const val HOME_SECTION = "home:"
         private const val SEARCH = "search"
         private const val HOME_CACHE_MS = 30 * 60 * 1000L
+        private const val MAX_HOME_PAGES = 4
+        private const val MORE_PAGES_TIMEOUT_MS = 8_000L
         private const val RECENT = "recent"
         private const val RECOMMENDED = "recommended"
         private const val LIBRARY = "library"
