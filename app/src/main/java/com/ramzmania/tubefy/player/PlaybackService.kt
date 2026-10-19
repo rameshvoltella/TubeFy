@@ -7,6 +7,8 @@ import android.net.Uri
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
@@ -14,6 +16,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.Timeline
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.ResolvingDataSource
@@ -75,7 +78,9 @@ class PlaybackService(
     private val mainScope = CoroutineScope(Dispatchers.Main + SupervisorJob() + crashGuard)
     private lateinit var sleepTimer: SleepTimer
     private lateinit var smartShuffle: SmartShuffle
-    private lateinit var favoriteButton: NotificationFavorite
+    private lateinit var notificationButtons: NotificationButtons
+    private val upcomingShuffle = UpcomingShuffle()
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     /** Session extras shared by the sleep timer and Smart Shuffle (read by the player screen). */
     private val sessionExtras = Bundle()
@@ -88,6 +93,10 @@ class PlaybackService(
     }
 
     private fun publishSessionExtras(values: Bundle) {
+        // Only push when something actually changed: every push wakes all controllers / the notification
+        @Suppress("DEPRECATION")
+        val changed = values.keySet().any { !sessionExtras.containsKey(it) || sessionExtras.get(it) != values.get(it) }
+        if (!changed) return
         sessionExtras.putAll(values)
         mediaSession?.setSessionExtras(Bundle(sessionExtras))
     }
@@ -145,6 +154,24 @@ class PlaybackService(
                         }
                     }
 
+                }
+
+                override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
+                    if (shuffleModeEnabled) {
+                        // Shuffle only what's still to come, so the current song keeps a "next"
+                        upcomingShuffle.onSongStarted(currentMediaItem?.mediaId)
+                        upcomingShuffle.apply(this@apply, reshuffle = true)
+                        handleMediaItemChange() // nothing queued yet: start the auto-queue refill
+                    }
+                    // Keep the notification's shuffle button in sync (player screen, other controllers)
+                    if (::notificationButtons.isInitialized) notificationButtons.onShuffleChanged()
+                }
+
+                override fun onTimelineChanged(timeline: Timeline, reason: Int) {
+                    // Songs added while shuffling (auto-queue, Mix, playlist loading) go after the current one
+                    if (reason == Player.TIMELINE_CHANGE_REASON_PLAYLIST_CHANGED && shuffleModeEnabled) {
+                        mainHandler.post { upcomingShuffle.apply(this@apply) }
+                    }
                 }
 
                 override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
@@ -206,8 +233,9 @@ class PlaybackService(
 
                 override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
 //                    mediaItem?.let {
+                    upcomingShuffle.onSongStarted(mediaItem?.mediaId)
                     smartShuffle.onSongChanged()
-                    favoriteButton.refresh()
+                    notificationButtons.refresh()
                     handleMediaItemChange()
 //                    }
                 }
@@ -236,26 +264,38 @@ class PlaybackService(
         )
         val carLibrary = CarLibrary(this, songHistory, dailyRecommendations, dataBaseRepositorySource, remoteRepositorySource)
         mediaLibrarySessionCallback = MediaLibrarySessionCallback(
-            customCommands = SleepTimer.COMMANDS + SmartShuffle.COMMANDS + NotificationFavorite.COMMANDS,
+            customCommands = SleepTimer.COMMANDS + SmartShuffle.COMMANDS + NotificationButtons.COMMANDS,
             carLibrary = carLibrary,
             scope = serviceScope,
             onBrowserQueue = { offline ->
                 // Picked in the car: a fresh queue (Downloads play offline, others get the Mix later)
                 apiPlaListBulkCallJob?.cancel()
                 offlineMode = offline
+                upcomingShuffle.reset()
             }
         ) { action, args ->
             when (action) {
-                SmartShuffle.CMD_SET -> smartShuffle.handleCommand(action, args)
-                NotificationFavorite.CMD_TOGGLE, NotificationFavorite.CMD_REFRESH -> favoriteButton.handleCommand(action)
+                SmartShuffle.CMD_SET -> {
+                    smartShuffle.handleCommand(action, args)
+                    notificationButtons.onShuffleChanged()
+                }
+                NotificationButtons.CMD_TOGGLE, NotificationButtons.CMD_REFRESH, NotificationButtons.CMD_SHUFFLE ->
+                    notificationButtons.handleCommand(action)
                 else -> sleepTimer.handleCommand(action, args)
             }
         }
         mediaSession =
             MediaLibrarySession.Builder(this, player, mediaLibrarySessionCallback)
                 .setSessionActivity(pendingIntent).build()
-        favoriteButton = NotificationFavorite(serviceScope, { mediaSession }, dataBaseRepositorySource, ::publishSessionExtras)
-        favoriteButton.refresh()
+        notificationButtons = NotificationButtons(
+            scope = serviceScope,
+            sessionProvider = { mediaSession },
+            database = dataBaseRepositorySource,
+            isSmartShuffleOn = { smartShuffle.enabled },
+            turnSmartShuffleOff = { smartShuffle.setEnabled(false) },
+            publish = ::publishSessionExtras
+        )
+        notificationButtons.refresh()
     }
 
     /**
@@ -354,12 +394,14 @@ class PlaybackService(
         intent?.let {
             when (it.action) {
                 ACTION_PLAY_DOWNLOADS -> {
+                    upcomingShuffle.reset()
                     apiPlaListBulkCallJob?.cancel()
                     offlineMode = true
                     playDownloads()
                 }
 
                 ACTION_FETCH_PLAYLIST -> {
+                    upcomingShuffle.reset()
                     offlineMode = false
                     apiPlaListBulkCallJob?.cancel()
                     preferenceManager.putLong("queue", System.currentTimeMillis())
@@ -369,6 +411,7 @@ class PlaybackService(
                 }
 
                 ACTION_FETCH_SONG -> {
+                    upcomingShuffle.reset()
                     offlineMode = false
                     publishSessionExtras(bundleOf(EXTRA_LOAD_ERROR to ""))
                     apiPlaListBulkCallJob?.cancel()

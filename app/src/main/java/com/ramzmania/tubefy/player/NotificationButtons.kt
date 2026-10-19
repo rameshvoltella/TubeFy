@@ -18,23 +18,30 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * The Favorites button in the media notification: a round "+" adds the playing song to
- * Favorites, a (green) tick shows it's already there and removes it when tapped.
+ * Extra buttons in the media notification (and lock screen / Android Auto):
+ * - Shuffle: off ↔ on; when Smart Shuffle is on it shows a sparkle and turns shuffle off.
+ * - Favorites: a round "+" adds the playing song, a (green) tick removes it again.
  * Must be called on the main thread (it reads the player).
  */
 @UnstableApi
-class NotificationFavorite(
+class NotificationButtons(
     private val scope: CoroutineScope,
     private val sessionProvider: () -> MediaSession?,
     private val database: DatabaseRepositorySource,
+    private val isSmartShuffleOn: () -> Boolean,
+    private val turnSmartShuffleOff: () -> Unit,
     private val publish: (Bundle) -> Unit
 ) {
     private var favorite = false
 
+    /** What the buttons last showed, so unchanged states aren't re-sent (each send re-posts the notification). */
+    private var shown: Triple<Boolean, Boolean, Boolean>? = null
+
     fun handleCommand(action: String) {
         when (action) {
-            CMD_TOGGLE -> toggle()
+            CMD_TOGGLE -> toggleFavorite()
             CMD_REFRESH -> refresh()
+            CMD_SHUFFLE -> toggleShuffle()
         }
     }
 
@@ -42,22 +49,41 @@ class NotificationFavorite(
     fun refresh() {
         val id = currentId()
         if (id == null) {
-            show(favorite = false)
+            favorite = false
+            show()
             return
         }
         scope.launch {
             val isFavorite = (database.isFavourite(id).first() as? Resource.Success)?.data == true
             withContext(Dispatchers.Main) {
-                if (currentId() == id) show(isFavorite)
+                if (currentId() == id) {
+                    favorite = isFavorite
+                    show()
+                }
             }
         }
     }
 
-    private fun toggle() {
+    /** Call when shuffle or Smart Shuffle changed elsewhere (player screen, other controllers). */
+    fun onShuffleChanged() = show()
+
+    private fun toggleShuffle() {
+        val player = sessionProvider()?.player ?: return
+        if (isSmartShuffleOn()) {
+            turnSmartShuffleOff()
+            player.shuffleModeEnabled = false
+        } else {
+            player.shuffleModeEnabled = !player.shuffleModeEnabled
+        }
+        show()
+    }
+
+    private fun toggleFavorite() {
         val item = sessionProvider()?.player?.currentMediaItem ?: return
         val id = currentId() ?: return
         val add = !favorite
-        show(add) // update the button right away
+        favorite = add
+        show() // update the button right away
         scope.launch {
             if (add) {
                 database.addToFavorites(
@@ -82,19 +108,41 @@ class NotificationFavorite(
         return YoutubeCoreConstant.extractYoutubeVideoId(mediaId) ?: mediaId
     }
 
-    private fun show(favorite: Boolean) {
-        this.favorite = favorite
-        val button = CommandButton.Builder(
+    private fun show() {
+        val session = sessionProvider() ?: return
+        val smart = isSmartShuffleOn()
+        val shuffleOn = smart || session.player.shuffleModeEnabled
+        val state = Triple(smart, shuffleOn, favorite)
+        if (state == shown) return
+        shown = state
+        val shuffle = CommandButton.Builder(
+            when {
+                smart -> CommandButton.ICON_SHUFFLE_STAR
+                shuffleOn -> CommandButton.ICON_SHUFFLE_ON
+                else -> CommandButton.ICON_SHUFFLE_OFF
+            }
+        )
+            .setDisplayName(
+                when {
+                    smart -> "Smart Shuffle on (tap to turn off)"
+                    shuffleOn -> "Shuffle on (tap to turn off)"
+                    else -> "Shuffle"
+                }
+            )
+            .setSessionCommand(SessionCommand(CMD_SHUFFLE, Bundle.EMPTY))
+            // The system media notification only takes extra buttons from the overflow slot
+            .setSlots(CommandButton.SLOT_BACK_SECONDARY, CommandButton.SLOT_OVERFLOW)
+            .build()
+        val favoriteButton = CommandButton.Builder(
             if (favorite) CommandButton.ICON_CHECK_CIRCLE_FILLED else CommandButton.ICON_PLUS_CIRCLE_UNFILLED
         )
             .setCustomIconResId(if (favorite) R.drawable.ic_notification_fav_added else R.drawable.ic_notification_fav_add)
             .setDisplayName(if (favorite) "Remove from Favorites" else "Add to Favorites")
             .setSessionCommand(SessionCommand(CMD_TOGGLE, Bundle.EMPTY))
-            // The system media notification only takes extra buttons from the overflow slot
-            // (forward-secondary alone is dropped while previous/next exist)
             .setSlots(CommandButton.SLOT_FORWARD_SECONDARY, CommandButton.SLOT_OVERFLOW)
             .build()
-        sessionProvider()?.setMediaButtonPreferences(listOf(button))
+        // Shuffle first, Favorites second: systems that show two extra buttons put them on either side
+        session.setMediaButtonPreferences(listOf(shuffle, favoriteButton))
     }
 
     companion object {
@@ -103,9 +151,11 @@ class NotificationFavorite(
         /** Sent by the app after it changed the playing song's favorite state. */
         const val CMD_REFRESH = "com.ramzmania.tubefy.FAVORITE_REFRESH"
 
+        const val CMD_SHUFFLE = "com.ramzmania.tubefy.SHUFFLE_TOGGLE"
+
         /** Session extra: when the notification last changed Favorites (the player re-checks its heart). */
         const val EXTRA_FAVORITE_CHANGED_AT = "com.ramzmania.tubefy.FAVORITE_CHANGED_AT"
 
-        val COMMANDS = listOf(CMD_TOGGLE, CMD_REFRESH).map { SessionCommand(it, Bundle.EMPTY) }
+        val COMMANDS = listOf(CMD_TOGGLE, CMD_REFRESH, CMD_SHUFFLE).map { SessionCommand(it, Bundle.EMPTY) }
     }
 }
