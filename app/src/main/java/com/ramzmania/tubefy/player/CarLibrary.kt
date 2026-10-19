@@ -11,10 +11,13 @@ import com.ramzmania.tubefy.core.download.Downloads
 import com.ramzmania.tubefy.core.recommendation.DailyRecommendations
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.database.DatabaseRepositorySource
+import com.ramzmania.tubefy.data.dto.base.BaseContentData
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
+import com.ramzmania.tubefy.data.dto.home.HomePageResponse
 import com.ramzmania.tubefy.data.local.SongHistory
 import com.ramzmania.tubefy.data.remote.RemoteRepositorySource
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeoutOrNull
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -22,10 +25,12 @@ import java.util.concurrent.ConcurrentHashMap
  *
  * ```
  * root
+ * ├── Home                 YouTube Music's home sections (songs and playlists)
  * ├── Recently played      songs the user started themselves
  * ├── Recommended          today's picks (songs + artist playlists)
  * └── Library              Favorites, Downloads and the user's playlists
  * ```
+ * Search (car search button or "play … on TubeFy") looks up songs on YouTube Music.
  *
  * Streamed songs are queued as `tubefy://video/<videoId>`; [StreamUrlRefresher] fetches the real link
  * just before each song plays, so a whole folder can be queued instantly. Downloads play from file.
@@ -41,15 +46,30 @@ class CarLibrary(
     /** Last children listed per folder, so picking a song can queue the rest of its folder. */
     private val listed = ConcurrentHashMap<String, List<MediaItem>>()
 
+    /** YouTube Music home sections, kept for a while so opening each section doesn't refetch. */
+    @Volatile private var homeSections: List<HomePageResponse> = emptyList()
+    @Volatile private var homeLoadedAt = 0L
+
     fun root(): MediaItem = folder(ROOT, "TubeFy")
 
     suspend fun children(parentId: String): List<MediaItem> {
         val children = when {
             parentId == ROOT -> listOf(
+                folder(HOME, "Home"),
                 folder(RECENT, "Recently played"),
                 folder(RECOMMENDED, "Recommended"),
                 folder(LIBRARY, "Library")
             )
+
+            parentId == HOME -> homeSections().mapIndexed { index, section ->
+                folder("$HOME_SECTION$index", section.heading.trim().takeUnless { it.isEmpty() || it == "TOP" } ?: "Top picks",
+                    section.contentData?.firstOrNull()?.thumbnail)
+            }
+
+            parentId.startsWith(HOME_SECTION) -> {
+                val section = homeSections().getOrNull(parentId.removePrefix(HOME_SECTION).toIntOrNull() ?: -1)
+                section?.contentData.orEmpty().mapNotNull { homeItem(parentId, it) }
+            }
 
             parentId == RECENT -> songHistory.songs.value.map { song(RECENT, it.videoId, it.title, "", it.thumbnail) }
 
@@ -90,6 +110,67 @@ class CarLibrary(
         listed[parentId] = children
         return children
     }
+
+    /** Songs on YouTube Music matching [query]; picking one queues the rest of the results. */
+    suspend fun search(query: String): List<MediaItem> {
+        val result = remote.getNewPipePageSearch(0, query, listOf("music_songs"), "").first()
+        val songs = (result as? Resource.Success)?.data?.youtubeSortedData?.youtubeSortedList.orEmpty()
+            .filterNotNull()
+            .filter { it.videoId.isNotEmpty() }
+            .distinctBy { it.videoId }
+            .take(MAX_CHILDREN)
+            .map { song(SEARCH, it.videoId, it.videoTitle, it.artist, it.videoImage) }
+        listed[SEARCH] = songs
+        return songs
+    }
+
+    private suspend fun homeSections(): List<HomePageResponse> {
+        val fresh = System.currentTimeMillis() - homeLoadedAt < HOME_CACHE_MS
+        if (fresh && homeSections.isNotEmpty()) return homeSections
+        // The first page only has the top sections (e.g. Quick picks); the app loads the rest while
+        // scrolling, so follow a few continuation pages here
+        val first = (remote.getMusicHomeYoutubei().first() as? Resource.Success)?.data
+        val all = first?.homePageContentDataList.orEmpty().toMutableList()
+        val visitorData = first?.paginationContent?.visitorData.orEmpty()
+        var next = first?.paginationContent
+        // Extra pages are a bonus: on a slow connection stop early and show what we have
+        withTimeoutOrNull(MORE_PAGES_TIMEOUT_MS) {
+            repeat(MAX_HOME_PAGES) {
+                val hex = next?.paginationHex?.takeIf { it.isNotBlank() && it != "null" } ?: return@withTimeoutOrNull
+                val id = next?.paginationId?.takeIf { it.isNotBlank() } ?: return@withTimeoutOrNull
+                val page = (remote.getMusicHomePaginationYoutubei(hex, id, visitorData).first() as? Resource.Success)?.data
+                    ?: return@withTimeoutOrNull
+                all += page.homePageContentDataList.orEmpty()
+                next = page.paginationContent
+            }
+        }
+        val sections = all
+            .filterNotNull()
+            .filter { !it.contentData.isNullOrEmpty() }
+            .distinctBy { it.heading.trim() }
+        if (sections.isNotEmpty()) {
+            homeSections = sections
+            homeLoadedAt = System.currentTimeMillis()
+        }
+        return homeSections
+    }
+
+    /** A home card as the app treats it: a playlist when it has a playlist id, otherwise a song. */
+    private fun homeItem(parentId: String, data: BaseContentData): MediaItem? {
+        val playlistId = data.playlistId.orEmpty()
+        val videoId = data.videoId.orEmpty()
+        val title = data.title.orEmpty().lines().map { it.trim() }.filter { it.isNotEmpty() }.joinToString(" • ")
+        return when {
+            playlistId.startsWith("PLAYLIST-ID-") -> null // built-in search lists, not real playlists
+            playlistId.length > 1 -> folder("$YOUTUBE_PLAYLIST$playlistId", title, data.thumbnail)
+            videoId.length == 11 -> song(parentId, videoId, title, "", data.thumbnail.orEmpty())
+            else -> null
+        }
+    }
+
+    /** A previously listed item (or the root) by id. */
+    fun find(mediaId: String): MediaItem? =
+        if (mediaId == ROOT) root() else listed.values.asSequence().flatten().firstOrNull { it.mediaId == mediaId }
 
     /**
      * Turns what a car picked into a playable queue: the picked song plus the rest of its folder.
@@ -172,6 +253,12 @@ class CarLibrary(
         const val LAZY_SCHEME = "tubefy"
 
         private const val ROOT = "root"
+        private const val HOME = "home"
+        private const val HOME_SECTION = "home:"
+        private const val SEARCH = "search"
+        private const val HOME_CACHE_MS = 30 * 60 * 1000L
+        private const val MAX_HOME_PAGES = 4
+        private const val MORE_PAGES_TIMEOUT_MS = 8_000L
         private const val RECENT = "recent"
         private const val RECOMMENDED = "recommended"
         private const val LIBRARY = "library"
