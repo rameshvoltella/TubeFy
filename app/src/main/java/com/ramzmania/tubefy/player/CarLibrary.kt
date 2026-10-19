@@ -91,6 +91,10 @@ class CarLibrary(
         return children
     }
 
+    /** A previously listed item (or the root) by id. */
+    fun find(mediaId: String): MediaItem? =
+        if (mediaId == ROOT) root() else listed.values.asSequence().flatten().firstOrNull { it.mediaId == mediaId }
+
     /**
      * Turns what a car picked into a playable queue: the picked song plus the rest of its folder.
      * Returns the items, the start index, and whether it's offline (Downloads) playback.

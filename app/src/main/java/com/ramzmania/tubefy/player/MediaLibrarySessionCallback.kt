@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.KeyEvent
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
@@ -18,7 +19,9 @@ import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.SettableFuture
 import com.google.common.collect.ImmutableList
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 @UnstableApi
 class MediaLibrarySessionCallback(
@@ -72,15 +75,41 @@ class MediaLibrarySessionCallback(
     ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
         val future = SettableFuture.create<LibraryResult<ImmutableList<MediaItem>>>()
         scope.launch {
-            val children = try {
-                carLibrary.children(parentId)
-            } catch (e: Exception) {
-                e.printStackTrace()
-                emptyList()
+            val started = System.currentTimeMillis()
+            var children = emptyList<MediaItem>()
+            try {
+                // A car waits on this: never let a slow network keep it spinning forever. Loaded in its
+                // own job because network calls block and can't be interrupted by the timeout itself.
+                val loading = scope.async { carLibrary.children(parentId) }
+                children = withTimeoutOrNull(BROWSE_TIMEOUT_MS) { loading.await() }
+                    ?: emptyList<MediaItem>().also {
+                        loading.cancel()
+                        Log.w(TAG, "Browsing $parentId timed out")
+                    }
+            } catch (e: Throwable) {
+                Log.e(TAG, "Browsing $parentId failed", e)
+            } finally {
+                // Cars ask long lists page by page; answer only the requested page
+                val pageItems = if (pageSize in 1 until Int.MAX_VALUE) {
+                    children.drop((page.toLong() * pageSize).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()).take(pageSize)
+                } else children
+                Log.d(TAG, "Browse $parentId page $page/$pageSize: ${pageItems.size} of ${children.size} items in ${System.currentTimeMillis() - started} ms")
+                future.set(LibraryResult.ofItemList(ImmutableList.copyOf(pageItems), params))
             }
-            future.set(LibraryResult.ofItemList(ImmutableList.copyOf(children), params))
         }
         return future
+    }
+
+    /** Some cars look items up by id (e.g. to resume); answer instead of leaving it pending. */
+    override fun onGetItem(
+        session: MediaLibraryService.MediaLibrarySession,
+        browser: MediaSession.ControllerInfo,
+        mediaId: String
+    ): ListenableFuture<LibraryResult<MediaItem>> {
+        val item = carLibrary.find(mediaId)
+        return Futures.immediateFuture(
+            if (item != null) LibraryResult.ofItem(item, null) else LibraryResult.ofError(LibraryResult.RESULT_ERROR_BAD_VALUE)
+        )
     }
 
     /** A song picked in the car: queue it with the rest of its folder, ready to play. */
@@ -173,6 +202,8 @@ class MediaLibrarySessionCallback(
     }
 
     companion object {
+        private const val TAG = "CarBrowse"
+        private const val BROWSE_TIMEOUT_MS = 15_000L
         private const val Root = "root"
         private const val Playlist = "playlist"
     }
