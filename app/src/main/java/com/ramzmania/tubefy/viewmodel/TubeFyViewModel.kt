@@ -92,6 +92,30 @@ class TubeFyViewModel @Inject constructor(
     /** Podcast shows per language (lower-cased key), cached for the session. */
     val podcastShows = podcastShowsPrivate.asStateFlow()
 
+    /** Languages (lowercase) whose shows are being refreshed by pull-to-refresh. */
+    private val refreshingPodcastsPrivate = MutableStateFlow<Set<String>>(emptySet())
+    val refreshingPodcasts = refreshingPodcastsPrivate.asStateFlow()
+
+    /** Pull-to-refresh: re-fetches a language's shows while keeping the current ones on screen. */
+    fun refreshPodcastsFor(language: String) {
+        val key = language.lowercase()
+        if (key in refreshingPodcastsPrivate.value) return
+        refreshingPodcastsPrivate.update { it + key }
+        viewModelScope.launch {
+            try {
+                val shows = podcastSearch.search("$language podcast")
+                podcastShowsPrivate.update { it + (key to Resource.Success(shows)) }
+            } catch (e: Exception) {
+                // Keep what's already shown; only replace a non-result with the error
+                podcastShowsPrivate.update {
+                    if (it[key] is Resource.Success) it else it + (key to Resource.DataError(NETWORK_ERROR))
+                }
+            } finally {
+                refreshingPodcastsPrivate.update { it - key }
+            }
+        }
+    }
+
     fun loadPodcastsFor(language: String, forceRefresh: Boolean = false) {
         val key = language.lowercase()
         val current = podcastShowsPrivate.value[key]

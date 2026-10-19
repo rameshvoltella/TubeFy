@@ -8,12 +8,14 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
@@ -21,6 +23,8 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -29,9 +33,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -200,13 +208,38 @@ private fun LanguageChipRow(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PodcastShowsGrid(viewModel: TubeFyViewModel, language: String) {
-    val navController = LocalNavController.current
     val allShows by viewModel.podcastShows.collectAsState()
+    val refreshingLanguages by viewModel.refreshingPodcasts.collectAsState()
+    val refreshing = language.lowercase() in refreshingLanguages
+    val pullState = rememberPullToRefreshState()
     LaunchedEffect(language) { viewModel.loadPodcastsFor(language) }
 
-    when (val result = allShows[language.lowercase()]) {
+    PullToRefreshBox(
+        isRefreshing = refreshing,
+        onRefresh = { viewModel.refreshPodcastsFor(language) },
+        state = pullState,
+        indicator = {
+            PullToRefreshDefaults.Indicator(
+                state = pullState,
+                isRefreshing = refreshing,
+                containerColor = DiscoverSurface,
+                color = DiscoverAccent,
+                modifier = Modifier.align(Alignment.TopCenter)
+            )
+        },
+        modifier = Modifier.fillMaxSize()
+    ) {
+        PodcastShowsState(viewModel, language, allShows[language.lowercase()])
+    }
+}
+
+@Composable
+private fun PodcastShowsState(viewModel: TubeFyViewModel, language: String, result: Resource<List<PodcastShow>>?) {
+    val navController = LocalNavController.current
+    when (result) {
         is Resource.Success -> {
             val shows = result.data.orEmpty()
             if (shows.isEmpty()) {
@@ -243,7 +276,8 @@ private fun PodcastShowsGrid(viewModel: TubeFyViewModel, language: String) {
         is Resource.DataError -> Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()) // scrollable so it can be pulled to refresh
                 .padding(top = 48.dp)
         ) {
             Text("Couldn't load $language podcasts", color = Color.White, fontSize = 16.sp)
@@ -385,8 +419,18 @@ private fun AddLanguageDialog(
 
 @Composable
 private fun CenteredNote(text: String) {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(text = text, color = DiscoverTextSecondary, fontSize = 16.sp)
+    // Scrollable so an empty result can still be pulled to refresh; sized to the screen to stay centered
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val height = maxHeight
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .verticalScroll(rememberScrollState())
+                .fillMaxWidth()
+                .height(height)
+        ) {
+            Text(text = text, color = DiscoverTextSecondary, fontSize = 16.sp)
+        }
     }
 }
 
