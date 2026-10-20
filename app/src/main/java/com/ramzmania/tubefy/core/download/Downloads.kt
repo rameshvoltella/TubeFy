@@ -36,8 +36,12 @@ object Downloads {
     /** MediaMetadata extra set on items played from local files. */
     const val OFFLINE_EXTRA = "com.ramzmania.tubefy.OFFLINE"
 
-    private val RESERVED_NAMES = setOf("download", "downloads", PLAYLIST.lowercase())
+    /** The YouTube tab's "Save" button fills this playlist; its songs open in the video page. */
+    const val YOUTUBE_VIDEOS = "YouTube Videos"
 
+    private val RESERVED_NAMES = setOf("download", "downloads", PLAYLIST.lowercase(), YOUTUBE_VIDEOS.lowercase())
+
+    /** Names users can't give their own playlists (Downloads and the YouTube "Save" list). */
     fun isReservedName(name: String) = name.trim().lowercase() in RESERVED_NAMES
 
     fun directory(context: Context) = File(context.filesDir, "downloaded").apply { mkdirs() }

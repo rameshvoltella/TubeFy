@@ -2,6 +2,7 @@ package com.ramzmania.tubefy.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ramzmania.tubefy.core.download.Downloads
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.database.DatabaseRepositorySource
 import com.ramzmania.tubefy.data.youtube.VideoHistory
@@ -87,6 +88,6 @@ class VideoViewModel @Inject constructor(
             .any { it?.videoId == videoId }
 
     companion object {
-        const val SAVED_PLAYLIST = "YouTube Videos"
+        const val SAVED_PLAYLIST = Downloads.YOUTUBE_VIDEOS
     }
 }
