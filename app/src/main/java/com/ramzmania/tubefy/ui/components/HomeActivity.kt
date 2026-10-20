@@ -79,6 +79,10 @@ import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
+import com.ramzmania.tubefy.ui.components.screen.youtube.VideoScreen
+import com.ramzmania.tubefy.ui.components.screen.youtube.YouTubeScreen
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -192,7 +196,7 @@ ex.printStackTrace()
 
 
 
-private val edgeToEdgeRoutes = setOf(NavigationItem.AudioPlayer.route, NavigationItem.PlayList.route)
+private val edgeToEdgeRoutes = setOf(NavigationItem.AudioPlayer.route, NavigationItem.PlayList.route, NavigationItem.Video.route)
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
@@ -213,7 +217,7 @@ fun MainScreen(mediaControllerState: MutableState<MediaController?>) {
         ) {
             Scaffold(
                 bottomBar = {
-                    if (currentRoute != NavigationItem.AudioPlayer.route) {
+                    if (currentRoute != NavigationItem.AudioPlayer.route && currentRoute != NavigationItem.Video.route) {
                         val showMiniPlayer = mediaControllerState.value?.currentMediaItem != null
                         if (isLandscape) {
                             // Landscape: mini player and a compact tab bar share one row to save height
@@ -253,7 +257,7 @@ fun MainScreen(mediaControllerState: MutableState<MediaController?>) {
                             .padding(bottom = innerPadding.calculateBottomPadding())
                             // In landscape keep content clear of side system bars / camera cutouts
                             .then(
-                                if (currentRoute == NavigationItem.AudioPlayer.route) Modifier
+                                if (currentRoute == NavigationItem.AudioPlayer.route || currentRoute == NavigationItem.Video.route) Modifier
                                 else Modifier.windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
                             )
                     ) {
@@ -288,13 +292,27 @@ fun Navigation(navController: NavHostController) {
         composable(NavigationItem.Books.route) {
             MyLibraryPage()
         }
+        composable(NavigationItem.YouTube.route) {
+            YouTubeScreen()
+        }
+        composable(
+            NavigationItem.Video.route,
+            arguments = listOf("title", "thumb", "channel").map { name ->
+                navArgument(name) { type = NavType.StringType; nullable = true; defaultValue = null }
+            }
+        ) {
+            VideoScreen()
+        }
         composable(NavigationItem.Profile.route) {
             SettingsScreen()
         }
         composable(NavigationItem.PlayList.route) { backStackEntry ->
             AlbumScreen()
         }
-        composable(NavigationItem.AudioPlayer.route) { backStackEntry ->
+        composable(
+            NavigationItem.AudioPlayer.route,
+            arguments = listOf(navArgument("mode") { type = NavType.StringType; nullable = true; defaultValue = null })
+        ) { backStackEntry ->
             PlayerBaseView()
         }
         composable(NavigationItem.MyPlayList.route) { backStackEntry ->
@@ -329,7 +347,8 @@ fun BottomNavigationBar(navController: NavController, modifier: Modifier = Modif
     val tabs = listOf(
         BottomTab(NavigationItem.Home.route, NavigationItem.Home.title, HomeIconFilled, HomeIconOutlined),
         BottomTab(NavigationItem.Search.route, NavigationItem.Search.title, SearchIconBold, SearchIconRegular),
-        BottomTab(NavigationItem.Books.route, NavigationItem.Books.title, LibraryIconFilled, LibraryIconOutlined),
+        BottomTab(NavigationItem.Books.route, "Library", LibraryIconFilled, LibraryIconOutlined),
+        BottomTab(NavigationItem.YouTube.route, NavigationItem.YouTube.title, YouTubeIconFilled, YouTubeIconOutlined),
         BottomTab(NavigationItem.Profile.route, NavigationItem.Profile.title, Icons.Rounded.Settings, Icons.Outlined.Settings)
     )
     val navBackStackEntry by navController.currentBackStackEntryAsState()

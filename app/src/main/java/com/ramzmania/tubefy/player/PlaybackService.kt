@@ -14,6 +14,7 @@ import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.Timeline
@@ -419,7 +420,10 @@ class PlaybackService(
                     removeExistingPlayList = true
                     fetchRecentPlaylistQueue = true
                     it.extras?.getString(VIDEO_ID)?.let { it1 ->
-                        getStreamUrl(
+                        if (it.getBooleanExtra(VIDEO_MODE, false)) {
+                            // Video page: all qualities, audio languages and captions
+                            getVideoStream(it1, it.extras?.getString(ALBUM_ART).orEmpty(), it.extras?.getString(VIDEO_TITLE).orEmpty())
+                        } else getStreamUrl(
                             it1,
                             it.extras?.getString(ALBUM_ART)!!, it.extras?.getString(VIDEO_TITLE)!!
                         )
@@ -642,6 +646,8 @@ class PlaybackService(
                                     .setUri(
                                         Uri.parse(response.data?.streamUrl)
                                     )
+                                    // Live streams are HLS manifests; say so in case the URL doesn't show it
+                                    .apply { if (YoutubeCoreConstant.isHlsUrl(response.data?.streamUrl)) setMimeType(MimeTypes.APPLICATION_M3U8) }
                                     // Lets StreamUrlRefresher re-fetch the link by song id once it expires
                                     .setCustomCacheKey(YoutubeCoreConstant.extractYoutubeVideoId(videoId))
                                     .setMediaMetadata(
@@ -665,6 +671,50 @@ class PlaybackService(
         }
 
 
+    }
+
+    /**
+     * Plays a video for the video page from a DASH manifest (every quality and audio language, plus
+     * captions). Falls back to the normal stream for live videos or when the manifest can't be built.
+     */
+    private fun getVideoStream(videoId: String, albumArt: String, title: String) {
+        serviceScope.launch {
+            val id = YoutubeCoreConstant.extractYoutubeVideoId(videoId) ?: videoId
+            val result = runCatching { VideoManifest.fetch(id) }.onFailure { Log.w("PlaybackService", "No manifest for $id", it) }.getOrNull()
+            if (result == null) {
+                getStreamUrl(videoId, albumArt, title)
+                return@launch
+            }
+            streamUrlRefresher.putManifest(id, result.manifest)
+            val captions = result.subtitles.mapIndexed { index, sub ->
+                MediaItem.SubtitleConfiguration.Builder(Uri.parse(sub.url))
+                    .setId("cc$index")
+                    .setMimeType(MimeTypes.APPLICATION_TTML)
+                    .setLanguage(sub.language)
+                    .setLabel(sub.label)
+                    .build()
+            }
+            val item = MediaItem.Builder()
+                .setMediaId(id)
+                .setUri(Uri.parse("${StreamUrlRefresher.DASH_SCHEME}://video/$id"))
+                .setMimeType(MimeTypes.APPLICATION_MPD)
+                .setSubtitleConfigurations(captions)
+                .setMediaMetadata(
+                    MediaMetadata.Builder()
+                        .setTitle(title.ifBlank { result.title })
+                        .setArtist(result.uploader.ifBlank { null })
+                        .setArtworkUri(Uri.parse(albumArt.ifBlank { "https://i.ytimg.com/vi/$id/hq720.jpg" }))
+                        .setIsBrowsable(false)
+                        .setIsPlayable(true)
+                        .setMediaType(MediaMetadata.MEDIA_TYPE_VIDEO)
+                        .build()
+                )
+                .build()
+            withContext(Dispatchers.Main) {
+                publishSessionExtras(bundleOf(EXTRA_LOAD_ERROR to ""))
+                playAudioList(listOf(item), -1)
+            }
+        }
     }
 
     fun playAudioList(mediaItems: List<MediaItem>, mediaIndex: Int = -1) {
@@ -730,6 +780,7 @@ class PlaybackService(
         /** How many Mix songs to queue at once; the next refill seeds from the song playing then. */
         private const val MIX_BATCH_SIZE = 10
         const val VIDEO_ID = "com.ramzmania.tubefy.VIDEO_ID"
+        const val VIDEO_MODE = "com.ramzmania.tubefy.VIDEO_MODE"
         const val ALBUM_ART = "com.ramzmania.tubefy.ALBUM_ART"
         const val VIDEO_TITLE = "com.ramzmania.tubefy.VIDEO_TITLE"
 

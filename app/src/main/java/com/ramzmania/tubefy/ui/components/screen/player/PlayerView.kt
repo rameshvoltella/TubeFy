@@ -132,6 +132,8 @@ import androidx.palette.graphics.Palette
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.ramzmania.tubefy.R
+import com.ramzmania.tubefy.ui.components.NavigationItem
+import com.ramzmania.tubefy.ui.components.screen.youtube.setVideoTrackEnabled
 import com.ramzmania.tubefy.core.YoutubeCoreConstant
 import com.ramzmania.tubefy.data.dto.base.searchformat.TubeFyCoreTypeData
 import com.ramzmania.tubefy.database.FavoritePlaylist
@@ -183,7 +185,9 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
     var shuffleOn by remember { mutableStateOf(false) }
     var repeatMode by remember { mutableIntStateOf(Player.REPEAT_MODE_OFF) }
     var nextItem by remember { mutableStateOf<MediaItem?>(null) }
-    var playerMode by rememberSaveable { mutableStateOf(PlayerMode.Song) }
+    var playerMode by rememberSaveable {
+        mutableStateOf(if (navArgs?.getString("mode") == NavigationItem.AudioPlayer.MODE_VIDEO) PlayerMode.Video else PlayerMode.Song)
+    }
     var showPlayListDialog by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
     var palette by remember { mutableStateOf<Palette?>(null) }
@@ -222,6 +226,10 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
     }
     LaunchedEffect(playingOffline) {
         if (playingOffline) playerMode = PlayerMode.Song
+    }
+    // Video only downloads while the Video tab shows it (matters for the video page's separate streams)
+    LaunchedEffect(playerMode, mediaController) {
+        setVideoTrackEnabled(mediaController, playerMode == PlayerMode.Video)
     }
 
     // Position ticker
@@ -455,6 +463,7 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
 
                             PlayerMode.Video -> SessionVideoSurface(
                                 controller = mediaController,
+                                playing = isPlaying,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .aspectRatio(16f / 9f)
@@ -754,7 +763,11 @@ private fun SongVideoToggle(selected: PlayerMode, onSelect: (PlayerMode) -> Unit
  */
 @OptIn(UnstableApi::class)
 @Composable
-private fun SessionVideoSurface(controller: MediaController?, modifier: Modifier = Modifier) {
+/**
+ * The session's video. The screen stays awake only while it [playing]; paused or stopped it may sleep.
+ * [zoomed] fills the whole area (cropping the edges) instead of fitting the video inside it.
+ */
+internal fun SessionVideoSurface(controller: MediaController?, playing: Boolean, modifier: Modifier = Modifier, zoomed: Boolean = false) {
     AndroidView(
         factory = { ctx ->
             PlayerView(ctx).apply {
@@ -762,11 +775,14 @@ private fun SessionVideoSurface(controller: MediaController?, modifier: Modifier
                 resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
                 setShutterBackgroundColor(android.graphics.Color.BLACK)
                 setKeepContentOnPlayerReset(true)
-                // Screen stays awake while the Video tab is showing; released when this view goes away
-                keepScreenOn = true
             }
         },
-        update = { it.player = controller },
+        update = {
+            it.player = controller
+            // Released automatically when this view goes away
+            it.keepScreenOn = playing
+            it.resizeMode = if (zoomed) AspectRatioFrameLayout.RESIZE_MODE_ZOOM else AspectRatioFrameLayout.RESIZE_MODE_FIT
+        },
         onRelease = { it.player = null },
         modifier = modifier
     )
@@ -1205,10 +1221,12 @@ fun startFetchPlayListService(context: Context) {
 }
 
 @OptIn(UnstableApi::class)
-fun startFetchSongService(context: Context, videoId: String, albumArt: String, title: String) {
+/** [video]: the video page's playback (every quality, audio language and captions). */
+fun startFetchSongService(context: Context, videoId: String, albumArt: String, title: String, video: Boolean = false) {
     val intent = Intent(context, PlaybackService::class.java).apply {
         action = PlaybackService.ACTION_FETCH_SONG
         putExtra(PlaybackService.VIDEO_ID, videoId)
+        putExtra(PlaybackService.VIDEO_MODE, video)
         putExtra(PlaybackService.ALBUM_ART, albumArt)
         putExtra(PlaybackService.VIDEO_TITLE, title)
     }

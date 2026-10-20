@@ -122,6 +122,10 @@ constructor(
                 if (extractor.videoStreams.isNotEmpty()) {
                     streamUrl = extractor.videoStreams.first().content ?: ""
                     artist = extractor.uploaderName ?: ""
+                } else if (extractor.hlsUrl.isNotBlank()) {
+                    // Live streams only come as HLS
+                    streamUrl = extractor.hlsUrl
+                    artist = extractor.uploaderName ?: ""
                 }
             } catch (e: Exception) {
                 e.printStackTrace()

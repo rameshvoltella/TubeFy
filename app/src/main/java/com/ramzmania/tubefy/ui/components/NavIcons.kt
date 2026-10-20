@@ -99,3 +99,44 @@ private fun buildSearchIcon(strokeWidth: Float): ImageVector = ImageVector.Build
         lineTo(20.2f, 20.2f)
     }
 }.build()
+
+val YouTubeIconFilled: ImageVector by lazy { buildYouTubeIcon(filled = true) }
+val YouTubeIconOutlined: ImageVector by lazy { buildYouTubeIcon(filled = false) }
+
+/** Rounded "video" screen with a play triangle: solid with the triangle cut out when selected. */
+private fun buildYouTubeIcon(filled: Boolean): ImageVector = ImageVector.Builder(
+    name = if (filled) "YouTubeFilled" else "YouTubeOutlined",
+    defaultWidth = 24.dp,
+    defaultHeight = 24.dp,
+    viewportWidth = 24f,
+    viewportHeight = 24f
+).apply {
+    fun screen(builder: androidx.compose.ui.graphics.vector.PathBuilder) = builder.apply {
+        moveTo(6.5f, 5f)
+        lineTo(17.5f, 5f)
+        arcTo(4f, 4f, 0f, false, true, 21.5f, 9f)
+        lineTo(21.5f, 15f)
+        arcTo(4f, 4f, 0f, false, true, 17.5f, 19f)
+        lineTo(6.5f, 19f)
+        arcTo(4f, 4f, 0f, false, true, 2.5f, 15f)
+        lineTo(2.5f, 9f)
+        arcTo(4f, 4f, 0f, false, true, 6.5f, 5f)
+        close()
+    }
+    fun play(builder: androidx.compose.ui.graphics.vector.PathBuilder) = builder.apply {
+        moveTo(10f, 8.8f)
+        lineTo(15.4f, 12f)
+        lineTo(10f, 15.2f)
+        close()
+    }
+    if (filled) {
+        // One even-odd path: the triangle becomes a hole in the solid screen
+        path(fill = SolidColor(Color.Black), pathFillType = androidx.compose.ui.graphics.PathFillType.EvenOdd) {
+            screen(this)
+            play(this)
+        }
+    } else {
+        path(stroke = SolidColor(Color.Black), strokeLineWidth = 1.8f, strokeLineJoin = StrokeJoin.Round) { screen(this) }
+        path(fill = SolidColor(Color.Black), stroke = SolidColor(Color.Black), strokeLineWidth = 1f, strokeLineJoin = StrokeJoin.Round) { play(this) }
+    }
+}.build()
