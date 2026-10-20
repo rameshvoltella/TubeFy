@@ -101,6 +101,7 @@ import com.ramzmania.tubefy.ui.components.screen.player.MiniPlayerView
 import com.ramzmania.tubefy.ui.components.screen.player.PlayerBaseView
 import com.ramzmania.tubefy.ui.components.screen.search.AudioSearchScreen
 import com.ramzmania.tubefy.utils.LocalNavController
+import com.ramzmania.tubefy.ui.tv.TvActivity
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.UnstableApi
 
@@ -110,6 +111,12 @@ class HomeActivity : ComponentActivity() {
     private val mediaControllerState = mutableStateOf<MediaController?>(null)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // On a TV the remote-friendly YouTube screens are used instead (e.g. opened from a sideload launcher)
+        if (TvActivity.isTv(this)) {
+            startActivity(android.content.Intent(this, TvActivity::class.java))
+            finish()
+            return
+        }
         // Edge-to-edge is enforced from targetSdk 35; keep light system bar icons on the black UI
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),

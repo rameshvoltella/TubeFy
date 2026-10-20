@@ -7,6 +7,7 @@ import org.schabi.newpipe.extractor.InfoItem
 import org.schabi.newpipe.extractor.Page
 import org.schabi.newpipe.extractor.ServiceList
 import org.schabi.newpipe.extractor.localization.ContentCountry
+import org.schabi.newpipe.extractor.playlist.PlaylistInfo
 import org.schabi.newpipe.extractor.playlist.PlaylistInfoItem
 import org.schabi.newpipe.extractor.search.SearchInfo
 import org.schabi.newpipe.extractor.stream.Description
@@ -48,6 +49,8 @@ sealed interface YouTubeFeed {
     data object Live : YouTubeFeed { override val key = "live" }
     data object Gaming : YouTubeFeed { override val key = "gaming" }
     data class Search(val query: String) : YouTubeFeed { override val key = "search:$query" }
+    /** A playlist's videos (TV opens playlists as a grid). */
+    data class Playlist(val id: String, val title: String) : YouTubeFeed { override val key = "playlist:$id" }
 }
 
 /** Where the next page of a feed comes from. A feed can switch source (chart → search) when one ends. */
@@ -56,6 +59,7 @@ sealed interface YouTubeCursor {
     data class Kiosks(val ids: List<String>, val country: String, val then: YouTubeCursor?) : YouTubeCursor
     data class Kiosk(val id: String, val country: String, val page: Page, val then: YouTubeCursor?) : YouTubeCursor
     data class SearchQuery(val query: String, val filter: String, val page: Page?) : YouTubeCursor
+    data class PlaylistPage(val id: String, val page: Page?) : YouTubeCursor
     /** Several sources loaded together and interleaved; each keeps its own paging. */
     data class Mixed(val parts: List<YouTubeCursor>) : YouTubeCursor
 }
@@ -112,6 +116,7 @@ class YouTubeFeedSource @Inject constructor() {
                 listOf(KIOSK_GAMING), country, YouTubeCursor.SearchQuery("gaming $countryName", VIDEOS, null)
             )
             is YouTubeFeed.Search -> YouTubeCursor.SearchQuery(feed.query, ALL, null)
+            is YouTubeFeed.Playlist -> YouTubeCursor.PlaylistPage(feed.id, null)
         }
     }
 
@@ -163,6 +168,21 @@ class YouTubeFeedSource @Inject constructor() {
                     1 -> next.single()
                     else -> YouTubeCursor.Mixed(next)
                 }
+            )
+        }
+
+        is YouTubeCursor.PlaylistPage -> {
+            val url = "https://www.youtube.com/playlist?list=${cursor.id}"
+            val (items, nextPage) = if (cursor.page == null) {
+                val info = PlaylistInfo.getInfo(youtube, url)
+                info.relatedItems to info.nextPage
+            } else {
+                val more = PlaylistInfo.getMoreItems(youtube, url, cursor.page)
+                more.items to more.nextPage
+            }
+            YouTubePage(
+                items.mapNotNull(::toItem),
+                if (Page.isValid(nextPage)) cursor.copy(page = nextPage) else null
             )
         }
 

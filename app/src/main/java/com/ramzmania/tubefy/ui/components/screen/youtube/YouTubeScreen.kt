@@ -411,7 +411,7 @@ fun YouTubeScreen(viewModel: YouTubeViewModel = hiltViewModel()) {
 
 /** Asks for the next page once the user is within a few rows of the end. */
 @Composable
-private fun LoadMoreWhenNearEnd(gridState: LazyGridState, state: FeedState, loadMore: () -> Unit) {
+internal fun LoadMoreWhenNearEnd(gridState: LazyGridState, state: FeedState, loadMore: () -> Unit) {
     val nearEnd by remember(gridState) {
         derivedStateOf {
             val info = gridState.layoutInfo
@@ -548,7 +548,7 @@ private fun ChipRow(
     }
 }
 
-private fun chipLabel(feed: YouTubeFeed): String = when (feed) {
+internal fun chipLabel(feed: YouTubeFeed): String = when (feed) {
     is YouTubeFeed.InState -> feed.state
     YouTubeFeed.Trending -> "Trending"
     YouTubeFeed.Music -> "Music"
@@ -556,6 +556,7 @@ private fun chipLabel(feed: YouTubeFeed): String = when (feed) {
     YouTubeFeed.Live -> "Live"
     YouTubeFeed.Gaming -> "Gaming"
     is YouTubeFeed.Search -> feed.query
+    is YouTubeFeed.Playlist -> feed.title
 }
 
 @Composable
@@ -605,7 +606,7 @@ private fun StatePromptCard(detecting: Boolean, onAllow: () -> Unit, onPick: () 
 }
 
 @Composable
-private fun StatePickerDialog(
+internal fun StatePickerDialog(
     current: String?,
     detecting: Boolean,
     onDetect: () -> Unit,
@@ -807,7 +808,7 @@ private fun Message(text: String, action: String? = null, onAction: () -> Unit =
 }
 
 /** "12M views • 2 weeks ago", "1.2K watching" for live; null when YouTube gave neither. */
-private fun stats(item: YouTubeItem): String? {
+internal fun stats(item: YouTubeItem): String? {
     val views = item.views.takeIf { it >= 0 }?.let { formatCount(it) + if (item.isLive) " watching" else " views" }
     return listOfNotNull(views, item.uploadedAgo?.takeIf { it.isNotBlank() }).joinToString(" • ").ifEmpty { null }
 }
