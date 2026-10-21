@@ -131,6 +131,8 @@ fun TvVideoPlayer(
     var positionMs by remember { mutableLongStateOf(0L) }
     var durationMs by remember { mutableLongStateOf(0L) }
     var tracks by remember { mutableStateOf(Tracks.EMPTY) }
+    // Height of the picture actually playing (what "Auto" picked right now)
+    var videoHeight by remember { mutableStateOf(0) }
     var trackParams by remember { mutableStateOf<TrackSelectionParameters?>(null) }
     var loadError by remember { mutableStateOf("") }
 
@@ -201,6 +203,7 @@ fun TvVideoPlayer(
             if (player.duration > 0) durationMs = player.duration
             positionMs = player.currentPosition
             tracks = player.currentTracks
+            videoHeight = player.videoSize.height
             trackParams = player.trackSelectionParameters
             val current = player.currentMediaItem?.mediaId.orEmpty()
             if (current == videoId) started = true
@@ -350,7 +353,7 @@ fun TvVideoPlayer(
     }
 
     val params = trackParams
-    val qualities = if (params != null) qualityOptions(tracks, params) else emptyList()
+    val qualities = if (params != null) qualityOptions(tracks, params, videoHeight) else emptyList()
     val languages = audioOptions(tracks)
     val captions = if (params != null) captionOptions(tracks, params) else emptyList()
 

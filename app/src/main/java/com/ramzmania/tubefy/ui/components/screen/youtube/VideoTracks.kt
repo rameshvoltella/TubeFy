@@ -43,8 +43,12 @@ class TrackOption(
 
 enum class TrackSheet(val title: String) { Quality("Quality"), Audio("Audio language"), Captions("Captions") }
 
-/** Qualities, highest first, after "Auto" (adapts to the connection). */
-fun qualityOptions(tracks: Tracks, params: TrackSelectionParameters): List<TrackOption> {
+/**
+ * Qualities, highest first, after "Auto" (adapts to the connection). [playingHeight] is the picture
+ * actually on screen (the player's video size): with Auto, every quality counts as "selected", so the
+ * tracks alone can't tell which one is playing.
+ */
+fun qualityOptions(tracks: Tracks, params: TrackSelectionParameters, playingHeight: Int = 0): List<TrackOption> {
     val group = tracks.groups.firstOrNull { it.type == C.TRACK_TYPE_VIDEO } ?: return emptyList()
     // A single quality (e.g. the 360p fallback): still shown, so the button doesn't just vanish
     if (group.length <= 1) {
@@ -52,10 +56,8 @@ fun qualityOptions(tracks: Tracks, params: TrackSelectionParameters): List<Track
         return if (height > 0) listOf(TrackOption("${height}p", selected = true) { it }) else emptyList()
     }
     val override = params.overrides[group.mediaTrackGroup]
-    val playingHeight = (0 until group.length).firstOrNull { group.isTrackSelected(it) }?.let { group.getTrackFormat(it).height }
-        ?.takeIf { it > 0 }
     val auto = TrackOption(
-        label = if (override == null && playingHeight != null) "Auto (${playingHeight}p)" else "Auto",
+        label = if (override == null && playingHeight > 0) "Auto (${playingHeight}p)" else "Auto",
         selected = override == null,
         apply = { it.buildUpon().clearOverridesOfType(C.TRACK_TYPE_VIDEO).build() }
     )

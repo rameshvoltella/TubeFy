@@ -90,3 +90,18 @@ class TvScrubTest {
         assertEquals(60_000L, com.ramzmania.tubefy.ui.tv.scrubStepMs(20, 600_000L))  // at least a minute
     }
 }
+
+class VideoQualityTest {
+    private val pick = com.ramzmania.tubefy.player.VideoQuality::bestIndex
+
+    @Test
+    fun `best quality is the tallest supported one that fits the screen`() {
+        val heights = listOf(144, 360, 720, 1080, 2160)
+        val all = List(5) { true }
+        assertEquals(3, pick(heights, all, 1080))          // 1080p phone: 1080p, not 4K
+        assertEquals(4, pick(heights, all, 2160))          // 4K TV
+        assertEquals(2, pick(heights, listOf(true, true, true, false, false), 1080)) // 1080p not decodable
+        assertEquals(0, pick(listOf(480, 720), listOf(true, true), 240)) // nothing fits: the smallest
+        assertNull(pick(heights, List(5) { false }, 1080))
+    }
+}

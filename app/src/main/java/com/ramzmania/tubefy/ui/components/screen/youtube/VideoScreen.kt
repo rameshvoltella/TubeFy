@@ -4,6 +4,8 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.pm.ActivityInfo
+import android.media.AudioManager
+import android.view.WindowManager
 import android.content.res.Configuration
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -37,7 +39,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
+import androidx.compose.material.icons.automirrored.rounded.VolumeDown
+import androidx.compose.material.icons.automirrored.rounded.VolumeOff
+import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.Bookmark
+import androidx.compose.material.icons.rounded.BrightnessHigh
+import androidx.compose.material.icons.rounded.BrightnessLow
+import androidx.compose.material.icons.rounded.BrightnessMedium
 import androidx.compose.material.icons.rounded.ClosedCaption
 import androidx.compose.material.icons.rounded.ClosedCaptionDisabled
 import androidx.compose.material.icons.rounded.Translate
@@ -121,6 +129,8 @@ import com.ramzmania.tubefy.utils.LocalNavController
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
 import com.ramzmania.tubefy.viewmodel.VideoViewModel
 import kotlinx.coroutines.delay
+import kotlin.math.abs
+import kotlin.math.roundToInt
 import java.net.URLDecoder
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -158,7 +168,11 @@ fun VideoScreen(viewModel: VideoViewModel = hiltViewModel()) {
     var lastTouch by remember { mutableLongStateOf(0L) }
     // Full screen: pinch out fills the screen (crops the edges), pinch in fits the whole video again
     var zoomed by rememberSaveable { mutableStateOf(false) }
+    // Swipe on the left half: this page's screen brightness (-1 = the phone's own; the setting isn't changed)
+    var brightness by rememberSaveable { mutableStateOf(-1f) }
     var tracks by remember { mutableStateOf(Tracks.EMPTY) }
+    // Height of the picture actually playing (what "Auto" picked right now)
+    var videoHeight by remember { mutableStateOf(0) }
     var trackParams by remember { mutableStateOf<TrackSelectionParameters?>(null) }
     var openSheet by remember { mutableStateOf<TrackSheet?>(null) }
 
@@ -243,6 +257,7 @@ fun VideoScreen(viewModel: VideoViewModel = hiltViewModel()) {
             if (player.duration > 0) durationMs = player.duration
             positionMs = player.currentPosition
             tracks = player.currentTracks
+            videoHeight = player.videoSize.height
             trackParams = player.trackSelectionParameters
             val current = player.currentMediaItem?.mediaId.orEmpty()
             if (current == videoId) started = true
@@ -325,6 +340,7 @@ fun VideoScreen(viewModel: VideoViewModel = hiltViewModel()) {
             // Leaving the page (not just rotating, which recreates the screen): rotate freely again
             if (activity?.isChangingConfigurations == true) return@onDispose
             setVideoTrackEnabled(controller, false) // audio carries on without downloading video
+            activity?.window?.let { it.attributes = it.attributes.apply { screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE } }
             activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
             activity?.window?.let { WindowCompat.getInsetsController(it, view).show(WindowInsetsCompat.Type.systemBars()) }
         }
@@ -334,6 +350,10 @@ fun VideoScreen(viewModel: VideoViewModel = hiltViewModel()) {
             if (on) ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
     }
     BackHandler(enabled = fullscreen) { setFullscreen(false) }
+    // Re-applied after rotation (a new window starts at the phone's brightness)
+    LaunchedEffect(brightness, activity) {
+        activity?.window?.let { it.attributes = it.attributes.apply { screenBrightness = brightness } }
+    }
 
     fun applyTracks(change: (TrackSelectionParameters) -> TrackSelectionParameters?) {
         val c = controller ?: return
@@ -341,7 +361,7 @@ fun VideoScreen(viewModel: VideoViewModel = hiltViewModel()) {
         trackParams = c.trackSelectionParameters
     }
     val params = trackParams
-    val qualities = if (params != null) qualityOptions(tracks, params) else emptyList()
+    val qualities = if (params != null) qualityOptions(tracks, params, videoHeight) else emptyList()
     val languages = audioOptions(tracks)
     val captions = if (params != null) captionOptions(tracks, params) else emptyList()
     openSheet?.let { sheet ->
@@ -397,6 +417,8 @@ fun VideoScreen(viewModel: VideoViewModel = hiltViewModel()) {
             onRetry = { play(videoId, title, fallbackThumb) },
             zoomed = zoomed,
             onZoomChange = { zoomed = it },
+            brightness = brightness,
+            onBrightnessChange = { brightness = it },
             // Until this video's own picture plays, show its thumbnail (not the old video / a song's art)
             coverThumbnail = fallbackThumb.takeIf { !started || !pictureReady },
             atEnd = atEnd,
@@ -557,6 +579,8 @@ private fun VideoPlayerBox(
     onRetry: () -> Unit,
     zoomed: Boolean,
     onZoomChange: (Boolean) -> Unit,
+    brightness: Float,
+    onBrightnessChange: (Float) -> Unit,
     coverThumbnail: String?,
     atEnd: Boolean,
     onReplay: () -> Unit,
@@ -572,6 +596,35 @@ private fun VideoPlayerBox(
 
     // Briefly says "Zoomed to fill" / "Original size" after a pinch
     var zoomHint by remember { mutableStateOf<String?>(null) }
+
+    // Brightness / volume swipes
+    val context = LocalContext.current
+    val audio = remember(context) { context.getSystemService(AudioManager::class.java) }
+    val maxVolume = remember(audio) { audio?.getStreamMaxVolume(AudioManager.STREAM_MUSIC)?.coerceAtLeast(1) ?: 1 }
+    val currentBrightness by rememberUpdatedState(brightness)
+    var swipeHud by remember { mutableStateOf<Pair<SwipeKind, Float>?>(null) }
+    var swipeEndedAt by remember { mutableStateOf(0L) }
+    LaunchedEffect(swipeEndedAt) {
+        if (swipeEndedAt > 0) {
+            delay(900L)
+            swipeHud = null
+        }
+    }
+    fun currentLevel(kind: SwipeKind): Float = when (kind) {
+        SwipeKind.Brightness -> currentBrightness.takeIf { it >= 0f } ?: systemBrightness(context)
+        SwipeKind.Volume -> (audio?.getStreamVolume(AudioManager.STREAM_MUSIC) ?: 0) / maxVolume.toFloat()
+    }
+    fun applyLevel(kind: SwipeKind, level: Float) {
+        when (kind) {
+            SwipeKind.Brightness -> onBrightnessChange(level.coerceAtLeast(0.01f))
+            SwipeKind.Volume -> {
+                val target = (level * maxVolume).roundToInt()
+                if (target != audio?.getStreamVolume(AudioManager.STREAM_MUSIC)) {
+                    audio?.setStreamVolume(AudioManager.STREAM_MUSIC, target, 0)
+                }
+            }
+        }
+    }
     LaunchedEffect(zoomHint) {
         if (zoomHint != null) {
             delay(1_200L)
@@ -582,20 +635,58 @@ private fun VideoPlayerBox(
     Box(
         modifier = modifier
             .background(Color.Black)
-            // Pinch (full screen only); single taps pass through to toggle the controls
+            // Gestures: swipe up/down on the left half = brightness, on the right half = volume;
+            // pinch (full screen) = zoom. Single taps pass through to toggle the controls.
             .pointerInput(fullscreen, zoomed) {
-                if (!fullscreen) return@pointerInput
                 awaitEachGesture {
-                    awaitFirstDown(requireUnconsumed = false)
+                    val down = awaitFirstDown(requireUnconsumed = false)
+                    // Not right at the edges, where Android's back / home gestures live
+                    val x = down.position.x / size.width
+                    val y = down.position.y / size.height
+                    val side = when {
+                        y > 0.94f -> null
+                        x in 0.05f..0.45f -> SwipeKind.Brightness
+                        x in 0.55f..0.95f -> SwipeKind.Volume
+                        else -> null
+                    }
+                    var mode = GestureMode.Undecided
                     var scale = 1f
+                    var dragX = 0f
+                    var dragY = 0f
+                    var startLevel = 0f
+                    var startY = 0f
                     do {
                         val event = awaitPointerEvent()
-                        if (event.changes.count { it.pressed } >= 2) {
+                        val pressed = event.changes.count { it.pressed }
+                        if (pressed >= 2 && fullscreen && mode != GestureMode.Swipe) {
+                            mode = GestureMode.Pinch
                             scale *= event.calculateZoom()
                             event.changes.forEach { it.consume() }
+                        } else if (pressed == 1 && (mode == GestureMode.Undecided || mode == GestureMode.Swipe)) {
+                            val change = event.changes.firstOrNull { it.id == down.id } ?: event.changes.first()
+                            if (mode == GestureMode.Undecided) {
+                                dragX += change.position.x - change.previousPosition.x
+                                dragY += change.position.y - change.previousPosition.y
+                                val slop = viewConfiguration.touchSlop
+                                if (side != null && abs(dragY) > slop && abs(dragY) > abs(dragX) * 1.5f) {
+                                    mode = GestureMode.Swipe
+                                    startY = change.position.y
+                                    startLevel = currentLevel(side)
+                                } else if (abs(dragX) > slop * 2) {
+                                    mode = GestureMode.Ignore
+                                }
+                            }
+                            if (mode == GestureMode.Swipe && side != null) {
+                                // A swipe across most of the video's height goes from 0 to 100 %
+                                val level = (startLevel - (change.position.y - startY) / (size.height * 0.85f)).coerceIn(0f, 1f)
+                                applyLevel(side, level)
+                                swipeHud = side to level
+                                change.consume()
+                            }
                         }
                     } while (event.changes.any { it.pressed })
-                    when {
+                    if (mode == GestureMode.Swipe) swipeEndedAt = System.currentTimeMillis()
+                    if (mode == GestureMode.Pinch) when {
                         scale > 1.12f && !zoomed -> {
                             onZoomChange(true)
                             zoomHint = "Zoomed to fill"
@@ -627,6 +718,8 @@ private fun VideoPlayerBox(
                 )
             }
         }
+
+        swipeHud?.let { (kind, level) -> SwipeLevelHud(kind, level, Modifier.align(Alignment.Center)) }
 
         zoomHint?.let {
             Text(
@@ -834,6 +927,46 @@ private fun VideoPlayerBox(
                     .background(DiscoverAccent)
             )
         }
+    }
+}
+
+private enum class GestureMode { Undecided, Swipe, Pinch, Ignore }
+
+internal enum class SwipeKind { Brightness, Volume }
+
+/** The phone's own brightness (0..1), used as the starting point before the first swipe. */
+private fun systemBrightness(context: Context): Float = runCatching {
+    android.provider.Settings.System.getInt(context.contentResolver, android.provider.Settings.System.SCREEN_BRIGHTNESS) / 255f
+}.getOrDefault(0.5f).coerceIn(0f, 1f)
+
+/** The level shown while swiping: an icon, a bar and the percentage. */
+@Composable
+private fun SwipeLevelHud(kind: SwipeKind, level: Float, modifier: Modifier = Modifier) {
+    val icon = when {
+        kind == SwipeKind.Brightness -> if (level < 0.3f) Icons.Rounded.BrightnessLow else if (level < 0.7f) Icons.Rounded.BrightnessMedium else Icons.Rounded.BrightnessHigh
+        level <= 0f -> Icons.AutoMirrored.Rounded.VolumeOff
+        level < 0.5f -> Icons.AutoMirrored.Rounded.VolumeDown
+        else -> Icons.AutoMirrored.Rounded.VolumeUp
+    }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .clip(RoundedCornerShape(50))
+            .background(Color.Black.copy(alpha = 0.65f))
+            .padding(horizontal = 16.dp, vertical = 10.dp)
+    ) {
+        Icon(icon, contentDescription = if (kind == SwipeKind.Brightness) "Brightness" else "Volume", tint = Color.White, modifier = Modifier.size(22.dp))
+        Box(
+            Modifier
+                .padding(horizontal = 12.dp)
+                .width(110.dp)
+                .height(4.dp)
+                .clip(RoundedCornerShape(2.dp))
+                .background(Color.White.copy(alpha = 0.3f))
+        ) {
+            Box(Modifier.fillMaxWidth(level).height(4.dp).background(if (kind == SwipeKind.Brightness) Color.White else DiscoverAccent))
+        }
+        Text("${(level * 100).roundToInt()}%", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium)
     }
 }
 
