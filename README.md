@@ -113,6 +113,14 @@ Click here -> https://youtu.be/YrhG8T8gbU4 (oldplayer)
 
 </div>
 
+<div style="text-align: center;">
+        <h3>Android Auto(CAR)</h3>
+     <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/car1.png" alt="Tv1" style="width: 40%; height: 40%;">
+          <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/car2.png" alt="Tv1" style="width: 40%; height: 40%;">
+               <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/car3.png" alt="Tv1" style="width: 40%; height: 40%;">
+
+</div>
+
 ## Technologies Used
 
 - **Kotlin**: The app is built using Kotlin, a modern programming language for Android development known for its conciseness and safety features. ([Kotlin GitHub Repository](https://github.com/JetBrains/kotlin))
