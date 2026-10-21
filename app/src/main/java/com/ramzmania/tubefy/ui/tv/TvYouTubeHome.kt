@@ -20,6 +20,8 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -89,6 +91,7 @@ fun TvYouTubeHome(
     val feeds by viewModel.feeds.collectAsState()
     val recent by viewModel.recent.collectAsState()
     val detecting by viewModel.detecting.collectAsState()
+    val suggestions by viewModel.suggestions.collectAsState()
 
     var section by remember { mutableStateOf<TvSection>(TvSection.Feed(selected)) }
     var query by rememberSaveable { mutableStateOf("") }
@@ -200,7 +203,10 @@ fun TvYouTubeHome(
                 TvSection.Search -> Column(Modifier.fillMaxSize()) {
                     OutlinedTextField(
                         value = query,
-                        onValueChange = { query = it },
+                        onValueChange = {
+                            query = it
+                            viewModel.onQueryChanged(it)
+                        },
                         placeholder = { Text("Search YouTube", color = DiscoverTextSecondary, fontSize = 20.sp) },
                         leadingIcon = { Icon(Icons.Rounded.Search, null, tint = DiscoverTextSecondary, modifier = Modifier.size(28.dp)) },
                         singleLine = true,
@@ -220,7 +226,27 @@ fun TvYouTubeHome(
                             .padding(start = 32.dp, end = 32.dp, top = 28.dp)
                     )
                     val results = search
-                    if (results == null) {
+                    // Suggestions while typing (▼ from the box, OK searches)
+                    if (query.isNotBlank() && suggestions.isNotEmpty() && results?.query != query.trim()) {
+                        LazyColumn(
+                            contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 12.dp, bottom = 32.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                            modifier = Modifier.fillMaxWidth(0.6f)
+                        ) {
+                            items(suggestions, key = { it }) { suggestion ->
+                                TvMenuItem(
+                                    label = suggestion,
+                                    icon = Icons.Rounded.Search,
+                                    selected = false,
+                                    onFocus = {},
+                                    onClick = {
+                                        query = suggestion
+                                        viewModel.submitSearch(suggestion)
+                                    }
+                                )
+                            }
+                        }
+                    } else if (results == null) {
                         Text(
                             "Select the box to type, or press the mic button on your remote.",
                             color = DiscoverTextSecondary,
