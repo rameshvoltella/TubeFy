@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccountCircle
@@ -137,6 +138,9 @@ fun TvVideoPlayer(
     var lastKey by remember { mutableLongStateOf(0L) }
     var seekHint by remember { mutableStateOf<String?>(null) }
     var openSheet by remember { mutableStateOf<TrackSheet?>(null) }
+    // Related videos slide up only on ▼ from the buttons (like YouTube), not with every OK
+    var relatedOpen by remember { mutableStateOf(false) }
+    val firstRelated = remember { FocusRequester() }
 
     val details by viewModel.details.collectAsState()
     val loaded = (details as? VideoViewModel.DetailsState.Loaded)?.details
@@ -236,7 +240,14 @@ fun TvVideoPlayer(
         }
     }
     LaunchedEffect(controlsVisible) {
+        if (!controlsVisible) relatedOpen = false
         runCatching { if (controlsVisible) playFocus.requestFocus() else rootFocus.requestFocus() }
+    }
+    LaunchedEffect(relatedOpen) {
+        if (relatedOpen) {
+            delay(150L) // let the row appear
+            runCatching { firstRelated.requestFocus() }
+        }
     }
     LaunchedEffect(seekHint) {
         if (seekHint != null) {
@@ -333,6 +344,10 @@ fun TvVideoPlayer(
     BackHandler(enabled = controlsVisible) { controlsVisible = false }
     // Registered last, so it wins: Back on the Up next card only cancels autoplay
     BackHandler(enabled = showUpNext && !controlsVisible) { autoplayCancelled = true }
+    BackHandler(enabled = relatedOpen) {
+        relatedOpen = false
+        runCatching { playFocus.requestFocus() }
+    }
 
     val params = trackParams
     val qualities = if (params != null) qualityOptions(tracks, params) else emptyList()
@@ -482,11 +497,19 @@ fun TvVideoPlayer(
                         )
                     }
 
-                    // Buttons
+                    val related = loaded?.related.orEmpty().filter { !it.isPlaylist }
+                    // Buttons (▼ opens the related videos)
                     Row(
                         verticalAlignment = Alignment.Top,
                         horizontalArrangement = Arrangement.spacedBy(22.dp),
-                        modifier = Modifier.padding(top = 14.dp)
+                        modifier = Modifier
+                            .padding(top = 14.dp)
+                            .onPreviewKeyEvent { event ->
+                                if (event.type == KeyEventType.KeyDown && event.key == Key.DirectionDown && related.isNotEmpty()) {
+                                    relatedOpen = true
+                                    true
+                                } else false
+                            }
                     ) {
                         if (!isLive) TvRoundButton(Icons.Rounded.Replay10, "Back 10 seconds", onClick = { seekBy(-10_000) })
                         TvRoundButton(
@@ -524,12 +547,29 @@ fun TvVideoPlayer(
                         }
                     }
 
-                    // Related videos
-                    val related = loaded?.related.orEmpty().filter { !it.isPlaylist }
-                    if (related.isNotEmpty()) {
-                        Text("Related videos", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 22.dp, bottom = 6.dp))
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(end = 24.dp)) {
-                            items(related, key = { it.id }) { item ->
+                    // Related videos: a hint, and the row itself once opened with ▼ (▲ closes it)
+                    if (related.isNotEmpty() && !relatedOpen) {
+                        Text("▼  Related videos", color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp, modifier = Modifier.padding(top = 14.dp))
+                    }
+                    AnimatedVisibility(
+                        visible = relatedOpen && related.isNotEmpty(),
+                        enter = androidx.compose.animation.slideInVertically { it / 2 } + fadeIn(),
+                        exit = androidx.compose.animation.slideOutVertically { it / 2 } + fadeOut()
+                    ) {
+                      Column {
+                        Text("Related videos", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 18.dp, bottom = 6.dp))
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            contentPadding = PaddingValues(end = 24.dp),
+                            modifier = Modifier.onPreviewKeyEvent { event ->
+                                if (event.type == KeyEventType.KeyDown && event.key == Key.DirectionUp) {
+                                    relatedOpen = false
+                                    runCatching { playFocus.requestFocus() }
+                                    true
+                                } else false
+                            }
+                        ) {
+                            itemsIndexed(related, key = { _, item -> item.id }) { index, item ->
                                 TvVideoCard(
                                     item = item,
                                     onClick = {
@@ -540,10 +580,13 @@ fun TvVideoPlayer(
                                         play(item.id, item.title, item.thumbnail)
                                         controlsVisible = false
                                     },
-                                    modifier = Modifier.width(240.dp)
+                                    modifier = Modifier
+                                        .width(240.dp)
+                                        .then(if (index == 0) Modifier.focusRequester(firstRelated) else Modifier)
                                 )
                             }
                         }
+                      }
                     }
                 }
             }
