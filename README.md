@@ -22,6 +22,52 @@ Transform your YouTube experience into a seamless music streaming journey with o
 
 
 Elevate your music experience and enjoy YouTube's vast music library like never before. Download now and start listening!
+
+## How to Install
+
+TubeFy isn't on the Google Play Store, so you install it from its APK file. The same APK works on phones, Android TV and Google TV. Get it from the [Releases page](https://github.com/rameshvoltella/TubeFy/releases): open the latest release and download the `.apk` file under **Assets**.
+
+> Menu names can differ slightly between phone and TV brands. If you can't find an option, search for it in the device's Settings.
+
+### 📱 Phone
+
+1. Download the APK on your phone from the [Releases page](https://github.com/rameshvoltella/TubeFy/releases).
+2. Open the downloaded file. Android will say it can't install apps from this source: tap **Settings**, turn on **Allow from this source** for your browser or file manager, then go back.
+3. Tap **Install**. If Google Play Protect warns that the app is unknown, tap **More details → Install anyway**.
+4. Open TubeFy and allow notifications so the music controls show up.
+
+To update, install the newer APK over the old one. Your playlists and downloads are kept.
+
+### 🚗 Android Auto
+
+Android Auto only shows apps from the Play Store unless you allow other apps once:
+
+1. Install TubeFy on your phone (see above).
+2. On your phone open **Settings → Connected devices → Connection preferences → Android Auto** (or search "Android Auto" in Settings).
+3. Scroll to the bottom and tap **Version** about 10 times, then tap **OK** to turn on developer mode.
+4. Tap **⋮ (top right) → Developer settings** and turn on **Unknown sources**.
+5. Restart Android Auto (unplug and reconnect the phone). TubeFy now appears with your other media apps in the car.
+
+### 📺 Android TV / Google TV
+
+**Step 1: Turn on Developer options**
+- **Google TV:** Settings → System → About → tap **Android TV OS build** 7 times.
+- **Android TV:** Settings → Device Preferences → About → tap **Build** 7 times.
+
+You'll see "You are now a developer".
+
+**Step 2: Install the APK** using one of these:
+
+- **With the Downloader app (easiest):**
+  1. Install **Downloader** (by AFTVnews) from the TV's Play Store.
+  2. Allow it to install apps: Settings → Apps → Security & restrictions → **Unknown sources** → turn on **Downloader** (on some TVs: Device Preferences → Security & restrictions).
+  3. Open Downloader, enter the APK link from the [Releases page](https://github.com/rameshvoltella/TubeFy/releases), and tap **Install** when it finishes downloading.
+- **From a computer with adb:**
+  1. On the TV, go to Settings → System (or Device Preferences) → **Developer options** and turn on **USB debugging** / **Network debugging**.
+  2. Find the TV's IP address in Settings → Network & Internet.
+  3. On the computer run `adb connect <TV-IP>:5555`, accept the prompt on the TV, then `adb install <the-downloaded-file>.apk`.
+
+**Step 3:** TubeFy appears on the TV home screen (look in **Apps** if it isn't in the first row). It opens straight into the YouTube experience, made for the remote.
 ## Video Preview
 
 Click here -> https://youtu.be/YrhG8T8gbU4 (oldplayer)
