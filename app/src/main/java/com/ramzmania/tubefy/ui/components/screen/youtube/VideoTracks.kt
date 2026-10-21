@@ -46,7 +46,11 @@ enum class TrackSheet(val title: String) { Quality("Quality"), Audio("Audio lang
 /** Qualities, highest first, after "Auto" (adapts to the connection). */
 fun qualityOptions(tracks: Tracks, params: TrackSelectionParameters): List<TrackOption> {
     val group = tracks.groups.firstOrNull { it.type == C.TRACK_TYPE_VIDEO } ?: return emptyList()
-    if (group.length <= 1) return emptyList()
+    // A single quality (e.g. the 360p fallback): still shown, so the button doesn't just vanish
+    if (group.length <= 1) {
+        val height = group.getTrackFormat(0).height
+        return if (height > 0) listOf(TrackOption("${height}p", selected = true) { it }) else emptyList()
+    }
     val override = params.overrides[group.mediaTrackGroup]
     val playingHeight = (0 until group.length).firstOrNull { group.isTrackSelected(it) }?.let { group.getTrackFormat(it).height }
         ?.takeIf { it > 0 }

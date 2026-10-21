@@ -20,17 +20,13 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -47,9 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -61,7 +55,6 @@ import com.ramzmania.tubefy.ui.components.screen.youtube.StatePickerDialog
 import com.ramzmania.tubefy.ui.components.screen.youtube.chipLabel
 import com.ramzmania.tubefy.ui.theme.DiscoverAccent
 import com.ramzmania.tubefy.ui.theme.DiscoverBackground
-import com.ramzmania.tubefy.ui.theme.DiscoverBorder
 import com.ramzmania.tubefy.ui.theme.DiscoverTextSecondary
 import com.ramzmania.tubefy.viewmodel.FeedState
 import com.ramzmania.tubefy.viewmodel.YouTubeViewModel
@@ -89,8 +82,12 @@ fun TvYouTubeHome(
     val feeds by viewModel.feeds.collectAsState()
     val recent by viewModel.recent.collectAsState()
     val detecting by viewModel.detecting.collectAsState()
+    val suggestions by viewModel.suggestions.collectAsState()
 
-    var section by remember { mutableStateOf<TvSection>(TvSection.Feed(selected)) }
+    // Saveable, so coming back from a video returns to the same section (e.g. search results)
+    var section by rememberSaveable(stateSaver = tvSectionSaver { key -> viewModel.chips(viewModel.region.value).firstOrNull { it.key == key } }) {
+        mutableStateOf<TvSection>(TvSection.Feed(selected))
+    }
     var query by rememberSaveable { mutableStateOf("") }
     var showStatePicker by remember { mutableStateOf(false) }
     val menuFocus = remember { FocusRequester() }
@@ -151,7 +148,13 @@ fun TvYouTubeHome(
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(start = 18.dp, bottom = 18.dp)
             )
-            TvMenuItem("Search", Icons.Rounded.Search, section == TvSection.Search, onFocus = {}, onClick = { section = TvSection.Search })
+            TvMenuItem("Search", Icons.Rounded.Search, section == TvSection.Search, onFocus = {}, onClick = {
+                // A fresh search each time: the bottom row starts with recently played videos
+                query = ""
+                viewModel.clearSuggestions()
+                viewModel.clearSearch()
+                section = TvSection.Search
+            })
             TvMenuItem("Recent", Icons.Rounded.History, section == TvSection.Recent, onFocus = {}, onClick = { section = TvSection.Recent })
             Spacer(Modifier.height(12.dp))
             Text("YouTube", color = DiscoverTextSecondary, fontSize = 13.sp, modifier = Modifier.padding(start = 18.dp, bottom = 4.dp))
@@ -197,46 +200,38 @@ fun TvYouTubeHome(
                     onOpen = ::open
                 )
 
-                TvSection.Search -> Column(Modifier.fillMaxSize()) {
-                    OutlinedTextField(
-                        value = query,
-                        onValueChange = { query = it },
-                        placeholder = { Text("Search YouTube", color = DiscoverTextSecondary, fontSize = 20.sp) },
-                        leadingIcon = { Icon(Icons.Rounded.Search, null, tint = DiscoverTextSecondary, modifier = Modifier.size(28.dp)) },
-                        singleLine = true,
-                        textStyle = TextStyle(color = Color.White, fontSize = 20.sp),
-                        keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Search),
-                        keyboardActions = KeyboardActions(onSearch = { viewModel.submitSearch(query) }),
-                        shape = RoundedCornerShape(32.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = DiscoverAccent,
-                            unfocusedBorderColor = DiscoverBorder,
-                            focusedContainerColor = Color(0xFF161314),
-                            unfocusedContainerColor = Color(0xFF161314),
-                            cursorColor = DiscoverAccent
-                        ),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 32.dp, end = 32.dp, top = 28.dp)
-                    )
+                TvSection.Search -> {
                     val results = search
-                    if (results == null) {
-                        Text(
-                            "Select the box to type, or press the mic button on your remote.",
-                            color = DiscoverTextSecondary,
-                            fontSize = 16.sp,
-                            modifier = Modifier.padding(start = 36.dp, top = 16.dp)
-                        )
-                    } else {
-                        FeedGrid(
-                            title = "Results for \"${results.query}\"",
-                            feedKey = results.key,
-                            state = feeds[results.key] ?: FeedState(loading = true),
-                            onLoadMore = { viewModel.loadMore(results) },
-                            onRetry = { viewModel.load(results, force = true) },
-                            onOpen = ::open
+                    val recentItems = recent.map { video ->
+                        YouTubeItem(
+                            id = video.id,
+                            url = "https://www.youtube.com/watch?v=${video.id}",
+                            title = video.title,
+                            channel = video.channel,
+                            thumbnail = video.thumbnail,
+                            durationSeconds = video.durationSeconds,
+                            uploadedAgo = "Watched " + YouTubeFeedSource.timeAgo(video.playedAt, System.currentTimeMillis())
                         )
                     }
+                    TvSearchScreen(
+                        query = query,
+                        onQueryChange = {
+                            query = it
+                            viewModel.onQueryChanged(it)
+                        },
+                        suggestions = if (query.isBlank()) emptyList() else suggestions,
+                        onSearch = { text ->
+                            if (text.isNotBlank()) {
+                                query = text
+                                viewModel.submitSearch(text)
+                            }
+                        },
+                        rowTitle = if (results != null) "Results for \"${results.query}\"" else "Recently played",
+                        rowState = if (results != null) feeds[results.key] ?: FeedState(loading = true) else FeedState(items = recentItems, ended = true),
+                        emptyText = if (results != null) "No videos found" else "Videos you play will show up here",
+                        onLoadMore = { results?.let(viewModel::loadMore) },
+                        onOpen = ::open
+                    )
                 }
 
                 is TvSection.Playlist -> FeedGrid(
@@ -330,3 +325,26 @@ private fun FeedGrid(
         }
     }
 }
+
+/** Saves the open section as text: "feed:<key>", "search", "recent" or "playlist:<id>|<title>". */
+private fun tvSectionSaver(feedFor: (String) -> YouTubeFeed?) = androidx.compose.runtime.saveable.Saver<TvSection, String>(
+    save = { section ->
+        when (section) {
+            is TvSection.Feed -> "feed:${section.feed.key}"
+            TvSection.Search -> "search"
+            TvSection.Recent -> "recent"
+            is TvSection.Playlist -> "playlist:${section.feed.id}|${section.feed.title}"
+        }
+    },
+    restore = { saved ->
+        when {
+            saved == "search" -> TvSection.Search
+            saved == "recent" -> TvSection.Recent
+            saved.startsWith("playlist:") -> saved.removePrefix("playlist:").split("|", limit = 2).let {
+                TvSection.Playlist(YouTubeFeed.Playlist(it[0], it.getOrElse(1) { "" }))
+            }
+            saved.startsWith("feed:") -> feedFor(saved.removePrefix("feed:"))?.let { TvSection.Feed(it) }
+            else -> null
+        }
+    }
+)

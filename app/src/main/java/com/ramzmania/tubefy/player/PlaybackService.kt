@@ -122,6 +122,8 @@ class PlaybackService(
 
     override fun onCreate() {
         super.onCreate()
+        // Video page: only use VP9 where it's hardware-decoded (decided once per process)
+        VideoManifest.allowVp9 = VideoManifest.hasHardwareVp9()
 
 
         // Links of queued songs are refreshed just before use if they have expired (long pauses)
@@ -182,6 +184,7 @@ class PlaybackService(
                 }
 
                 override fun onPlayerError(error: PlaybackException) {
+                    Log.w("PlaybackService", "Playback error ${error.errorCodeName} on ${currentMediaItem?.mediaId}", error)
                     // A dead link (expired / rejected): retry the same song once with a fresh link,
                     // keeping its position, before falling back to the skip logic below
                     val failedId = currentMediaItem?.mediaId

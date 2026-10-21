@@ -94,9 +94,34 @@ class YouTubeViewModel @Inject constructor(
         load(feed)
     }
 
+    private val _suggestions = MutableStateFlow<List<String>>(emptyList())
+    /** Search suggestions for the text being typed. */
+    val suggestions: StateFlow<List<String>> = _suggestions.asStateFlow()
+    private var suggestJob: Job? = null
+
+    /** Call as the user types: fetches suggestions once typing pauses briefly. */
+    fun onQueryChanged(query: String) {
+        suggestJob?.cancel()
+        val text = query.trim()
+        if (text.length < MIN_SUGGEST_CHARS) {
+            _suggestions.value = emptyList()
+            return
+        }
+        suggestJob = viewModelScope.launch {
+            kotlinx.coroutines.delay(SUGGEST_DELAY_MS)
+            _suggestions.value = runCatching { source.suggestions(text) }.getOrDefault(emptyList()).take(MAX_SUGGESTIONS)
+        }
+    }
+
+    fun clearSuggestions() {
+        suggestJob?.cancel()
+        _suggestions.value = emptyList()
+    }
+
     fun submitSearch(query: String) {
         val text = query.trim()
         if (text.isEmpty()) return
+        clearSuggestions()
         val feed = YouTubeFeed.Search(text)
         _showRecent.value = false
         _search.value = feed
@@ -208,6 +233,12 @@ class YouTubeViewModel @Inject constructor(
     }
 
     private fun defaultFeed(): YouTubeFeed = stateFeed(regionStore.region.value) ?: YouTubeFeed.Trending
+
+    private companion object {
+        const val MIN_SUGGEST_CHARS = 2
+        const val SUGGEST_DELAY_MS = 250L
+        const val MAX_SUGGESTIONS = 10
+    }
 
     private fun update(feed: YouTubeFeed, change: (FeedState) -> FeedState) {
         _feeds.update { it + (feed.key to change(it[feed.key] ?: FeedState())) }

@@ -45,6 +45,7 @@ import androidx.compose.material.icons.rounded.Headphones
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.NorthWest
 import androidx.compose.material.icons.rounded.PlaylistPlay
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.AlertDialog
@@ -82,6 +83,9 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -132,7 +136,14 @@ fun YouTubeScreen(viewModel: YouTubeViewModel = hiltViewModel()) {
     val showRecent by viewModel.showRecent.collectAsState()
     var confirmClearRecent by remember { mutableStateOf(false) }
 
-    var query by rememberSaveable { mutableStateOf("") }
+    // TextFieldValue so a picked suggestion can be put in the box with the cursor at its end
+    var queryValue by rememberSaveable(stateSaver = TextFieldValue.Saver) { mutableStateOf(TextFieldValue("")) }
+    val query = queryValue.text
+    val suggestions by viewModel.suggestions.collectAsState()
+    var searchFocused by remember { mutableStateOf(false) }
+    fun setQuery(text: String) {
+        queryValue = TextFieldValue(text, selection = androidx.compose.ui.text.TextRange(text.length))
+    }
     var showStatePicker by remember { mutableStateOf(false) }
     var addToPlaylist by remember { mutableStateOf<YouTubeItem?>(null) }
 
@@ -157,7 +168,7 @@ fun YouTubeScreen(viewModel: YouTubeViewModel = hiltViewModel()) {
 
     BackHandler(enabled = showRecent) { viewModel.setShowRecent(false) }
     BackHandler(enabled = search != null && !showRecent) {
-        query = ""
+        setQuery("")
         viewModel.clearSearch()
     }
 
@@ -267,24 +278,50 @@ fun YouTubeScreen(viewModel: YouTubeViewModel = hiltViewModel()) {
                     modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 4.dp)
                 ) {
                     SearchBox(
-                        query = query,
+                        value = queryValue,
                         searching = search != null,
-                        onQueryChange = { query = it },
+                        onValueChange = {
+                            if (it.text != queryValue.text) viewModel.onQueryChanged(it.text)
+                            queryValue = it
+                        },
                         onSearch = {
                             focusManager.clearFocus()
                             viewModel.submitSearch(query)
                         },
                         onClear = {
-                            query = ""
+                            setQuery("")
+                            viewModel.clearSuggestions()
                             viewModel.clearSearch()
                         },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier
+                            .weight(1f)
+                            .onFocusChanged { searchFocused = it.isFocused }
                     )
                     RecentButton(selected = showRecent, onClick = {
                         focusManager.clearFocus()
                         viewModel.setShowRecent(!showRecent)
                     })
                 }
+            }
+
+            // While typing: YouTube's suggestions instead of the list
+            if (searchFocused && query.isNotBlank() && suggestions.isNotEmpty()) {
+                items(suggestions, key = { "suggest|$it" }, span = { fullLine() }) { suggestion ->
+                    SuggestionRow(
+                        suggestion = suggestion,
+                        typed = query,
+                        onPick = {
+                            setQuery(suggestion)
+                            focusManager.clearFocus()
+                            viewModel.submitSearch(suggestion)
+                        },
+                        onFill = {
+                            setQuery("$suggestion ")
+                            viewModel.onQueryChanged(suggestion)
+                        }
+                    )
+                }
+                return@LazyVerticalGrid
             }
 
             if (showRecent) {
@@ -427,16 +464,17 @@ internal fun LoadMoreWhenNearEnd(gridState: LazyGridState, state: FeedState, loa
 
 @Composable
 private fun SearchBox(
-    query: String,
+    value: TextFieldValue,
     searching: Boolean,
-    onQueryChange: (String) -> Unit,
+    onValueChange: (TextFieldValue) -> Unit,
     onSearch: () -> Unit,
     onClear: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val query = value.text
     OutlinedTextField(
-        value = query,
-        onValueChange = onQueryChange,
+        value = value,
+        onValueChange = onValueChange,
         placeholder = { Text("Search YouTube videos", color = DiscoverTextSecondary, fontSize = 17.sp, maxLines = 1) },
         leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null, tint = DiscoverTextSecondary, modifier = Modifier.size(24.dp)) },
         trailingIcon = {
@@ -458,6 +496,45 @@ private fun SearchBox(
         ),
         modifier = modifier.height(58.dp)
     )
+}
+
+/**
+ * A search suggestion: tap searches it; ↖ puts it in the box to keep typing. The part beyond what was
+ * typed is bold, like YouTube.
+ */
+@Composable
+private fun SuggestionRow(suggestion: String, typed: String, onPick: () -> Unit, onFill: () -> Unit) {
+    val prefix = typed.trim()
+    val text = androidx.compose.ui.text.buildAnnotatedString {
+        if (prefix.isNotEmpty() && suggestion.startsWith(prefix, ignoreCase = true)) {
+            append(suggestion.substring(0, prefix.length))
+            withStyle(androidx.compose.ui.text.SpanStyle(fontWeight = FontWeight.Bold, color = Color.White)) {
+                append(suggestion.substring(prefix.length))
+            }
+        } else {
+            append(suggestion)
+        }
+    }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onPick)
+            .padding(start = 24.dp, end = 8.dp, top = 2.dp, bottom = 2.dp)
+    ) {
+        Icon(Icons.Rounded.Search, contentDescription = null, tint = DiscoverTextSecondary, modifier = Modifier.size(22.dp))
+        Text(
+            text,
+            color = Color.White.copy(alpha = 0.8f),
+            fontSize = 16.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f).padding(start = 16.dp, top = 12.dp, bottom = 12.dp)
+        )
+        IconButton(onClick = onFill) {
+            Icon(Icons.Rounded.NorthWest, contentDescription = "Use \"$suggestion\"", tint = DiscoverTextSecondary, modifier = Modifier.size(20.dp))
+        }
+    }
 }
 
 /** Round "Recent" button next to the search box; red when the Recent list is showing. */

@@ -123,7 +123,9 @@ internal fun TvMenuItem(
     selected: Boolean,
     onFocus: () -> Unit,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /** Smaller rows (search suggestions). */
+    compact: Boolean = false
 ) {
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
@@ -141,7 +143,7 @@ internal fun TvMenuItem(
                 }
             )
             .clickable(interactionSource = interaction, indication = null, onClick = onClick)
-            .padding(horizontal = 18.dp, vertical = 11.dp)
+            .padding(horizontal = 18.dp, vertical = if (compact) 7.dp else 11.dp)
     ) {
         val tint = when {
             focused -> Color.Black
@@ -152,7 +154,7 @@ internal fun TvMenuItem(
         Text(
             label,
             color = tint,
-            fontSize = 16.sp,
+            fontSize = if (compact) 15.sp else 16.sp,
             fontWeight = if (selected || focused) FontWeight.SemiBold else FontWeight.Normal,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,

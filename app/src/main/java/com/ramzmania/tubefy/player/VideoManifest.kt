@@ -16,6 +16,23 @@ import org.schabi.newpipe.extractor.stream.VideoStream
  */
 object VideoManifest {
 
+    private const val TAG = "VideoManifest"
+
+    /**
+     * Whether VP9 may be used. Set from the device's decoders (see [hasHardwareVp9]): many TV boxes
+     * can't play VP9 smoothly, and a failing video falls back to the single 360p file (no qualities).
+     */
+    @Volatile var allowVp9: Boolean = true
+
+    /** True when the device has a hardware VP9 decoder. */
+    fun hasHardwareVp9(): Boolean = runCatching {
+        android.media.MediaCodecList(android.media.MediaCodecList.REGULAR_CODECS).codecInfos.any { info ->
+            !info.isEncoder &&
+                info.supportedTypes.any { it.equals("video/x-vnd.on2.vp9", ignoreCase = true) } &&
+                (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.Q || info.isHardwareAccelerated)
+        }
+    }.getOrDefault(false)
+
     data class Representation(
         val id: String,
         val url: String,
@@ -53,9 +70,16 @@ object VideoManifest {
         val duration = extractor.length
         if (duration <= 0) return null // live
 
-        val video = pickVideo(extractor.videoOnlyStreams)
+        val video = pickVideo(extractor.videoOnlyStreams, allowVp9)
         val audio = pickAudio(extractor.audioStreams)
-        if (video.isEmpty() || audio.isEmpty()) return null
+        if (video.isEmpty() || audio.isEmpty()) {
+            android.util.Log.w(TAG, "$videoId: no adaptive streams (video=${video.size}, audio=${audio.size})")
+            return null
+        }
+        android.util.Log.i(
+            TAG,
+            "$videoId: ${video.first().mimeType} ${video.joinToString { "${it.height}p" }}, ${audio.size} audio track(s), vp9 allowed=$allowVp9"
+        )
 
         val subtitles = extractor.subtitlesDefault.orEmpty()
             .filter { !it.content.isNullOrBlank() && it.format == MediaFormat.TTML }
@@ -69,7 +93,7 @@ object VideoManifest {
     }
 
     /** One codec family only (mixing codecs breaks quality switching), every resolution. */
-    private fun pickVideo(streams: List<VideoStream>): List<Representation> {
+    private fun pickVideo(streams: List<VideoStream>, allowVp9: Boolean): List<Representation> {
         val usable = streams.mapNotNull { stream ->
             val itag = stream.itagItem ?: return@mapNotNull null
             if (stream.deliveryMethod != DeliveryMethod.PROGRESSIVE_HTTP || itag.indexEnd <= 0 || itag.initEnd <= 0) return@mapNotNull null
@@ -87,8 +111,10 @@ object VideoManifest {
                 fps = stream.fps
             )
         }
-        // The family that reaches the highest resolution (H.264 on a tie: it plays everywhere)
-        val family = usable.groupBy { it.mimeType }
+        // The family that reaches the highest resolution (H.264 on a tie: it plays everywhere).
+        // WebM (VP9) only when the device decodes it in hardware.
+        val family = usable.filter { allowVp9 || it.mimeType == "video/mp4" }.ifEmpty { usable }
+            .groupBy { it.mimeType }
             .maxWithOrNull(compareBy<Map.Entry<String, List<Representation>>> { entry -> entry.value.maxOf { it.height } }
                 .thenBy { if (it.key == "video/mp4") 1 else 0 })
             ?.value.orEmpty()

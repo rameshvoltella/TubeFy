@@ -266,6 +266,11 @@ class YouTubeFeedSource @Inject constructor() {
         )
     }
 
+    /** YouTube's search suggestions for what's been typed so far (e.g. "malayala" → "malayalam song", …). */
+    suspend fun suggestions(query: String): List<String> = withContext(Dispatchers.IO) {
+        youtube.suggestionExtractor.suggestionList(query).orEmpty().map { it.trim() }.filter { it.isNotEmpty() }.distinct()
+    }
+
     /** Details and related videos for the video page. */
     suspend fun details(videoId: String): YouTubeVideoDetails = withContext(Dispatchers.IO) {
         val info = StreamInfo.getInfo(youtube, "https://www.youtube.com/watch?v=$videoId")
