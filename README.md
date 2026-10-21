@@ -16,6 +16,9 @@ Transform your YouTube experience into a seamless music streaming journey with o
 - **Smart Queueing:** When a song ends, TubeFy automatically queues similar songs that match your taste, in the same language, genre and artist style as what you're listening to, so the music keeps flowing without breaking your mood.
 - **Smart Shuffle:** Tap shuffle once for a normal shuffle, and tap it again for Smart Shuffle. It reshuffles your queue so songs by the same artist flow together, and mixes in recommended songs that match the language, mood and style of what's playing. Tap once more to turn shuffle off, which also removes any recommended songs that haven't played yet.
 - **Sleep Timer:** Fall asleep to your music. Choose 15, 30, 45 or 60 minutes, or "End of this song", and the music gently fades out and pauses when time is up. The countdown shows on the player, and you can add 5 more minutes or turn the timer off at any time. It keeps running even when your screen is off.
+- **YouTube Videos:** A dedicated YouTube tab to search and watch videos, with Trending, Music, Mixes, Live and Gaming, plus "Trending in your state" in your language. The video player supports quality selection up to 1080p, dubbed audio languages, captions, full screen with pinch to zoom, autoplay of the next related video, channel pages, and "Play in background" when you just want to listen.
+- **Android Auto:** Use TubeFy right from your car screen. Browse Home, Recently played, Recommended and your Library (Favorites, Downloads and playlists), search with the car's search button, or just say "Hey Google, play <song> on TubeFy".
+- **Android TV:** TubeFy shows up on your Android TV / Google TV home screen with a YouTube experience built for the remote: big video grids, search, recent videos and channel pages, and a full-screen player where you can seek with the remote, choose quality, audio language and captions, and see an "Up next" countdown before the next video plays.
 
 
 Elevate your music experience and enjoy YouTube's vast music library like never before. Download now and start listening!
@@ -51,6 +54,16 @@ Click here -> https://youtu.be/YrhG8T8gbU4 (oldplayer)
      <img src="https://github.com/rameshvoltella/TubeFy/blob/beta/screenshots/WhatsApp%20Image%202024-08-28%20at%209.09.38%20PM(1).jpeg" alt="Notification" style="width: 40%; height: 40%;">
     <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/player.jpeg" alt="MiniPlayer" style="width: 40%; height: 40%;">
         <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/lib.jpeg" alt="Playlist" style="width: 40%; height: 40%;">
+
+</div>
+
+<div style="text-align: center;">
+        <h3>TV</h3>
+     <img src="https://github.com/rameshvoltella/TubeFy/blob/beta/screenshots/tv1.jpeg" alt="Notification" style="width: 40%; height: 40%;">
+    <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/tv2.jpeg" alt="MiniPlayer" style="width: 40%; height: 40%;">
+        <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/tv3.jpeg" alt="Playlist" style="width: 40%; height: 40%;">
+                <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/tv4.jpeg" alt="Playlist" style="width: 40%; height: 40%;">
+                        <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/tv5.jpeg" alt="Playlist" style="width: 40%; height: 40%;">
 
 </div>
 
