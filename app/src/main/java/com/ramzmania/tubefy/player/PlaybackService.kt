@@ -15,6 +15,7 @@ import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.MimeTypes
+import androidx.media3.common.Tracks
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.Timeline
@@ -23,6 +24,9 @@ import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.ResolvingDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.exoplayer.trackselection.AdaptiveTrackSelection
+import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
+import androidx.media3.exoplayer.upstream.DefaultBandwidthMeter
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
 import androidx.core.os.bundleOf
@@ -102,6 +106,10 @@ class PlaybackService(
         mediaSession?.setSessionExtras(Bundle(sessionExtras))
     }
     private var mediaSession: MediaLibrarySession? = null
+
+    /** The video whose best quality was already chosen, and the screen it's capped to. */
+    private var bestQualityAppliedFor: String? = null
+    private var screenHeight = 0
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob() + crashGuard)
     private var removeExistingPlayList: Boolean = false
     private var fetchRecentPlaylistQueue: Boolean = false
@@ -124,11 +132,32 @@ class PlaybackService(
         super.onCreate()
         // Video page: only use VP9 where it's hardware-decoded (decided once per process)
         VideoManifest.allowVp9 = VideoManifest.hasHardwareVp9()
+        screenHeight = VideoQuality.screenHeight(this)
 
 
         // Links of queued songs are refreshed just before use if they have expired (long pauses)
         val dataSourceFactory = ResolvingDataSource.Factory(DefaultDataSource.Factory(this), streamUrlRefresher)
+        // Video page (DASH): start from a realistic speed for the connection type instead of a cautious
+        // default, and step up in quality after 3 s of good speed (not 10 s), so "Auto" reaches HD quickly
+        val bandwidthMeter = DefaultBandwidthMeter.Builder(this)
+            .setInitialBitrateEstimate(C.NETWORK_TYPE_ETHERNET, 12_000_000)
+            .setInitialBitrateEstimate(C.NETWORK_TYPE_WIFI, 8_000_000)
+            .setInitialBitrateEstimate(C.NETWORK_TYPE_5G_SA, 8_000_000)
+            .setInitialBitrateEstimate(C.NETWORK_TYPE_5G_NSA, 6_000_000)
+            .setInitialBitrateEstimate(C.NETWORK_TYPE_4G, 3_000_000)
+            .build()
+        val trackSelector = DefaultTrackSelector(
+            this,
+            AdaptiveTrackSelection.Factory(
+                /* minDurationForQualityIncreaseMs= */ 3_000,
+                /* maxDurationForQualityDecreaseMs= */ 25_000,
+                /* minDurationToRetainAfterDiscardMs= */ 25_000,
+                /* bandwidthFraction= */ 0.75f
+            )
+        )
         val player = ExoPlayer.Builder(this)
+            .setBandwidthMeter(bandwidthMeter)
+            .setTrackSelector(trackSelector)
             .setMediaSourceFactory(DefaultMediaSourceFactory(dataSourceFactory))
             // Pause when the audio output goes away (Bluetooth/car disconnects, headphones unplugged)
             .setHandleAudioBecomingNoisy(true)
@@ -143,6 +172,16 @@ class PlaybackService(
             .build().apply {
             // Adding the error listener to the ExoPlayer instance
             addListener(object : Player.Listener {
+                // Each video-page video starts at its best quality (once; the user can then change it)
+                override fun onTracksChanged(tracks: Tracks) {
+                    val item = currentMediaItem ?: return
+                    if (item.mediaMetadata.mediaType != MediaMetadata.MEDIA_TYPE_VIDEO || item.mediaId == bestQualityAppliedFor) return
+                    VideoQuality.bestOverride(tracks, trackSelectionParameters, screenHeight)?.let {
+                        trackSelectionParameters = it
+                        bestQualityAppliedFor = item.mediaId
+                    }
+                }
+
                 override fun onPlaybackStateChanged(playbackState: Int) {
                     super.onPlaybackStateChanged(playbackState)
                     if (playbackState == Player.STATE_READY) {
