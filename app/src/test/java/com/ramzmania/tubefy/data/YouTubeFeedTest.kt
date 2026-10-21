@@ -79,3 +79,14 @@ class VideoEndGuardTest {
         assertEquals(false, com.ramzmania.tubefy.ui.components.screen.youtube.isAtEnd(0, 0, isLive = false))
     }
 }
+
+class TvScrubTest {
+    @Test
+    fun `holding the key speeds up seeking`() {
+        val hour = 3_600_000L
+        assertEquals(10_000L, com.ramzmania.tubefy.ui.tv.scrubStepMs(0, hour))
+        assertEquals(30_000L, com.ramzmania.tubefy.ui.tv.scrubStepMs(6, hour))
+        assertEquals(90_000L, com.ramzmania.tubefy.ui.tv.scrubStepMs(20, hour))      // 1/40 of an hour
+        assertEquals(60_000L, com.ramzmania.tubefy.ui.tv.scrubStepMs(20, 600_000L))  // at least a minute
+    }
+}
