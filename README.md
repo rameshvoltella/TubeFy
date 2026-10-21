@@ -59,11 +59,11 @@ Click here -> https://youtu.be/YrhG8T8gbU4 (oldplayer)
 
 <div style="text-align: center;">
         <h3>TV</h3>
-     <img src="https://github.com/rameshvoltella/TubeFy/blob/beta/screenshots/tv1.jpeg" alt="Notification" style="width: 40%; height: 40%;">
-    <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/tv2.jpeg" alt="MiniPlayer" style="width: 40%; height: 40%;">
-        <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/tv3.jpeg" alt="Playlist" style="width: 40%; height: 40%;">
-                <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/tv4.jpeg" alt="Playlist" style="width: 40%; height: 40%;">
-                        <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/tv5.jpeg" alt="Playlist" style="width: 40%; height: 40%;">
+     <img src="https://github.com/rameshvoltella/TubeFy/blob/beta/screenshots/tv1.png" alt="Notification" style="width: 40%; height: 40%;">
+    <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/tv2.png" alt="MiniPlayer" style="width: 40%; height: 40%;">
+        <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/tv3.png" alt="Playlist" style="width: 40%; height: 40%;">
+                <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/tv4.png" alt="Playlist" style="width: 40%; height: 40%;">
+                        <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/tv5.png" alt="Playlist" style="width: 40%; height: 40%;">
 
 </div>
 
