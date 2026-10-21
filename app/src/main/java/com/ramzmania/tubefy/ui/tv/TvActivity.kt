@@ -49,7 +49,21 @@ class TvActivity : ComponentActivity() {
                                 navArgument(name) { type = NavType.StringType; nullable = true; defaultValue = null }
                             }
                         ) { entry ->
-                            TvVideoPlayer(args = entry.arguments, onExit = { nav.popBackStack() })
+                            TvVideoPlayer(
+                                args = entry.arguments,
+                                onExit = { nav.popBackStack() },
+                                onOpenChannel = { url, name -> nav.navigate(channelRoute(url, name)) }
+                            )
+                        }
+                        composable(
+                            ROUTE_CHANNEL,
+                            arguments = listOf("url", "name").map { name ->
+                                navArgument(name) { type = NavType.StringType; nullable = true; defaultValue = null }
+                            }
+                        ) { entry ->
+                            TvChannelScreen(args = entry.arguments, onOpenVideo = { item ->
+                                nav.navigate(videoRoute(item.id, item.title, item.thumbnail, item.channel))
+                            })
                         }
                     }
                 }
@@ -60,6 +74,12 @@ class TvActivity : ComponentActivity() {
     companion object {
         private const val ROUTE_HOME = "tvHome"
         private const val ROUTE_VIDEO = "tvVideo/{videoId}?title={title}&thumb={thumb}&channel={channel}"
+        private const val ROUTE_CHANNEL = "tvChannel?url={url}&name={name}"
+
+        private fun channelRoute(url: String, name: String): String {
+            fun enc(value: String) = URLEncoder.encode(value, StandardCharsets.UTF_8.toString())
+            return "tvChannel?url=${enc(url)}&name=${enc(name)}"
+        }
 
         private fun videoRoute(id: String, title: String, thumb: String, channel: String): String {
             fun enc(value: String) = URLEncoder.encode(value, StandardCharsets.UTF_8.toString())

@@ -51,6 +51,7 @@ import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Replay
 import androidx.compose.material.icons.rounded.Replay10
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -70,6 +71,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -95,6 +97,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.TrackSelectionParameters
 import androidx.media3.common.Tracks
@@ -141,6 +144,8 @@ fun VideoScreen(viewModel: VideoViewModel = hiltViewModel()) {
     var fallbackChannel by rememberSaveable { mutableStateOf(arg("channel")) }
     // Survive rotation: only start playback once, and only follow the queue once our video started
     var playbackRequested by rememberSaveable { mutableStateOf(false) }
+    // The new video's own picture is on screen (its first frame was drawn, or it has been playing a moment)
+    var pictureReady by remember { mutableStateOf(false) }
     var started by rememberSaveable { mutableStateOf(false) }
 
     var controller by remember { mutableStateOf<MediaController?>(null) }
@@ -171,8 +176,16 @@ fun VideoScreen(viewModel: VideoViewModel = hiltViewModel()) {
 
     LaunchedEffect(videoId) { viewModel.load(videoId, fallbackTitle, fallbackThumb, fallbackChannel) }
 
+    // Autoplay: videos already played on this page (so it never bounces back to one)
+    var playedIds by rememberSaveable { mutableStateOf(ArrayList<String>()) }
+    val autoplay by viewModel.autoplay.collectAsState()
+    // Autoplay off: the video stopped at its end (the play button becomes Replay)
+    var atEnd by remember(videoId) { mutableStateOf(false) }
+    val liveNow by rememberUpdatedState(isLive)
+
     fun play(id: String, itemTitle: String, thumb: String) {
         started = false
+        pictureReady = false
         isBuffering = true
         positionMs = 0L
         durationMs = 0L
@@ -189,13 +202,37 @@ fun VideoScreen(viewModel: VideoViewModel = hiltViewModel()) {
                 playbackRequested = true
                 if (c.currentMediaItem?.mediaId == videoId) {
                     started = true // already playing (e.g. came back from the mini player)
+                    pictureReady = true
                 } else {
                     play(videoId, fallbackTitle, fallbackThumb)
                 }
+            } else if (c.currentMediaItem?.mediaId == videoId) {
+                pictureReady = true // screen recreated (rotation): the video is already showing, even if paused
             }
         },
         onMetaDataChangedValue = { }
     )
+
+    // When the video ends (or the player would loop it / move on to a song), play the next related video
+    val onVideoEnded by rememberUpdatedState {
+        val next = loaded?.related?.let { nextRelated(it, playedIds + videoId) }
+        if (!started || atEnd) {
+            // already handled
+        } else if (!autoplay || next == null) {
+            controller?.pause()
+            atEnd = true
+            controlsVisible = true
+        } else {
+            controller?.pause()
+            playedIds = ArrayList(playedIds + videoId)
+            videoId = next.id
+            fallbackTitle = next.title
+            fallbackThumb = next.thumbnail
+            fallbackChannel = next.channel
+            controlsVisible = true
+            play(next.id, next.title, next.thumbnail)
+        }
+    }
 
     // Player state: buffering, duration, and which video is playing
     DisposableEffect(controller) {
@@ -209,6 +246,7 @@ fun VideoScreen(viewModel: VideoViewModel = hiltViewModel()) {
             trackParams = player.trackSelectionParameters
             val current = player.currentMediaItem?.mediaId.orEmpty()
             if (current == videoId) started = true
+            if (started && player.isPlaying && player.currentPosition > 800) pictureReady = true
             else if (started && current.length == 11) {
                 // The queue moved on (next song / Mix): show that video's page
                 videoId = current
@@ -218,6 +256,18 @@ fun VideoScreen(viewModel: VideoViewModel = hiltViewModel()) {
             }
         }
         val listener = object : Player.Listener {
+            override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO || reason == Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT) onVideoEnded()
+            }
+
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                if (playbackState == Player.STATE_ENDED) onVideoEnded()
+            }
+
+            override fun onRenderedFirstFrame() {
+                if (started) pictureReady = true
+            }
+
             override fun onEvents(player: Player, events: Player.Events) = sync(player)
         }
         c.addListener(listener)
@@ -235,13 +285,15 @@ fun VideoScreen(viewModel: VideoViewModel = hiltViewModel()) {
         }
     }
 
-    // Position ticker
+    // Position ticker; checks often near the end to act before the player jumps to its next item
     LaunchedEffect(controller, isPlaying) {
         val c = controller ?: return@LaunchedEffect
         do {
             positionMs = c.currentPosition
             if (c.duration > 0) durationMs = c.duration
-            delay(500L)
+            if (atEnd && durationMs - positionMs > END_WATCH_MS) atEnd = false // seeked back
+            if (isPlaying && started && isAtEnd(positionMs, durationMs, liveNow)) onVideoEnded()
+            delay(if (durationMs - positionMs < END_WATCH_MS) 100L else 500L)
         } while (isPlaying)
     }
 
@@ -345,6 +397,14 @@ fun VideoScreen(viewModel: VideoViewModel = hiltViewModel()) {
             onRetry = { play(videoId, title, fallbackThumb) },
             zoomed = zoomed,
             onZoomChange = { zoomed = it },
+            // Until this video's own picture plays, show its thumbnail (not the old video / a song's art)
+            coverThumbnail = fallbackThumb.takeIf { !started || !pictureReady },
+            atEnd = atEnd,
+            onReplay = {
+                atEnd = false
+                controller?.seekTo(0)
+                controller?.play()
+            },
             menu = listOfNotNull(
                 qualities.currentLabel()?.let { PlayerMenuEntry("Quality", it) { openSheet = TrackSheet.Quality } },
                 languages.currentLabel()?.let { PlayerMenuEntry("Audio language", it) { openSheet = TrackSheet.Audio } },
@@ -404,7 +464,13 @@ fun VideoScreen(viewModel: VideoViewModel = hiltViewModel()) {
                         )
                     },
                     thumbnail = fallbackThumb,
-                    isLive = isLive
+                    isLive = isLive,
+                    autoplay = autoplay,
+                    onAutoplayChange = viewModel::setAutoplay,
+                    onOpenChannel = { channelUrl, name ->
+                        fun enc(value: String) = URLEncoder.encode(value, StandardCharsets.UTF_8.toString())
+                        navController?.navigate(NavigationItem.Channel.createRoute(enc(channelUrl), enc(name)))
+                    }
                 )
             }
 
@@ -491,6 +557,9 @@ private fun VideoPlayerBox(
     onRetry: () -> Unit,
     zoomed: Boolean,
     onZoomChange: (Boolean) -> Unit,
+    coverThumbnail: String?,
+    atEnd: Boolean,
+    onReplay: () -> Unit,
     menu: List<PlayerMenuEntry>,
     hasCaptions: Boolean,
     captionsOn: Boolean,
@@ -542,6 +611,23 @@ private fun VideoPlayerBox(
     ) {
         SessionVideoSurface(controller = controller, playing = isPlaying, zoomed = fullscreen && zoomed, modifier = Modifier.fillMaxSize())
 
+        coverThumbnail?.let { thumb ->
+            Box(Modifier.fillMaxSize().background(Color.Black)) {
+                AsyncImage(
+                    model = thumb,
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxSize()
+                )
+                Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.35f)))
+                if (loadError.isEmpty()) CircularProgressIndicator(
+                    color = Color.White,
+                    strokeWidth = 3.dp,
+                    modifier = Modifier.align(Alignment.Center).size(46.dp)
+                )
+            }
+        }
+
         zoomHint?.let {
             Text(
                 it,
@@ -557,7 +643,7 @@ private fun VideoPlayerBox(
             )
         }
 
-        if (isBuffering && loadError.isEmpty() && !(controlsVisible && !isPlaying)) {
+        if (coverThumbnail == null && isBuffering && loadError.isEmpty() && !(controlsVisible && !isPlaying)) {
             CircularProgressIndicator(color = Color.White, strokeWidth = 3.dp, modifier = Modifier.align(Alignment.Center).size(46.dp))
         }
 
@@ -640,7 +726,12 @@ private fun VideoPlayerBox(
                             CircularProgressIndicator(color = Color.White, strokeWidth = 3.dp, modifier = Modifier.size(46.dp))
                         }
                     } else {
-                        RoundControl(if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, if (isPlaying) "Pause" else "Play", 68.dp) {
+                        if (atEnd && !isPlaying) {
+                            RoundControl(Icons.Rounded.Replay, "Replay", 68.dp) {
+                                onTouch()
+                                onReplay()
+                            }
+                        } else RoundControl(if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, if (isPlaying) "Pause" else "Play", 68.dp) {
                             onTouch()
                             controller?.let { if (it.isPlaying) it.pause() else it.play() }
                         }
@@ -655,7 +746,13 @@ private fun VideoPlayerBox(
                 }
 
                 // Bottom: time, full screen, seek bar
-                Column(modifier = Modifier.fillMaxWidth().align(Alignment.BottomCenter).padding(horizontal = 12.dp)) {
+                // Kept clear of the bottom edge (and the gesture bar in full screen) so it's easy to grab
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.BottomCenter)
+                        .padding(start = 12.dp, end = 12.dp, bottom = if (fullscreen) 22.dp else 10.dp)
+                ) {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                         if (isLive) {
                             Text(
@@ -710,7 +807,7 @@ private fun VideoPlayerBox(
                                 modifier = Modifier.height(3.dp)
                             )
                         },
-                        modifier = Modifier.fillMaxWidth().height(24.dp).padding(bottom = if (fullscreen) 4.dp else 0.dp)
+                        modifier = Modifier.fillMaxWidth().height(32.dp)
                     )
                 }
             }
@@ -772,6 +869,9 @@ private fun VideoInfo(
     saved: Boolean,
     thumbnail: String,
     isLive: Boolean,
+    autoplay: Boolean,
+    onAutoplayChange: (Boolean) -> Unit,
+    onOpenChannel: (url: String, name: String) -> Unit,
     onPlayInBackground: () -> Unit,
     onSave: () -> Unit,
     onPlayAsAudio: () -> Unit
@@ -845,7 +945,15 @@ private fun VideoInfo(
 
         // Channel
         val channel = details?.channel?.ifBlank { null } ?: fallbackChannel
-        if (channel.isNotBlank()) Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 16.dp)) {
+        // Tap to open the channel page
+        if (channel.isNotBlank()) Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .padding(top = 16.dp)
+                .clip(RoundedCornerShape(28.dp))
+                .clickable(enabled = details?.channelUrl != null) { details?.channelUrl?.let { onOpenChannel(it, channel) } }
+                .padding(end = 10.dp)
+        ) {
             AsyncImage(
                 model = details?.channelAvatar ?: R.drawable.placeholder,
                 contentDescription = null,
@@ -866,35 +974,41 @@ private fun VideoInfo(
             }
         }
 
-        // Play in background · Save
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth().padding(top = 16.dp)) {
-            Pill(modifier = Modifier.weight(1.3f), onClick = onPlayInBackground) {
-                Icon(Icons.Rounded.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+        // Play in background · Save · Autoplay
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().padding(top = 16.dp)) {
+            Pill(modifier = Modifier.weight(1.2f), onClick = onPlayInBackground) {
+                Icon(Icons.Rounded.Headphones, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
                 Text(
                     "Play in background",
                     color = Color.White,
-                    fontSize = 14.sp,
+                    fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
                     maxLines = 2,
-                    lineHeight = 17.sp,
-                    modifier = Modifier.weight(1f).padding(horizontal = 8.dp)
+                    lineHeight = 16.sp,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(start = 6.dp)
                 )
-                Icon(Icons.Rounded.Headphones, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
             }
-            Pill(modifier = Modifier.weight(1f), highlighted = saved, onClick = onSave) {
+            Pill(modifier = Modifier.weight(0.85f), highlighted = saved, onClick = onSave) {
                 Icon(
                     if (saved) Icons.Rounded.Bookmark else Icons.Rounded.BookmarkBorder,
                     contentDescription = null,
                     tint = if (saved) DiscoverAccent else Color.White,
-                    modifier = Modifier.size(22.dp)
+                    modifier = Modifier.size(20.dp)
                 )
                 Text(
                     if (saved) "Saved" else "Save",
                     color = Color.White,
-                    fontSize = 14.sp,
+                    fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(start = 8.dp)
+                    maxLines = 1,
+                    modifier = Modifier.padding(start = 4.dp)
                 )
+            }
+            // Autoplay: when this video ends, play the next related one (off: stop at the end)
+            Pill(modifier = Modifier.weight(1.15f), highlighted = autoplay, onClick = { onAutoplayChange(!autoplay) }) {
+                Text("Autoplay", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1)
+                MiniSwitch(checked = autoplay, modifier = Modifier.padding(start = 6.dp))
             }
         }
 
@@ -952,9 +1066,29 @@ private fun Pill(
             .background(DiscoverSurface)
             .border(1.dp, if (highlighted) DiscoverAccent.copy(alpha = 0.6f) else DiscoverBorder, RoundedCornerShape(27.dp))
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = 10.dp),
         content = content
     )
+}
+
+/** A small on/off switch that fits inside a pill (the pill itself handles the tap). */
+@Composable
+private fun MiniSwitch(checked: Boolean, modifier: Modifier = Modifier) {
+    val thumbOffset by androidx.compose.animation.core.animateDpAsState(if (checked) 16.dp else 2.dp, label = "miniSwitch")
+    Box(
+        modifier = modifier
+            .size(width = 34.dp, height = 20.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(if (checked) DiscoverAccent else Color(0xFF3A3436))
+    ) {
+        Box(
+            Modifier
+                .padding(start = thumbOffset, top = 2.dp)
+                .size(16.dp)
+                .clip(CircleShape)
+                .background(if (checked) Color.White else DiscoverTextSecondary)
+        )
+    }
 }
 
 /**

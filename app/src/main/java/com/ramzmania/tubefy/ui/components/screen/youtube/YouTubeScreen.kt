@@ -38,6 +38,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
+import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Headphones
@@ -557,6 +558,7 @@ internal fun chipLabel(feed: YouTubeFeed): String = when (feed) {
     YouTubeFeed.Gaming -> "Gaming"
     is YouTubeFeed.Search -> feed.query
     is YouTubeFeed.Playlist -> feed.title
+    is YouTubeFeed.Channel -> feed.name
 }
 
 @Composable
@@ -777,6 +779,22 @@ internal fun VideoRow(
                         onAddToPlaylist()
                     }
                 )
+                item.channelUrl?.let { channelUrl ->
+                    val nav = LocalNavController.current
+                    DropdownMenuItem(
+                        text = { Text("Go to channel") },
+                        leadingIcon = { Icon(Icons.Rounded.AccountCircle, null) },
+                        onClick = {
+                            menuOpen = false
+                            nav?.navigate(
+                                NavigationItem.Channel.createRoute(
+                                    URLEncoder.encode(channelUrl, StandardCharsets.UTF_8.toString()),
+                                    URLEncoder.encode(item.channel, StandardCharsets.UTF_8.toString())
+                                )
+                            )
+                        }
+                    )
+                }
                 onRemove?.let { remove ->
                     DropdownMenuItem(
                         text = { Text("Remove from recent") },

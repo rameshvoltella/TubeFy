@@ -7,6 +7,10 @@ import org.schabi.newpipe.extractor.InfoItem
 import org.schabi.newpipe.extractor.Page
 import org.schabi.newpipe.extractor.ServiceList
 import org.schabi.newpipe.extractor.localization.ContentCountry
+import org.schabi.newpipe.extractor.channel.ChannelInfo
+import org.schabi.newpipe.extractor.channel.tabs.ChannelTabInfo
+import org.schabi.newpipe.extractor.channel.tabs.ChannelTabs
+import org.schabi.newpipe.extractor.linkhandler.ListLinkHandler
 import org.schabi.newpipe.extractor.playlist.PlaylistInfo
 import org.schabi.newpipe.extractor.playlist.PlaylistInfoItem
 import org.schabi.newpipe.extractor.search.SearchInfo
@@ -32,7 +36,21 @@ data class YouTubeItem(
     val isLive: Boolean = false,
     val isPlaylist: Boolean = false,
     /** Number of videos, for playlists; -1 when unknown. */
-    val videoCount: Long = -1
+    val videoCount: Long = -1,
+    /** The uploader's channel page, when YouTube gave it. */
+    val channelUrl: String? = null
+)
+
+/** The top of a channel page. */
+data class YouTubeChannel(
+    val url: String,
+    val name: String,
+    val avatar: String?,
+    val banner: String?,
+    /** -1 when hidden. */
+    val subscribers: Long,
+    val description: String,
+    val verified: Boolean
 )
 
 /** The chips on the YouTube tab, plus search. */
@@ -51,6 +69,8 @@ sealed interface YouTubeFeed {
     data class Search(val query: String) : YouTubeFeed { override val key = "search:$query" }
     /** A playlist's videos (TV opens playlists as a grid). */
     data class Playlist(val id: String, val title: String) : YouTubeFeed { override val key = "playlist:$id" }
+    /** A channel's videos, newest first. */
+    data class Channel(val url: String, val name: String) : YouTubeFeed { override val key = "channel:$url" }
 }
 
 /** Where the next page of a feed comes from. A feed can switch source (chart → search) when one ends. */
@@ -60,6 +80,8 @@ sealed interface YouTubeCursor {
     data class Kiosk(val id: String, val country: String, val page: Page, val then: YouTubeCursor?) : YouTubeCursor
     data class SearchQuery(val query: String, val filter: String, val page: Page?) : YouTubeCursor
     data class PlaylistPage(val id: String, val page: Page?) : YouTubeCursor
+    /** A channel's Videos tab ([tab] is found on the first load). */
+    data class ChannelVideos(val url: String, val tab: ListLinkHandler?, val page: Page?) : YouTubeCursor
     /** Several sources loaded together and interleaved; each keeps its own paging. */
     data class Mixed(val parts: List<YouTubeCursor>) : YouTubeCursor
 }
@@ -71,6 +93,7 @@ data class YouTubeVideoDetails(
     val id: String,
     val title: String,
     val channel: String,
+    val channelUrl: String?,
     val channelAvatar: String?,
     /** -1 when hidden / unknown. */
     val subscribers: Long,
@@ -117,6 +140,7 @@ class YouTubeFeedSource @Inject constructor() {
             )
             is YouTubeFeed.Search -> YouTubeCursor.SearchQuery(feed.query, ALL, null)
             is YouTubeFeed.Playlist -> YouTubeCursor.PlaylistPage(feed.id, null)
+            is YouTubeFeed.Channel -> YouTubeCursor.ChannelVideos(feed.url, null, null)
         }
     }
 
@@ -171,6 +195,23 @@ class YouTubeFeedSource @Inject constructor() {
             )
         }
 
+        is YouTubeCursor.ChannelVideos -> {
+            val tab = cursor.tab ?: channelInfo(cursor.url).tabs
+                .firstOrNull { ChannelTabs.VIDEOS in it.contentFilters }
+                ?: throw java.io.IOException("No videos tab")
+            val (items, nextPage) = if (cursor.page == null) {
+                val info = ChannelTabInfo.getInfo(youtube, tab)
+                info.relatedItems to info.nextPage
+            } else {
+                val more = ChannelTabInfo.getMoreItems(youtube, tab, cursor.page)
+                more.items to more.nextPage
+            }
+            YouTubePage(
+                items.mapNotNull(::toItem),
+                if (Page.isValid(nextPage)) cursor.copy(tab = tab, page = nextPage) else null
+            )
+        }
+
         is YouTubeCursor.PlaylistPage -> {
             val url = "https://www.youtube.com/playlist?list=${cursor.id}"
             val (items, nextPage) = if (cursor.page == null) {
@@ -202,6 +243,29 @@ class YouTubeFeedSource @Inject constructor() {
         }
     }
 
+    /** Channel pages fetched recently (the header and the first videos page share one fetch). */
+    private val channels = java.util.concurrent.ConcurrentHashMap<String, ChannelInfo>()
+
+    private fun channelInfo(url: String): ChannelInfo =
+        channels[url] ?: ChannelInfo.getInfo(youtube, url).also {
+            if (channels.size > 20) channels.clear()
+            channels[url] = it
+        }
+
+    /** The channel page's header: name, avatar, banner, subscribers, description. */
+    suspend fun channel(url: String): YouTubeChannel = withContext(Dispatchers.IO) {
+        val info = channelInfo(url)
+        YouTubeChannel(
+            url = url,
+            name = info.name.orEmpty(),
+            avatar = bestThumbnailUrl(info.avatars).ifBlank { null },
+            banner = info.banners.maxByOrNull { it.width }?.url?.ifBlank { null },
+            subscribers = info.subscriberCount,
+            description = info.description.orEmpty().trim(),
+            verified = info.isVerified
+        )
+    }
+
     /** Details and related videos for the video page. */
     suspend fun details(videoId: String): YouTubeVideoDetails = withContext(Dispatchers.IO) {
         val info = StreamInfo.getInfo(youtube, "https://www.youtube.com/watch?v=$videoId")
@@ -209,6 +273,7 @@ class YouTubeFeedSource @Inject constructor() {
             id = videoId,
             title = info.name.orEmpty(),
             channel = info.uploaderName.orEmpty(),
+            channelUrl = info.uploaderUrl?.ifBlank { null },
             channelAvatar = bestThumbnailUrl(info.uploaderAvatars).ifBlank { null },
             subscribers = info.uploaderSubscriberCount,
             views = info.viewCount,
@@ -237,7 +302,8 @@ class YouTubeFeedSource @Inject constructor() {
                 durationSeconds = item.duration,
                 views = item.viewCount,
                 uploadedAgo = item.textualUploadDate,
-                isLive = item.streamType == StreamType.LIVE_STREAM || item.streamType == StreamType.AUDIO_LIVE_STREAM
+                isLive = item.streamType == StreamType.LIVE_STREAM || item.streamType == StreamType.AUDIO_LIVE_STREAM,
+                channelUrl = item.uploaderUrl?.ifBlank { null }
             )
         }
 
@@ -251,7 +317,8 @@ class YouTubeFeedSource @Inject constructor() {
                 channel = item.uploaderName.orEmpty(),
                 thumbnail = bestThumbnailUrl(item.thumbnails),
                 isPlaylist = true,
-                videoCount = item.streamCount
+                videoCount = item.streamCount,
+                channelUrl = item.uploaderUrl?.ifBlank { null }
             )
         }
 

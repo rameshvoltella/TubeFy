@@ -55,3 +55,27 @@ class YouTubeTimeAgoTest {
         assertEquals("2 years ago", ago(2 * 366 * 86_400L))
     }
 }
+
+class VideoAutoplayTest {
+    private fun video(id: String, live: Boolean = false, playlist: Boolean = false) =
+        com.ramzmania.tubefy.data.youtube.YouTubeItem(id, "", id, "", "", isLive = live, isPlaylist = playlist)
+
+    @Test
+    fun `next is the first related video not played yet, skipping playlists and live`() {
+        val related = listOf(video("p", playlist = true), video("l", live = true), video("a"), video("b"))
+        assertEquals("a", com.ramzmania.tubefy.ui.components.screen.youtube.nextRelated(related, emptyList())?.id)
+        assertEquals("b", com.ramzmania.tubefy.ui.components.screen.youtube.nextRelated(related, listOf("a"))?.id)
+        assertNull(com.ramzmania.tubefy.ui.components.screen.youtube.nextRelated(related, listOf("a", "b")))
+    }
+}
+
+class VideoEndGuardTest {
+    @Test
+    fun `acts only in the last moments of a non-live video`() {
+        val end = com.ramzmania.tubefy.ui.components.screen.youtube.END_GUARD_MS
+        assertEquals(true, com.ramzmania.tubefy.ui.components.screen.youtube.isAtEnd(60_000 - end, 60_000, isLive = false))
+        assertEquals(false, com.ramzmania.tubefy.ui.components.screen.youtube.isAtEnd(60_000 - end - 1, 60_000, isLive = false))
+        assertEquals(false, com.ramzmania.tubefy.ui.components.screen.youtube.isAtEnd(59_900, 60_000, isLive = true))
+        assertEquals(false, com.ramzmania.tubefy.ui.components.screen.youtube.isAtEnd(0, 0, isLive = false))
+    }
+}

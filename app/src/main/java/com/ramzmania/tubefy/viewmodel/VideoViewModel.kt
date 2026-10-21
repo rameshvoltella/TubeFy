@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.ramzmania.tubefy.core.download.Downloads
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.database.DatabaseRepositorySource
+import com.ramzmania.tubefy.data.youtube.AutoplaySetting
 import com.ramzmania.tubefy.data.youtube.VideoHistory
 import com.ramzmania.tubefy.data.youtube.YouTubeFeedSource
 import com.ramzmania.tubefy.data.youtube.YouTubeVideoDetails
@@ -24,8 +25,14 @@ import javax.inject.Inject
 class VideoViewModel @Inject constructor(
     private val source: YouTubeFeedSource,
     private val database: DatabaseRepositorySource,
-    private val history: VideoHistory
+    private val history: VideoHistory,
+    private val autoplaySetting: AutoplaySetting
 ) : ViewModel() {
+
+    /** The Autoplay switch (phone); the TV always autoplays. */
+    val autoplay: StateFlow<Boolean> = autoplaySetting.enabled
+
+    fun setAutoplay(enabled: Boolean) = autoplaySetting.set(enabled)
 
     sealed interface DetailsState {
         data object Loading : DetailsState

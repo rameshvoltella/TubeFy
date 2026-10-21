@@ -18,7 +18,7 @@ class YouTubeFeedProbe {
         val source = YouTubeFeedSource()
         val feeds = listOf(
             YouTubeFeed.InState("Kerala", "Malayalam"), YouTubeFeed.Trending, YouTubeFeed.Music,
-            YouTubeFeed.Mixes("Malayalam"), YouTubeFeed.Live, YouTubeFeed.Gaming, YouTubeFeed.Search("arijit singh")
+            YouTubeFeed.Mixes("Malayalam"), YouTubeFeed.Live, YouTubeFeed.Gaming, YouTubeFeed.Search("arijit singh"), YouTubeFeed.Channel("https://www.youtube.com/channel/UCX6OQ3DkcsbYNE6H8uQQuVA", "MrBeast")
         )
         try {
             val d = source.details("O5gwxm3NxFU")
@@ -27,6 +27,9 @@ class YouTubeFeedProbe {
                 "firstRelated='${d.related.firstOrNull()?.title?.take(40)}' playlists=${d.related.count { it.isPlaylist }}")
         } catch (e: Exception) {
             println("DETAILS FAILED: ${e.javaClass.simpleName}: ${e.message?.take(200)}")
+        }
+        source.channel("https://www.youtube.com/channel/UCX6OQ3DkcsbYNE6H8uQQuVA").let {
+            println("CHANNEL ${it.name} subs=${it.subscribers} avatar=${it.avatar != null} banner=${it.banner != null} verified=${it.verified}")
         }
         for (feed in feeds) {
             try {

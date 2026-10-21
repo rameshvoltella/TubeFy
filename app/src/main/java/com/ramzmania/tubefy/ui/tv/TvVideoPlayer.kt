@@ -28,6 +28,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.ClosedCaption
 import androidx.compose.material.icons.rounded.ClosedCaptionDisabled
@@ -49,6 +50,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -80,6 +82,10 @@ import com.ramzmania.tubefy.ui.components.screen.player.SessionVideoSurface
 import com.ramzmania.tubefy.ui.components.screen.player.startFetchSongService
 import com.ramzmania.tubefy.ui.components.screen.youtube.TrackOption
 import com.ramzmania.tubefy.ui.components.screen.youtube.TrackSheet
+import com.ramzmania.tubefy.ui.components.screen.youtube.END_WATCH_MS
+import com.ramzmania.tubefy.ui.components.screen.youtube.UP_NEXT_LEAD_SECONDS
+import com.ramzmania.tubefy.ui.components.screen.youtube.isAtEnd
+import com.ramzmania.tubefy.ui.components.screen.youtube.nextRelated
 import com.ramzmania.tubefy.ui.components.screen.youtube.audioOptions
 import com.ramzmania.tubefy.ui.components.screen.youtube.captionOptions
 import com.ramzmania.tubefy.ui.components.screen.youtube.currentLabel
@@ -99,7 +105,12 @@ import java.nio.charset.StandardCharsets
  * audio language) and, below them, the related videos. Back hides the controls, then leaves.
  */
 @Composable
-fun TvVideoPlayer(args: Bundle?, onExit: () -> Unit, viewModel: VideoViewModel = hiltViewModel()) {
+fun TvVideoPlayer(
+    args: Bundle?,
+    onExit: () -> Unit,
+    onOpenChannel: (url: String, name: String) -> Unit,
+    viewModel: VideoViewModel = hiltViewModel()
+) {
     val context = LocalContext.current
     fun arg(key: String) = URLDecoder.decode(args?.getString(key).orEmpty(), StandardCharsets.UTF_8.toString())
 
@@ -108,6 +119,8 @@ fun TvVideoPlayer(args: Bundle?, onExit: () -> Unit, viewModel: VideoViewModel =
     var fallbackThumb by rememberSaveable { mutableStateOf(arg("thumb").ifBlank { "https://i.ytimg.com/vi/$videoId/hq720.jpg" }) }
     var fallbackChannel by rememberSaveable { mutableStateOf(arg("channel")) }
     var playbackRequested by rememberSaveable { mutableStateOf(false) }
+    // The new video's own picture is on screen (its first frame was drawn, or it has been playing a moment)
+    var pictureReady by remember { mutableStateOf(false) }
     var started by rememberSaveable { mutableStateOf(false) }
 
     var controller by remember { mutableStateOf<MediaController?>(null) }
@@ -135,8 +148,20 @@ fun TvVideoPlayer(args: Bundle?, onExit: () -> Unit, viewModel: VideoViewModel =
 
     LaunchedEffect(videoId) { viewModel.load(videoId, fallbackTitle, fallbackThumb, fallbackChannel) }
 
+    // Autoplay: played videos (never bounce back), and "Back" on the Up next card cancels it for this video
+    var playedIds by rememberSaveable { mutableStateOf(ArrayList<String>()) }
+    var autoplayCancelled by remember(videoId) { mutableStateOf(false) }
+    // Autoplay cancelled with Back: stopped at the end (OK replays)
+    var atEnd by remember(videoId) { mutableStateOf(false) }
+    val liveNow by rememberUpdatedState(isLive)
+    val nextVideo = loaded?.related?.let { nextRelated(it, playedIds + videoId) }
+    val remainingMs = durationMs - positionMs
+    val showUpNext = nextVideo != null && !autoplayCancelled && !isLive && started &&
+        durationMs > 30_000 && positionMs > 0 && remainingMs in 1..(UP_NEXT_LEAD_SECONDS * 1000L)
+
     fun play(id: String, itemTitle: String, thumb: String) {
         started = false
+        pictureReady = false
         isBuffering = true
         positionMs = 0L
         durationMs = 0L
@@ -150,7 +175,14 @@ fun TvVideoPlayer(args: Bundle?, onExit: () -> Unit, viewModel: VideoViewModel =
             isPlaying = c.isPlaying
             if (!playbackRequested) {
                 playbackRequested = true
-                if (c.currentMediaItem?.mediaId == videoId) started = true else play(videoId, fallbackTitle, fallbackThumb)
+                if (c.currentMediaItem?.mediaId == videoId) {
+                    started = true
+                    pictureReady = true
+                } else play(videoId, fallbackTitle, fallbackThumb)
+            } else if (c.currentMediaItem?.mediaId == videoId) {
+                // Back from the channel page: the video is still there, carry on
+                pictureReady = true
+                c.play()
             }
         },
         onMetaDataChangedValue = { }
@@ -167,6 +199,7 @@ fun TvVideoPlayer(args: Bundle?, onExit: () -> Unit, viewModel: VideoViewModel =
             trackParams = player.trackSelectionParameters
             val current = player.currentMediaItem?.mediaId.orEmpty()
             if (current == videoId) started = true
+            if (started && player.isPlaying && player.currentPosition > 800) pictureReady = true
             else if (started && current.length == 11) {
                 videoId = current
                 fallbackTitle = player.mediaMetadata.title?.toString().orEmpty()
@@ -186,14 +219,6 @@ fun TvVideoPlayer(args: Bundle?, onExit: () -> Unit, viewModel: VideoViewModel =
         }
     }
 
-    LaunchedEffect(controller, isPlaying) {
-        val c = controller ?: return@LaunchedEffect
-        do {
-            positionMs = c.currentPosition
-            if (c.duration > 0) durationMs = c.duration
-            delay(500L)
-        } while (isPlaying)
-    }
     LaunchedEffect(controller) {
         val c = controller ?: return@LaunchedEffect
         while (true) {
@@ -219,6 +244,59 @@ fun TvVideoPlayer(args: Bundle?, onExit: () -> Unit, viewModel: VideoViewModel =
         }
     }
 
+    fun playNext(next: com.ramzmania.tubefy.data.youtube.YouTubeItem) {
+        controller?.pause()
+        playedIds = ArrayList(playedIds + videoId)
+        videoId = next.id
+        fallbackTitle = next.title
+        fallbackThumb = next.thumbnail
+        fallbackChannel = next.channel
+        controlsVisible = false
+        play(next.id, next.title, next.thumbnail)
+    }
+
+    // The video ended (or the player would loop it / move on to a song): next related video, unless cancelled
+    val onVideoEnded by rememberUpdatedState {
+        val next = nextVideo
+        if (started && !atEnd) {
+            if (next != null && !autoplayCancelled) playNext(next)
+            else {
+                controller?.pause()
+                atEnd = true
+            }
+        }
+    }
+    DisposableEffect(controller) {
+        val c = controller ?: return@DisposableEffect onDispose {}
+        val listener = object : Player.Listener {
+            override fun onMediaItemTransition(mediaItem: androidx.media3.common.MediaItem?, reason: Int) {
+                if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO || reason == Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT) onVideoEnded()
+            }
+
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                if (playbackState == Player.STATE_ENDED) onVideoEnded()
+            }
+
+            override fun onRenderedFirstFrame() {
+                if (started) pictureReady = true
+            }
+        }
+        c.addListener(listener)
+        onDispose { c.removeListener(listener) }
+    }
+
+    // Position ticker; checks often near the end to switch before the player jumps to its next item
+    LaunchedEffect(controller, isPlaying) {
+        val c = controller ?: return@LaunchedEffect
+        do {
+            positionMs = c.currentPosition
+            if (c.duration > 0) durationMs = c.duration
+            if (atEnd && durationMs - positionMs > END_WATCH_MS) atEnd = false // seeked back
+            if (isPlaying && started && isAtEnd(positionMs, durationMs, liveNow)) onVideoEnded()
+            delay(if (durationMs - positionMs < END_WATCH_MS) 100L else 500L)
+        } while (isPlaying)
+    }
+
     fun seekBy(deltaMs: Long) {
         val c = controller ?: return
         val target = (c.currentPosition + deltaMs).coerceAtLeast(0)
@@ -231,8 +309,10 @@ fun TvVideoPlayer(args: Bundle?, onExit: () -> Unit, viewModel: VideoViewModel =
         trackParams = c.trackSelectionParameters
     }
 
-    BackHandler(enabled = controlsVisible) { controlsVisible = false }
     BackHandler(enabled = !controlsVisible) { onExit() }
+    BackHandler(enabled = controlsVisible) { controlsVisible = false }
+    // Registered last, so it wins: Back on the Up next card only cancels autoplay
+    BackHandler(enabled = showUpNext && !controlsVisible) { autoplayCancelled = true }
 
     val params = trackParams
     val qualities = if (params != null) qualityOptions(tracks, params) else emptyList()
@@ -266,11 +346,21 @@ fun TvVideoPlayer(args: Bundle?, onExit: () -> Unit, viewModel: VideoViewModel =
                 if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
                 lastKey = System.currentTimeMillis()
                 if (controlsVisible) return@onPreviewKeyEvent false // the buttons handle it
+                if (showUpNext && (event.key == Key.DirectionCenter || event.key == Key.Enter || event.key == Key.NumPadEnter)) {
+                    nextVideo?.let(::playNext)
+                    return@onPreviewKeyEvent true
+                }
                 when (event.key) {
                     Key.DirectionLeft -> { if (!isLive) seekBy(-10_000); true }
                     Key.DirectionRight -> { if (!isLive) seekBy(10_000); true }
                     Key.DirectionCenter, Key.Enter, Key.NumPadEnter -> {
-                        controller?.let { if (it.isPlaying) it.pause() else it.play() }
+                        controller?.let {
+                            if (atEnd) {
+                                atEnd = false
+                                it.seekTo(0)
+                                it.play()
+                            } else if (it.isPlaying) it.pause() else it.play()
+                        }
                         controlsVisible = true
                         true
                     }
@@ -281,7 +371,20 @@ fun TvVideoPlayer(args: Bundle?, onExit: () -> Unit, viewModel: VideoViewModel =
     ) {
         SessionVideoSurface(controller = controller, playing = isPlaying, modifier = Modifier.fillMaxSize())
 
-        if (isBuffering && loadError.isEmpty()) {
+        // Until this video's own picture plays, show its thumbnail (not the old video / a song's art)
+        if (!started || !pictureReady) {
+            Box(Modifier.fillMaxSize().background(Color.Black)) {
+                coil.compose.AsyncImage(
+                    model = fallbackThumb,
+                    contentDescription = null,
+                    contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                    modifier = Modifier.fillMaxSize()
+                )
+                Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.35f)))
+            }
+        }
+
+        if ((isBuffering || !started || !pictureReady) && loadError.isEmpty()) {
             CircularProgressIndicator(color = Color.White, strokeWidth = 4.dp, modifier = Modifier.align(Alignment.Center).size(64.dp))
         }
 
@@ -307,6 +410,18 @@ fun TvVideoPlayer(args: Bundle?, onExit: () -> Unit, viewModel: VideoViewModel =
             ) {
                 Text(loadError, color = Color.White, fontSize = 20.sp)
                 TextButton(onClick = { play(videoId, title, fallbackThumb) }) { Text("Retry", color = DiscoverAccent, fontSize = 20.sp) }
+            }
+        }
+
+        // Up next: the last seconds of the video show what plays next, YouTube style
+        AnimatedVisibility(
+            visible = showUpNext && !controlsVisible,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.align(Alignment.BottomEnd).padding(end = 48.dp, bottom = 44.dp)
+        ) {
+            nextVideo?.let { next ->
+                UpNextCard(next, secondsLeft = ((remainingMs + 999) / 1000).toInt(), fraction = (remainingMs / (UP_NEXT_LEAD_SECONDS * 1000f)).coerceIn(0f, 1f))
             }
         }
 
@@ -381,6 +496,15 @@ fun TvVideoPlayer(args: Bundle?, onExit: () -> Unit, viewModel: VideoViewModel =
                         languages.currentLabel()?.let {
                             TvRoundButton(Icons.Rounded.Translate, "Audio language", onClick = { openSheet = TrackSheet.Audio }, label = it)
                         }
+                        // The channel's page (pauses this video)
+                        loaded?.channelUrl?.let { channelUrl ->
+                            TvRoundButton(
+                                Icons.Rounded.AccountCircle,
+                                "Open channel",
+                                onClick = { onOpenChannel(channelUrl, channel) },
+                                label = channel.take(18)
+                            )
+                        }
                     }
 
                     // Related videos
@@ -406,6 +530,68 @@ fun TvVideoPlayer(args: Bundle?, onExit: () -> Unit, viewModel: VideoViewModel =
                     }
                 }
             }
+        }
+    }
+}
+
+/** "Up next" card: the next video's thumbnail and title, a countdown, and how to act on it. */
+@Composable
+private fun UpNextCard(next: com.ramzmania.tubefy.data.youtube.YouTubeItem, secondsLeft: Int, fraction: Float) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .width(520.dp)
+            .clip(RoundedCornerShape(18.dp))
+            .background(Color(0xE6161314))
+            .padding(14.dp)
+    ) {
+        Box(
+            Modifier
+                .width(200.dp)
+                .height(112.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(Color.DarkGray)
+        ) {
+            coil.compose.AsyncImage(
+                model = next.thumbnail,
+                contentDescription = next.title,
+                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+            if (next.durationSeconds > 0) Text(
+                formatDuration(next.durationSeconds),
+                color = Color.White,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(6.dp)
+                    .clip(RoundedCornerShape(5.dp))
+                    .background(Color.Black.copy(alpha = 0.8f))
+                    .padding(horizontal = 5.dp, vertical = 1.dp)
+            )
+            // Shrinking bar: time left before it plays
+            Box(
+                Modifier
+                    .align(Alignment.BottomStart)
+                    .fillMaxWidth(fraction)
+                    .height(4.dp)
+                    .background(DiscoverAccent)
+            )
+        }
+        Column(Modifier.weight(1f).padding(start = 16.dp)) {
+            Text("Up next in $secondsLeft", color = DiscoverAccent, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+            Text(
+                next.title,
+                color = Color.White,
+                fontSize = 17.sp,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+            if (next.channel.isNotBlank()) Text(next.channel, color = DiscoverTextSecondary, fontSize = 14.sp, maxLines = 1, modifier = Modifier.padding(top = 2.dp))
+            Text("OK  Play now     Back  Cancel", color = Color.White.copy(alpha = 0.7f), fontSize = 13.sp, modifier = Modifier.padding(top = 8.dp))
         }
     }
 }

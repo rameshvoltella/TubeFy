@@ -9,6 +9,11 @@ sealed class NavigationItem(var route: String, var icon: Int, var title: String)
     data object Books : NavigationItem("library", R.drawable.library, "Your Library")
     data object YouTube : NavigationItem("youtube", R.drawable.ic_search, "YouTube")
 
+    /** A YouTube channel's page. Values must be URL-encoded. */
+    data object Channel : NavigationItem("channel?url={url}&name={name}", R.drawable.ic_search, "Channel") {
+        fun createRoute(url: String, name: String) = "channel?url=$url&name=$name"
+    }
+
     /** A YouTube video's page (opened from the YouTube tab). Values must be URL-encoded. */
     data object Video : NavigationItem("video/{videoId}?title={title}&thumb={thumb}&channel={channel}", R.drawable.ic_search, "Video") {
         fun createRoute(videoId: String, title: String, thumb: String, channel: String) =

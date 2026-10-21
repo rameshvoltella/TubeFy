@@ -79,6 +79,7 @@ import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
+import com.ramzmania.tubefy.ui.components.screen.youtube.ChannelScreen
 import com.ramzmania.tubefy.ui.components.screen.youtube.VideoScreen
 import com.ramzmania.tubefy.ui.components.screen.youtube.YouTubeScreen
 import androidx.navigation.NavType
@@ -309,6 +310,14 @@ fun Navigation(navController: NavHostController) {
             }
         ) {
             VideoScreen()
+        }
+        composable(
+            NavigationItem.Channel.route,
+            arguments = listOf("url", "name").map { name ->
+                navArgument(name) { type = NavType.StringType; nullable = true; defaultValue = null }
+            }
+        ) {
+            ChannelScreen()
         }
         composable(NavigationItem.Profile.route) {
             SettingsScreen()
