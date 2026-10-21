@@ -63,6 +63,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalContext
@@ -297,6 +298,25 @@ fun TvVideoPlayer(
         } while (isPlaying)
     }
 
+    // Seek bar scrubbing: ◀ ▶ move a preview position, applied after a short pause or on OK
+    var scrubMs by remember { mutableStateOf<Long?>(null) }
+    fun commitScrub() {
+        scrubMs?.let { target -> controller?.seekTo(target) }
+        scrubMs = null
+    }
+    fun scrub(direction: Int, repeatCount: Int) {
+        if (durationMs <= 0) return
+        val base = scrubMs ?: positionMs
+        scrubMs = (base + direction * scrubStepMs(repeatCount, durationMs)).coerceIn(0L, (durationMs - 1_000).coerceAtLeast(0))
+        lastKey = System.currentTimeMillis()
+    }
+    LaunchedEffect(scrubMs, lastKey) {
+        if (scrubMs != null) {
+            delay(800L)
+            commitScrub()
+        }
+    }
+
     fun seekBy(deltaMs: Long) {
         val c = controller ?: return
         val target = (c.currentPosition + deltaMs).coerceAtLeast(0)
@@ -453,15 +473,12 @@ fun TvVideoPlayer(
                             modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(TvLiveRed).padding(horizontal = 8.dp, vertical = 3.dp)
                         )
                     } else {
-                        val fraction = if (durationMs > 0) (positionMs.toFloat() / durationMs).coerceIn(0f, 1f) else 0f
-                        Box(Modifier.fillMaxWidth().height(5.dp).clip(RoundedCornerShape(3.dp)).background(Color.White.copy(alpha = 0.3f))) {
-                            Box(Modifier.fillMaxWidth(fraction).height(5.dp).background(DiscoverAccent))
-                        }
-                        Text(
-                            "${clock(positionMs)} / ${clock(durationMs)}",
-                            color = Color.White,
-                            fontSize = 15.sp,
-                            modifier = Modifier.padding(top = 8.dp)
+                        TvSeekBar(
+                            positionMs = positionMs,
+                            durationMs = durationMs,
+                            scrubMs = scrubMs,
+                            onScrub = ::scrub,
+                            onCommit = ::commitScrub
                         )
                     }
 
@@ -592,6 +609,86 @@ private fun UpNextCard(next: com.ramzmania.tubefy.data.youtube.YouTubeItem, seco
             )
             if (next.channel.isNotBlank()) Text(next.channel, color = DiscoverTextSecondary, fontSize = 14.sp, maxLines = 1, modifier = Modifier.padding(top = 2.dp))
             Text("OK  Play now     Back  Cancel", color = Color.White.copy(alpha = 0.7f), fontSize = 13.sp, modifier = Modifier.padding(top = 8.dp))
+        }
+    }
+}
+
+/** How far one ◀ / ▶ press moves the seek bar: 10 s, faster while the key is held, bigger on long videos. */
+internal fun scrubStepMs(repeatCount: Int, durationMs: Long): Long = when {
+    repeatCount < 4 -> 10_000L
+    repeatCount < 12 -> 30_000L
+    else -> maxOf(60_000L, durationMs / 40)
+}
+
+/**
+ * The seek bar on TV: focusable (▲ from the buttons). Focused, it grows and shows a handle; ◀ ▶ preview
+ * a new time (held, it speeds up) and OK jumps there straight away.
+ */
+@Composable
+private fun TvSeekBar(
+    positionMs: Long,
+    durationMs: Long,
+    scrubMs: Long?,
+    onScrub: (direction: Int, repeatCount: Int) -> Unit,
+    onCommit: () -> Unit
+) {
+    val interaction = remember { MutableInteractionSource() }
+    val focused by interaction.collectIsFocusedAsState()
+    val shownMs = scrubMs ?: positionMs
+    val fraction = if (durationMs > 0) (shownMs.toFloat() / durationMs).coerceIn(0f, 1f) else 0f
+    val played = if (durationMs > 0) (positionMs.toFloat() / durationMs).coerceIn(0f, 1f) else 0f
+
+    Column(Modifier.fillMaxWidth()) {
+        androidx.compose.foundation.layout.BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(28.dp)
+                .onKeyEvent { event ->
+                    if (event.type != KeyEventType.KeyDown) return@onKeyEvent false
+                    when (event.key) {
+                        Key.DirectionLeft -> { onScrub(-1, event.nativeKeyEvent.repeatCount); true }
+                        Key.DirectionRight -> { onScrub(1, event.nativeKeyEvent.repeatCount); true }
+                        Key.DirectionCenter, Key.Enter, Key.NumPadEnter -> { onCommit(); true }
+                        else -> false
+                    }
+                }
+                .focusable(interactionSource = interaction)
+        ) {
+            val barHeight = if (focused) 8.dp else 5.dp
+            val width = maxWidth
+            // Track, what's played, and (while scrubbing) the preview position
+            Box(
+                Modifier
+                    .align(Alignment.CenterStart)
+                    .fillMaxWidth()
+                    .height(barHeight)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(Color.White.copy(alpha = 0.3f))
+            ) {
+                if (scrubMs != null) Box(Modifier.fillMaxWidth(fraction).height(barHeight).background(Color.White.copy(alpha = 0.55f)))
+                Box(Modifier.fillMaxWidth(if (scrubMs != null) minOf(played, fraction) else played).height(barHeight).background(DiscoverAccent))
+            }
+            if (focused) Box(
+                Modifier
+                    .align(Alignment.CenterStart)
+                    .padding(start = (width - 22.dp) * fraction)
+                    .size(22.dp)
+                    .clip(androidx.compose.foundation.shape.CircleShape)
+                    .background(if (scrubMs != null) Color.White else DiscoverAccent)
+            )
+        }
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 6.dp)) {
+            Text(
+                "${clock(shownMs)} / ${clock(durationMs)}",
+                color = if (scrubMs != null) DiscoverAccent else Color.White,
+                fontSize = if (scrubMs != null) 20.sp else 15.sp,
+                fontWeight = if (scrubMs != null) FontWeight.Bold else FontWeight.Normal
+            )
+            if (focused) Text(
+                if (scrubMs != null) "   OK to jump here" else "   ◀ ▶ to seek",
+                color = Color.White.copy(alpha = 0.7f),
+                fontSize = 13.sp
+            )
         }
     }
 }
