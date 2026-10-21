@@ -285,6 +285,20 @@ fun LibraryListBaseView(
 
     fun play(index: Int) {
         if (songs.isEmpty()) return
+        // Saved YouTube videos open in the video page
+        if (playlistName == Downloads.YOUTUBE_VIDEOS) {
+            val video = songs.getOrNull(index) ?: return
+            fun enc(value: String) = URLEncoder.encode(value, StandardCharsets.UTF_8.toString())
+            newNav.navigate(
+                NavigationItem.Video.createRoute(
+                    enc(YoutubeCoreConstant.extractYoutubeVideoId(video.videoId) ?: video.videoId),
+                    enc(video.videoTitle),
+                    enc(YoutubeCoreConstant.decodeThumpUrl(video.videoImage)),
+                    enc(video.artist)
+                )
+            )
+            return
+        }
         // Counts towards Home's top playlists grid (own playlists, Favorites and Downloads)
         viewModel.recordCustomPlaylistPlayed(playlistName, songs.first().videoImage)
         clickedPosition = index

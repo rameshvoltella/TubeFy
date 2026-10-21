@@ -58,6 +58,7 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.media3.common.MediaMetadata
 import androidx.media3.session.MediaController
 import androidx.palette.graphics.Palette
 import coil.compose.AsyncImage
@@ -141,6 +142,22 @@ fun MiniPlayerView(modifier: Modifier = Modifier, viewModel: TubeFyViewModel = h
         }
     )
     fun openPlayer() {
+        // A video started from the YouTube tab goes back to its video page, not the music player
+        val current = mediaController?.currentMediaItem
+        if (current?.mediaMetadata?.mediaType == MediaMetadata.MEDIA_TYPE_VIDEO) {
+            // Already in the back stack (e.g. went on to a channel): return to it; it follows the playing video
+            if (newNav.popBackStack(NavigationItem.Video.route, inclusive = false)) return
+            fun enc(value: String) = URLEncoder.encode(value, StandardCharsets.UTF_8.toString())
+            newNav.navigate(
+                NavigationItem.Video.createRoute(
+                    enc(current.mediaId),
+                    enc(current.mediaMetadata.title?.toString() ?: songName),
+                    enc(current.mediaMetadata.artworkUri?.toString() ?: albumArt),
+                    enc(current.mediaMetadata.artist?.toString().orEmpty())
+                )
+            ) { launchSingleTop = true }
+            return
+        }
         val encodedVideoId = URLEncoder.encode(videoId, StandardCharsets.UTF_8.toString())
         newNav.navigate(
             NavigationItem.AudioPlayer.createRoute(

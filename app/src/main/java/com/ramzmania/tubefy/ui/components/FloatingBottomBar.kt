@@ -117,7 +117,8 @@ fun FloatingBottomBar(
                     barTop = dims.bumpHeight.toPx(),
                     bumpRise = dims.bumpHeight.toPx() * bumpVisible,
                     centerX = bumpCenter.value,
-                    halfWidth = dims.bumpHalfWidth.toPx(),
+                    // Narrower bump when many tabs share the width, so it never spills over a neighbour
+                    halfWidth = minOf(dims.bumpHalfWidth.toPx(), size.width / tabs.size * 0.62f),
                     corner = dims.corner.toPx()
                 )
                 drawPath(path, BarColor)

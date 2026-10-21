@@ -6,6 +6,17 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- YouTube tab: finds the user's state once, for "Trending in <state>" (asked only on tap) -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+
+    <!-- Android TV (YouTube tab only, see TvActivity); none of these are required, so phones are unaffected -->
+    <uses-feature android:name="android.software.leanback" android:required="false" />
+    <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+    <uses-feature android:name="android.hardware.location" android:required="false" />
+    <uses-feature android:name="android.hardware.location.network" android:required="false" />
+    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
+    <!-- Some TVs only have Ethernet -->
+    <uses-feature android:name="android.hardware.wifi" android:required="false" />
 
     <application
         android:allowBackup="true"
@@ -18,6 +29,7 @@
         android:supportsRtl="true"
         android:name=".TubeFyApplication"
         android:theme="@style/Theme.TubeFy"
+        android:banner="@drawable/tv_banner"
         tools:targetApi="31" >
         <!-- Android Auto: TubeFy is a media app (browsing comes from PlaybackService) -->
         <meta-data
@@ -32,6 +44,18 @@
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
     </activity>
+        <!-- Android TV: opens straight into the YouTube tab, built for the remote -->
+        <activity
+            android:name=".ui.tv.TvActivity"
+            android:exported="true"
+            android:screenOrientation="landscape"
+            android:configChanges="keyboard|keyboardHidden|navigation|screenSize|screenLayout|smallestScreenSize|orientation|uiMode"
+            android:banner="@drawable/tv_banner">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+        </activity>
         <service
             android:name=".player.PlaybackService"
             android:foregroundServiceType="mediaPlayback"

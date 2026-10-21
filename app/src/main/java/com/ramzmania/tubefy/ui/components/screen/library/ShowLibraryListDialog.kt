@@ -106,7 +106,7 @@ fun PlaylistDialog(currentSongDetails: TubeFyCoreTypeData,viewModel: TubeFyViewM
         when {
             name.isEmpty() -> Unit
             Downloads.isReservedName(name) ->
-                Toast.makeText(context, "\"$name\" is reserved for downloads", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, "\"$name\" is a reserved name, please choose another", Toast.LENGTH_LONG).show()
             playlists.any { it?.playlistName.equals(name, ignoreCase = true) } ->
                 Toast.makeText(context, "Playlist already exists", Toast.LENGTH_LONG).show()
             else -> {

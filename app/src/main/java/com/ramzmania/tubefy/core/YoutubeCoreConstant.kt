@@ -55,4 +55,8 @@ object YoutubeCoreConstant {
 
         // Add more replacements as needed for other encoded characters
     }
+
+    /** True for HLS manifests (live streams), which ExoPlayer needs to be told about. */
+    fun isHlsUrl(url: String?): Boolean =
+        url != null && (url.contains(".m3u8") || url.contains("/hls_variant/") || url.contains("/hls_playlist/"))
 }
