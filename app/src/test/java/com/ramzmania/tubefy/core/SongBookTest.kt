@@ -34,6 +34,16 @@ class SongBookTest {
     }
 
     @Test
+    fun `"Both" shows the original lyrics, then English letters`() {
+        val both = entry("m1", "Malare").copy(language = "Malayalam", lyrics = "തെളിമാനം", lyricsEnglish = "thelimaanam")
+        val html = SongBook.render(listOf(both), presentFiles = null, now = 0)
+        val original = html.indexOf("<h3>Malayalam</h3>")
+        val english = html.indexOf("<h3>English letters</h3>")
+        assertTrue(original in 0 until english)
+        assertTrue(html.contains("thelimaanam"))
+    }
+
+    @Test
     fun `language comes from the lyrics' script`() {
         assertEquals("Malayalam", SongBook.languageOf("തെളിമാനം മഴവില്ലിൻ നിറമണിയും നേരം"))
         assertEquals("Hindi", SongBook.languageOf("मुझको इतना बताए कोई कैसे तुझसे"))

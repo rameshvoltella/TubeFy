@@ -34,6 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ramzmania.tubefy.core.download.PhoneDownloads
 import com.ramzmania.tubefy.ui.theme.DiscoverAccent
 import com.ramzmania.tubefy.ui.theme.DiscoverTextSecondary
 
@@ -53,6 +54,8 @@ internal fun DownloadOptionsSheet(
     inAppBusy: Boolean,
     phoneSaving: Boolean,
     phoneFolder: String?,
+    lyricsChoice: PhoneDownloads.LyricsChoice,
+    onLyricsChoiceChange: (PhoneDownloads.LyricsChoice) -> Unit,
     onInApp: () -> Unit,
     onPhone: () -> Unit,
     onChangeFolder: () -> Unit,
@@ -121,6 +124,42 @@ internal fun DownloadOptionsSheet(
                     )
                     TextButton(onClick = onChangeFolder) {
                         Text(if (phoneFolder != null) "Change" else "Choose", color = DiscoverAccent, fontSize = 13.sp)
+                    }
+                }
+                // Lyrics for the Song Book (songs in Malayalam, Hindi, … scripts)
+                Text(
+                    "Song Book lyrics",
+                    color = DiscoverTextSecondary,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(top = 12.dp, bottom = 6.dp)
+                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(50))
+                        .background(Color.White.copy(alpha = 0.06f))
+                        .padding(3.dp)
+                ) {
+                    listOf(
+                        PhoneDownloads.LyricsChoice.Original to "Original",
+                        PhoneDownloads.LyricsChoice.English to "English letters",
+                        PhoneDownloads.LyricsChoice.Both to "Both"
+                    ).forEach { (choice, label) ->
+                        val selected = choice == lyricsChoice
+                        Text(
+                            label,
+                            color = if (selected) Color.White else DiscoverTextSecondary,
+                            fontSize = 13.sp,
+                            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            maxLines = 1,
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(50))
+                                .background(if (selected) DiscoverAccent else Color.Transparent)
+                                .clickable { onLyricsChoiceChange(choice) }
+                                .padding(vertical = 8.dp)
+                        )
                     }
                 }
             }

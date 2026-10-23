@@ -35,6 +35,7 @@ object PhoneDownloads {
 
     private const val PREFS = "phone_downloads"
     private const val KEY_FOLDER = "folder"
+    private const val KEY_LYRICS = "songbook_lyrics"
     private const val WORK_TAG = "tubefy-phone-download"
 
     fun workName(videoId: String) = "phone-download-${Downloads.plainId(videoId)}"
@@ -66,7 +67,38 @@ object PhoneDownloads {
         }
     }
 
-    fun enqueue(context: Context, videoId: String, title: String, artist: String) {
+    /** Which lyrics go into the Song Book for songs in another script. */
+    enum class LyricsChoice { Original, English, Both }
+
+    fun lyricsChoice(context: Context): LyricsChoice =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_LYRICS, null)
+            ?.let { saved -> LyricsChoice.entries.firstOrNull { it.name == saved } } ?: LyricsChoice.Original
+
+    fun setLyricsChoice(context: Context, choice: LyricsChoice) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(KEY_LYRICS, choice.name).apply()
+    }
+
+    /**
+     * The song's file if it's already in the chosen folder (same name, either audio type).
+     * Blocking: call off the main thread.
+     */
+    fun findExisting(context: Context, title: String, artist: String): String? {
+        val folder = folder(context) ?: return null
+        val base = fileName(title, artist)
+        val wanted = setOf("$base.m4a", "$base.webm")
+        return childNames(context, folder).firstOrNull { it in wanted }
+    }
+
+    /** The display names of the files in [folder]. Blocking. */
+    internal fun childNames(context: Context, folder: Uri): List<String> {
+        val children = DocumentsContract.buildChildDocumentsUriUsingTree(folder, DocumentsContract.getTreeDocumentId(folder))
+        return context.contentResolver.query(children, arrayOf(DocumentsContract.Document.COLUMN_DISPLAY_NAME), null, null, null)
+            ?.use { cursor -> buildList { while (cursor.moveToNext()) add(cursor.getString(0).orEmpty()) } }
+            .orEmpty()
+    }
+
+    /** [replace]: overwrite a song already saved under the same name (otherwise Android adds "(1)"). */
+    fun enqueue(context: Context, videoId: String, title: String, artist: String, replace: Boolean = false) {
         val folder = folder(context) ?: return
         val request = OneTimeWorkRequestBuilder<PhoneDownloadWorker>()
             .addTag(WORK_TAG)
@@ -75,12 +107,14 @@ object PhoneDownloads {
                     PhoneDownloadWorker.KEY_VIDEO_ID to Downloads.plainId(videoId),
                     PhoneDownloadWorker.KEY_TITLE to title,
                     PhoneDownloadWorker.KEY_ARTIST to artist,
-                    PhoneDownloadWorker.KEY_FOLDER to folder.toString()
+                    PhoneDownloadWorker.KEY_FOLDER to folder.toString(),
+                    PhoneDownloadWorker.KEY_REPLACE to replace,
+                    PhoneDownloadWorker.KEY_LYRICS to lyricsChoice(context).name
                 )
             )
             .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
             .build()
-        WorkManager.getInstance(context).enqueueUniqueWork(workName(videoId), ExistingWorkPolicy.KEEP, request)
+        WorkManager.getInstance(context).enqueueUniqueWork(workName(videoId), ExistingWorkPolicy.REPLACE, request)
     }
 
     /** "Song - Artist" without characters file systems refuse. */
@@ -112,7 +146,9 @@ class PhoneDownloadWorker(context: Context, params: WorkerParameters) : Coroutin
             val (mime, extension) = if (audio.format == MediaFormat.M4A) "audio/mp4" to "m4a" else "audio/webm" to "webm"
 
             val parent = DocumentsContract.buildDocumentUriUsingTree(folder, DocumentsContract.getTreeDocumentId(folder))
-            created = DocumentsContract.createDocument(resolver, parent, mime, "${PhoneDownloads.fileName(title, artist)}.$extension")
+            val name = "${PhoneDownloads.fileName(title, artist)}.$extension"
+            if (inputData.getBoolean(KEY_REPLACE, false)) deleteChild(folder, name)
+            created = DocumentsContract.createDocument(resolver, parent, mime, name)
                 ?: throw IOException("Couldn't create the file")
             resolver.openOutputStream(created)?.use { output ->
                 downloadInChunks(audio.content, output) { setProgress(workDataOf(KEY_PROGRESS to it)) }
@@ -133,13 +169,41 @@ class PhoneDownloadWorker(context: Context, params: WorkerParameters) : Coroutin
         }
     }
 
+    /** Removes the file called [name] from [folder] (Replace). */
+    private fun deleteChild(folder: Uri, name: String) {
+        val resolver = applicationContext.contentResolver
+        val children = DocumentsContract.buildChildDocumentsUriUsingTree(folder, DocumentsContract.getTreeDocumentId(folder))
+        resolver.query(
+            children,
+            arrayOf(DocumentsContract.Document.COLUMN_DOCUMENT_ID, DocumentsContract.Document.COLUMN_DISPLAY_NAME),
+            null, null, null
+        )?.use { cursor ->
+            while (cursor.moveToNext()) {
+                if (cursor.getString(1) == name) {
+                    runCatching { DocumentsContract.deleteDocument(resolver, DocumentsContract.buildDocumentUriUsingTree(folder, cursor.getString(0))) }
+                }
+            }
+        }
+    }
+
     private suspend fun addToSongBook(videoId: String, title: String, artist: String, folder: Uri, file: Uri) {
         val context = applicationContext
         val durationMs = YouTubeStreams.peek(videoId)?.duration?.times(1000) ?: 0L
         val info = dagger.hilt.android.EntryPointAccessors.fromApplication(context, DownloadEntryPoint::class.java)
             .songInfoSource()
             .load(videoId, title, artist, durationMs)
-        val lyrics = info.lyrics?.lines?.joinToString("\n") { it.text }.orEmpty()
+        fun text(lyrics: com.ramzmania.tubefy.core.lyrics.Lyrics?) = lyrics?.lines?.joinToString("\n") { it.text }.orEmpty()
+        val original = text(info.lyrics)
+        val english = text(info.englishLetters)
+        // Songs in another script: the lyrics the user chose for the Song Book
+        val choice = inputData.getString(KEY_LYRICS)?.let { saved -> PhoneDownloads.LyricsChoice.entries.firstOrNull { it.name == saved } }
+            ?: PhoneDownloads.LyricsChoice.Original
+        val (lyrics, lyricsEnglish) = when {
+            english.isBlank() -> original to ""
+            choice == PhoneDownloads.LyricsChoice.English -> english to ""
+            choice == PhoneDownloads.LyricsChoice.Both -> original to english
+            else -> original to ""
+        }
         // The name Android actually gave the file (it adds "(1)" when the name was taken)
         val fileName = context.contentResolver.query(file, arrayOf(DocumentsContract.Document.COLUMN_DISPLAY_NAME), null, null, null)
             ?.use { if (it.moveToFirst()) it.getString(0) else null }.orEmpty()
@@ -150,11 +214,12 @@ class PhoneDownloadWorker(context: Context, params: WorkerParameters) : Coroutin
                 title = info.details.title.ifBlank { title },
                 movie = info.details.movie,
                 year = info.details.year,
-                language = SongBook.languageOf(lyrics),
+                language = SongBook.languageOf(original),
                 singers = info.details.singers.ifBlank { artist },
                 composer = info.details.composer,
                 lyricist = info.details.lyricist,
                 lyrics = lyrics,
+                lyricsEnglish = lyricsEnglish,
                 lyricsSource = info.lyrics?.source.orEmpty(),
                 fileName = fileName,
                 folder = folder.toString(),
@@ -186,6 +251,8 @@ class PhoneDownloadWorker(context: Context, params: WorkerParameters) : Coroutin
         const val KEY_TITLE = "title"
         const val KEY_ARTIST = "artist"
         const val KEY_FOLDER = "folder"
+        const val KEY_REPLACE = "replace"
+        const val KEY_LYRICS = "lyrics"
         const val KEY_PROGRESS = "progress"
         private const val CHANNEL = "tubefy_saved_songs"
         private const val MAX_ATTEMPTS = 3

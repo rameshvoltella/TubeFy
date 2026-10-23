@@ -20,6 +20,8 @@ data class SongBookEntry(
     val composer: String = "",
     val lyricist: String = "",
     val lyrics: String = "",
+    /** With "Both": the lyrics again in English letters, shown after [lyrics]. */
+    val lyricsEnglish: String = "",
     val lyricsSource: String = "",
     val fileName: String = "",
     /** The folder (tree URI) the song was saved to; each folder has its own book. */
@@ -91,7 +93,7 @@ object SongBook {
             SongBookEntry(
                 videoId = text("videoId"), title = text("title"), movie = text("movie"), year = text("year"),
                 language = text("language"), singers = text("singers"), composer = text("composer"),
-                lyricist = text("lyricist"), lyrics = text("lyrics"), lyricsSource = text("lyricsSource"),
+                lyricist = text("lyricist"), lyrics = text("lyrics"), lyricsEnglish = text("lyricsEnglish"), lyricsSource = text("lyricsSource"),
                 fileName = text("fileName"), folder = text("folder"), savedAt = (map["savedAt"] as? Number)?.toLong() ?: 0L
             )
         }
@@ -102,7 +104,7 @@ object SongBook {
             mapOf(
                 "videoId" to e.videoId, "title" to e.title, "movie" to e.movie, "year" to e.year,
                 "language" to e.language, "singers" to e.singers, "composer" to e.composer,
-                "lyricist" to e.lyricist, "lyrics" to e.lyrics, "lyricsSource" to e.lyricsSource,
+                "lyricist" to e.lyricist, "lyrics" to e.lyrics, "lyricsEnglish" to e.lyricsEnglish, "lyricsSource" to e.lyricsSource,
                 "fileName" to e.fileName, "folder" to e.folder, "savedAt" to e.savedAt
             )
         }
@@ -152,13 +154,18 @@ object SongBook {
                 .joinToString("") { (label, value) -> "<dt>$label</dt><dd>${esc(value)}</dd>" }
             val missing = presentFiles != null && e.fileName.isNotBlank() && e.fileName !in presentFiles
             val lyrics = if (e.lyrics.isBlank()) "<p class=\"none\">Lyrics not available</p>"
-            else "<div class=\"lyrics\">${esc(e.lyrics.trim())}</div>" +
+            else if (e.lyricsEnglish.isNotBlank()) {
+                // "Both": the original script, then English letters
+                "<h3>${esc(e.language.ifBlank { "Original" })}</h3><div class=\"lyrics\">${esc(e.lyrics.trim())}</div>" +
+                    "<h3>English letters</h3><div class=\"lyrics\">${esc(e.lyricsEnglish.trim())}</div>"
+            } else "<div class=\"lyrics\">${esc(e.lyrics.trim())}</div>"
+            val lyricsBlock = lyrics +
                 (if (e.lyricsSource.isNotBlank()) "<p class=\"src\">Lyrics by ${esc(e.lyricsSource)}</p>" else "")
             """
 <section class="song" id="${anchor(e)}">
   <h2>${esc(e.title)}${if (missing) " <span class=\"gone\">file removed</span>" else ""}</h2>
   ${if (rows.isNotEmpty()) "<dl>$rows</dl>" else ""}
-  $lyrics
+  $lyricsBlock
   <p class="foot">Saved ${dateFormat.format(Date(e.savedAt))}${if (e.fileName.isNotBlank()) " · ${esc(e.fileName)}" else ""} · <a href="https://www.youtube.com/watch?v=${esc(e.videoId)}">YouTube</a> · <a href="#top">↑ Top</a></p>
 </section>"""
         }
@@ -188,6 +195,7 @@ dl { display:grid; grid-template-columns:auto 1fr; gap:4px 14px; margin:0 0 14px
 dt { color:var(--muted); } dd { margin:0; font-weight:500; }
 .lyrics { white-space:pre-wrap; font-size:17px; line-height:1.7; border-top:1px solid var(--line); padding-top:12px; }
 .none { color:var(--muted); font-style:italic; }
+.song h3 { margin:16px 0 0; font-size:13px; text-transform:uppercase; letter-spacing:.06em; color:var(--accent); }
 .src, .foot { color:var(--muted); font-size:13px; } .foot a { color:var(--accent); }
 .gone { font-size:12px; font-weight:600; color:var(--accent); border:1px solid var(--accent); border-radius:10px; padding:1px 8px; vertical-align:middle; }
 </style>
