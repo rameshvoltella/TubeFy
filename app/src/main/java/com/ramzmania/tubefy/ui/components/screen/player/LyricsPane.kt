@@ -1,5 +1,3 @@
-@file:OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
-
 package com.ramzmania.tubefy.ui.components.screen.player
 
 import androidx.compose.animation.animateColorAsState
@@ -124,65 +122,59 @@ private fun LyricsList(
     // Follow the song, unless the user scrolled in the last few seconds
     LaunchedEffect(current) {
         if (current < 0 || dragged || System.currentTimeMillis() - lastUserScroll < 4_000) return@LaunchedEffect
-        // Lyrics start after the details card (and the pinned switch); keep the current line about a third down
-        val firstLine = if (scriptSwitch != null) 2 else 1
-        listState.animateScrollToItem((current + firstLine - 2).coerceAtLeast(0))
+        // Item 0 is the details card; keep the current line about a third of the way down
+        listState.animateScrollToItem((current + 1 - 2).coerceAtLeast(0))
     }
 
-    LazyColumn(
-        state = listState,
-        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 120.dp),
-        modifier = Modifier.fillMaxSize()
-    ) {
-        item(key = "details") { DetailsCard(details) }
-        // Pinned: the Original / English letters switch stays at the top while the lyrics scroll
+    // The Original / English letters switch sits above the list, so it stays while the lyrics scroll
+    Column(Modifier.fillMaxSize()) {
         scriptSwitch?.let { switch ->
-            stickyHeader(key = "script") {
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .background(PinnedBackground)
-                        .padding(top = 6.dp, bottom = 2.dp)
-                ) { switch() }
-            }
+            Box(Modifier.padding(start = 20.dp, end = 20.dp, top = 14.dp)) { switch() }
         }
+        LazyColumn(
+            state = listState,
+            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = if (scriptSwitch != null) 12.dp else 16.dp, bottom = 120.dp),
+            modifier = Modifier.fillMaxWidth().weight(1f)
+        ) {
+            item(key = "details") { DetailsCard(details) }
 
-        if (lyrics == null || lyrics.lines.all { it.text.isBlank() }) {
-            item(key = "none") {
-                Text(
-                    "Lyrics not available for this song",
-                    color = Color.White.copy(alpha = 0.6f),
-                    fontSize = 16.sp,
-                    modifier = Modifier.padding(top = 28.dp).fillMaxWidth()
-                )
-            }
-        } else {
-            itemsIndexed(lyrics.lines) { index, line ->
-                if (line.text.isBlank()) {
-                    Spacer(Modifier.height(14.dp))
-                } else if (lyrics.synced) {
-                    SyncedLine(line.text, state = when {
-                        index == current -> LineState.Current
-                        index < current -> LineState.Sung
-                        else -> LineState.Upcoming
-                    }, onClick = { line.timeMs?.let(onSeek) })
-                } else {
+            if (lyrics == null || lyrics.lines.all { it.text.isBlank() }) {
+                item(key = "none") {
                     Text(
-                        line.text,
-                        color = Color.White.copy(alpha = 0.88f),
-                        fontSize = 18.sp,
-                        lineHeight = 26.sp,
-                        modifier = Modifier.padding(vertical = 2.dp)
+                        "Lyrics not available for this song",
+                        color = Color.White.copy(alpha = 0.6f),
+                        fontSize = 16.sp,
+                        modifier = Modifier.padding(top = 28.dp).fillMaxWidth()
                     )
                 }
-            }
-            item(key = "source") {
-                if (lyrics.source.isNotBlank()) Text(
-                    "Lyrics by ${lyrics.source}",
-                    color = Color.White.copy(alpha = 0.45f),
-                    fontSize = 12.sp,
-                    modifier = Modifier.padding(top = 24.dp)
-                )
+            } else {
+                itemsIndexed(lyrics.lines) { index, line ->
+                    if (line.text.isBlank()) {
+                        Spacer(Modifier.height(14.dp))
+                    } else if (lyrics.synced) {
+                        SyncedLine(line.text, state = when {
+                            index == current -> LineState.Current
+                            index < current -> LineState.Sung
+                            else -> LineState.Upcoming
+                        }, onClick = { line.timeMs?.let(onSeek) })
+                    } else {
+                        Text(
+                            line.text,
+                            color = Color.White.copy(alpha = 0.88f),
+                            fontSize = 18.sp,
+                            lineHeight = 26.sp,
+                            modifier = Modifier.padding(vertical = 2.dp)
+                        )
+                    }
+                }
+                item(key = "source") {
+                    if (lyrics.source.isNotBlank()) Text(
+                        "Lyrics by ${lyrics.source}",
+                        color = Color.White.copy(alpha = 0.45f),
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(top = 24.dp)
+                    )
+                }
             }
         }
     }
@@ -215,15 +207,11 @@ private fun SyncedLine(text: String, state: LineState, onClick: () -> Unit) {
     )
 }
 
-/** Behind the pinned switch, so lyrics scrolling under it don't show through. */
-private val PinnedBackground = Color(0xFF1B1718)
-
 /** "Malayalam | English letters": which way to show the lyrics. */
 @Composable
 private fun ScriptSwitch(script: String, englishLetters: Boolean, onChange: (Boolean) -> Unit) {
     Row(
         modifier = Modifier
-            .padding(bottom = 10.dp)
             .clip(RoundedCornerShape(50))
             .background(Color.White.copy(alpha = 0.08f))
             .padding(4.dp)
