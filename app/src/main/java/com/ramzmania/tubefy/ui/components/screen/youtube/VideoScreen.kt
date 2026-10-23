@@ -505,7 +505,7 @@ fun VideoScreen(viewModel: VideoViewModel = hiltViewModel()) {
 
                 VideoViewModel.DetailsState.Error -> item(key = "error") {
                     Column(Modifier.fillMaxWidth().padding(top = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Couldn't load related videos", color = DiscoverTextSecondary, fontSize = 15.sp)
+                        Text(com.ramzmania.tubefy.core.youtube.YouTubeAccess.messageOr("Couldn't load related videos"), color = DiscoverTextSecondary, fontSize = 15.sp)
                         TextButton(onClick = { viewModel.load(videoId, title, fallbackThumb, fallbackChannel, force = true) }) { Text("Retry", color = DiscoverAccent) }
                     }
                 }

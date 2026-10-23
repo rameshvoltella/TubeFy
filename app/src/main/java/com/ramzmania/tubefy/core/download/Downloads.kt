@@ -20,8 +20,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import org.schabi.newpipe.extractor.services.youtube.YoutubeService
-import org.schabi.newpipe.extractor.services.youtube.extractors.YoutubeStreamExtractor
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.TimeUnit
@@ -92,6 +90,7 @@ object Downloads {
 @InstallIn(SingletonComponent::class)
 interface DownloadEntryPoint {
     fun playlistDao(): PlaylistDao
+    fun songInfoSource(): com.ramzmania.tubefy.core.lyrics.SongInfoSource
 }
 
 /**
@@ -110,7 +109,10 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
         try {
             if (!Downloads.isDownloaded(applicationContext, videoId)) {
                 val url = resolveStreamUrl(videoId)
-                downloadInChunks(url, partial)
+                partial.delete()
+                partial.outputStream().use { output ->
+                    downloadInChunks(url, output) { setProgress(workDataOf(KEY_PROGRESS to it)) }
+                }
                 if (!partial.renameTo(target)) throw IOException("Could not save download")
             }
             EntryPointAccessors.fromApplication(applicationContext, DownloadEntryPoint::class.java)
@@ -130,51 +132,49 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
         }
     }
 
-    private fun resolveStreamUrl(videoId: String): String {
-        val extractor = YoutubeService(0)
-            .getStreamExtractor("${YoutubeCoreConstant.YOUTUBE_WATCH_URL}$videoId") as YoutubeStreamExtractor
-        extractor.fetchPage()
-        return extractor.videoStreams.firstOrNull()?.content
+    private fun resolveStreamUrl(videoId: String): String =
+        com.ramzmania.tubefy.core.youtube.YouTubeStreams.info(videoId).videoStreams.orEmpty().firstOrNull()?.content
             ?: throw IOException("No downloadable stream for $videoId")
-    }
-
-    private suspend fun downloadInChunks(url: String, destination: File) {
-        destination.delete()
-        var start = 0L
-        var total = -1L
-        destination.outputStream().use { output ->
-            while (total < 0 || start < total) {
-                val request = Request.Builder()
-                    .url(url)
-                    .header("Range", "bytes=$start-${start + CHUNK_SIZE - 1}")
-                    .build()
-                client.newCall(request).execute().use { response ->
-                    if (!response.isSuccessful) throw IOException("HTTP ${response.code}")
-                    val bytes = response.body?.bytes() ?: throw IOException("Empty response")
-                    if (total < 0) {
-                        total = response.header("Content-Range")?.substringAfter('/')?.toLongOrNull()
-                            ?: bytes.size.toLong()
-                    }
-                    if (bytes.isEmpty()) throw IOException("Download stalled")
-                    output.write(bytes)
-                    start += bytes.size
-                }
-                setProgress(workDataOf(KEY_PROGRESS to (start * 100 / total).toInt()))
-            }
-        }
-    }
 
     companion object {
         const val KEY_VIDEO_ID = "videoId"
         const val KEY_TITLE = "title"
         const val KEY_THUMBNAIL = "thumbnail"
         const val KEY_PROGRESS = "progress"
-        private const val CHUNK_SIZE = 4L * 1024 * 1024
         private const val MAX_ATTEMPTS = 3
+    }
+}
 
-        private val client = OkHttpClient.Builder()
-            .connectTimeout(20, TimeUnit.SECONDS)
-            .readTimeout(60, TimeUnit.SECONDS)
+private const val CHUNK_SIZE = 4L * 1024 * 1024
+
+private val downloadClient = OkHttpClient.Builder()
+    .connectTimeout(20, TimeUnit.SECONDS)
+    .readTimeout(60, TimeUnit.SECONDS)
+    .build()
+
+/**
+ * Downloads [url] into [output] in byte-range chunks (YouTube throttles single long requests),
+ * reporting progress as a percentage.
+ */
+internal suspend fun downloadInChunks(url: String, output: java.io.OutputStream, onProgress: suspend (Int) -> Unit) {
+    var start = 0L
+    var total = -1L
+    while (total < 0 || start < total) {
+        val request = Request.Builder()
+            .url(url)
+            .header("Range", "bytes=$start-${start + CHUNK_SIZE - 1}")
             .build()
+        downloadClient.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) throw IOException("HTTP ${response.code}")
+            val bytes = response.body?.bytes() ?: throw IOException("Empty response")
+            if (total < 0) {
+                total = response.header("Content-Range")?.substringAfter('/')?.toLongOrNull()
+                    ?: bytes.size.toLong()
+            }
+            if (bytes.isEmpty()) throw IOException("Download stalled")
+            output.write(bytes)
+            start += bytes.size
+        }
+        onProgress((start * 100 / total).toInt())
     }
 }

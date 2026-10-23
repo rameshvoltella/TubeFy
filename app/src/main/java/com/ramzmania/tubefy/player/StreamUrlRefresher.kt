@@ -4,9 +4,7 @@ import android.net.Uri
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSpec
 import androidx.media3.datasource.ResolvingDataSource
-import com.ramzmania.tubefy.core.YoutubeCoreConstant
-import org.schabi.newpipe.extractor.services.youtube.YoutubeService
-import org.schabi.newpipe.extractor.services.youtube.extractors.YoutubeStreamExtractor
+import com.ramzmania.tubefy.core.youtube.YouTubeStreams
 import java.io.IOException
 import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
@@ -46,9 +44,10 @@ class StreamUrlRefresher : ResolvingDataSource.Resolver {
         // Video page: a DASH manifest (all qualities / audio languages), rebuilt when its links expired
         if (uri.scheme == DASH_SCHEME) {
             val id = uri.lastPathSegment ?: throw IOException("No video id")
-            if (forced.remove(id)) manifests.remove(id)
+            val rejected = forced.remove(id)
+            if (rejected) manifests.remove(id)
             val manifest = manifests[id]
-                ?: VideoManifest.fetch(id)?.let { dataUri(it.manifest).also { built -> manifests[id] = built } }
+                ?: VideoManifest.fetch(id, fresh = rejected)?.let { dataUri(it.manifest).also { built -> manifests[id] = built } }
                 ?: throw IOException("No manifest for $id")
             return dataSpec.withUri(manifest)
         }
@@ -57,7 +56,8 @@ class StreamUrlRefresher : ResolvingDataSource.Resolver {
         if (uri.scheme == CarLibrary.LAZY_SCHEME) {
             val id = videoId?.takeIf { it.isNotBlank() } ?: uri.lastPathSegment ?: throw IOException("No song id")
             val link = refreshed[id]?.takeIf { !isExpiring(it) }
-                ?: fetchFreshLink(id, itag = null)?.also { refreshed[id] = it }
+                // First play: a recent lookup (e.g. the video page's) is fine to reuse
+                ?: fetchFreshLink(id, itag = null, fresh = false)?.also { refreshed[id] = it }
                 ?: throw IOException("No stream for $id")
             return dataSpec.withUri(link)
         }
@@ -70,7 +70,7 @@ class StreamUrlRefresher : ResolvingDataSource.Resolver {
         if (!force && !isExpiring(current)) {
             return if (current == uri) dataSpec else dataSpec.withUri(current)
         }
-        val fresh = fetchFreshLink(videoId, uri.getQueryParameter("itag")) ?: return dataSpec
+        val fresh = fetchFreshLink(videoId, uri.getQueryParameter("itag"), fresh = true) ?: return dataSpec
         refreshed[videoId] = fresh
         return dataSpec.withUri(fresh)
     }
@@ -81,13 +81,15 @@ class StreamUrlRefresher : ResolvingDataSource.Resolver {
     }
 
     /** Same format (itag) as before, so a resumed position still points at the same bytes. */
-    private fun fetchFreshLink(videoId: String, itag: String?): Uri? = try {
-        val extractor = YoutubeService(0)
-            .getStreamExtractor("${YoutubeCoreConstant.YOUTUBE_WATCH_URL}$videoId") as YoutubeStreamExtractor
-        extractor.fetchPage()
-        val streams = extractor.videoStreams
+    /**
+     * Same format (itag) as before, so a resumed position still points at the same bytes. [fresh] asks
+     * YouTube again (expired / rejected link) instead of reusing a recent lookup.
+     */
+    private fun fetchFreshLink(videoId: String, itag: String?, fresh: Boolean): Uri? = try {
+        val info = YouTubeStreams.info(videoId, fresh)
+        val streams = info.videoStreams.orEmpty()
         val stream = streams.firstOrNull { it.itag.toString() == itag } ?: streams.firstOrNull()
-        (stream?.content ?: extractor.hlsUrl.takeIf { it.isNotBlank() })?.let(Uri::parse)
+        (stream?.content ?: info.hlsUrl?.takeIf { it.isNotBlank() })?.let(Uri::parse)
     } catch (e: Exception) {
         e.printStackTrace()
         null

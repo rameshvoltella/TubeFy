@@ -1,0 +1,66 @@
+package com.ramzmania.tubefy.core
+
+import com.ramzmania.tubefy.core.lyrics.LyricLine
+import com.ramzmania.tubefy.core.lyrics.Lyrics
+import com.ramzmania.tubefy.core.lyrics.SongInfoSource
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertSame
+import org.junit.Test
+
+class SongInfoSourceTest {
+
+    @Test
+    fun `timed lyrics are parsed and ordered`() {
+        val lines = SongInfoSource.parseLrc("[00:12.50] Thelimaanam\n[01:02.3] Malare\n[00:05.00][00:30.00] Chorus\nno stamp")
+        assertEquals(listOf(5_000L, 12_500L, 30_000L, 62_300L), lines.map { it.timeMs })
+        assertEquals(listOf("Chorus", "Thelimaanam", "Chorus", "Malare"), lines.map { it.text })
+    }
+
+    @Test
+    fun `movie comes from the soundtrack album`() {
+        assertEquals("Brahmastra", SongInfoSource.movieFrom("Kesariya (From \"Brahmastra\")"))
+        assertEquals("Velipadinte Pusthakam", SongInfoSource.movieFrom("Velipadinte Pusthakam (Original Motion Picture Soundtrack)"))
+        assertEquals("Premam", SongInfoSource.movieFrom("Premam"))
+    }
+
+    @Test
+    fun `credits are read from the description`() {
+        val description = """
+            Provided to YouTube by Muzik 247
+            Malare · Vijay Yesudas
+            Composer: Rajesh Murugesan
+            Lyricist: Shabareesh Varma
+        """.trimIndent()
+        val credits = SongInfoSource.creditsFrom(description)
+        assertEquals("Shabareesh Varma", credits.lyricist)
+        assertEquals("Rajesh Murugesan", credits.composer)
+        val html = SongInfoSource.creditsFrom("Provided to YouTube by Sony<br><br>Composer: Pritam<br>Lyricist: <a href=\"x\">Amitabh Bhattacharya</a>")
+        assertEquals("Pritam", html.composer)
+        assertEquals("Amitabh Bhattacharya", html.lyricist)
+        val indian = SongInfoSource.creditsFrom("Song: Kesariya\nMusic - Pritam\nLyrics - Amitabh Bhattacharya")
+        assertEquals("Amitabh Bhattacharya", indian.lyricist)
+        assertEquals("Pritam", indian.composer)
+    }
+
+    @Test
+    fun `timed lyrics win, then YouTube Music, then plain`() {
+        val timed = Lyrics(listOf(LyricLine(0, "a")), synced = true, source = "LRCLIB")
+        val plain = Lyrics(listOf(LyricLine(null, "a")), synced = false, source = "LRCLIB")
+        val ytm = Lyrics(listOf(LyricLine(null, "a")), synced = false, source = "Musixmatch")
+        assertSame(timed, SongInfoSource.pickLyrics(timed, ytm))
+        assertSame(ytm, SongInfoSource.pickLyrics(plain, ytm))
+        assertSame(plain, SongInfoSource.pickLyrics(plain, null))
+    }
+}
+
+class PhoneDownloadsTest {
+    @Test
+    fun `file names are clean and readable`() {
+        val name = com.ramzmania.tubefy.core.download.PhoneDownloads::fileName
+        assertEquals("Malare - Vijay Yesudas", name("Malare", "Vijay Yesudas"))
+        assertEquals("Kesariya (From Brahmastra) - Arijit Singh", name("Kesariya (From \"Brahmastra\")", "Arijit Singh"))
+        assertEquals("AC DC Song", name("AC/DC: Song?", ""))
+        assertEquals("Tum Hi Ho - Arijit Singh", name("Tum Hi Ho - Arijit Singh", "Arijit Singh"))
+        assertEquals("TubeFy song", name("", ""))
+    }
+}

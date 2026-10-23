@@ -201,7 +201,7 @@ fun ChannelScreen(viewModel: ChannelViewModel = hiltViewModel()) {
 
                 videos.items.isEmpty() && videos.error -> item(key = "error") {
                     Column(Modifier.fillMaxWidth().padding(top = 40.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Couldn't load this channel", color = DiscoverTextSecondary, fontSize = 15.sp)
+                        Text(com.ramzmania.tubefy.core.youtube.YouTubeAccess.messageOr("Couldn't load this channel"), color = DiscoverTextSecondary, fontSize = 15.sp)
                         TextButton(onClick = { viewModel.load(url, fallbackName, force = true) }) { Text("Retry", color = DiscoverAccent) }
                     }
                 }
@@ -226,7 +226,7 @@ fun ChannelScreen(viewModel: ChannelViewModel = hiltViewModel()) {
                                 CircularProgressIndicator(color = DiscoverAccent, strokeWidth = 2.dp, modifier = Modifier.size(26.dp))
                             }
                             videos.error -> TextButton(onClick = viewModel::loadMore, modifier = Modifier.fillMaxWidth()) {
-                                Text("Couldn't load more · Retry", color = DiscoverAccent)
+                                Text(com.ramzmania.tubefy.core.youtube.YouTubeAccess.messageOr("Couldn't load more") + " · Retry", color = DiscoverAccent)
                             }
                             videos.ended -> Text(
                                 "You're all caught up",

@@ -211,7 +211,7 @@ internal fun TvSearchScreen(
                 CircularProgressIndicator(color = DiscoverAccent)
             }
             rowState.items.isEmpty() -> Text(
-                if (rowState.error) "Couldn't load videos. Check your connection." else emptyText,
+                if (rowState.error) com.ramzmania.tubefy.core.youtube.YouTubeAccess.messageOr("Couldn't load videos. Check your connection.") else emptyText,
                 color = DiscoverTextSecondary,
                 fontSize = 15.sp,
                 modifier = Modifier.padding(start = 34.dp, top = 8.dp)

@@ -141,6 +141,12 @@ import com.ramzmania.tubefy.player.PlaybackService
 import com.ramzmania.tubefy.ui.components.screen.library.PlayListDialogViewer
 import com.ramzmania.tubefy.utils.LocalNavController
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.compose.rememberLauncherForActivityResult
+import com.ramzmania.tubefy.core.download.PhoneDownloadWorker
+import com.ramzmania.tubefy.core.download.PhoneDownloads
+import androidx.compose.runtime.rememberUpdatedState
+import com.ramzmania.tubefy.viewmodel.LyricsViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.net.URLDecoder
@@ -148,7 +154,7 @@ import java.nio.charset.StandardCharsets
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-private enum class PlayerMode { Song, Video }
+private enum class PlayerMode { Song, Video, Lyrics }
 
 private val FavouriteRed = Color(0xFFFF4D4D)
 private val SurfaceTint = Color.White.copy(alpha = 0.08f)
@@ -193,6 +199,50 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
     var palette by remember { mutableStateOf<Palette?>(null) }
     val isFavouriteSong by viewModel.isFavouriteState.collectAsState()
     val downloadState by rememberDownloadState(videoId)
+    // "Save to phone storage" (audio file in a folder the user picked)
+    val phoneSaveProgress by rememberPhoneSaveProgress(videoId)
+    var showDownloadSheet by remember { mutableStateOf(false) }
+    var phoneFolder by remember { mutableStateOf(PhoneDownloads.folder(context)) }
+    var saveAfterPickingFolder by remember { mutableStateOf(false) }
+    fun saveToPhone() {
+        PhoneDownloads.enqueue(context, videoId, title, artist)
+        phoneFolder?.let { Toast.makeText(context, "Saving to ${PhoneDownloads.folderLabel(it)}…", Toast.LENGTH_SHORT).show() }
+        showDownloadSheet = false
+    }
+    // Android's own folder picker; access to the folder is kept for next time
+    val folderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        if (uri != null) {
+            PhoneDownloads.setFolder(context, uri)
+            phoneFolder = PhoneDownloads.folder(context)
+            if (saveAfterPickingFolder) saveToPhone()
+        }
+        saveAfterPickingFolder = false
+    }
+    if (showDownloadSheet) {
+        DownloadOptionsSheet(
+            songTitle = title,
+            inAppDone = downloadState == DownloadState.Done,
+            inAppBusy = downloadState is DownloadState.Downloading,
+            phoneSaving = phoneSaveProgress != null,
+            phoneFolder = phoneFolder?.let(PhoneDownloads::folderLabel),
+            onInApp = {
+                Downloads.enqueue(context, videoId, title, albumArt)
+                Toast.makeText(context, "Download started", Toast.LENGTH_SHORT).show()
+                showDownloadSheet = false
+            },
+            onPhone = {
+                if (phoneFolder == null) {
+                    saveAfterPickingFolder = true
+                    folderPicker.launch(null)
+                } else saveToPhone()
+            },
+            onChangeFolder = {
+                saveAfterPickingFolder = false
+                folderPicker.launch(phoneFolder)
+            },
+            onDismiss = { showDownloadSheet = false }
+        )
+    }
     val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
     var showSleepSheet by remember { mutableStateOf(false) }
     var sleepEndAt by remember { mutableLongStateOf(0L) }
@@ -225,11 +275,35 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
         YoutubeCoreConstant.extractYoutubeVideoId(videoId)?.let { viewModel.isFavourite(it) }
     }
     LaunchedEffect(playingOffline) {
-        if (playingOffline) playerMode = PlayerMode.Song
+        // Downloads play from files without video: Song and Lyrics only
+        if (playingOffline && playerMode == PlayerMode.Video) playerMode = PlayerMode.Song
     }
     // Video only downloads while the Video tab shows it (matters for the video page's separate streams)
     LaunchedEffect(playerMode, mediaController) {
         setVideoTrackEnabled(mediaController, playerMode == PlayerMode.Video)
+    }
+
+    // Lyrics tab: loaded only when it's open (and again when the song changes)
+    val lyricsViewModel: LyricsViewModel = hiltViewModel()
+    val lyricsState by lyricsViewModel.state.collectAsState()
+    val currentDurationMs by rememberUpdatedState(durationMs)
+    fun loadLyrics(force: Boolean = false) {
+        val id = YoutubeCoreConstant.extractYoutubeVideoId(videoId) ?: videoId
+        lyricsViewModel.load(id, title, artist, currentDurationMs, force)
+    }
+    LaunchedEffect(playerMode, videoId) {
+        if (playerMode != PlayerMode.Lyrics) return@LaunchedEffect
+        // The song's length helps pick the right timed lyrics; give it a moment to be known
+        if (currentDurationMs <= 0) delay(1_500L)
+        loadLyrics()
+    }
+    // Timed lyrics need a finer position than the seek bar does
+    LaunchedEffect(mediaController, isPlaying, playerMode) {
+        val controller = mediaController ?: return@LaunchedEffect
+        while (isPlaying && playerMode == PlayerMode.Lyrics) {
+            positionMs = controller.currentPosition
+            delay(200L)
+        }
     }
 
     // Position ticker
@@ -414,7 +488,15 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                 }
                 Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                     if (playingOffline) {
-                        OfflineBadge()
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            OfflineBadge()
+                            Spacer(Modifier.width(8.dp))
+                            SongVideoToggle(
+                                selected = playerMode,
+                                modes = listOf(PlayerMode.Song, PlayerMode.Lyrics),
+                                onSelect = { playerMode = it }
+                            )
+                        }
                     } else {
                         SongVideoToggle(
                             selected = playerMode,
@@ -469,6 +551,14 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                                     .aspectRatio(16f / 9f)
                                     .clip(RoundedCornerShape(20.dp))
                                     .background(Color.Black)
+                            )
+
+                            PlayerMode.Lyrics -> LyricsPane(
+                                state = lyricsState,
+                                positionMs = positionMs,
+                                onSeek = { mediaController?.seekTo(it) },
+                                onRetry = { loadLyrics(force = true) },
+                                modifier = Modifier.fillMaxSize()
                             )
                         }
                     }
@@ -648,15 +738,15 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                     onClick = ::toggleFavourite
                 )
                 DownloadTile(
-                    state = downloadState,
+                    // Saving to phone storage shows its progress here too
+                    state = phoneSaveProgress?.let { DownloadState.Downloading(it) } ?: downloadState,
+                    saving = phoneSaveProgress != null,
                     onClick = {
-                        when (downloadState) {
-                            DownloadState.Done -> Toast.makeText(context, "Already downloaded", Toast.LENGTH_SHORT).show()
-                            is DownloadState.Downloading -> Toast.makeText(context, "Downloading…", Toast.LENGTH_SHORT).show()
-                            else -> {
-                                Downloads.enqueue(context, videoId, title, albumArt)
-                                Toast.makeText(context, "Download started", Toast.LENGTH_SHORT).show()
-                            }
+                        if (downloadState is DownloadState.Downloading || phoneSaveProgress != null) {
+                            Toast.makeText(context, "Downloading…", Toast.LENGTH_SHORT).show()
+                        } else {
+                            phoneFolder = PhoneDownloads.folder(context)
+                            showDownloadSheet = true
                         }
                     }
                 )
@@ -730,14 +820,18 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
 }
 
 @Composable
-private fun SongVideoToggle(selected: PlayerMode, onSelect: (PlayerMode) -> Unit) {
+private fun SongVideoToggle(
+    selected: PlayerMode,
+    onSelect: (PlayerMode) -> Unit,
+    modes: List<PlayerMode> = PlayerMode.entries
+) {
     Row(
         modifier = Modifier
             .clip(RoundedCornerShape(50))
             .background(SurfaceTint)
             .padding(4.dp)
     ) {
-        PlayerMode.entries.forEach { mode ->
+        modes.forEach { mode ->
             val isSelected = mode == selected
             val background by animateColorAsState(
                 if (isSelected) Color.White.copy(alpha = 0.18f) else Color.Transparent, label = "toggleBg"
@@ -751,7 +845,7 @@ private fun SongVideoToggle(selected: PlayerMode, onSelect: (PlayerMode) -> Unit
                     .clip(RoundedCornerShape(50))
                     .background(background)
                     .clickable { onSelect(mode) }
-                    .padding(horizontal = 22.dp, vertical = 8.dp)
+                    .padding(horizontal = if (modes.size > 2) 16.dp else 22.dp, vertical = 8.dp)
             )
         }
     }
@@ -1013,15 +1107,38 @@ private fun rememberDownloadState(videoId: String): State<DownloadState> {
     }
 }
 
+/** Progress (0–100) of saving this song to phone storage, or null when it isn't being saved. */
 @Composable
-private fun DownloadTile(state: DownloadState, onClick: () -> Unit) {
+private fun rememberPhoneSaveProgress(videoId: String): State<Int?> {
+    val context = LocalContext.current
+    return produceState<Int?>(initialValue = null, key1 = videoId) {
+        if (videoId.isBlank()) return@produceState
+        WorkManager.getInstance(context)
+            .getWorkInfosForUniqueWorkFlow(PhoneDownloads.workName(videoId))
+            .collect { infos ->
+                val info = infos.firstOrNull()
+                value = when (info?.state) {
+                    WorkInfo.State.RUNNING -> info.progress.getInt(PhoneDownloadWorker.KEY_PROGRESS, 0)
+                    WorkInfo.State.ENQUEUED, WorkInfo.State.BLOCKED -> 0
+                    else -> null
+                }
+            }
+    }
+}
+
+@Composable
+private fun DownloadTile(state: DownloadState, onClick: () -> Unit, saving: Boolean = false) {
     when (state) {
         DownloadState.Done -> ActionTile(Icons.Rounded.DownloadDone, "Downloaded", onClick, iconTint = DownloadedGreen)
         DownloadState.Failed -> ActionTile(Icons.Rounded.Download, "Retry", onClick)
         DownloadState.Idle -> ActionTile(Icons.Rounded.Download, "Download", onClick)
         is DownloadState.Downloading -> ActionTile(
             icon = Icons.Rounded.Download,
-            label = if (state.progress > 0) "${state.progress}%" else "Waiting…",
+            label = when {
+                state.progress > 0 && saving -> "Saving ${state.progress}%"
+                state.progress > 0 -> "${state.progress}%"
+                else -> "Waiting…"
+            },
             onClick = onClick,
             content = {
                 if (state.progress > 0) {

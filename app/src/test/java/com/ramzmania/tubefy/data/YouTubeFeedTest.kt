@@ -105,3 +105,24 @@ class VideoQualityTest {
         assertNull(pick(heights, List(5) { false }, 1080))
     }
 }
+
+class YouTubeAccessTest {
+    private val access = com.ramzmania.tubefy.core.youtube.YouTubeAccess
+
+    @Test
+    fun `a not-a-bot refusal is recognised, also when wrapped`() {
+        val refusal = org.schabi.newpipe.extractor.exceptions.SignInConfirmNotBotException("Sign in to confirm that you're not a bot")
+        assertEquals(true, access.isBlock(refusal))
+        assertEquals(true, access.isBlock(RuntimeException("wrapped", refusal)))
+        assertEquals(false, access.isBlock(java.io.IOException("timeout")))
+    }
+
+    @Test
+    fun `the block message shows only after a refusal`() {
+        access.markOk()
+        assertEquals("fallback", access.messageOr("fallback"))
+        access.check(org.schabi.newpipe.extractor.exceptions.SignInConfirmNotBotException("not a bot"))
+        assertEquals(access.BLOCKED_MESSAGE, access.messageOr("fallback"))
+        access.markOk()
+    }
+}

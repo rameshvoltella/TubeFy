@@ -303,7 +303,7 @@ private fun FeedGrid(
 
             state.items.isEmpty() && state.error -> item(span = { GridItemSpan(maxLineSpan) }) {
                 Column(Modifier.fillMaxWidth().padding(top = 60.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Couldn't load videos. Check your connection.", color = DiscoverTextSecondary, fontSize = 18.sp)
+                    Text(com.ramzmania.tubefy.core.youtube.YouTubeAccess.messageOr("Couldn't load videos. Check your connection."), color = DiscoverTextSecondary, fontSize = 18.sp)
                     TextButton(onClick = onRetry) { Text("Retry", color = DiscoverAccent, fontSize = 18.sp) }
                 }
             }
