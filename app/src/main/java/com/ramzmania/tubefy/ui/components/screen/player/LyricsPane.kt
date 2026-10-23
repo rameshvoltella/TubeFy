@@ -63,6 +63,8 @@ internal fun LyricsPane(
     positionMs: Long,
     onSeek: (Long) -> Unit,
     onRetry: () -> Unit,
+    englishLetters: Boolean,
+    onEnglishLettersChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -82,13 +84,31 @@ internal fun LyricsPane(
                 TextButton(onClick = onRetry) { Text("Retry", color = DiscoverAccent) }
             }
 
-            is LyricsViewModel.State.Loaded -> LyricsList(state.info.details, state.info.lyrics, positionMs, onSeek)
+            is LyricsViewModel.State.Loaded -> {
+                val english = state.info.englishLetters
+                LyricsList(
+                    details = state.info.details,
+                    lyrics = if (englishLetters && english != null) english else state.info.lyrics,
+                    // The switch only when there's another script to switch from
+                    scriptSwitch = if (english != null && state.info.lyrics != null) {
+                        { ScriptSwitch(scriptName(state.info.lyrics), englishLetters, onEnglishLettersChange) }
+                    } else null,
+                    positionMs = positionMs,
+                    onSeek = onSeek
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun LyricsList(details: SongDetails, lyrics: Lyrics?, positionMs: Long, onSeek: (Long) -> Unit) {
+private fun LyricsList(
+    details: SongDetails,
+    lyrics: Lyrics?,
+    scriptSwitch: (@Composable () -> Unit)?,
+    positionMs: Long,
+    onSeek: (Long) -> Unit
+) {
     val listState = rememberLazyListState()
     val dragged by listState.interactionSource.collectIsDraggedAsState()
     var lastUserScroll by remember { mutableLongStateOf(0L) }
@@ -112,6 +132,7 @@ private fun LyricsList(details: SongDetails, lyrics: Lyrics?, positionMs: Long, 
         modifier = Modifier.fillMaxSize()
     ) {
         item(key = "details") { DetailsCard(details) }
+        scriptSwitch?.let { switch -> item(key = "script") { switch() } }
 
         if (lyrics == null || lyrics.lines.all { it.text.isBlank() }) {
             item(key = "none") {
@@ -180,6 +201,38 @@ private fun SyncedLine(text: String, state: LineState, onClick: () -> Unit) {
             .padding(vertical = 6.dp)
     )
 }
+
+/** "Malayalam | English letters": which way to show the lyrics. */
+@Composable
+private fun ScriptSwitch(script: String, englishLetters: Boolean, onChange: (Boolean) -> Unit) {
+    Row(
+        modifier = Modifier
+            .padding(bottom = 18.dp)
+            .clip(RoundedCornerShape(50))
+            .background(Color.White.copy(alpha = 0.08f))
+            .padding(4.dp)
+    ) {
+        listOf(false to script, true to "English letters").forEach { (english, label) ->
+            val selected = english == englishLetters
+            val background by animateColorAsState(if (selected) DiscoverAccent else Color.Transparent, label = "scriptBg")
+            Text(
+                label,
+                color = if (selected) Color.White else Color.White.copy(alpha = 0.7f),
+                fontSize = 14.sp,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(50))
+                    .background(background)
+                    .clickable { onChange(english) }
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+        }
+    }
+}
+
+/** The script's name for the switch ("Malayalam", "Hindi", …), from the lyrics themselves. */
+private fun scriptName(lyrics: Lyrics): String =
+    com.ramzmania.tubefy.core.download.SongBook.languageOf(lyrics.lines.joinToString(" ") { it.text }).ifBlank { "Original" }
 
 @Composable
 private fun DetailsCard(details: SongDetails) {

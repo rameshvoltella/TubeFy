@@ -286,6 +286,7 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
     // Lyrics tab: loaded only when it's open (and again when the song changes)
     val lyricsViewModel: LyricsViewModel = hiltViewModel()
     val lyricsState by lyricsViewModel.state.collectAsState()
+    val lyricsEnglish by lyricsViewModel.englishLetters.collectAsState()
     val currentDurationMs by rememberUpdatedState(durationMs)
     fun loadLyrics(force: Boolean = false) {
         val id = YoutubeCoreConstant.extractYoutubeVideoId(videoId) ?: videoId
@@ -558,6 +559,8 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                                 positionMs = positionMs,
                                 onSeek = { mediaController?.seekTo(it) },
                                 onRetry = { loadLyrics(force = true) },
+                                englishLetters = lyricsEnglish,
+                                onEnglishLettersChange = lyricsViewModel::setEnglishLetters,
                                 modifier = Modifier.fillMaxSize()
                             )
                         }

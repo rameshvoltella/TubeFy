@@ -64,3 +64,41 @@ class PhoneDownloadsTest {
         assertEquals("TubeFy song", name("", ""))
     }
 }
+
+class LyricsVersionsTest {
+    private val malayalamTimed = Lyrics(listOf(LyricLine(1000, "തെളിമാനം")), synced = true, source = "LRCLIB")
+    private val manglish = Lyrics(listOf(LyricLine(null, "Thelimaanam mazhavillin")), synced = false, source = "Musixmatch")
+    private val isLatin = com.ramzmania.tubefy.core.lyrics.Romanizer::isLatin
+
+    @Test
+    fun `script lyrics first, with a timed English-letters version converted on the phone`() {
+        val converted = Lyrics(listOf(LyricLine(1000, "thelimaanam")), synced = true, source = "LRCLIB · in English letters")
+        val (shown, english) = SongInfoSource.versions(malayalamTimed, manglish, isLatin) { converted }
+        assertSame(malayalamTimed, shown)
+        assertSame(converted, english)
+    }
+
+    @Test
+    fun `without conversion the source's own English letters are used`() {
+        val (_, english) = SongInfoSource.versions(malayalamTimed, manglish, isLatin) { null }
+        assertSame(manglish, english)
+    }
+
+    @Test
+    fun `English-only songs get no switch`() {
+        val (shown, english) = SongInfoSource.versions(null, manglish, isLatin) { error("not needed") }
+        assertSame(manglish, shown)
+        assertEquals(null, english)
+    }
+
+    @Test
+    fun `textbook transliteration reads like everyday spelling`() {
+        val readable = com.ramzmania.tubefy.core.lyrics.Romanizer::readable
+        // Malayalam: ത is "th", ന്റ is "nt", ഴ is "zh"
+        assertEquals("thelimaanam mazhavillin", readable("teḷimānaṁ maḻavilliṉ", true))
+        assertEquals("ninte kannil", readable("ninṟe kaṇṇil", true))
+        assertEquals("chandran", readable("candran", true))
+        // Hindi keeps "t"
+        assertEquals("tere binaa", readable("tērē binā", false))
+    }
+}

@@ -15,7 +15,24 @@ import javax.inject.Inject
 
 /** The music player's Lyrics tab: the playing song's details and lyrics. */
 @HiltViewModel
-class LyricsViewModel @Inject constructor(private val source: SongInfoSource) : ViewModel() {
+class LyricsViewModel @Inject constructor(
+    private val source: SongInfoSource,
+    @dagger.hilt.android.qualifiers.ApplicationContext context: android.content.Context
+) : ViewModel() {
+
+    private val prefs = context.getSharedPreferences("lyrics_settings", android.content.Context.MODE_PRIVATE)
+    private val _englishLetters = MutableStateFlow(prefs.getBoolean(KEY_ENGLISH, false))
+    /** Show lyrics in English letters (when the song is in another script); remembered. */
+    val englishLetters: StateFlow<Boolean> = _englishLetters.asStateFlow()
+
+    fun setEnglishLetters(enabled: Boolean) {
+        _englishLetters.value = enabled
+        prefs.edit().putBoolean(KEY_ENGLISH, enabled).apply()
+    }
+
+    private companion object {
+        const val KEY_ENGLISH = "english_letters"
+    }
 
     sealed interface State {
         data object Idle : State

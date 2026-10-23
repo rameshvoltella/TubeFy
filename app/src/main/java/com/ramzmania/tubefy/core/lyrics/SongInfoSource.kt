@@ -31,7 +31,11 @@ data class LyricLine(val timeMs: Long?, val text: String)
 
 data class Lyrics(val lines: List<LyricLine>, val synced: Boolean, val source: String)
 
-data class SongInfo(val details: SongDetails, val lyrics: Lyrics?)
+/**
+ * [lyrics] is shown first; for songs in an Indian script, [englishLetters] is the same song written in
+ * English letters (the source's own version, or converted on the phone), for people who can't read the script.
+ */
+data class SongInfo(val details: SongDetails, val lyrics: Lyrics?, val englishLetters: Lyrics? = null)
 
 /**
  * Song details and lyrics for the player's Lyrics tab. Details come from YouTube Music (singers,
@@ -58,7 +62,9 @@ class SongInfoSource @Inject constructor(private val http: OkHttpClient) {
 
                 val ytmLyrics = async { track?.lyricsBrowseId?.let { runCatching { musicLyrics(it) }.getOrNull() } }
                 val lrcLyrics = async { runCatching { lrclib(title, singers, durationMs) }.getOrNull() }
-                val lyrics = pickLyrics(lrcLyrics.await(), ytmLyrics.await())
+                val lrc = lrcLyrics.await()
+                val ytm = ytmLyrics.await()
+                val (lyrics, englishLetters) = versions(lrc, ytm, Romanizer::isLatin, Romanizer::romanize)
 
                 SongInfo(
                     details = SongDetails(
@@ -69,7 +75,8 @@ class SongInfoSource @Inject constructor(private val http: OkHttpClient) {
                         composer = credits.composer,
                         year = track?.year.orEmpty()
                     ),
-                    lyrics = lyrics
+                    lyrics = lyrics,
+                    englishLetters = englishLetters
                 ).also { info -> if (track != null || lyrics != null) cache[videoId] = info }
             }
         }
@@ -172,6 +179,29 @@ class SongInfoSource @Inject constructor(private val http: OkHttpClient) {
         private const val CLIENT_VERSION = "1.20240729.01.00"
         private val JSON = "application/json".toMediaType()
         private const val DURATION_TOLERANCE_MS = 4_000L
+
+        /**
+         * What to show: the lyrics in the song's own script first (timed if possible), and an English-letters
+         * version. The English one keeps timing when it can: a timed English source, else the timed lyrics
+         * converted, else the source's English text (reads most naturally), else a conversion.
+         */
+        internal fun versions(
+            lrclib: Lyrics?,
+            youtubeMusic: Lyrics?,
+            isLatin: (Lyrics) -> Boolean,
+            romanize: (Lyrics) -> Lyrics?
+        ): Pair<Lyrics?, Lyrics?> {
+            val all = listOfNotNull(lrclib, youtubeMusic)
+            val native = all.filterNot(isLatin).maxByOrNull { if (it.synced) 1 else 0 }
+                ?: return pickLyrics(lrclib, youtubeMusic) to null
+            val latin = all.filter(isLatin).maxByOrNull { if (it.synced) 1 else 0 }
+            val english = when {
+                latin?.synced == true -> latin
+                native.synced -> runCatching { romanize(native) }.getOrNull() ?: latin
+                else -> latin ?: runCatching { romanize(native) }.getOrNull()
+            }
+            return native to english
+        }
 
         /** Timed lyrics first; then YouTube Music's text; then any plain text. */
         internal fun pickLyrics(lrclib: Lyrics?, youtubeMusic: Lyrics?): Lyrics? = when {
