@@ -64,6 +64,43 @@ object VideoDownloads {
 
     fun workName(videoId: String) = "video-download-${Downloads.plainId(videoId)}"
 
+    /** Video-page downloads go into this subfolder of the chosen folder (songs stay in the folder itself). */
+    const val SUBFOLDER = "YouTube"
+
+    /** "Movies/TubeFy/YouTube". */
+    fun folderLabel(folder: Uri) = "${PhoneDownloads.folderLabel(folder)}/$SUBFOLDER"
+
+    /**
+     * The "YouTube" subfolder of [folder] as a document, created if it isn't there yet. Synchronized,
+     * so two downloads starting together don't create it twice. Blocking.
+     */
+    @Synchronized
+    fun youTubeFolder(context: Context, folder: Uri): Uri {
+        val resolver = context.contentResolver
+        val rootId = DocumentsContract.getTreeDocumentId(folder)
+        resolver.query(
+            DocumentsContract.buildChildDocumentsUriUsingTree(folder, rootId),
+            arrayOf(
+                DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                DocumentsContract.Document.COLUMN_MIME_TYPE
+            ),
+            null, null, null
+        )?.use { cursor ->
+            while (cursor.moveToNext()) {
+                if (cursor.getString(1) == SUBFOLDER && cursor.getString(2) == DocumentsContract.Document.MIME_TYPE_DIR) {
+                    return DocumentsContract.buildDocumentUriUsingTree(folder, cursor.getString(0))
+                }
+            }
+        }
+        return DocumentsContract.createDocument(
+            resolver,
+            DocumentsContract.buildDocumentUriUsingTree(folder, rootId),
+            DocumentsContract.Document.MIME_TYPE_DIR,
+            SUBFOLDER
+        ) ?: throw IOException("Couldn't create the $SUBFOLDER folder")
+    }
+
     /** Every video quality (best first) and every audio format for the Download sheet. */
     fun options(info: StreamInfo): Pair<List<VideoDownloadOption>, List<VideoDownloadOption>> {
         val seconds = info.duration.coerceAtLeast(0)
@@ -231,7 +268,7 @@ class VideoDownloadWorker(context: Context, params: WorkerParameters) : Coroutin
                     write(created) { output -> joined.inputStream().use { it.copyTo(output) } }
                 }
             }
-            postSavedNotification(applicationContext, videoId, "Saved to ${PhoneDownloads.folderLabel(folder)}", title)
+            postSavedNotification(applicationContext, videoId, "Saved to ${VideoDownloads.folderLabel(folder)}", title)
             val file = created ?: throw IOException("No file")
             val (mime, size) = applicationContext.contentResolver.query(
                 file, arrayOf(DocumentsContract.Document.COLUMN_MIME_TYPE, DocumentsContract.Document.COLUMN_SIZE), null, null, null
@@ -239,7 +276,7 @@ class VideoDownloadWorker(context: Context, params: WorkerParameters) : Coroutin
             VideoDownloadLog.update(applicationContext, id.toString()) {
                 it.copy(
                     status = VideoDownloadEntry.Status.Done, fileUri = file.toString(), mimeType = mime,
-                    sizeBytes = if (size > 0) size else it.sizeBytes, folderLabel = PhoneDownloads.folderLabel(folder)
+                    sizeBytes = if (size > 0) size else it.sizeBytes, folderLabel = VideoDownloads.folderLabel(folder)
                 )
             }
             Result.success()
@@ -266,8 +303,9 @@ class VideoDownloadWorker(context: Context, params: WorkerParameters) : Coroutin
 
     private suspend fun progress(percent: Int) = setProgress(workDataOf(KEY_PROGRESS to percent.coerceIn(0, 100)))
 
+    /** Creates the file in the "YouTube" subfolder of the chosen folder (made the first time). */
     private fun createFile(folder: Uri, mime: String, name: String): Uri {
-        val parent = DocumentsContract.buildDocumentUriUsingTree(folder, DocumentsContract.getTreeDocumentId(folder))
+        val parent = VideoDownloads.youTubeFolder(applicationContext, folder)
         return DocumentsContract.createDocument(applicationContext.contentResolver, parent, mime, name)
             ?: throw IOException("Couldn't create the file")
     }

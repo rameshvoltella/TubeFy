@@ -412,7 +412,7 @@ fun VideoScreen(viewModel: VideoViewModel = hiltViewModel()) {
     }
     fun startDownload(option: VideoDownloadOption) {
         VideoDownloads.enqueue(context, videoId, title, option)
-        downloadFolder?.let { Toast.makeText(context, "Downloading to ${PhoneDownloads.folderLabel(it)}…", Toast.LENGTH_SHORT).show() }
+        downloadFolder?.let { Toast.makeText(context, "Downloading to ${VideoDownloads.folderLabel(it)}…", Toast.LENGTH_SHORT).show() }
         showDownloadSheet = false
     }
     // Android's folder picker (the same folder as songs saved to phone storage)
@@ -428,7 +428,7 @@ fun VideoScreen(viewModel: VideoViewModel = hiltViewModel()) {
         VideoDownloadSheet(
             title = title,
             options = downloadOptions,
-            folder = downloadFolder?.let(PhoneDownloads::folderLabel),
+            folder = downloadFolder?.let(VideoDownloads::folderLabel),
             onChangeFolder = {
                 pendingDownload = null
                 folderPicker.launch(downloadFolder)
