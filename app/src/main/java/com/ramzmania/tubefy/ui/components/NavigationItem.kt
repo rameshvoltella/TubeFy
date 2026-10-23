@@ -9,6 +9,9 @@ sealed class NavigationItem(var route: String, var icon: Int, var title: String)
     data object Books : NavigationItem("library", R.drawable.library, "Your Library")
     data object YouTube : NavigationItem("youtube", R.drawable.ic_search, "YouTube")
 
+    /** Settings → Downloads: files downloaded from the YouTube video page. */
+    data object VideoDownloads : NavigationItem("videoDownloads", R.drawable.ic_search, "Downloads")
+
     /** A YouTube channel's page. Values must be URL-encoded. */
     data object Channel : NavigationItem("channel?url={url}&name={name}", R.drawable.ic_search, "Channel") {
         fun createRoute(url: String, name: String) = "channel?url=$url&name=$name"

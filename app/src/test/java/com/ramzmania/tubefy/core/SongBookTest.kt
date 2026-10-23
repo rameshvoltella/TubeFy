@@ -62,3 +62,19 @@ class VideoDownloadsTest {
         assertEquals(144, downloads.heightOf("144p"))
     }
 }
+
+class VideoDownloadLogTest {
+    @Test
+    fun `download entries come back the same after saving`() {
+        val log = com.ramzmania.tubefy.core.download.VideoDownloadLog
+        val entry = com.ramzmania.tubefy.core.download.VideoDownloadEntry(
+            workId = "w1", videoId = "abc", title = "A video", label = "720p", detail = "MP4", audioOnly = false,
+            status = com.ramzmania.tubefy.core.download.VideoDownloadEntry.Status.Done, fileUri = "content://x/y", mimeType = "video/mp4",
+            sizeBytes = 229_500_000, folderLabel = "Movies/TubeFy", createdAt = 1_800_000_000_000, videoItag = 136, audioTrackId = null
+        )
+        val adapter = com.squareup.moshi.Moshi.Builder().build().adapter(Any::class.java)
+        assertEquals(entry, log.fromMap(adapter.fromJson(adapter.toJson(log.toMap(entry))) as Map<*, *>))
+        // retry uses the same choice
+        assertEquals(136, entry.option().videoItag)
+    }
+}

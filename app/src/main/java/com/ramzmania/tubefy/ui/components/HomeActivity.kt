@@ -80,6 +80,7 @@ import androidx.media3.session.SessionToken
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import com.ramzmania.tubefy.ui.components.screen.youtube.ChannelScreen
+import com.ramzmania.tubefy.ui.components.screen.settings.VideoDownloadsScreen
 import com.ramzmania.tubefy.ui.components.screen.youtube.VideoScreen
 import com.ramzmania.tubefy.ui.components.screen.youtube.YouTubeScreen
 import androidx.navigation.NavType
@@ -321,6 +322,9 @@ fun Navigation(navController: NavHostController) {
         }
         composable(NavigationItem.Profile.route) {
             SettingsScreen()
+        }
+        composable(NavigationItem.VideoDownloads.route) {
+            VideoDownloadsScreen()
         }
         composable(NavigationItem.PlayList.route) { backStackEntry ->
             AlbumScreen()

@@ -123,9 +123,13 @@ object VideoDownloads {
         return video to audio
     }
 
-    fun enqueue(context: Context, videoId: String, title: String, option: VideoDownloadOption) {
+    const val WORK_TAG = "tubefy-video-download"
+
+    /** [retryOf]: the Downloads-list entry being retried (it's updated instead of listed again). */
+    fun enqueue(context: Context, videoId: String, title: String, option: VideoDownloadOption, retryOf: String? = null) {
         val folder = PhoneDownloads.folder(context) ?: return
         val request = OneTimeWorkRequestBuilder<VideoDownloadWorker>()
+            .addTag(WORK_TAG)
             .setInputData(
                 workDataOf(
                     VideoDownloadWorker.KEY_VIDEO_ID to Downloads.plainId(videoId),
@@ -142,6 +146,14 @@ object VideoDownloads {
             .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
             .build()
         WorkManager.getInstance(context).enqueueUniqueWork(workName(videoId), ExistingWorkPolicy.REPLACE, request)
+        // Settings → Downloads
+        val entry = VideoDownloadEntry(
+            workId = request.id.toString(), videoId = Downloads.plainId(videoId), title = title,
+            label = option.label, detail = option.detail, audioOnly = option.audioOnly, sizeBytes = option.sizeBytes,
+            videoItag = option.videoItag, withSound = option.withSound, audioItag = option.audioItag, audioTrackId = option.audioTrackId
+        )
+        if (retryOf != null) VideoDownloadLog.remove(context, retryOf)
+        VideoDownloadLog.add(context, entry)
     }
 
     /** "12.4 MB". */
@@ -220,6 +232,16 @@ class VideoDownloadWorker(context: Context, params: WorkerParameters) : Coroutin
                 }
             }
             postSavedNotification(applicationContext, videoId, "Saved to ${PhoneDownloads.folderLabel(folder)}", title)
+            val file = created ?: throw IOException("No file")
+            val (mime, size) = applicationContext.contentResolver.query(
+                file, arrayOf(DocumentsContract.Document.COLUMN_MIME_TYPE, DocumentsContract.Document.COLUMN_SIZE), null, null, null
+            )?.use { if (it.moveToFirst()) (it.getString(0).orEmpty() to it.getLong(1)) else null } ?: ("" to 0L)
+            VideoDownloadLog.update(applicationContext, id.toString()) {
+                it.copy(
+                    status = VideoDownloadEntry.Status.Done, fileUri = file.toString(), mimeType = mime,
+                    sizeBytes = if (size > 0) size else it.sizeBytes, folderLabel = PhoneDownloads.folderLabel(folder)
+                )
+            }
             Result.success()
         } catch (e: Exception) {
             YouTubeAccess.check(e)
@@ -227,6 +249,7 @@ class VideoDownloadWorker(context: Context, params: WorkerParameters) : Coroutin
             if (runAttemptCount < MAX_ATTEMPTS && e !is SecurityException) Result.retry()
             else {
                 postSavedNotification(applicationContext, videoId, "Couldn't download the video", title)
+                VideoDownloadLog.update(applicationContext, id.toString()) { it.copy(status = VideoDownloadEntry.Status.Failed) }
                 Result.failure()
             }
         } finally {
