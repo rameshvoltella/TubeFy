@@ -141,6 +141,8 @@ import com.ramzmania.tubefy.player.PlaybackService
 import com.ramzmania.tubefy.ui.components.screen.library.PlayListDialogViewer
 import com.ramzmania.tubefy.utils.LocalNavController
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.fadeIn
@@ -217,6 +219,7 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
     val downloadState by rememberDownloadState(videoId)
     // "Save to phone storage" (audio file in a folder the user picked)
     val phoneSaveProgress by rememberPhoneSaveProgress(videoId)
+    val savedToPhone by rememberSavedToPhone(videoId, title, artist)
     var showDownloadSheet by remember { mutableStateOf(false) }
     var phoneFolder by remember { mutableStateOf(PhoneDownloads.folder(context)) }
     var saveAfterPickingFolder by remember { mutableStateOf(false) }
@@ -843,6 +846,7 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                     // Saving to phone storage shows its progress here too
                     state = phoneSaveProgress?.let { DownloadState.Downloading(it) } ?: downloadState,
                     saving = phoneSaveProgress != null,
+                    savedToPhone = savedToPhone,
                     onClick = {
                         if (downloadState is DownloadState.Downloading || phoneSaveProgress != null) {
                             Toast.makeText(context, "Downloading…", Toast.LENGTH_SHORT).show()
@@ -1305,6 +1309,22 @@ private fun rememberDownloadState(videoId: String): State<DownloadState> {
     }
 }
 
+/**
+ * True when this song is saved in the phone-storage folder: its save just finished, or its file is
+ * there (checked once per song, so it still shows after restarting the app).
+ */
+@Composable
+private fun rememberSavedToPhone(videoId: String, title: String, artist: String): State<Boolean> {
+    val context = LocalContext.current
+    return produceState(initialValue = false, key1 = videoId) {
+        if (videoId.isBlank()) return@produceState
+        value = withContext(Dispatchers.IO) { runCatching { PhoneDownloads.findExisting(context, title, artist) != null }.getOrDefault(false) }
+        WorkManager.getInstance(context)
+            .getWorkInfosForUniqueWorkFlow(PhoneDownloads.workName(videoId))
+            .collect { infos -> if (infos.firstOrNull()?.state == WorkInfo.State.SUCCEEDED) value = true }
+    }
+}
+
 /** Progress (0–100) of saving this song to phone storage, or null when it isn't being saved. */
 @Composable
 private fun rememberPhoneSaveProgress(videoId: String): State<Int?> {
@@ -1325,7 +1345,35 @@ private fun rememberPhoneSaveProgress(videoId: String): State<Int?> {
 }
 
 @Composable
-private fun DownloadTile(state: DownloadState, onClick: () -> Unit, saving: Boolean = false) {
+private fun DownloadTile(state: DownloadState, onClick: () -> Unit, saving: Boolean = false, savedToPhone: Boolean = false) {
+    when {
+        // Saved to phone storage (and not downloaded in the app): a folder with a green tick
+        savedToPhone && (state == DownloadState.Idle || state == DownloadState.Failed) -> ActionTile(
+            icon = Icons.Rounded.Folder,
+            label = "Saved",
+            onClick = onClick,
+            content = {
+                Box {
+                    Icon(Icons.Rounded.Folder, contentDescription = "Saved to phone storage", tint = Color.White, modifier = Modifier.size(26.dp))
+                    Icon(
+                        Icons.Rounded.CheckCircle,
+                        contentDescription = null,
+                        tint = DownloadedGreen,
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .offset(x = 4.dp, y = 4.dp)
+                            .size(15.dp)
+                            .background(Color.Black, CircleShape)
+                    )
+                }
+            }
+        )
+        else -> DownloadStateTile(state, onClick, saving)
+    }
+}
+
+@Composable
+private fun DownloadStateTile(state: DownloadState, onClick: () -> Unit, saving: Boolean) {
     when (state) {
         DownloadState.Done -> ActionTile(Icons.Rounded.DownloadDone, "Downloaded", onClick, iconTint = DownloadedGreen)
         DownloadState.Failed -> ActionTile(Icons.Rounded.Download, "Retry", onClick)
