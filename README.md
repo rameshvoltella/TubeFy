@@ -129,7 +129,6 @@ Click here -> https://youtu.be/YrhG8T8gbU4 (oldplayer)
 <div style="text-align: center;">
         <h3>Download Support</h3>
      <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/dolyr.jpeg" alt="Search" style="width: 40%; height: 40%;">
-          <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/dolyr.jpeg" alt="Search" style="width: 40%; height: 40%;">
                <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/downvid1.jpeg" alt="Search" style="width: 40%; height: 40%;">
                               <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/downvid2.jpeg" alt="Search" style="width: 40%; height: 40%;">
                                                             <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/downvid3.jpeg" alt="Search" style="width: 40%; height: 40%;">
