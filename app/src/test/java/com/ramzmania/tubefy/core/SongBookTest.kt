@@ -50,3 +50,15 @@ class SongBookTest {
         assertEquals("", SongBook.languageOf("Hum tere bin ab reh nahi sakte"))
     }
 }
+
+class VideoDownloadsTest {
+    @Test
+    fun `sizes and qualities read naturally`() {
+        val downloads = com.ramzmania.tubefy.core.download.VideoDownloads
+        assertEquals("611.7 MB", downloads.sizeLabel(611_700_000))
+        assertEquals("1.2 GB", downloads.sizeLabel(1_200_000_000))
+        assertEquals("", downloads.sizeLabel(0))
+        assertEquals(1080, downloads.heightOf("1080p60"))
+        assertEquals(144, downloads.heightOf("144p"))
+    }
+}

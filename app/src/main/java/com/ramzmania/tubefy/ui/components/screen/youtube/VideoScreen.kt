@@ -128,6 +128,19 @@ import com.ramzmania.tubefy.ui.theme.DiscoverTextSecondary
 import com.ramzmania.tubefy.utils.LocalNavController
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
 import com.ramzmania.tubefy.viewmodel.VideoViewModel
+import androidx.compose.material.icons.rounded.DownloadDone
+import androidx.compose.material.icons.rounded.Download
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.compose.runtime.produceState
+import androidx.work.WorkManager
+import androidx.work.WorkInfo
+import com.ramzmania.tubefy.core.download.VideoDownloads
+import com.ramzmania.tubefy.core.download.VideoDownloadWorker
+import com.ramzmania.tubefy.core.download.VideoDownloadOption
+import com.ramzmania.tubefy.core.download.PhoneDownloads
 import kotlinx.coroutines.delay
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -381,6 +394,55 @@ fun VideoScreen(viewModel: VideoViewModel = hiltViewModel()) {
         )
     }
 
+    // Download sheet (to phone storage) and its progress
+    var showDownloadSheet by remember { mutableStateOf(false) }
+    var downloadFolder by remember { mutableStateOf(PhoneDownloads.folder(context)) }
+    var pendingDownload by remember { mutableStateOf<VideoDownloadOption?>(null) }
+    val downloadOptions by viewModel.downloadOptions.collectAsState()
+    val downloadState by produceState<VideoDownloadState>(VideoDownloadState.Idle, videoId) {
+        WorkManager.getInstance(context).getWorkInfosForUniqueWorkFlow(VideoDownloads.workName(videoId)).collect { infos ->
+            val info = infos.firstOrNull()
+            value = when (info?.state) {
+                WorkInfo.State.RUNNING -> VideoDownloadState.Running(info.progress.getInt(VideoDownloadWorker.KEY_PROGRESS, 0))
+                WorkInfo.State.ENQUEUED, WorkInfo.State.BLOCKED -> VideoDownloadState.Running(0)
+                WorkInfo.State.SUCCEEDED -> VideoDownloadState.Saved
+                else -> VideoDownloadState.Idle
+            }
+        }
+    }
+    fun startDownload(option: VideoDownloadOption) {
+        VideoDownloads.enqueue(context, videoId, title, option)
+        downloadFolder?.let { Toast.makeText(context, "Downloading to ${PhoneDownloads.folderLabel(it)}…", Toast.LENGTH_SHORT).show() }
+        showDownloadSheet = false
+    }
+    // Android's folder picker (the same folder as songs saved to phone storage)
+    val folderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        if (uri != null) {
+            PhoneDownloads.setFolder(context, uri)
+            downloadFolder = PhoneDownloads.folder(context)
+            pendingDownload?.let(::startDownload)
+        }
+        pendingDownload = null
+    }
+    if (showDownloadSheet) {
+        VideoDownloadSheet(
+            title = title,
+            options = downloadOptions,
+            folder = downloadFolder?.let(PhoneDownloads::folderLabel),
+            onChangeFolder = {
+                pendingDownload = null
+                folderPicker.launch(downloadFolder)
+            },
+            onDownload = { option ->
+                if (downloadFolder == null) {
+                    pendingDownload = option
+                    folderPicker.launch(null)
+                } else startDownload(option)
+            },
+            onDismiss = { showDownloadSheet = false }
+        )
+    }
+
     playlistTarget?.let { target ->
         val tubeFyViewModel: TubeFyViewModel = hiltViewModel()
         PlayListDialogViewer(
@@ -489,6 +551,16 @@ fun VideoScreen(viewModel: VideoViewModel = hiltViewModel()) {
                     isLive = isLive,
                     autoplay = autoplay,
                     onAutoplayChange = viewModel::setAutoplay,
+                    downloadState = downloadState,
+                    onDownload = {
+                        if (downloadState is VideoDownloadState.Running) {
+                            Toast.makeText(context, "Downloading…", Toast.LENGTH_SHORT).show()
+                        } else {
+                            downloadFolder = PhoneDownloads.folder(context)
+                            viewModel.loadDownloadOptions(videoId)
+                            showDownloadSheet = true
+                        }
+                    },
                     onOpenChannel = { channelUrl, name ->
                         fun enc(value: String) = URLEncoder.encode(value, StandardCharsets.UTF_8.toString())
                         navController?.navigate(NavigationItem.Channel.createRoute(enc(channelUrl), enc(name)))
@@ -1004,6 +1076,8 @@ private fun VideoInfo(
     isLive: Boolean,
     autoplay: Boolean,
     onAutoplayChange: (Boolean) -> Unit,
+    downloadState: VideoDownloadState,
+    onDownload: () -> Unit,
     onOpenChannel: (url: String, name: String) -> Unit,
     onPlayInBackground: () -> Unit,
     onSave: () -> Unit,
@@ -1107,22 +1181,26 @@ private fun VideoInfo(
             }
         }
 
-        // Play in background · Save · Autoplay
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().padding(top = 16.dp)) {
-            Pill(modifier = Modifier.weight(1.2f), onClick = onPlayInBackground) {
+        // Play in background · Save · Download · Autoplay (scrolls sideways, like YouTube's action chips)
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp)
+                .horizontalScroll(rememberScrollState())
+        ) {
+            Pill(onClick = onPlayInBackground) {
                 Icon(Icons.Rounded.Headphones, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
                 Text(
                     "Play in background",
                     color = Color.White,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
-                    maxLines = 2,
-                    lineHeight = 16.sp,
-                    overflow = TextOverflow.Ellipsis,
+                    maxLines = 1,
                     modifier = Modifier.padding(start = 6.dp)
                 )
             }
-            Pill(modifier = Modifier.weight(0.85f), highlighted = saved, onClick = onSave) {
+            Pill(highlighted = saved, onClick = onSave) {
                 Icon(
                     if (saved) Icons.Rounded.Bookmark else Icons.Rounded.BookmarkBorder,
                     contentDescription = null,
@@ -1138,8 +1216,34 @@ private fun VideoInfo(
                     modifier = Modifier.padding(start = 4.dp)
                 )
             }
+            // Download: any quality or audio only, to phone storage
+            Pill(highlighted = downloadState == VideoDownloadState.Saved, onClick = onDownload) {
+                when (downloadState) {
+                    is VideoDownloadState.Running -> CircularProgressIndicator(
+                        progress = { downloadState.percent / 100f },
+                        color = DiscoverAccent,
+                        trackColor = Color.White.copy(alpha = 0.15f),
+                        strokeWidth = 2.5.dp,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    VideoDownloadState.Saved -> Icon(Icons.Rounded.DownloadDone, contentDescription = null, tint = Color(0xFF2ECC71), modifier = Modifier.size(20.dp))
+                    VideoDownloadState.Idle -> Icon(Icons.Rounded.Download, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                }
+                Text(
+                    when (downloadState) {
+                        is VideoDownloadState.Running -> "${downloadState.percent}%"
+                        VideoDownloadState.Saved -> "Saved"
+                        VideoDownloadState.Idle -> "Download"
+                    },
+                    color = Color.White,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    modifier = Modifier.padding(start = 6.dp)
+                )
+            }
             // Autoplay: when this video ends, play the next related one (off: stop at the end)
-            Pill(modifier = Modifier.weight(1.15f), highlighted = autoplay, onClick = { onAutoplayChange(!autoplay) }) {
+            Pill(highlighted = autoplay, onClick = { onAutoplayChange(!autoplay) }) {
                 Text("Autoplay", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1)
                 MiniSwitch(checked = autoplay, modifier = Modifier.padding(start = 6.dp))
             }
@@ -1199,9 +1303,16 @@ private fun Pill(
             .background(DiscoverSurface)
             .border(1.dp, if (highlighted) DiscoverAccent.copy(alpha = 0.6f) else DiscoverBorder, RoundedCornerShape(27.dp))
             .clickable(onClick = onClick)
-            .padding(horizontal = 10.dp),
+            .padding(horizontal = 16.dp),
         content = content
     )
+}
+
+/** The video page's Download chip. */
+internal sealed interface VideoDownloadState {
+    data object Idle : VideoDownloadState
+    data class Running(val percent: Int) : VideoDownloadState
+    data object Saved : VideoDownloadState
 }
 
 /** A small on/off switch that fits inside a pill (the pill itself handles the tap). */

@@ -44,7 +44,10 @@ data class SongInfo(val details: SongDetails, val lyrics: Lyrics?, val englishLe
  * YouTube Music's (Musixmatch / LyricFind), otherwise LRCLIB's plain text. Loaded on demand, remembered.
  */
 @Singleton
-class SongInfoSource @Inject constructor(private val http: OkHttpClient) {
+class SongInfoSource @Inject constructor(
+    private val http: OkHttpClient,
+    @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
+) {
 
     private val json = Moshi.Builder().build().adapter(Any::class.java)
     private val cache = Collections.synchronizedMap(object : LinkedHashMap<String, SongInfo>() {
@@ -53,6 +56,11 @@ class SongInfoSource @Inject constructor(private val http: OkHttpClient) {
 
     suspend fun load(videoId: String, fallbackTitle: String, fallbackArtist: String, durationMs: Long): SongInfo =
         cache[videoId] ?: withContext(Dispatchers.IO) {
+            // Downloaded songs keep their lyrics on the phone: offline first
+            OfflineLyrics.load(context, videoId)?.let { saved ->
+                cache[videoId] = saved
+                return@withContext saved
+            }
             coroutineScope {
                 val music = async { runCatching { musicTrack(videoId) }.getOrNull() }
                 val track = music.await()
@@ -77,7 +85,15 @@ class SongInfoSource @Inject constructor(private val http: OkHttpClient) {
                     ),
                     lyrics = lyrics,
                     englishLetters = englishLetters
-                ).also { info -> if (track != null || lyrics != null) cache[videoId] = info }
+                ).also { info ->
+                    if (track != null || lyrics != null) {
+                        cache[videoId] = info
+                        // Downloaded inside the app (also songs from before lyrics were saved): keep them for offline
+                        if (com.ramzmania.tubefy.core.download.Downloads.isDownloaded(context, videoId)) {
+                            runCatching { OfflineLyrics.save(context, videoId, info) }
+                        }
+                    }
+                }
             }
         }
 

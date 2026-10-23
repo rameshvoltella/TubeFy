@@ -46,6 +46,37 @@ class VideoViewModel @Inject constructor(
     private val _saved = MutableStateFlow(false)
     val saved: StateFlow<Boolean> = _saved.asStateFlow()
 
+    sealed interface DownloadOptions {
+        data object Loading : DownloadOptions
+        data object Error : DownloadOptions
+        data class Loaded(
+            val video: List<com.ramzmania.tubefy.core.download.VideoDownloadOption>,
+            val audio: List<com.ramzmania.tubefy.core.download.VideoDownloadOption>
+        ) : DownloadOptions
+    }
+
+    private val _downloadOptions = MutableStateFlow<DownloadOptions>(DownloadOptions.Loading)
+    /** The Download sheet's choices for the video on screen. */
+    val downloadOptions: StateFlow<DownloadOptions> = _downloadOptions.asStateFlow()
+
+    /** Lists every quality / format of [videoId] (reuses the lookup made for playing it). */
+    fun loadDownloadOptions(videoId: String) {
+        _downloadOptions.value = DownloadOptions.Loading
+        viewModelScope.launch {
+            _downloadOptions.value = try {
+                val info = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    com.ramzmania.tubefy.core.youtube.YouTubeStreams.info(videoId)
+                }
+                val (video, audio) = com.ramzmania.tubefy.core.download.VideoDownloads.options(info)
+                DownloadOptions.Loaded(video, audio)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                DownloadOptions.Error
+            }
+        }
+    }
+
     private var loadedId: String? = null
     private var job: Job? = null
 

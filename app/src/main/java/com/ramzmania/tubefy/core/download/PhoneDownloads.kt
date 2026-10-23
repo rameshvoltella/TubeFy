@@ -228,23 +228,7 @@ class PhoneDownloadWorker(context: Context, params: WorkerParameters) : Coroutin
         )
     }
 
-    private fun notify(videoId: String, heading: String, title: String) {
-        val context = applicationContext
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-        ) return
-        val manager = context.getSystemService(NotificationManager::class.java)
-        if (manager.getNotificationChannel(CHANNEL) == null) {
-            manager.createNotificationChannel(NotificationChannel(CHANNEL, "Saved songs", NotificationManager.IMPORTANCE_LOW))
-        }
-        val notification = NotificationCompat.Builder(context, CHANNEL)
-            .setSmallIcon(R.drawable.ic_notification_player_icon)
-            .setContentTitle(heading)
-            .setContentText(title)
-            .setAutoCancel(true)
-            .build()
-        NotificationManagerCompat.from(context).notify(videoId.hashCode(), notification)
-    }
+    private fun notify(videoId: String, heading: String, title: String) = postSavedNotification(applicationContext, videoId, heading, title)
 
     companion object {
         const val KEY_VIDEO_ID = "videoId"
@@ -254,7 +238,26 @@ class PhoneDownloadWorker(context: Context, params: WorkerParameters) : Coroutin
         const val KEY_REPLACE = "replace"
         const val KEY_LYRICS = "lyrics"
         const val KEY_PROGRESS = "progress"
-        private const val CHANNEL = "tubefy_saved_songs"
         private const val MAX_ATTEMPTS = 3
     }
+}
+
+private const val SAVED_CHANNEL = "tubefy_saved_songs"
+
+/** "Saved to Music/TubeFy" (or a failure) for downloads saved to phone storage. */
+internal fun postSavedNotification(context: Context, id: String, heading: String, text: String) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+        ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+    ) return
+    val manager = context.getSystemService(NotificationManager::class.java)
+    if (manager.getNotificationChannel(SAVED_CHANNEL) == null) {
+        manager.createNotificationChannel(NotificationChannel(SAVED_CHANNEL, "Saved downloads", NotificationManager.IMPORTANCE_LOW))
+    }
+    val notification = NotificationCompat.Builder(context, SAVED_CHANNEL)
+        .setSmallIcon(R.drawable.ic_notification_player_icon)
+        .setContentTitle(heading)
+        .setContentText(text)
+        .setAutoCancel(true)
+        .build()
+    NotificationManagerCompat.from(context).notify(id.hashCode(), notification)
 }

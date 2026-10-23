@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+
 package com.ramzmania.tubefy.ui.components.screen.player
 
 import androidx.compose.animation.animateColorAsState
@@ -122,8 +124,9 @@ private fun LyricsList(
     // Follow the song, unless the user scrolled in the last few seconds
     LaunchedEffect(current) {
         if (current < 0 || dragged || System.currentTimeMillis() - lastUserScroll < 4_000) return@LaunchedEffect
-        // Item 0 is the details card; keep the current line about a third of the way down
-        listState.animateScrollToItem((current + 1 - 2).coerceAtLeast(0))
+        // Lyrics start after the details card (and the pinned switch); keep the current line about a third down
+        val firstLine = if (scriptSwitch != null) 2 else 1
+        listState.animateScrollToItem((current + firstLine - 2).coerceAtLeast(0))
     }
 
     LazyColumn(
@@ -132,7 +135,17 @@ private fun LyricsList(
         modifier = Modifier.fillMaxSize()
     ) {
         item(key = "details") { DetailsCard(details) }
-        scriptSwitch?.let { switch -> item(key = "script") { switch() } }
+        // Pinned: the Original / English letters switch stays at the top while the lyrics scroll
+        scriptSwitch?.let { switch ->
+            stickyHeader(key = "script") {
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .background(PinnedBackground)
+                        .padding(top = 6.dp, bottom = 2.dp)
+                ) { switch() }
+            }
+        }
 
         if (lyrics == null || lyrics.lines.all { it.text.isBlank() }) {
             item(key = "none") {
@@ -202,12 +215,15 @@ private fun SyncedLine(text: String, state: LineState, onClick: () -> Unit) {
     )
 }
 
+/** Behind the pinned switch, so lyrics scrolling under it don't show through. */
+private val PinnedBackground = Color(0xFF1B1718)
+
 /** "Malayalam | English letters": which way to show the lyrics. */
 @Composable
 private fun ScriptSwitch(script: String, englishLetters: Boolean, onChange: (Boolean) -> Unit) {
     Row(
         modifier = Modifier
-            .padding(bottom = 18.dp)
+            .padding(bottom = 10.dp)
             .clip(RoundedCornerShape(50))
             .background(Color.White.copy(alpha = 0.08f))
             .padding(4.dp)

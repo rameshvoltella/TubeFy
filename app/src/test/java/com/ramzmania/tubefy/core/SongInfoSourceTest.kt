@@ -102,3 +102,20 @@ class LyricsVersionsTest {
         assertEquals("tere binaa", readable("tērē binā", false))
     }
 }
+
+class OfflineLyricsTest {
+    @Test
+    fun `saved lyrics come back the same, both versions and timings`() {
+        val info = com.ramzmania.tubefy.core.lyrics.SongInfo(
+            details = com.ramzmania.tubefy.core.lyrics.SongDetails("Malare", "Vijay Yesudas", "Premam", "", "Rajesh Murugesan", "2015"),
+            lyrics = Lyrics(listOf(LyricLine(17_830, "തെളിമാനം"), LyricLine(null, "")), synced = true, source = "LRCLIB"),
+            englishLetters = Lyrics(listOf(LyricLine(17_830, "thelimaanam")), synced = true, source = "LRCLIB · in English letters")
+        )
+        // Through JSON text, as on the phone
+        val adapter = com.squareup.moshi.Moshi.Builder().build().adapter(Any::class.java)
+        val restored = com.ramzmania.tubefy.core.lyrics.OfflineLyrics.fromMap(
+            adapter.fromJson(adapter.toJson(com.ramzmania.tubefy.core.lyrics.OfflineLyrics.toMap(info))) as Map<*, *>
+        )
+        assertEquals(info, restored)
+    }
+}

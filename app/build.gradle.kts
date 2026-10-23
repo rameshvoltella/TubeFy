@@ -103,6 +103,8 @@ dependencies {
     implementation(libs.androidx.media3.exoplayer.dash)
     implementation(libs.androidx.media3.exoplayer.hls)
     implementation(libs.androidx.media3.ui)
+    // Video page downloads: joins YouTube's separate HD video and audio into one MP4 (no re-encoding)
+    implementation(libs.androidx.media3.transformer)
 
     // Room
     implementation(libs.androidx.room.runtime)

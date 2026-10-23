@@ -53,6 +53,7 @@ object Downloads {
     /** Deletes the song's file (and any half-finished download) and cancels a pending download. */
     fun delete(context: Context, videoId: String) {
         WorkManager.getInstance(context).cancelUniqueWork(workName(videoId))
+        com.ramzmania.tubefy.core.lyrics.OfflineLyrics.delete(context, plainId(videoId))
         val target = file(context, videoId)
         File(target.parentFile, "${target.name}.part").delete()
         target.delete()
@@ -60,7 +61,10 @@ object Downloads {
 
     fun deleteAll(context: Context) {
         WorkManager.getInstance(context).cancelAllWorkByTag(WORK_TAG)
-        directory(context).listFiles()?.forEach { it.delete() }
+        directory(context).listFiles()?.forEach {
+            com.ramzmania.tubefy.core.lyrics.OfflineLyrics.delete(context, it.nameWithoutExtension)
+            it.delete()
+        }
     }
 
     private const val WORK_TAG = "tubefy-download"
@@ -125,6 +129,14 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
                         videoName = title
                     )
                 )
+            // Details + lyrics (original and English letters) for the Lyrics tab offline; the song is
+            // saved even if this fails (it's retried the next time the Lyrics tab is opened online)
+            runCatching {
+                val durationMs = com.ramzmania.tubefy.core.youtube.YouTubeStreams.peek(videoId)?.duration?.times(1000) ?: 0L
+                EntryPointAccessors.fromApplication(applicationContext, DownloadEntryPoint::class.java)
+                    .songInfoSource()
+                    .load(videoId, title, "", durationMs)
+            }
             Result.success()
         } catch (e: Exception) {
             partial.delete()
