@@ -1,6 +1,9 @@
 package com.ramzmania.tubefy.ui.components.screen.settings
 
 import android.widget.Toast
+import androidx.compose.material.icons.rounded.Download
+import com.ramzmania.tubefy.ui.components.NavigationItem
+import com.ramzmania.tubefy.utils.LocalNavController
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -45,6 +48,7 @@ import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
 
 @Composable
 fun SettingsScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
+    val navController = LocalNavController.current
     val context = LocalContext.current
     var confirmClear by remember { mutableStateOf(false) }
 
@@ -116,6 +120,43 @@ fun SettingsScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
                 Text("Clear automated playlist", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                 Text(
                     "Remove the songs that play automatically after your selected song",
+                    color = DiscoverTextSecondary,
+                    fontSize = 13.sp,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+            }
+            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, tint = DiscoverTextSecondary)
+        }
+
+        SectionLabel("Downloads")
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .padding(horizontal = 16.dp)
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(18.dp))
+                .background(DiscoverSurface)
+                .border(1.dp, DiscoverBorder, RoundedCornerShape(18.dp))
+                .clickable { navController?.navigate(NavigationItem.VideoDownloads.route) }
+                .padding(14.dp)
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(46.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(DiscoverAccentContainer)
+            ) {
+                Icon(Icons.Rounded.Download, contentDescription = null, tint = DiscoverAccent, modifier = Modifier.size(26.dp))
+            }
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 14.dp)
+            ) {
+                Text("Downloads", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                Text(
+                    "Videos and audio downloaded from the YouTube tab: progress, and open them in any app",
                     color = DiscoverTextSecondary,
                     fontSize = 13.sp,
                     modifier = Modifier.padding(top = 2.dp)

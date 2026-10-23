@@ -42,6 +42,8 @@ import com.ramzmania.tubefy.errors.YOUTUBE_SCRAP_ERROR
 import com.ramzmania.tubefy.errors.YOUTUBE_V3_SEARCH_ERROR
 import com.ramzmania.tubefy.player.YoutubePlayerPlaylistListModel
 import com.ramzmania.tubefy.player.createMediaItems
+import com.ramzmania.tubefy.player.CarLibrary
+import com.ramzmania.tubefy.core.youtube.YouTubeStreams
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
@@ -115,17 +117,16 @@ constructor(
         withContext(Dispatchers.IO)
         {
             try {
-                val extractor =
-                    YoutubeService(0).getStreamExtractor("${YoutubeCoreConstant.YOUTUBE_WATCH_URL}$videoId") as YoutubeStreamExtractor
-                extractor.fetchPage()
-
-                if (extractor.videoStreams.isNotEmpty()) {
-                    streamUrl = extractor.videoStreams.first().content ?: ""
-                    artist = extractor.uploaderName ?: ""
-                } else if (extractor.hlsUrl.isNotBlank()) {
+                // Shared lookup: reuses a recent answer for this video instead of asking YouTube again
+                val info = YouTubeStreams.info(videoId)
+                val muxed = info.videoStreams.orEmpty().firstOrNull()?.content
+                if (!muxed.isNullOrBlank()) {
+                    streamUrl = muxed
+                    artist = info.uploaderName ?: ""
+                } else if (!info.hlsUrl.isNullOrBlank()) {
                     // Live streams only come as HLS
-                    streamUrl = extractor.hlsUrl
-                    artist = extractor.uploaderName ?: ""
+                    streamUrl = info.hlsUrl
+                    artist = info.uploaderName ?: ""
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -139,70 +140,27 @@ constructor(
     }
 
 
+    /**
+     * Queue items for many songs at once (playlists, smart queue). No link is fetched here: each item
+     * gets a `tubefy://video/<id>` address that [com.ramzmania.tubefy.player.StreamUrlRefresher] turns into
+     * a real link just before that song plays. Asking YouTube for 10+ links up front got IPs blocked.
+     */
     override suspend fun getStreamBulkUrl(youtubePlayerPlaylistListModel: YoutubePlayerPlaylistListModel): Resource<List<MediaItem>> {
-        var streamUrlArray: ArrayList<String> = ArrayList()
-        var videoThumpUrls: ArrayList<String> = ArrayList()
-        var videoTitles: ArrayList<String> = ArrayList()
-        var videoIdArray: ArrayList<String> = ArrayList()
-        var artists: ArrayList<String> = ArrayList()
-        var mediaItems: List<MediaItem>? = null
-
-//         var mediaUris:Array<String> = listOf("http://example.com/audio1.mp3", "http://example.com/audio2.mp3")
-//         val videoThumpUrls = listOf("http://example.com/thumb1.jpg", "http://example.com/thumb2.jpg")
-//         val videoTitles = listOf("Title 1", "Title 2")
-        withContext(Dispatchers.IO)
-        {
-            try {
-                var currentIndex=0;
-                for (videoIds in youtubePlayerPlaylistListModel.playListData) {
-                    ensureActive()
-                    val extractor =
-                        YoutubeService(0).getStreamExtractor(
-                            "${YoutubeCoreConstant.YOUTUBE_WATCH_URL}${
-                                YoutubeCoreConstant.extractYoutubeVideoId(
-                                    videoIds!!.videoId
-                                )
-                            }"
-                        ) as YoutubeStreamExtractor
-                    extractor.fetchPage()
-
-                    if (extractor.videoStreams.isNotEmpty()) {
-                        videoIdArray.add(YoutubeCoreConstant.extractYoutubeVideoId(videoIds.videoId)!!)
-//                        if(videoIds.videoId.equals("https://www.youtube.com/watch?v=roz9sXFkTuE",ignoreCase = true)) {
-//                            streamUrlArray?.add("https://olakka"+extractor.videoStreams.first().content ?: "")
-//
-//                        }else
-//                        {
-                            streamUrlArray?.add(extractor.videoStreams.first().content ?: "")
-
-//                        }
-                        videoTitles.add(videoIds.videoTitle)
-                        artists.add(extractor.uploaderName ?: "")
-                        videoThumpUrls.add(
-                            "https://i.ytimg.com/vi/${
-                                YoutubeCoreConstant.extractYoutubeVideoId(
-                                    videoIds.videoId
-                                )
-                            }/hq720.jpg"
-                        )
-
-                        currentIndex++
-
-                    }
-                }
-                mediaItems = createMediaItems(streamUrlArray, videoThumpUrls, videoTitles,videoIdArray,artists)
-            }catch (e: CancellationException) {
-                // Handle the cancellation, e.g., clean up resources if needed
-                e.printStackTrace() // Re-throw the cancellation exception to properly handle coroutine cancellation
-            } catch (e: Exception) {
-                e.printStackTrace()
+        val songs = youtubePlayerPlaylistListModel.playListData.filterNotNull()
+            .mapNotNull { song ->
+                val id = YoutubeCoreConstant.extractYoutubeVideoId(song.videoId) ?: return@mapNotNull null
+                Triple(id, song.videoTitle, song.artist)
             }
-        }
-        return if (mediaItems != null) {
-            Resource.Success(mediaItems!!)
-        } else {
-            Resource.DataError(404)
-        }
+        if (songs.isEmpty()) return Resource.DataError(404)
+        return Resource.Success(
+            createMediaItems(
+                mediaUris = songs.map { (id, _, _) -> "${CarLibrary.LAZY_SCHEME}://video/$id" },
+                videoThumpUrls = songs.map { (id, _, _) -> "https://i.ytimg.com/vi/$id/hq720.jpg" },
+                videoTitles = songs.map { (_, title, _) -> title },
+                videoIdList = songs.map { (id, _, _) -> id },
+                artists = songs.map { (_, _, artist) -> artist }
+            )
+        )
     }
 
     override suspend fun getCategoryPlayList(

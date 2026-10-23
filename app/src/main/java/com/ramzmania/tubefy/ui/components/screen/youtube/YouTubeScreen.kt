@@ -407,7 +407,7 @@ fun YouTubeScreen(viewModel: YouTubeViewModel = hiltViewModel()) {
                 }
 
                 state.items.isEmpty() && state.error -> item(key = "error", span = fullLine) {
-                    Message("Couldn't load videos. Check your connection.", action = "Retry") {
+                    Message(com.ramzmania.tubefy.core.youtube.YouTubeAccess.messageOr("Couldn't load videos. Check your connection."), action = "Retry") {
                         viewModel.load(activeFeed, force = true)
                     }
                 }
@@ -430,7 +430,7 @@ fun YouTubeScreen(viewModel: YouTubeViewModel = hiltViewModel()) {
                             state.loadingMore -> Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
                                 CircularProgressIndicator(color = DiscoverAccent, strokeWidth = 2.dp, modifier = Modifier.size(26.dp))
                             }
-                            state.error -> Message("Couldn't load more", action = "Retry") { viewModel.loadMore(activeFeed) }
+                            state.error -> Message(com.ramzmania.tubefy.core.youtube.YouTubeAccess.messageOr("Couldn't load more"), action = "Retry") { viewModel.loadMore(activeFeed) }
                             state.ended -> Text(
                                 "You're all caught up",
                                 color = DiscoverTextSecondary,

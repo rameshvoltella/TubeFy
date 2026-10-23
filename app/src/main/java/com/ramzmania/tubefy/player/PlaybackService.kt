@@ -94,7 +94,8 @@ class PlaybackService(
         val connectivity = getSystemService(ConnectivityManager::class.java)
         val online = connectivity?.getNetworkCapabilities(connectivity.activeNetwork)
             ?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
-        return if (online) "Couldn't load this song" else "No internet connection"
+        // YouTube refusing this network ("not a bot" check) gets its own explanation
+        return if (online) com.ramzmania.tubefy.core.youtube.YouTubeAccess.messageOr("Couldn't load this song") else "No internet connection"
     }
 
     private fun publishSessionExtras(values: Bundle) {

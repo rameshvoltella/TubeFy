@@ -115,7 +115,7 @@ fun TvChannelScreen(args: Bundle?, onOpenVideo: (YouTubeItem) -> Unit, viewModel
             }
             videos.items.isEmpty() && videos.error -> item(span = { GridItemSpan(maxLineSpan) }) {
                 Column(Modifier.fillMaxWidth().padding(top = 40.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Couldn't load this channel", color = DiscoverTextSecondary, fontSize = 18.sp)
+                    Text(com.ramzmania.tubefy.core.youtube.YouTubeAccess.messageOr("Couldn't load this channel"), color = DiscoverTextSecondary, fontSize = 18.sp)
                     TextButton(onClick = { viewModel.load(url, fallbackName, force = true) }) { Text("Retry", color = DiscoverAccent, fontSize = 18.sp) }
                 }
             }

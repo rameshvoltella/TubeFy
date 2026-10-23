@@ -145,7 +145,14 @@ class YouTubeFeedSource @Inject constructor() {
     }
 
     /** Loads one page from [cursor]; blocking network, so it runs on IO. */
-    suspend fun load(cursor: YouTubeCursor): YouTubePage = withContext(Dispatchers.IO) { loadBlocking(cursor) }
+    suspend fun load(cursor: YouTubeCursor): YouTubePage = withContext(Dispatchers.IO) {
+        try {
+            loadBlocking(cursor)
+        } catch (e: Exception) {
+            com.ramzmania.tubefy.core.youtube.YouTubeAccess.check(e)
+            throw e
+        }
+    }
 
     private fun loadBlocking(cursor: YouTubeCursor): YouTubePage = when (cursor) {
         is YouTubeCursor.Kiosks -> {
@@ -273,7 +280,8 @@ class YouTubeFeedSource @Inject constructor() {
 
     /** Details and related videos for the video page. */
     suspend fun details(videoId: String): YouTubeVideoDetails = withContext(Dispatchers.IO) {
-        val info = StreamInfo.getInfo(youtube, "https://www.youtube.com/watch?v=$videoId")
+        // Shared with playback (stream / manifest): one YouTube request per video
+        val info = com.ramzmania.tubefy.core.youtube.YouTubeStreams.info(videoId)
         YouTubeVideoDetails(
             id = videoId,
             title = info.name.orEmpty(),

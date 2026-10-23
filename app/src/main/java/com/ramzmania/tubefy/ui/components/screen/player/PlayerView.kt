@@ -141,6 +141,30 @@ import com.ramzmania.tubefy.player.PlaybackService
 import com.ramzmania.tubefy.ui.components.screen.library.PlayListDialogViewer
 import com.ramzmania.tubefy.utils.LocalNavController
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Folder
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.material.icons.rounded.FullscreenExit
+import androidx.core.view.WindowInsetsControllerCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowCompat
+import androidx.compose.ui.platform.LocalView
+import androidx.activity.compose.BackHandler
+import android.content.pm.ActivityInfo
+import android.content.ContextWrapper
+import android.app.Activity
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import androidx.compose.material3.AlertDialog
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.compose.rememberLauncherForActivityResult
+import com.ramzmania.tubefy.core.download.PhoneDownloadWorker
+import com.ramzmania.tubefy.core.download.PhoneDownloads
+import androidx.compose.runtime.rememberUpdatedState
+import com.ramzmania.tubefy.viewmodel.LyricsViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.net.URLDecoder
@@ -148,7 +172,7 @@ import java.nio.charset.StandardCharsets
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-private enum class PlayerMode { Song, Video }
+private enum class PlayerMode { Song, Video, Lyrics }
 
 private val FavouriteRed = Color(0xFFFF4D4D)
 private val SurfaceTint = Color.White.copy(alpha = 0.08f)
@@ -193,6 +217,88 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
     var palette by remember { mutableStateOf<Palette?>(null) }
     val isFavouriteSong by viewModel.isFavouriteState.collectAsState()
     val downloadState by rememberDownloadState(videoId)
+    // "Save to phone storage" (audio file in a folder the user picked)
+    val phoneSaveProgress by rememberPhoneSaveProgress(videoId)
+    val savedToPhone by rememberSavedToPhone(videoId, title, artist)
+    var showDownloadSheet by remember { mutableStateOf(false) }
+    var phoneFolder by remember { mutableStateOf(PhoneDownloads.folder(context)) }
+    var saveAfterPickingFolder by remember { mutableStateOf(false) }
+    var lyricsChoice by remember { mutableStateOf(PhoneDownloads.lyricsChoice(context)) }
+    // Set when the song is already in the folder: ask Replace / Keep both / Cancel
+    var existingFile by remember { mutableStateOf<String?>(null) }
+    val downloadScope = rememberCoroutineScope()
+    fun startSave(replace: Boolean) {
+        PhoneDownloads.enqueue(context, videoId, title, artist, replace)
+        phoneFolder?.let { Toast.makeText(context, "Saving to ${PhoneDownloads.folderLabel(it)}…", Toast.LENGTH_SHORT).show() }
+        showDownloadSheet = false
+    }
+    fun saveToPhone() {
+        downloadScope.launch {
+            val existing = withContext(Dispatchers.IO) { runCatching { PhoneDownloads.findExisting(context, title, artist) }.getOrNull() }
+            if (existing != null) existingFile = existing else startSave(replace = false)
+        }
+    }
+    existingFile?.let { name ->
+        AlertDialog(
+            onDismissRequest = { existingFile = null },
+            title = { Text("Already saved") },
+            text = { Text("\"$name\" is already in ${phoneFolder?.let(PhoneDownloads::folderLabel) ?: "this folder"}. Replace it, or keep both?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    existingFile = null
+                    startSave(replace = true)
+                }) { Text("Replace") }
+            },
+            dismissButton = {
+                Row {
+                    TextButton(onClick = { existingFile = null }) { Text("Cancel") }
+                    TextButton(onClick = {
+                        existingFile = null
+                        startSave(replace = false)
+                    }) { Text("Keep both") }
+                }
+            }
+        )
+    }
+    // Android's own folder picker; access to the folder is kept for next time
+    val folderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        if (uri != null) {
+            PhoneDownloads.setFolder(context, uri)
+            phoneFolder = PhoneDownloads.folder(context)
+            if (saveAfterPickingFolder) saveToPhone()
+        }
+        saveAfterPickingFolder = false
+    }
+    if (showDownloadSheet) {
+        DownloadOptionsSheet(
+            songTitle = title,
+            inAppDone = downloadState == DownloadState.Done,
+            inAppBusy = downloadState is DownloadState.Downloading,
+            phoneSaving = phoneSaveProgress != null,
+            phoneFolder = phoneFolder?.let(PhoneDownloads::folderLabel),
+            lyricsChoice = lyricsChoice,
+            onLyricsChoiceChange = {
+                lyricsChoice = it
+                PhoneDownloads.setLyricsChoice(context, it)
+            },
+            onInApp = {
+                Downloads.enqueue(context, videoId, title, albumArt)
+                Toast.makeText(context, "Download started", Toast.LENGTH_SHORT).show()
+                showDownloadSheet = false
+            },
+            onPhone = {
+                if (phoneFolder == null) {
+                    saveAfterPickingFolder = true
+                    folderPicker.launch(null)
+                } else saveToPhone()
+            },
+            onChangeFolder = {
+                saveAfterPickingFolder = false
+                folderPicker.launch(phoneFolder)
+            },
+            onDismiss = { showDownloadSheet = false }
+        )
+    }
     val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
     var showSleepSheet by remember { mutableStateOf(false) }
     var sleepEndAt by remember { mutableLongStateOf(0L) }
@@ -225,11 +331,36 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
         YoutubeCoreConstant.extractYoutubeVideoId(videoId)?.let { viewModel.isFavourite(it) }
     }
     LaunchedEffect(playingOffline) {
-        if (playingOffline) playerMode = PlayerMode.Song
+        // Downloads play from files without video: Song and Lyrics only
+        if (playingOffline && playerMode == PlayerMode.Video) playerMode = PlayerMode.Song
     }
     // Video only downloads while the Video tab shows it (matters for the video page's separate streams)
     LaunchedEffect(playerMode, mediaController) {
         setVideoTrackEnabled(mediaController, playerMode == PlayerMode.Video)
+    }
+
+    // Lyrics tab: loaded only when it's open (and again when the song changes)
+    val lyricsViewModel: LyricsViewModel = hiltViewModel()
+    val lyricsState by lyricsViewModel.state.collectAsState()
+    val lyricsEnglish by lyricsViewModel.englishLetters.collectAsState()
+    val currentDurationMs by rememberUpdatedState(durationMs)
+    fun loadLyrics(force: Boolean = false) {
+        val id = YoutubeCoreConstant.extractYoutubeVideoId(videoId) ?: videoId
+        lyricsViewModel.load(id, title, artist, currentDurationMs, force)
+    }
+    LaunchedEffect(playerMode, videoId) {
+        if (playerMode != PlayerMode.Lyrics) return@LaunchedEffect
+        // The song's length helps pick the right timed lyrics; give it a moment to be known
+        if (currentDurationMs <= 0) delay(1_500L)
+        loadLyrics()
+    }
+    // Timed lyrics need a finer position than the seek bar does
+    LaunchedEffect(mediaController, isPlaying, playerMode) {
+        val controller = mediaController ?: return@LaunchedEffect
+        while (isPlaying && playerMode == PlayerMode.Lyrics) {
+            positionMs = controller.currentPosition
+            delay(200L)
+        }
     }
 
     // Position ticker
@@ -372,6 +503,52 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
         }
     }
 
+    // Lyrics tab: keep the screen awake while the song plays, to read along
+    val rootView = LocalView.current
+    DisposableEffect(playerMode == PlayerMode.Lyrics && isPlaying) {
+        rootView.keepScreenOn = playerMode == PlayerMode.Lyrics && isPlaying
+        onDispose { rootView.keepScreenOn = false }
+    }
+
+    // Video tab: tapping the video shows it full screen (landscape, system bars hidden)
+    var videoFullscreen by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(playerMode) { if (playerMode != PlayerMode.Video) videoFullscreen = false }
+    val activity = remember(context) { context.findHostActivity() }
+    DisposableEffect(videoFullscreen) {
+        val window = activity?.window
+        val enteredFullscreen = videoFullscreen
+        if (enteredFullscreen) {
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            window?.let {
+                WindowCompat.getInsetsController(it, rootView).apply {
+                    systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                    hide(WindowInsetsCompat.Type.systemBars())
+                }
+            }
+        }
+        onDispose {
+            // Not when the screen is only being recreated by the rotation itself
+            if (enteredFullscreen && activity?.isChangingConfigurations != true) {
+                activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                window?.let { WindowCompat.getInsetsController(it, rootView).show(WindowInsetsCompat.Type.systemBars()) }
+            }
+        }
+    }
+    BackHandler(enabled = videoFullscreen) { videoFullscreen = false }
+    if (videoFullscreen) {
+        FullscreenSongVideo(
+            controller = mediaController,
+            isPlaying = isPlaying,
+            positionMs = positionMs,
+            durationMs = durationMs,
+            onSeekTo = { target ->
+                mediaController?.seekTo(target)
+                positionMs = target
+            },
+            onExit = { videoFullscreen = false }
+        )
+        return
+    }
 
     Box(
         modifier = Modifier
@@ -414,7 +591,13 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                 }
                 Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                     if (playingOffline) {
-                        OfflineBadge()
+                        // Downloaded songs: no video, and "Offline" says where it's playing from
+                        SongVideoToggle(
+                            selected = playerMode,
+                            modes = listOf(PlayerMode.Song, PlayerMode.Lyrics),
+                            label = { if (it == PlayerMode.Song) "Offline" else it.name },
+                            onSelect = { playerMode = it }
+                        )
                     } else {
                         SongVideoToggle(
                             selected = playerMode,
@@ -469,6 +652,18 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                                     .aspectRatio(16f / 9f)
                                     .clip(RoundedCornerShape(20.dp))
                                     .background(Color.Black)
+                                    // Tap to watch full screen
+                                    .clickable { videoFullscreen = true }
+                            )
+
+                            PlayerMode.Lyrics -> LyricsPane(
+                                state = lyricsState,
+                                positionMs = positionMs,
+                                onSeek = { mediaController?.seekTo(it) },
+                                onRetry = { loadLyrics(force = true) },
+                                englishLetters = lyricsEnglish,
+                                onEnglishLettersChange = lyricsViewModel::setEnglishLetters,
+                                modifier = Modifier.fillMaxSize()
                             )
                         }
                     }
@@ -648,15 +843,16 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                     onClick = ::toggleFavourite
                 )
                 DownloadTile(
-                    state = downloadState,
+                    // Saving to phone storage shows its progress here too
+                    state = phoneSaveProgress?.let { DownloadState.Downloading(it) } ?: downloadState,
+                    saving = phoneSaveProgress != null,
+                    savedToPhone = savedToPhone,
                     onClick = {
-                        when (downloadState) {
-                            DownloadState.Done -> Toast.makeText(context, "Already downloaded", Toast.LENGTH_SHORT).show()
-                            is DownloadState.Downloading -> Toast.makeText(context, "Downloading…", Toast.LENGTH_SHORT).show()
-                            else -> {
-                                Downloads.enqueue(context, videoId, title, albumArt)
-                                Toast.makeText(context, "Download started", Toast.LENGTH_SHORT).show()
-                            }
+                        if (downloadState is DownloadState.Downloading || phoneSaveProgress != null) {
+                            Toast.makeText(context, "Downloading…", Toast.LENGTH_SHORT).show()
+                        } else {
+                            phoneFolder = PhoneDownloads.folder(context)
+                            showDownloadSheet = true
                         }
                     }
                 )
@@ -730,20 +926,25 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
 }
 
 @Composable
-private fun SongVideoToggle(selected: PlayerMode, onSelect: (PlayerMode) -> Unit) {
+private fun SongVideoToggle(
+    selected: PlayerMode,
+    onSelect: (PlayerMode) -> Unit,
+    modes: List<PlayerMode> = PlayerMode.entries,
+    label: (PlayerMode) -> String = { it.name }
+) {
     Row(
         modifier = Modifier
             .clip(RoundedCornerShape(50))
             .background(SurfaceTint)
             .padding(4.dp)
     ) {
-        PlayerMode.entries.forEach { mode ->
+        modes.forEach { mode ->
             val isSelected = mode == selected
             val background by animateColorAsState(
                 if (isSelected) Color.White.copy(alpha = 0.18f) else Color.Transparent, label = "toggleBg"
             )
             Text(
-                text = mode.name,
+                text = label(mode),
                 color = if (isSelected) Color.White else SecondaryText,
                 fontSize = 15.sp,
                 fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
@@ -751,7 +952,7 @@ private fun SongVideoToggle(selected: PlayerMode, onSelect: (PlayerMode) -> Unit
                     .clip(RoundedCornerShape(50))
                     .background(background)
                     .clickable { onSelect(mode) }
-                    .padding(horizontal = 22.dp, vertical = 8.dp)
+                    .padding(horizontal = if (modes.size > 2) 16.dp else 22.dp, vertical = 8.dp)
             )
         }
     }
@@ -786,6 +987,101 @@ internal fun SessionVideoSurface(controller: MediaController?, playing: Boolean,
         onRelease = { it.player = null },
         modifier = modifier
     )
+}
+
+/**
+ * The Video tab's full screen: the video filling the screen; a tap shows play/pause, the seek bar and
+ * an exit button (they hide again after a few seconds of playback).
+ */
+@Composable
+private fun FullscreenSongVideo(
+    controller: MediaController?,
+    isPlaying: Boolean,
+    positionMs: Long,
+    durationMs: Long,
+    onSeekTo: (Long) -> Unit,
+    onExit: () -> Unit
+) {
+    var controlsVisible by remember { mutableStateOf(true) }
+    var lastTouch by remember { mutableLongStateOf(0L) }
+    var seekFraction by remember { mutableStateOf<Float?>(null) }
+    LaunchedEffect(controlsVisible, isPlaying, lastTouch, seekFraction) {
+        if (controlsVisible && isPlaying && seekFraction == null) {
+            delay(3_000L)
+            controlsVisible = false
+        }
+    }
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {
+                controlsVisible = !controlsVisible
+                lastTouch = System.currentTimeMillis()
+            }
+    ) {
+        SessionVideoSurface(controller = controller, playing = isPlaying, modifier = Modifier.fillMaxSize())
+        AnimatedVisibility(visible = controlsVisible, enter = fadeIn(), exit = fadeOut(), modifier = Modifier.fillMaxSize()) {
+            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.4f))) {
+                IconButton(onClick = onExit, modifier = Modifier.align(Alignment.TopEnd).padding(12.dp)) {
+                    Icon(Icons.Rounded.FullscreenExit, contentDescription = "Exit full screen", tint = Color.White, modifier = Modifier.size(30.dp))
+                }
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .size(72.dp)
+                        .clip(CircleShape)
+                        .background(Color.Black.copy(alpha = 0.4f))
+                        .clickable {
+                            lastTouch = System.currentTimeMillis()
+                            controller?.let { if (it.isPlaying) it.pause() else it.play() }
+                        }
+                ) {
+                    Icon(
+                        if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                        contentDescription = if (isPlaying) "Pause" else "Play",
+                        tint = Color.White,
+                        modifier = Modifier.size(44.dp)
+                    )
+                }
+                Column(
+                    Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .padding(start = 24.dp, end = 24.dp, bottom = 20.dp)
+                ) {
+                    val fraction = seekFraction ?: if (durationMs > 0) (positionMs.toFloat() / durationMs).coerceIn(0f, 1f) else 0f
+                    SeekBar(
+                        fraction = fraction,
+                        onSeek = {
+                            seekFraction = it
+                            lastTouch = System.currentTimeMillis()
+                        },
+                        onSeekFinished = {
+                            seekFraction?.let { onSeekTo((it * durationMs).toLong()) }
+                            seekFraction = null
+                        }
+                    )
+                    Text(
+                        "${formatTime(seekFraction?.let { (it * durationMs).toLong() } ?: positionMs, durationMs)} / ${formatTime(durationMs, durationMs)}",
+                        color = Color.White,
+                        fontSize = 13.sp
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** The activity hosting [this] context (for orientation and system bars). */
+private fun Context.findHostActivity(): Activity? {
+    var current: Context? = this
+    while (current is ContextWrapper) {
+        if (current is Activity) return current
+        current = current.baseContext
+    }
+    return null
 }
 
 @kotlin.OptIn(ExperimentalMaterial3Api::class)
@@ -1013,15 +1309,82 @@ private fun rememberDownloadState(videoId: String): State<DownloadState> {
     }
 }
 
+/**
+ * True when this song is saved in the phone-storage folder: its save just finished, or its file is
+ * there (checked once per song, so it still shows after restarting the app).
+ */
 @Composable
-private fun DownloadTile(state: DownloadState, onClick: () -> Unit) {
+private fun rememberSavedToPhone(videoId: String, title: String, artist: String): State<Boolean> {
+    val context = LocalContext.current
+    return produceState(initialValue = false, key1 = videoId) {
+        if (videoId.isBlank()) return@produceState
+        value = withContext(Dispatchers.IO) { runCatching { PhoneDownloads.findExisting(context, title, artist) != null }.getOrDefault(false) }
+        WorkManager.getInstance(context)
+            .getWorkInfosForUniqueWorkFlow(PhoneDownloads.workName(videoId))
+            .collect { infos -> if (infos.firstOrNull()?.state == WorkInfo.State.SUCCEEDED) value = true }
+    }
+}
+
+/** Progress (0–100) of saving this song to phone storage, or null when it isn't being saved. */
+@Composable
+private fun rememberPhoneSaveProgress(videoId: String): State<Int?> {
+    val context = LocalContext.current
+    return produceState<Int?>(initialValue = null, key1 = videoId) {
+        if (videoId.isBlank()) return@produceState
+        WorkManager.getInstance(context)
+            .getWorkInfosForUniqueWorkFlow(PhoneDownloads.workName(videoId))
+            .collect { infos ->
+                val info = infos.firstOrNull()
+                value = when (info?.state) {
+                    WorkInfo.State.RUNNING -> info.progress.getInt(PhoneDownloadWorker.KEY_PROGRESS, 0)
+                    WorkInfo.State.ENQUEUED, WorkInfo.State.BLOCKED -> 0
+                    else -> null
+                }
+            }
+    }
+}
+
+@Composable
+private fun DownloadTile(state: DownloadState, onClick: () -> Unit, saving: Boolean = false, savedToPhone: Boolean = false) {
+    when {
+        // Saved to phone storage (and not downloaded in the app): a folder with a green tick
+        savedToPhone && (state == DownloadState.Idle || state == DownloadState.Failed) -> ActionTile(
+            icon = Icons.Rounded.Folder,
+            label = "Saved",
+            onClick = onClick,
+            content = {
+                Box {
+                    Icon(Icons.Rounded.Folder, contentDescription = "Saved to phone storage", tint = Color.White, modifier = Modifier.size(26.dp))
+                    Icon(
+                        Icons.Rounded.CheckCircle,
+                        contentDescription = null,
+                        tint = DownloadedGreen,
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .offset(x = 4.dp, y = 4.dp)
+                            .size(15.dp)
+                            .background(Color.Black, CircleShape)
+                    )
+                }
+            }
+        )
+        else -> DownloadStateTile(state, onClick, saving)
+    }
+}
+
+@Composable
+private fun DownloadStateTile(state: DownloadState, onClick: () -> Unit, saving: Boolean) {
     when (state) {
         DownloadState.Done -> ActionTile(Icons.Rounded.DownloadDone, "Downloaded", onClick, iconTint = DownloadedGreen)
         DownloadState.Failed -> ActionTile(Icons.Rounded.Download, "Retry", onClick)
         DownloadState.Idle -> ActionTile(Icons.Rounded.Download, "Download", onClick)
         is DownloadState.Downloading -> ActionTile(
             icon = Icons.Rounded.Download,
-            label = if (state.progress > 0) "${state.progress}%" else "Waiting…",
+            label = when {
+                state.progress > 0 && saving -> "Saving ${state.progress}%"
+                state.progress > 0 -> "${state.progress}%"
+                else -> "Waiting…"
+            },
             onClick = onClick,
             content = {
                 if (state.progress > 0) {
@@ -1037,21 +1400,6 @@ private fun DownloadTile(state: DownloadState, onClick: () -> Unit) {
                 }
             }
         )
-    }
-}
-
-/** Shown instead of the Song/Video toggle while playing downloaded files. */
-@Composable
-private fun OfflineBadge() {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .clip(RoundedCornerShape(50))
-            .background(SurfaceTint)
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-    ) {
-        Icon(Icons.Rounded.DownloadDone, contentDescription = null, tint = DownloadedGreen, modifier = Modifier.size(18.dp))
-        Text("Offline", color = Color.White, fontSize = 15.sp, modifier = Modifier.padding(start = 6.dp))
     }
 }
 
