@@ -12,16 +12,37 @@ Transform your YouTube experience into a seamless music streaming journey with o
 - **Discover New Music:** Explore new music and discover trending songs easily with personalized recommendations.
 - **Seamless Playback:** Enjoy uninterrupted music playback with background support, so you can listen while using other apps.
 - **User-Friendly Interface:** Navigate your music library and playlists with an intuitive and sleek interface designed for ease of use.
-- **Offline Downloads:** Download songs to your device and listen without an internet connection. Downloaded songs are collected in their own Downloads playlist, and playing from it queues only your downloaded songs.
+- **Downloads:** Download songs inside the app to listen offline, save songs to your phone with their lyrics, or download YouTube videos in any quality. See [Downloads](#downloads) below.
 - **Smart Queueing:** When a song ends, TubeFy automatically queues similar songs that match your taste, in the same language, genre and artist style as what you're listening to, so the music keeps flowing without breaking your mood.
 - **Smart Shuffle:** Tap shuffle once for a normal shuffle, and tap it again for Smart Shuffle. It reshuffles your queue so songs by the same artist flow together, and mixes in recommended songs that match the language, mood and style of what's playing. Tap once more to turn shuffle off, which also removes any recommended songs that haven't played yet.
 - **Sleep Timer:** Fall asleep to your music. Choose 15, 30, 45 or 60 minutes, or "End of this song", and the music gently fades out and pauses when time is up. The countdown shows on the player, and you can add 5 more minutes or turn the timer off at any time. It keeps running even when your screen is off.
-- **YouTube Videos:** A dedicated YouTube tab to search and watch videos, with Trending, Music, Mixes, Live and Gaming, plus "Trending in your state" in your language. The video player supports quality selection up to 1080p, dubbed audio languages, captions, full screen with pinch to zoom, autoplay of the next related video, channel pages, and "Play in background" when you just want to listen.
+- **Lyrics:** A Lyrics tab in the music player shows the song's details (singers, movie, lyricist, music director, year) and its lyrics. Timed lyrics follow the song line by line, and tapping a line jumps there. Songs in Malayalam, Tamil, Hindi and other scripts can be switched to English letters with one tap. Lyrics of downloaded songs work offline too.
+- **YouTube Videos:** A dedicated YouTube tab to search and watch videos, with search suggestions, Trending, Music, Mixes, Live and Gaming, plus "Trending in your state" in your language. The video player starts at the best quality your screen can show (up to 4K on TVs), and supports dubbed audio languages, captions, full screen with pinch to zoom, swipe controls for brightness and volume, autoplay of the next related video, channel pages, downloads, and "Play in background" when you just want to listen.
 - **Android Auto:** Use TubeFy right from your car screen. Browse Home, Recently played, Recommended and your Library (Favorites, Downloads and playlists), search with the car's search button, or just say "Hey Google, play <song> on TubeFy".
 - **Android TV:** TubeFy shows up on your Android TV / Google TV home screen with a YouTube experience built for the remote: big video grids, search, recent videos and channel pages, and a full-screen player where you can seek with the remote, choose quality, audio language and captions, and see an "Up next" countdown before the next video plays.
 
 
 Elevate your music experience and enjoy YouTube's vast music library like never before. Download now and start listening!
+
+## Downloads
+
+TubeFy has three ways to download, depending on what you want to do with the file.
+
+### 🎵 Songs, inside TubeFy (offline listening)
+In the music player, tap **Download → In TubeFy**. The song is saved inside the app and appears in your **Downloads** playlist, so you can listen without internet. Its details and lyrics (in the original script and in English letters) are saved with it, so the Lyrics tab works offline too.
+
+### 📁 Songs, to your phone storage (with lyrics)
+In the music player, tap **Download → Save to phone storage**. The first time, choose a folder with Android's folder picker; TubeFy remembers it.
+- The song is saved as an **audio file** (`.m4a`, best quality) that plays in any music app.
+- If the song is already in the folder, TubeFy asks whether to **Replace** it or **Keep both**.
+- Every saved song is added to **`TubeFy Song Book.html`** in the same folder. It's a page you can open in any browser, with all your songs' details and lyrics, a song list and a search box. Choose whether the lyrics are saved in the **original script**, in **English letters**, or **both**.
+
+### 🎬 YouTube videos (any quality, or audio only)
+On a YouTube video's page, tap **Download** and choose:
+- **Video:** any quality the video has, from 144p up to 1080p (MP4 or WebM), with the file size shown. HD video and its sound come separately from YouTube, so TubeFy joins them into one MP4 on your phone, with no quality loss.
+- **Audio only:** any audio format (M4A or Opus), including dubbed languages when the video has them.
+
+Videos are saved in a **YouTube** folder inside your chosen folder, for example `TubeFy/YouTube`. Go to **Settings → Downloads** to follow downloads in progress, retry failed ones, and open finished files in any app (VLC, Gallery, MX Player and others) with **Open with**.
 
 ## How to Install
 
@@ -81,9 +102,11 @@ Click here -> https://youtu.be/YrhG8T8gbU4 (oldplayer)
 </div>
 
 <div style="text-align: center;">
-        <h3>Search and Playlist</h3>
+        <h3>Search, Playlist and Lyrics</h3>
      <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/search.jpeg" alt="Search" style="width: 40%; height: 40%;">
           <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/album.jpeg" alt="Search" style="width: 40%; height: 40%;">
+                    <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/lyorg.jpeg" alt="Search" style="width: 40%; height: 40%;">
+                              <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/lyeng.jpeg" alt="Search" style="width: 40%; height: 40%;">
    
 
 </div>
@@ -100,6 +123,27 @@ Click here -> https://youtu.be/YrhG8T8gbU4 (oldplayer)
      <img src="https://github.com/rameshvoltella/TubeFy/blob/beta/screenshots/WhatsApp%20Image%202024-08-28%20at%209.09.38%20PM(1).jpeg" alt="Notification" style="width: 40%; height: 40%;">
     <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/player.jpeg" alt="MiniPlayer" style="width: 40%; height: 40%;">
         <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/lib.jpeg" alt="Playlist" style="width: 40%; height: 40%;">
+
+</div>
+
+<div style="text-align: center;">
+        <h3>Download Support</h3>
+     <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/dolyr.jpeg" alt="Search" style="width: 40%; height: 40%;">
+          <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/dolyr.jpeg" alt="Search" style="width: 40%; height: 40%;">
+               <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/downvid1.jpeg" alt="Search" style="width: 40%; height: 40%;">
+                              <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/downvid2.jpeg" alt="Search" style="width: 40%; height: 40%;">
+                                                            <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/downvid3.jpeg" alt="Search" style="width: 40%; height: 40%;">
+                              
+
+
+</div>
+
+<div style="text-align: center;">
+        <h3>Offline Lyrics Library</h3>
+             <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/offline1.jpeg" alt="Search" style="width: 40%; height: 40%;">
+     <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/offline2.jpeg" alt="Search" style="width: 40%; height: 40%;">
+         
+   
 
 </div>
 
