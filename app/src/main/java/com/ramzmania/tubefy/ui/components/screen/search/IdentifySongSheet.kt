@@ -60,6 +60,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.ramzmania.tubefy.R
+import androidx.compose.ui.platform.LocalContext
+import com.ramzmania.tubefy.utils.NotificationAccess
+import com.ramzmania.tubefy.utils.rememberNotificationsEnabled
 import com.ramzmania.tubefy.ui.theme.DiscoverAccent
 import com.ramzmania.tubefy.ui.theme.DiscoverTextSecondary
 import com.ramzmania.tubefy.viewmodel.RecognitionViewModel
@@ -106,6 +109,20 @@ internal fun IdentifySongSheet(
                         fontSize = 13.sp,
                         modifier = Modifier.padding(top = 14.dp)
                     )
+                    if (!rememberNotificationsEnabled()) {
+                        val context = LocalContext.current
+                        Text(
+                            "Turn on notifications to get results while in another app",
+                            color = DiscoverAccent,
+                            fontSize = 13.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .padding(top = 14.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable { NotificationAccess.openSettings(context) }
+                                .padding(horizontal = 10.dp, vertical = 6.dp)
+                        )
+                    }
                 }
 
                 is RecognitionViewModel.State.Found -> {

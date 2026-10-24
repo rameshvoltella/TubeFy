@@ -10,6 +10,8 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <!-- "Identify song": a few seconds of audio to recognise what's playing (asked only on tap) -->
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <!-- Keeps listening while the user switches to the app playing the song -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
 
     <!-- Android TV (YouTube tab only, see TvActivity); none of these are required, so phones are unaffected -->
     <uses-feature android:name="android.software.leanback" android:required="false" />
@@ -46,6 +48,25 @@
 
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
+        <!-- Share a YouTube video to TubeFy -->
+        <intent-filter>
+            <action android:name="android.intent.action.SEND" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <data android:mimeType="text/plain" />
+        </intent-filter>
+        <!-- "Open with" for YouTube links -->
+        <intent-filter>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="https" />
+            <data android:scheme="http" />
+            <data android:host="youtube.com" />
+            <data android:host="www.youtube.com" />
+            <data android:host="m.youtube.com" />
+            <data android:host="music.youtube.com" />
+            <data android:host="youtu.be" />
+        </intent-filter>
     </activity>
         <!-- Android TV: opens straight into the YouTube tab, built for the remote -->
         <activity
@@ -59,6 +80,10 @@
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity>
+        <service
+            android:name=".core.recognition.ListeningService"
+            android:foregroundServiceType="microphone"
+            android:exported="false" />
         <service
             android:name=".player.PlaybackService"
             android:foregroundServiceType="mediaPlayback"
