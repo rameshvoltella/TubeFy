@@ -175,7 +175,7 @@ Click here -> https://youtu.be/YrhG8T8gbU4 (oldplayer)
 <div style="text-align: center;">
         <h3>Song Search with Shazam</h3>
      <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/sha1.jpeg" alt="Search" style="width: 40%; height: 40%;">
-              <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/sha1.jpeg" alt="Search" style="width: 40%; height: 40%;">
+              <img src="https://github.com/rameshvoltella/TubeFy/blob/redesign/screenshots/new/sha2.jpeg" alt="Search" style="width: 40%; height: 40%;">
    
 
 </div>
