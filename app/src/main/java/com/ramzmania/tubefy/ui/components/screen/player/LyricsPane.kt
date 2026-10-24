@@ -36,6 +36,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
+import kotlinx.coroutines.flow.first
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -119,11 +123,24 @@ private fun LyricsList(
         lyrics.lines.indexOfLast { (it.timeMs ?: Long.MAX_VALUE) <= positionMs + 250 }
     } else -1
 
-    // Follow the song, unless the user scrolled in the last few seconds
-    LaunchedEffect(current) {
-        if (current < 0 || dragged || System.currentTimeMillis() - lastUserScroll < 4_000) return@LaunchedEffect
-        // Item 0 is the details card; keep the current line about a third of the way down
-        listState.animateScrollToItem((current + 1 - 2).coerceAtLeast(0))
+    // Item 0 is the details card; keep the current line about a third of the way down
+    fun targetOf(line: Int) = (line + 1 - 2).coerceAtLeast(0)
+    val currentLine by rememberUpdatedState(current)
+
+    // Opened mid-song (or switched Original / English letters): once the list is laid out, jump
+    // straight to the line being sung. Scrolling before the first layout does nothing.
+    var placed by remember(lyrics) { mutableStateOf(false) }
+    LaunchedEffect(lyrics) {
+        if (lyrics?.synced != true) return@LaunchedEffect
+        snapshotFlow { listState.layoutInfo.totalItemsCount }.first { it > 0 }
+        if (currentLine >= 0) listState.scrollToItem(targetOf(currentLine))
+        placed = true
+    }
+
+    // Then follow the song line by line, unless the user scrolled in the last few seconds
+    LaunchedEffect(current, placed) {
+        if (!placed || current < 0 || dragged || System.currentTimeMillis() - lastUserScroll < 4_000) return@LaunchedEffect
+        listState.animateScrollToItem(targetOf(current))
     }
 
     // The Original / English letters switch sits above the list, so it stays while the lyrics scroll
