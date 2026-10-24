@@ -29,7 +29,11 @@ data class SongDetails(
 /** One lyrics line; [timeMs] is set for timed ("synced") lyrics. */
 data class LyricLine(val timeMs: Long?, val text: String)
 
-data class Lyrics(val lines: List<LyricLine>, val synced: Boolean, val source: String)
+/**
+ * [offsetMs]: how much later than their timestamps timed lines are sung in the version playing
+ * (e.g. a music video with an intro before the song starts); added to every line's time.
+ */
+data class Lyrics(val lines: List<LyricLine>, val synced: Boolean, val source: String, val offsetMs: Long = 0)
 
 /**
  * [lyrics] is shown first; for songs in an Indian script, [englishLetters] is the same song written in
@@ -160,15 +164,21 @@ class SongInfoSource @Inject constructor(
         val request = Request.Builder().url(url).header("User-Agent", "TubeFy (https://github.com/rameshvoltella/TubeFy)").build()
         val results = http.newCall(request).execute().use { if (it.isSuccessful) json.fromJson(it.body?.string().orEmpty()) as? List<*> else null }
             ?.filterIsInstance<Map<*, *>>().orEmpty()
-        // Same recording: its length must match (within a few seconds) when we know it
-        val matching = results.filter { result ->
-            val seconds = (result["duration"] as? Number)?.toDouble() ?: return@filter durationMs <= 0
-            durationMs <= 0 || kotlin.math.abs(seconds * 1000 - durationMs) <= DURATION_TOLERANCE_MS
+        // The same song: a recording as long as the one playing, or shorter by up to an intro's length
+        // (music videos often start with a scene / logo before the song); closest length first
+        val matching = results
+            .mapNotNull { result ->
+                val trackMs = (result["duration"] as? Number)?.toDouble()?.times(1000)?.toLong()
+                val offset = introOffset(trackMs, durationMs) ?: return@mapNotNull null
+                result to offset
+            }
+            .sortedBy { (_, offset) -> offset }
+        matching.firstNotNullOfOrNull { (result, offset) ->
+            (result["syncedLyrics"] as? String)?.takeIf(String::isNotBlank)?.let { it to offset }
+        }?.let { (lrc, offset) ->
+            parseLrc(lrc).takeIf { it.isNotEmpty() }?.let { return Lyrics(it, synced = true, source = "LRCLIB", offsetMs = offset) }
         }
-        matching.firstNotNullOfOrNull { (it["syncedLyrics"] as? String)?.takeIf(String::isNotBlank) }?.let { lrc ->
-            parseLrc(lrc).takeIf { it.isNotEmpty() }?.let { return Lyrics(it, synced = true, source = "LRCLIB") }
-        }
-        return matching.firstNotNullOfOrNull { (it["plainLyrics"] as? String)?.takeIf(String::isNotBlank) }?.let { plain ->
+        return matching.firstNotNullOfOrNull { (result, _) -> (result["plainLyrics"] as? String)?.takeIf(String::isNotBlank) }?.let { plain ->
             Lyrics(plain.lines().map { LyricLine(null, it.trim()) }, synced = false, source = "LRCLIB")
         }
     }
@@ -195,6 +205,22 @@ class SongInfoSource @Inject constructor(
         private const val CLIENT_VERSION = "1.20240729.01.00"
         private val JSON = "application/json".toMediaType()
         private const val DURATION_TOLERANCE_MS = 4_000L
+        private const val MAX_INTRO_MS = 30_000L
+
+        /**
+         * How much later the song starts in the version playing than in the lyrics' recording, or null if
+         * they aren't the same song. Same length (±4 s): no shift. Longer by up to 30 s: assumed to be an
+         * intro (a music video's opening), so the lyrics move later by the difference. Unknown lengths: no shift.
+         */
+        internal fun introOffset(trackMs: Long?, playingMs: Long): Long? {
+            if (playingMs <= 0 || trackMs == null || trackMs <= 0) return if (playingMs <= 0 || trackMs == null) 0L else null
+            val extra = playingMs - trackMs
+            return when {
+                kotlin.math.abs(extra) <= DURATION_TOLERANCE_MS -> 0L
+                extra in DURATION_TOLERANCE_MS..MAX_INTRO_MS -> extra
+                else -> null
+            }
+        }
 
         /**
          * What to show: the lyrics in the song's own script first (timed if possible), and an English-letters

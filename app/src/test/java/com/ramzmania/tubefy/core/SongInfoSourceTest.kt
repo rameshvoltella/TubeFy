@@ -119,3 +119,31 @@ class OfflineLyricsTest {
         assertEquals(info, restored)
     }
 }
+
+class IntroOffsetTest {
+    private val offset = SongInfoSource::introOffset
+
+    @Test
+    fun `a music video with an intro shifts the lyrics by the extra time`() {
+        assertEquals(0L, offset(240_000, 242_000))        // same recording (±4 s): no shift
+        assertEquals(7_000L, offset(240_000, 247_000))    // 7 s intro
+        assertEquals(30_000L, offset(240_000, 270_000))   // up to 30 s
+        assertEquals(null, offset(240_000, 300_000))      // a minute longer: another version
+        assertEquals(null, offset(240_000, 230_000))      // shorter: another version
+        assertEquals(0L, offset(null, 240_000))           // the lyrics' length unknown: no shift
+        assertEquals(0L, offset(240_000, 0))              // the playing length unknown: no shift
+    }
+
+    @Test
+    fun `the shift is kept with offline lyrics`() {
+        val info = com.ramzmania.tubefy.core.lyrics.SongInfo(
+            details = com.ramzmania.tubefy.core.lyrics.SongDetails("A", "", "", "", "", ""),
+            lyrics = Lyrics(listOf(LyricLine(1_000, "a")), synced = true, source = "LRCLIB", offsetMs = 7_000)
+        )
+        val adapter = com.squareup.moshi.Moshi.Builder().build().adapter(Any::class.java)
+        val restored = com.ramzmania.tubefy.core.lyrics.OfflineLyrics.fromMap(
+            adapter.fromJson(adapter.toJson(com.ramzmania.tubefy.core.lyrics.OfflineLyrics.toMap(info))) as Map<*, *>
+        )
+        assertEquals(7_000L, restored.lyrics?.offsetMs)
+    }
+}

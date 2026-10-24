@@ -343,6 +343,7 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
     val lyricsViewModel: LyricsViewModel = hiltViewModel()
     val lyricsState by lyricsViewModel.state.collectAsState()
     val lyricsEnglish by lyricsViewModel.englishLetters.collectAsState()
+    val lyricsSync by lyricsViewModel.syncOffset.collectAsState()
     val currentDurationMs by rememberUpdatedState(durationMs)
     fun loadLyrics(force: Boolean = false) {
         val id = YoutubeCoreConstant.extractYoutubeVideoId(videoId) ?: videoId
@@ -663,6 +664,9 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                                 onRetry = { loadLyrics(force = true) },
                                 englishLetters = lyricsEnglish,
                                 onEnglishLettersChange = lyricsViewModel::setEnglishLetters,
+                                syncOffsetMs = lyricsSync,
+                                onAdjustSync = lyricsViewModel::adjustSync,
+                                onResetSync = lyricsViewModel::resetSync,
                                 modifier = Modifier.fillMaxSize()
                             )
                         }

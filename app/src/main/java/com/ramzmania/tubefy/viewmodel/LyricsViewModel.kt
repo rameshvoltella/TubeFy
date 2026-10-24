@@ -30,8 +30,26 @@ class LyricsViewModel @Inject constructor(
         prefs.edit().putBoolean(KEY_ENGLISH, enabled).apply()
     }
 
+    // Manual lyrics timing, per song (added to the automatic intro shift); kept across restarts
+    private val syncPrefs = context.getSharedPreferences("lyrics_sync", android.content.Context.MODE_PRIVATE)
+    private val _syncOffset = MutableStateFlow(0L)
+    /** The user's timing correction for the song shown, in ms (+ = lyrics later). */
+    val syncOffset: StateFlow<Long> = _syncOffset.asStateFlow()
+
+    fun adjustSync(deltaMs: Long) = setSync((_syncOffset.value + deltaMs).coerceIn(-MAX_SYNC_MS, MAX_SYNC_MS))
+
+    /** Back to the automatic timing. */
+    fun resetSync() = setSync(0L)
+
+    private fun setSync(offsetMs: Long) {
+        val id = loadedId ?: return
+        _syncOffset.value = offsetMs
+        syncPrefs.edit().apply { if (offsetMs == 0L) remove(id) else putLong(id, offsetMs) }.apply()
+    }
+
     private companion object {
         const val KEY_ENGLISH = "english_letters"
+        const val MAX_SYNC_MS = 60_000L
     }
 
     sealed interface State {
@@ -51,6 +69,7 @@ class LyricsViewModel @Inject constructor(
     fun load(videoId: String, title: String, artist: String, durationMs: Long, force: Boolean = false) {
         if (videoId.isBlank() || (!force && videoId == loadedId && _state.value !is State.Error)) return
         loadedId = videoId
+        _syncOffset.value = syncPrefs.getLong(videoId, 0L)
         job?.cancel()
         _state.value = State.Loading
         job = viewModelScope.launch {
