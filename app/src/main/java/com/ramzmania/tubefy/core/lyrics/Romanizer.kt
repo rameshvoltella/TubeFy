@@ -18,9 +18,8 @@ object Romanizer {
         val converter = transliterator ?: return null
         val dravidian = lyrics.lines.any { line -> line.text.any { it.code in 0x0D00..0x0D7F || it.code in 0x0B80..0x0BFF } }
         return runCatching {
-            Lyrics(
+            lyrics.copy(
                 lines = lyrics.lines.map { line -> line.copy(text = readable(converter.transliterate(line.text), dravidian)) },
-                synced = lyrics.synced,
                 source = "${lyrics.source} · in English letters".trimStart(' ', '·')
             )
         }.getOrNull()

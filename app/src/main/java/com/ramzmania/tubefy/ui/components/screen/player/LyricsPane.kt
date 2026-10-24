@@ -29,6 +29,8 @@ import androidx.compose.material.icons.rounded.Movie
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -36,6 +38,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
+import kotlinx.coroutines.flow.first
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -65,6 +71,9 @@ internal fun LyricsPane(
     onRetry: () -> Unit,
     englishLetters: Boolean,
     onEnglishLettersChange: (Boolean) -> Unit,
+    syncOffsetMs: Long,
+    onAdjustSync: (Long) -> Unit,
+    onResetSync: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -94,7 +103,10 @@ internal fun LyricsPane(
                         { ScriptSwitch(scriptName(state.info.lyrics), englishLetters, onEnglishLettersChange) }
                     } else null,
                     positionMs = positionMs,
-                    onSeek = onSeek
+                    onSeek = onSeek,
+                    syncOffsetMs = syncOffsetMs,
+                    onAdjustSync = onAdjustSync,
+                    onResetSync = onResetSync
                 )
             }
         }
@@ -107,8 +119,14 @@ private fun LyricsList(
     lyrics: Lyrics?,
     scriptSwitch: (@Composable () -> Unit)?,
     positionMs: Long,
-    onSeek: (Long) -> Unit
+    onSeek: (Long) -> Unit,
+    syncOffsetMs: Long,
+    onAdjustSync: (Long) -> Unit,
+    onResetSync: () -> Unit
 ) {
+    // Timed lyrics: the automatic intro shift plus the user's correction
+    val shiftMs = (lyrics?.offsetMs ?: 0L) + syncOffsetMs
+    var syncOpen by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
     val dragged by listState.interactionSource.collectIsDraggedAsState()
     var lastUserScroll by remember { mutableLongStateOf(0L) }
@@ -116,20 +134,56 @@ private fun LyricsList(
 
     // The line being sung: the last one that has started (a little early, so it lights up on time)
     val current = if (lyrics?.synced == true) {
-        lyrics.lines.indexOfLast { (it.timeMs ?: Long.MAX_VALUE) <= positionMs + 250 }
+        lyrics.lines.indexOfLast { line -> line.timeMs?.let { it + shiftMs <= positionMs + 250 } ?: false }
     } else -1
 
-    // Follow the song, unless the user scrolled in the last few seconds
-    LaunchedEffect(current) {
-        if (current < 0 || dragged || System.currentTimeMillis() - lastUserScroll < 4_000) return@LaunchedEffect
-        // Item 0 is the details card; keep the current line about a third of the way down
-        listState.animateScrollToItem((current + 1 - 2).coerceAtLeast(0))
+    // Item 0 is the details card; keep the current line about a third of the way down
+    fun targetOf(line: Int) = (line + 1 - 2).coerceAtLeast(0)
+    val currentLine by rememberUpdatedState(current)
+
+    // Opened mid-song (or switched Original / English letters): once the list is laid out, jump
+    // straight to the line being sung. Scrolling before the first layout does nothing.
+    var placed by remember(lyrics) { mutableStateOf(false) }
+    LaunchedEffect(lyrics) {
+        if (lyrics?.synced != true) return@LaunchedEffect
+        snapshotFlow { listState.layoutInfo.totalItemsCount }.first { it > 0 }
+        if (currentLine >= 0) listState.scrollToItem(targetOf(currentLine))
+        placed = true
     }
 
-    // The Original / English letters switch sits above the list, so it stays while the lyrics scroll
+    // Then follow the song line by line, unless the user scrolled in the last few seconds
+    LaunchedEffect(current, placed) {
+        if (!placed || current < 0 || dragged || System.currentTimeMillis() - lastUserScroll < 4_000) return@LaunchedEffect
+        listState.animateScrollToItem(targetOf(current))
+    }
+
+    // The Original / English letters switch (and the timing button) sit above the list, so they stay
     Column(Modifier.fillMaxSize()) {
-        scriptSwitch?.let { switch ->
-            Box(Modifier.padding(start = 20.dp, end = 20.dp, top = 14.dp)) { switch() }
+        if (scriptSwitch != null || lyrics?.synced == true) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 12.dp, top = 14.dp)
+            ) {
+                Box(Modifier.weight(1f)) { scriptSwitch?.invoke() }
+                if (lyrics?.synced == true) {
+                    IconButton(onClick = { syncOpen = !syncOpen }) {
+                        Icon(
+                            Icons.Rounded.Timer,
+                            contentDescription = "Lyrics timing",
+                            tint = if (syncOpen || syncOffsetMs != 0L) DiscoverAccent else Color.White.copy(alpha = 0.7f)
+                        )
+                    }
+                }
+            }
+            if (syncOpen && lyrics?.synced == true) {
+                SyncBar(
+                    shiftMs = shiftMs,
+                    manual = syncOffsetMs != 0L,
+                    onEarlier = { onAdjustSync(-SYNC_STEP_MS) },
+                    onLater = { onAdjustSync(SYNC_STEP_MS) },
+                    onAuto = onResetSync
+                )
+            }
         }
         LazyColumn(
             state = listState,
@@ -156,7 +210,7 @@ private fun LyricsList(
                             index == current -> LineState.Current
                             index < current -> LineState.Sung
                             else -> LineState.Upcoming
-                        }, onClick = { line.timeMs?.let(onSeek) })
+                        }, onClick = { line.timeMs?.let { onSeek(it + shiftMs) } })
                     } else {
                         Text(
                             line.text,
@@ -205,6 +259,46 @@ private fun SyncedLine(text: String, state: LineState, onClick: () -> Unit) {
             .clickable(onClick = onClick)
             .padding(vertical = 6.dp)
     )
+}
+
+private const val SYNC_STEP_MS = 500L
+
+/**
+ * Lyrics timing: −0.5 s / +0.5 s nudges (+ = lyrics later), the total shift, and Auto to go back to
+ * the automatic timing. Remembered per song.
+ */
+@Composable
+private fun SyncBar(shiftMs: Long, manual: Boolean, onEarlier: () -> Unit, onLater: () -> Unit, onAuto: () -> Unit) {
+    Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 6.dp)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(Color.White.copy(alpha = 0.08f))
+                .padding(horizontal = 6.dp, vertical = 4.dp)
+        ) {
+            TextButton(onClick = onEarlier) { Text("−0.5 s", color = Color.White, fontSize = 14.sp) }
+            Text(
+                (if (shiftMs >= 0) "+" else "−") + String.format(java.util.Locale.US, "%.1f s", kotlin.math.abs(shiftMs) / 1000f),
+                color = Color.White,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                modifier = Modifier.weight(1f)
+            )
+            TextButton(onClick = onLater) { Text("+0.5 s", color = Color.White, fontSize = 14.sp) }
+            TextButton(onClick = onAuto, enabled = manual) {
+                Text("Auto", color = if (manual) DiscoverAccent else Color.White.copy(alpha = 0.35f), fontSize = 14.sp)
+            }
+        }
+        Text(
+            "Lyrics ahead of the singing? Tap +0.5 s. Behind? Tap −0.5 s.",
+            color = Color.White.copy(alpha = 0.5f),
+            fontSize = 12.sp,
+            modifier = Modifier.padding(start = 6.dp, top = 4.dp)
+        )
+    }
 }
 
 /** "Malayalam | English letters": which way to show the lyrics. */

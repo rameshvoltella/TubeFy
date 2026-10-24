@@ -8,6 +8,8 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <!-- YouTube tab: finds the user's state once, for "Trending in <state>" (asked only on tap) -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <!-- "Identify song": a few seconds of audio to recognise what's playing (asked only on tap) -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
 
     <!-- Android TV (YouTube tab only, see TvActivity); none of these are required, so phones are unaffected -->
     <uses-feature android:name="android.software.leanback" android:required="false" />
@@ -17,6 +19,7 @@
     <uses-feature android:name="android.hardware.location.gps" android:required="false" />
     <!-- Some TVs only have Ethernet -->
     <uses-feature android:name="android.hardware.wifi" android:required="false" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
 
     <application
         android:allowBackup="true"

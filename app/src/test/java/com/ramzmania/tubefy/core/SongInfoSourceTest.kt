@@ -119,3 +119,78 @@ class OfflineLyricsTest {
         assertEquals(info, restored)
     }
 }
+
+class IntroOffsetTest {
+    private val offset = SongInfoSource::introOffset
+
+    @Test
+    fun `a music video with an intro shifts the lyrics by the extra time`() {
+        assertEquals(0L, offset(240_000, 242_000))        // same recording (±4 s): no shift
+        assertEquals(7_000L, offset(240_000, 247_000))    // 7 s intro
+        assertEquals(30_000L, offset(240_000, 270_000))   // up to 30 s
+        assertEquals(null, offset(240_000, 300_000))      // a minute longer: another version
+        assertEquals(null, offset(240_000, 230_000))      // shorter: another version
+        assertEquals(0L, offset(null, 240_000))           // the lyrics' length unknown: no shift
+        assertEquals(0L, offset(240_000, 0))              // the playing length unknown: no shift
+    }
+
+    @Test
+    fun `the shift is kept with offline lyrics`() {
+        val info = com.ramzmania.tubefy.core.lyrics.SongInfo(
+            details = com.ramzmania.tubefy.core.lyrics.SongDetails("A", "", "", "", "", ""),
+            lyrics = Lyrics(listOf(LyricLine(1_000, "a")), synced = true, source = "LRCLIB", offsetMs = 7_000)
+        )
+        val adapter = com.squareup.moshi.Moshi.Builder().build().adapter(Any::class.java)
+        val restored = com.ramzmania.tubefy.core.lyrics.OfflineLyrics.fromMap(
+            adapter.fromJson(adapter.toJson(com.ramzmania.tubefy.core.lyrics.OfflineLyrics.toMap(info))) as Map<*, *>
+        )
+        assertEquals(7_000L, restored.lyrics?.offsetMs)
+    }
+}
+
+class ShazamSignatureTest {
+    @Test
+    fun `the signature has Shazam's header and a valid checksum`() {
+        // A 12 s mix of tones is enough to produce peaks
+        val samples = ShortArray(12 * 16000) { i ->
+            (6000 * kotlin.math.sin(2 * Math.PI * (440 + (i / 16000) * 110) * i / 16000.0) +
+                3000 * kotlin.math.sin(2 * Math.PI * 1800 * i / 16000.0)).toInt().toShort()
+        }
+        val signature = com.ramzmania.tubefy.core.recognition.ShazamSignature.from(samples)
+        val bytes = signature.encode()
+        val buffer = java.nio.ByteBuffer.wrap(bytes).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+        assertEquals(0xcafe2580.toInt(), buffer.getInt(0))
+        assertEquals(bytes.size - 48, buffer.getInt(8))
+        assertEquals(0x94119c00.toInt(), buffer.getInt(12))
+        assertEquals(3 shl 27, buffer.getInt(28)) // 16 kHz
+        val crc = java.util.zip.CRC32().apply { update(bytes, 8, bytes.size - 8) }.value.toInt()
+        assertEquals(crc, buffer.getInt(4))
+        org.junit.Assert.assertTrue(signature.bands.sumOf { it.size } > 0)
+    }
+
+    @Test
+    fun `a Shazam answer becomes the song's details`() {
+        val answer = """{"matches":[{"id":"1"}],"track":{"title":"Malare (From \"Premam\")","subtitle":"Vijay Yesudas",
+            "images":{"coverart":"https://x/cover.jpg"},
+            "sections":[{"type":"SONG","metadata":[{"title":"Album","text":"Premam"},{"title":"Released","text":"2015"}]}]}}"""
+        val result = com.ramzmania.tubefy.core.recognition.SongRecognizer(okhttp3.OkHttpClient()).parse(answer)
+        val song = (result as com.ramzmania.tubefy.core.recognition.RecognitionResult.Found).song
+        assertEquals("Malare (From \"Premam\")", song.title)
+        assertEquals("Vijay Yesudas", song.artist)
+        assertEquals("Premam", song.album)
+        assertEquals("2015", song.year)
+        assertEquals(com.ramzmania.tubefy.core.recognition.RecognitionResult.NotFound,
+            com.ramzmania.tubefy.core.recognition.SongRecognizer(okhttp3.OkHttpClient()).parse("""{"matches":[]}"""))
+    }
+}
+
+class IdentifiedSongsTest {
+    @Test
+    fun `identified songs come back the same after saving`() {
+        val store = com.ramzmania.tubefy.core.recognition.IdentifiedSongs
+        val song = com.ramzmania.tubefy.core.recognition.IdentifiedSong("Malare", "Vijay Yesudas", "Premam", "2015", "https://x/c.jpg", "-GyOKmoLbng", 1_800_000_000_000)
+        val adapter = com.squareup.moshi.Moshi.Builder().build().adapter(Any::class.java)
+        assertEquals(song, store.fromMap(adapter.fromJson(adapter.toJson(store.toMap(song))) as Map<*, *>))
+        assertEquals("malare|vijay yesudas", song.key)
+    }
+}

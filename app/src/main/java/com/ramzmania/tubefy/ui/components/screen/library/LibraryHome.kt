@@ -79,6 +79,7 @@ import java.nio.charset.StandardCharsets
 private const val FAVORITES_PLAYLIST = "TubeFy-Favorites"
 private const val TAB_PLAYLISTS = "Playlists"
 private const val TAB_FAVORITES = "Favorites"
+private const val TAB_SHAZAM = "Shazam"
 
 @Composable
 fun MyLibraryPage(viewModel: TubeFyViewModel = hiltViewModel()) {
@@ -114,13 +115,13 @@ fun MyLibraryPage(viewModel: TubeFyViewModel = hiltViewModel()) {
             modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 20.dp)
         )
         Text(
-            text = "Your playlists and favorites",
+            text = "Your playlists, favorites and identified songs",
             color = DiscoverTextSecondary,
             fontSize = 16.sp,
             modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 8.dp)
         )
         ChipRow(
-            chips = listOf(TAB_PLAYLISTS, TAB_FAVORITES),
+            chips = listOf(TAB_PLAYLISTS, TAB_FAVORITES, TAB_SHAZAM),
             selected = selectedTab,
             onSelect = { selectedTab = it }
         )
@@ -139,6 +140,9 @@ fun MyLibraryPage(viewModel: TubeFyViewModel = hiltViewModel()) {
             } else {
                 LibraryHomeView(items, viewModel)
             }
+        } else if (selectedTab == TAB_SHAZAM) {
+            // Songs identified with 🎤
+            IdentifiedSongsList()
         } else {
             val songs = (favoriteSongs as? Resource.Success)?.data.orEmpty()
             if (songs.isNotEmpty()) {

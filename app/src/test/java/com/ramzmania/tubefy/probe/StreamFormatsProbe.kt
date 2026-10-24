@@ -16,7 +16,7 @@ class StreamFormatsProbe {
         val http = OkHttpClient()
         NewPipe.init(PipeDownloader(http))
         // a normal music video, a multi-language-audio video (MrBeast), a talk with captions
-        for (id in listOf("O5gwxm3NxFU", "0e3GPea1Tyg", "8jPQjjsBbIc")) {
+        for (id in (System.getenv("TUBEFY_PROBE_IDS") ?: "O5gwxm3NxFU,0e3GPea1Tyg,8jPQjjsBbIc").split(",")) {
             val ex = ServiceList.YouTube.getStreamExtractor("https://www.youtube.com/watch?v=$id")
             ex.fetchPage()
             println("== $id '${ex.name.take(40)}' hls=${ex.hlsUrl.isNotBlank()} dash=${ex.dashMpdUrl.isNotBlank()} dur=${ex.length}")

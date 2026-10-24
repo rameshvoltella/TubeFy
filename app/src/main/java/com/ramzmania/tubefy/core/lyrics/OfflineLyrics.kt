@@ -56,6 +56,7 @@ object OfflineLyrics {
     private fun lyricsToMap(lyrics: Lyrics): Map<String, Any?> = mapOf(
         "synced" to lyrics.synced,
         "source" to lyrics.source,
+        "offset" to lyrics.offsetMs,
         "lines" to lyrics.lines.map { mapOf("time" to it.timeMs, "text" to it.text) }
     )
 
@@ -64,6 +65,7 @@ object OfflineLyrics {
             LyricLine((line["time"] as? Number)?.toLong(), line["text"] as? String ?: "")
         },
         synced = map["synced"] as? Boolean ?: false,
-        source = map["source"] as? String ?: ""
+        source = map["source"] as? String ?: "",
+        offsetMs = (map["offset"] as? Number)?.toLong() ?: 0L
     )
 }

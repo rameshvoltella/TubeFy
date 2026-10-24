@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -86,6 +87,11 @@ import com.ramzmania.tubefy.ui.theme.DiscoverSurface
 import com.ramzmania.tubefy.ui.theme.DiscoverTextSecondary
 import com.ramzmania.tubefy.utils.LocalNavController
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
+import androidx.compose.ui.text.TextRange
+import com.ramzmania.tubefy.ui.components.screen.youtube.SuggestionRow
+import com.ramzmania.tubefy.viewmodel.SearchSuggestionsViewModel
+import androidx.compose.material.icons.rounded.Mic
+import android.widget.Toast
 import org.schabi.newpipe.extractor.Page
 
 /**
@@ -136,12 +142,37 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
     // Back while the empty search box is focused returns to the default search page
     BackHandler(enabled = searchFocused && textFieldValue.text.isEmpty()) { cancelSearch() }
 
+    // YouTube's suggestions while typing
+    val suggestionsViewModel: SearchSuggestionsViewModel = hiltViewModel()
+    val suggestions by suggestionsViewModel.suggestions.collectAsState()
+
     fun search() {
         if (textFieldValue.text.isBlank()) return
         isFreshSearch = true
         keyboardController?.hide()
+        suggestionsViewModel.clear()
         viewModel.searchNewPipePage(textFieldValue.text, filter.contentFilter(isChecked))
     }
+
+    fun searchFor(query: String) {
+        textFieldValue = TextFieldValue(query, TextRange(query.length))
+        focusManager.clearFocus()
+        search()
+    }
+
+    // 🎤 Identify song: "Search" puts "title artist" in the box
+    val identifySong = rememberIdentifySong(onSearch = ::searchFor)
+
+    // A search handed over from another tab (Identify song on Home)
+    LaunchedEffect(Unit) {
+        PendingSearch.query.collect { query ->
+            if (query != null) {
+                PendingSearch.query.value = null
+                searchFor(query)
+            }
+        }
+    }
+
 
     LaunchedEffect(key1 = searchPlayListName) {
         if (searchPlayListName is Resource.Success) {
@@ -207,7 +238,10 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
         val searchField: @Composable (Modifier) -> Unit = { fieldModifier ->
             OutlinedTextField(
                 value = textFieldValue,
-                onValueChange = { textFieldValue = it },
+                onValueChange = {
+                    if (it.text != textFieldValue.text) suggestionsViewModel.onQueryChanged(it.text)
+                    textFieldValue = it
+                },
                 placeholder = {
                     Text(
                         "Search songs, artists, playlists...",
@@ -221,16 +255,25 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
                     Icon(Icons.Rounded.Search, contentDescription = null, tint = DiscoverTextSecondary, modifier = Modifier.size(24.dp))
                 },
                 trailingIcon = {
-                    if (textFieldValue.text.isNotEmpty() || searchFocused) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         IconButton(onClick = {
-                            // First tap clears the text (recent picks show); on an empty box it cancels search
-                            if (textFieldValue.text.isNotEmpty()) textFieldValue = TextFieldValue() else cancelSearch()
+                            focusManager.clearFocus()
+                            keyboardController?.hide()
+                            identifySong()
                         }) {
-                            Icon(
-                                Icons.Rounded.Close,
-                                contentDescription = if (textFieldValue.text.isNotEmpty()) "Clear" else "Cancel search",
-                                tint = Color.White.copy(alpha = 0.8f)
-                            )
+                            Icon(Icons.Rounded.Mic, contentDescription = "Identify song", tint = DiscoverAccent)
+                        }
+                        if (textFieldValue.text.isNotEmpty() || searchFocused) {
+                            IconButton(onClick = {
+                                // First tap clears the text (recent picks show); on an empty box it cancels search
+                                if (textFieldValue.text.isNotEmpty()) textFieldValue = TextFieldValue() else cancelSearch()
+                            }) {
+                                Icon(
+                                    Icons.Rounded.Close,
+                                    contentDescription = if (textFieldValue.text.isNotEmpty()) "Clear" else "Cancel search",
+                                    tint = Color.White.copy(alpha = 0.8f)
+                                )
+                            }
                         }
                     }
                 },
@@ -313,6 +356,22 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
                 )
             } else {
                 CategoryScreenMain()
+            }
+        } else if (searchFocused && suggestions.isNotEmpty()) {
+            // While typing: YouTube's suggestions (tap to search, ↖ to keep typing from it)
+            LazyColumn(contentPadding = PaddingValues(top = 8.dp, bottom = 24.dp), modifier = Modifier.fillMaxSize()) {
+                items(suggestions, key = { "suggest|$it" }) { suggestion ->
+                    SuggestionRow(
+                        suggestion = suggestion,
+                        typed = textFieldValue.text,
+                        onPick = { searchFor(suggestion) },
+                        onFill = {
+                            val text = "$suggestion "
+                            textFieldValue = TextFieldValue(text, TextRange(text.length))
+                            suggestionsViewModel.onQueryChanged(suggestion)
+                        }
+                    )
+                }
             }
         } else {
             ChipRow(
