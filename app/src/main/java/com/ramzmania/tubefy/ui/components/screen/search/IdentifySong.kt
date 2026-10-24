@@ -6,6 +6,12 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.border
 import androidx.compose.ui.res.painterResource
 import com.ramzmania.tubefy.R
 import androidx.compose.foundation.clickable
@@ -88,16 +94,23 @@ fun rememberIdentifySong(onSearch: (String) -> Unit): () -> Unit {
     }
 }
 
-/** The round Identify-song button floating on Home (TubeFy's identify logo). */
+/** The round Identify-song button floating on Home: the identify symbol on TubeFy's red accent. */
 @Composable
 fun IdentifySongButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Image(
-        painter = painterResource(R.drawable.ic_identify_song),
-        contentDescription = "Identify song",
+    Box(
+        contentAlignment = Alignment.Center,
         modifier = modifier
             .shadow(14.dp, CircleShape, ambientColor = DiscoverAccent, spotColor = DiscoverAccent)
-            .size(64.dp)
+            .size(60.dp)
             .clip(CircleShape)
+            .background(Brush.linearGradient(listOf(Color(0xFFFF5A6A), DiscoverAccent)))
+            .border(1.5.dp, Color.White.copy(alpha = 0.25f), CircleShape)
             .clickable(onClick = onClick)
-    )
+    ) {
+        Image(
+            painter = painterResource(R.drawable.ic_identify_song_symbol),
+            contentDescription = "Identify song",
+            modifier = Modifier.size(36.dp)
+        )
+    }
 }
