@@ -60,6 +60,11 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
 
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.collectAsState
+import com.ramzmania.tubefy.ui.components.screen.share.SharedVideo
+import com.ramzmania.tubefy.ui.components.screen.share.SharedVideoDialog
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.geometry.Offset
@@ -111,6 +116,8 @@ import dagger.hilt.android.UnstableApi
 class HomeActivity : ComponentActivity() {
     private var mediaController: MediaController? = null
     private val mediaControllerState = mutableStateOf<MediaController?>(null)
+    // Android 13+: the player controls, downloads and "Identify song" results are notifications
+    private val notificationPermission = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) {}
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // On a TV the remote-friendly YouTube screens are used instead (e.g. opened from a sideload launcher)
@@ -124,9 +131,29 @@ class HomeActivity : ComponentActivity() {
             statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
         )
+        if (savedInstanceState == null && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
+            androidx.core.content.ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) notificationPermission.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+        // A YouTube link shared to TubeFy asks Music or YouTube once the UI is up
+        if (savedInstanceState == null) handleShare(intent)
         setContent {
             MainScreen(mediaControllerState = mediaControllerState)
 
+        }
+    }
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleShare(intent)
+    }
+
+    private fun handleShare(intent: android.content.Intent?) {
+        val video = SharedVideo.from(intent)
+        if (video != null) SharedVideo.pending.value = video
+        // Any text can be shared to TubeFy; only YouTube links can be opened
+        else if (intent?.action == android.content.Intent.ACTION_SEND) {
+            android.widget.Toast.makeText(this, "TubeFy can only open YouTube links", android.widget.Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -278,6 +305,24 @@ fun MainScreen(mediaControllerState: MutableState<MediaController?>) {
             )
         }
         // Place BottomNavigationBar at the bottom
+    }
+
+    val sharedVideo by SharedVideo.pending.collectAsState()
+    sharedVideo?.let { video ->
+        fun enc(value: String) = URLEncoder.encode(value, StandardCharsets.UTF_8.toString())
+        SharedVideoDialog(
+            video = video,
+            onMusic = {
+                SharedVideo.pending.value = null
+                val title = video.title.ifBlank { "YouTube video" }
+                navController.navigate(NavigationItem.AudioPlayer.createRoute(enc(video.videoId), enc(video.thumbnail), enc(title), enc(title), enc("YouTube")))
+            },
+            onVideo = {
+                SharedVideo.pending.value = null
+                navController.navigate(NavigationItem.Video.createRoute(enc(video.videoId), enc(video.title), enc(video.thumbnail), ""))
+            },
+            onDismiss = { SharedVideo.pending.value = null }
+        )
     }
 }
 

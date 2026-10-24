@@ -20,6 +20,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.PlaylistRemove
+import androidx.compose.material.icons.rounded.NotificationsOff
+import com.ramzmania.tubefy.utils.NotificationAccess
+import com.ramzmania.tubefy.utils.rememberNotificationsEnabled
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -51,6 +54,7 @@ fun SettingsScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
     val navController = LocalNavController.current
     val context = LocalContext.current
     var confirmClear by remember { mutableStateOf(false) }
+    val notificationsEnabled = rememberNotificationsEnabled()
 
     if (confirmClear) {
         AlertDialog(
@@ -90,6 +94,45 @@ fun SettingsScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 16.dp)
         )
+
+        if (!notificationsEnabled) {
+            SectionLabel("Notifications")
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(DiscoverSurface)
+                    .border(1.dp, DiscoverAccent.copy(alpha = 0.4f), RoundedCornerShape(18.dp))
+                    .clickable { NotificationAccess.openSettings(context) }
+                    .padding(14.dp)
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(46.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(DiscoverAccentContainer)
+                ) {
+                    Icon(Icons.Rounded.NotificationsOff, contentDescription = null, tint = DiscoverAccent, modifier = Modifier.size(26.dp))
+                }
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 14.dp)
+                ) {
+                    Text("Notifications are off", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "Turn them on for download updates and songs identified while you're in another app",
+                        color = DiscoverTextSecondary,
+                        fontSize = 13.sp,
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
+                }
+                Text("Turn on", color = DiscoverAccent, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+            }
+        }
 
         SectionLabel("Playback")
         Row(

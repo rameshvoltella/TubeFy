@@ -2,6 +2,7 @@ package com.ramzmania.tubefy.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ramzmania.tubefy.core.recognition.ListeningService
 import com.ramzmania.tubefy.core.recognition.RecognitionResult
 import com.ramzmania.tubefy.core.recognition.RecognizedSong
 import com.ramzmania.tubefy.core.recognition.SongRecognizer
@@ -43,12 +44,15 @@ class RecognitionViewModel @Inject constructor(
         // Whatever TubeFy is playing pauses, so the microphone hears the song to identify, not TubeFy
         pausePlayback()
         _state.value = State.Listening(0)
+        // Keeps the microphone on if the user switches to the app playing the song
+        ListeningService.start(context)
         job = viewModelScope.launch {
             when (val result = recognizer.listen { seconds -> _state.value = State.Listening(seconds) }) {
                 is RecognitionResult.Found -> {
                     _state.value = State.Found(result.song, null, findingTrack = true)
                     val track = findOnYouTube(result.song)
                     _state.value = State.Found(result.song, track, findingTrack = false)
+                    ListeningService.showResult(context, result.song)
                     // Library → Shazam
                     runCatching {
                         com.ramzmania.tubefy.core.recognition.IdentifiedSongs.record(
@@ -65,8 +69,14 @@ class RecognitionViewModel @Inject constructor(
                         )
                     }
                 }
-                RecognitionResult.NotFound -> _state.value = State.NotFound
-                is RecognitionResult.Failed -> _state.value = State.Failed(result.message)
+                RecognitionResult.NotFound -> {
+                    _state.value = State.NotFound
+                    ListeningService.showResult(context, null)
+                }
+                is RecognitionResult.Failed -> {
+                    _state.value = State.Failed(result.message)
+                    ListeningService.showResult(context, null, result.message)
+                }
             }
         }
     }
@@ -74,6 +84,11 @@ class RecognitionViewModel @Inject constructor(
     fun cancel() {
         job?.cancel()
         _state.value = State.Idle
+        ListeningService.stop(context)
+    }
+
+    override fun onCleared() {
+        ListeningService.stop(context)
     }
 
     private fun pausePlayback() {
