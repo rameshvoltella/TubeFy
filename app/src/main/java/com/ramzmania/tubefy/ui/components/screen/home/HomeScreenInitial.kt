@@ -51,6 +51,9 @@ import androidx.navigation.NavController
 import com.ramzmania.tubefy.R
 import com.ramzmania.tubefy.core.extractors.yotubewebextractor.YoutubeScrapType
 import com.ramzmania.tubefy.viewmodel.TubeFyViewModel
+import com.ramzmania.tubefy.ui.components.screen.search.rememberIdentifySong
+import com.ramzmania.tubefy.ui.components.screen.search.PendingSearch
+import com.ramzmania.tubefy.ui.components.screen.search.IdentifySongButton
 import com.ramzmania.tubefy.data.dto.home.HomePageResponse
 import com.ramzmania.tubefy.data.Resource
 import com.ramzmania.tubefy.data.dto.home.youtubei.YoutubeiHomeBaseResponse
@@ -257,6 +260,11 @@ fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel(), navControlle
         isDefaultDataLoaded = false
         viewModel.callYoutubeiHome()
     }
+    // Identify song: "Search" continues on the Search tab
+    val identifySong = rememberIdentifySong(onSearch = { query ->
+        PendingSearch.query.value = query
+        navController?.navigateToTab(NavigationItem.Search.route)
+    })
 
     Column(
         modifier = Modifier
@@ -312,6 +320,13 @@ fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel(), navControlle
                     HomeCategoryContent(viewModel = viewModel, category = selectedCategory)
                 }
             }
+            // 🎤 Identify song, bottom-right just above the mini player / tabs, always at hand
+            IdentifySongButton(
+                onClick = identifySong,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 18.dp, bottom = 18.dp)
+            )
         }
     }
 }

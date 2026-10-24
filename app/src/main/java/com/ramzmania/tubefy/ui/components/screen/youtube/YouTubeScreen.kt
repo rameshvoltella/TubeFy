@@ -503,7 +503,7 @@ private fun SearchBox(
  * typed is bold, like YouTube.
  */
 @Composable
-private fun SuggestionRow(suggestion: String, typed: String, onPick: () -> Unit, onFill: () -> Unit) {
+internal fun SuggestionRow(suggestion: String, typed: String, onPick: () -> Unit, onFill: () -> Unit) {
     val prefix = typed.trim()
     val text = androidx.compose.ui.text.buildAnnotatedString {
         if (prefix.isNotEmpty() && suggestion.startsWith(prefix, ignoreCase = true)) {
