@@ -504,6 +504,12 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
         }
     }
 
+    // Lyrics tab (portrait): full screen, keeping only the seek bar and controls; Back returns to the tab before
+    val lyricsFullScreen = playerMode == PlayerMode.Lyrics && !isLandscape
+    var modeBeforeLyrics by rememberSaveable { mutableStateOf(PlayerMode.Song) }
+    LaunchedEffect(playerMode) { if (playerMode != PlayerMode.Lyrics) modeBeforeLyrics = playerMode }
+    BackHandler(enabled = lyricsFullScreen) { playerMode = modeBeforeLyrics }
+
     // Lyrics tab: keep the screen awake while the song plays, to read along
     val rootView = LocalView.current
     DisposableEffect(playerMode == PlayerMode.Lyrics && isPlaying) {
@@ -675,8 +681,8 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
             }
         }
         val details: @Composable () -> Unit = {
-            // Title, artist, favourite
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            // Title, artist, favourite (full-screen lyrics shows the title in its own bar instead)
+            if (!lyricsFullScreen) Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = title,
@@ -707,7 +713,7 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(if (lyricsFullScreen) 8.dp else 16.dp))
 
             // Seek bar
             val shownFraction = seekFraction
@@ -833,8 +839,8 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                 )
             }
 
-            // Quick actions
-            Row(
+            // Quick actions (not in full-screen lyrics)
+            if (!lyricsFullScreen) Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 16.dp),
@@ -910,21 +916,40 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                         .statusBarsPadding()
                         .padding(horizontal = 20.dp)
                 ) {
-                    topBar()
+                    if (lyricsFullScreen) {
+                        LyricsTopBar(title = title, artist = artist, onBack = { playerMode = modeBeforeLyrics })
+                    } else {
+                        topBar()
+                    }
                     artwork(
                         Modifier
                             .weight(1f)
                             .fillMaxWidth()
-                            .padding(vertical = 20.dp)
+                            .padding(vertical = if (lyricsFullScreen) 8.dp else 20.dp)
                     )
                     details()
+                    if (lyricsFullScreen) Spacer(Modifier.navigationBarsPadding().height(8.dp))
                 }
             }
 
-            UpNextBar(
+            if (!lyricsFullScreen) UpNextBar(
                 nextItem = nextItem,
                 onSwipe = { mediaController?.takeIf { it.hasNextMediaItem() }?.seekToNextMediaItem() }
             )
+        }
+    }
+}
+
+/** Full-screen lyrics' top bar: back (to the tab before) and the song. */
+@Composable
+private fun LyricsTopBar(title: String, artist: String, onBack: () -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+        IconButton(onClick = onBack) {
+            Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = "Back", tint = Color.White, modifier = Modifier.size(30.dp))
+        }
+        Column(Modifier.weight(1f).padding(start = 4.dp, end = 12.dp)) {
+            Text(title, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, modifier = Modifier.basicMarquee())
+            if (artist.isNotEmpty()) Text(artist, color = SecondaryText, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }
