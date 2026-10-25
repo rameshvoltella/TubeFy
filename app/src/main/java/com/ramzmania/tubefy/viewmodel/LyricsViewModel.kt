@@ -25,6 +25,9 @@ class LyricsViewModel @Inject constructor(
     /** Show lyrics in English letters (when the song is in another script); remembered. */
     val englishLetters: StateFlow<Boolean> = _englishLetters.asStateFlow()
 
+    /** The playing song's album, for the player's "Go to album" (null if it isn't from one). */
+    suspend fun album(videoId: String) = source.album(videoId)
+
     fun setEnglishLetters(enabled: Boolean) {
         _englishLetters.value = enabled
         prefs.edit().putBoolean(KEY_ENGLISH, enabled).apply()

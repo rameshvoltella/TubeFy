@@ -95,7 +95,7 @@ internal fun IdentifySongSheet(
                 RecognitionViewModel.State.Idle, is RecognitionViewModel.State.Listening -> {
                     val seconds = (state as? RecognitionViewModel.State.Listening)?.seconds ?: 0
                     ListeningPulse(progress = seconds / LISTEN_SECONDS.toFloat())
-                    Text("Listening…", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 12.dp))
+                    Text("Identifying song…", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 12.dp))
                     EqualizerBars(Modifier.padding(top = 10.dp))
                     Text(
                         "Play the song near your phone",
@@ -234,7 +234,7 @@ private fun ListeningPulse(progress: Float) {
     }
 }
 
-/** Little bouncing bars under "Listening…". */
+/** Little bouncing bars under "Identifying song…". */
 @Composable
 private fun EqualizerBars(modifier: Modifier = Modifier) {
     val transition = rememberInfiniteTransition(label = "equalizer")

@@ -71,6 +71,9 @@ import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.Album
+import com.ramzmania.tubefy.core.lyrics.SongAlbum
+import com.ramzmania.tubefy.ui.components.screen.album.PlayedFromAlbum
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Repeat
@@ -341,6 +344,29 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
 
     // Lyrics tab: loaded only when it's open (and again when the song changes)
     val lyricsViewModel: LyricsViewModel = hiltViewModel()
+
+    // "Go to album": the album page it was played from, or else the song's album on YouTube Music
+    var songAlbum by remember(videoId) { mutableStateOf<SongAlbum?>(null) }
+    var findingAlbum by remember(videoId) { mutableStateOf(false) }
+    LaunchedEffect(videoId, showMenu) {
+        if (!showMenu || songAlbum != null || videoId.isBlank()) return@LaunchedEffect
+        PlayedFromAlbum.current?.takeIf { videoId in it }?.let {
+            songAlbum = it.album
+            return@LaunchedEffect
+        }
+        findingAlbum = true
+        songAlbum = lyricsViewModel.album(videoId)
+        findingAlbum = false
+    }
+    fun openAlbum(album: SongAlbum) {
+        // Came from that album page: just go back to it
+        if (navController.previousBackStackEntry?.arguments?.getString("playlistId") == album.playlistId) {
+            navController.popBackStack()
+            return
+        }
+        fun enc(value: String) = java.net.URLEncoder.encode(value, StandardCharsets.UTF_8.toString())
+        navController.navigate(NavigationItem.PlayList.createRoute(album.playlistId, enc(album.title), enc(album.thumbnail.ifBlank { "nourl" })))
+    }
     val lyricsState by lyricsViewModel.state.collectAsState()
     val lyricsEnglish by lyricsViewModel.englishLetters.collectAsState()
     val lyricsSync by lyricsViewModel.syncOffset.collectAsState()
@@ -628,6 +654,25 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                                 showPlayListDialog = true
                             }
                         )
+                        // Only for songs that are from an album
+                        if (findingAlbum) {
+                            DropdownMenuItem(
+                                text = { Text("Finding album…") },
+                                leadingIcon = { CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp) },
+                                enabled = false,
+                                onClick = {}
+                            )
+                        }
+                        songAlbum?.let { album ->
+                            DropdownMenuItem(
+                                text = { Text("Go to album") },
+                                leadingIcon = { Icon(Icons.Rounded.Album, null) },
+                                onClick = {
+                                    showMenu = false
+                                    openAlbum(album)
+                                }
+                            )
+                        }
                     }
                 }
             }

@@ -2,7 +2,11 @@ package com.ramzmania.tubefy.ui.components.screen.search
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.widget.Toast
+import android.content.Context
+import androidx.compose.runtime.DisposableEffect
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -52,13 +56,46 @@ fun rememberIdentifySong(onSearch: (String) -> Unit): () -> Unit {
     val recognition: RecognitionViewModel = hiltViewModel()
     val state by recognition.state.collectAsState()
     var show by remember { mutableStateOf(false) }
+    fun micAllowed() = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+    fun startListening() {
+        show = true
+        recognition.start()
+    }
+
+    // Until the microphone is allowed, Identify song first explains itself (and, after a denial, offers Settings)
+    val prefs = remember { context.getSharedPreferences("identify_song", Context.MODE_PRIVATE) }
+    var showIntro by remember { mutableStateOf(false) }
+    var micDenied by remember { mutableStateOf(prefs.getBoolean(KEY_MIC_DENIED, false)) }
     val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        micDenied = !granted
+        prefs.edit().putBoolean(KEY_MIC_DENIED, !granted).apply()
         if (granted) {
-            show = true
-            recognition.start()
-        } else {
-            Toast.makeText(context, "TubeFy needs the microphone to identify songs", Toast.LENGTH_LONG).show()
+            showIntro = false
+            startListening()
         }
+    }
+    // Back from Settings with the microphone on: go straight to listening
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME && showIntro && micDenied && micAllowed()) {
+                micDenied = false
+                prefs.edit().putBoolean(KEY_MIC_DENIED, false).apply()
+                showIntro = false
+                startListening()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+    if (showIntro) {
+        IdentifySongIntroDialog(
+            denied = micDenied,
+            canAskAgain = context.findActivity()?.shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO) == true,
+            onAllow = { permission.launch(Manifest.permission.RECORD_AUDIO) },
+            onOpenSettings = { openAppSettings(context) },
+            onDismiss = { showIntro = false }
+        )
     }
 
     if (show) {
@@ -87,12 +124,11 @@ fun rememberIdentifySong(onSearch: (String) -> Unit): () -> Unit {
     }
 
     return {
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
-            show = true
-            recognition.start()
-        } else permission.launch(Manifest.permission.RECORD_AUDIO)
+        if (micAllowed()) startListening() else showIntro = true
     }
 }
+
+private const val KEY_MIC_DENIED = "mic_denied"
 
 /** The round Identify-song button floating on Home: the identify symbol on TubeFy's red accent. */
 @Composable

@@ -21,7 +21,14 @@ android {
     }
 
     buildTypes {
+        // A separate "TubeFy Debug" app (own package, debug signature) that installs next to the release one
+        debug {
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+            manifestPlaceholders["appLabel"] = "TubeFy Debug"
+        }
         release {
+            manifestPlaceholders["appLabel"] = "@string/app_name"
             isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
