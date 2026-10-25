@@ -10,6 +10,8 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <!-- "Identify song": a few seconds of audio to recognise what's playing (asked only on tap) -->
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <!-- Sound controls: the reverb effect works on the shared output mix -->
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <!-- Keeps listening while the user switches to the app playing the song -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
 

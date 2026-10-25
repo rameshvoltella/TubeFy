@@ -71,6 +71,7 @@ import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.Album
 import com.ramzmania.tubefy.core.lyrics.SongAlbum
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic
@@ -217,6 +218,8 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
     }
     var showPlayListDialog by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
+    var showSoundControls by remember { mutableStateOf(false) }
+    val soundSettings by com.ramzmania.tubefy.player.SoundEffects.settings.collectAsState()
     var palette by remember { mutableStateOf<Palette?>(null) }
     val isFavouriteSong by viewModel.isFavouriteState.collectAsState()
     val downloadState by rememberDownloadState(videoId)
@@ -421,6 +424,9 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
         showSleepSheet = false
     }
 
+    if (showSoundControls) {
+        SoundControlsSheet(onDismiss = { showSoundControls = false })
+    }
     if (showSleepSheet) {
         SleepTimerSheet(
             active = sleepActive,
@@ -467,7 +473,8 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
             mediaController = controller
             isPlaying = controller.isPlaying
             val currentId = controller.currentMediaItem?.mediaId
-            if (playbackRequested) {
+            // (If the queue is gone, e.g. TubeFy was closed and couldn't restore it, start the song again)
+            if (playbackRequested && controller.currentMediaItem != null) {
                 // Screen recreated (e.g. rotation): keep what's playing now instead of
                 // restarting the song / playlist this screen was originally opened with
                 isLoading = !controller.isPlaying && controller.playbackState != Player.STATE_READY
@@ -815,6 +822,16 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Sound controls next to shuffle (lit while any effect is on)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                ModeButton(
+                    icon = Icons.Rounded.GraphicEq,
+                    description = "Sound controls",
+                    active = soundSettings.anyOn(),
+                    activeColor = DiscoverAccent,
+                    onClick = { showSoundControls = true },
+                    modifier = Modifier.size(40.dp)
+                )
                 // Off -> Shuffle -> Smart Shuffle -> Off
                 ShuffleButton(
                     shuffleOn = shuffleOn,
@@ -844,10 +861,12 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                                 Toast.makeText(context, "Shuffle on", Toast.LENGTH_SHORT).show()
                             }
                         }
-                    }
+                    },
+                    modifier = Modifier.size(40.dp)
                 )
-                IconButton(onClick = { mediaController?.seekToPrevious() }, modifier = Modifier.size(56.dp)) {
-                    Icon(Icons.Rounded.SkipPrevious, "Previous", tint = Color.White, modifier = Modifier.size(42.dp))
+                }
+                IconButton(onClick = { mediaController?.seekToPrevious() }, modifier = Modifier.size(50.dp)) {
+                    Icon(Icons.Rounded.SkipPrevious, "Previous", tint = Color.White, modifier = Modifier.size(40.dp))
                 }
                 Box(
                     modifier = Modifier
@@ -874,9 +893,9 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                 }
                 IconButton(
                     onClick = { mediaController?.takeIf { it.hasNextMediaItem() }?.seekToNextMediaItem() },
-                    modifier = Modifier.size(56.dp)
+                    modifier = Modifier.size(50.dp)
                 ) {
-                    Icon(Icons.Rounded.SkipNext, "Next", tint = Color.White, modifier = Modifier.size(42.dp))
+                    Icon(Icons.Rounded.SkipNext, "Next", tint = Color.White, modifier = Modifier.size(40.dp))
                 }
                 ModeButton(
                     icon = if (repeatMode == Player.REPEAT_MODE_ONE) Icons.Rounded.RepeatOne else Icons.Rounded.Repeat,
@@ -1234,9 +1253,9 @@ private fun LoadErrorBanner(message: String, onRetry: () -> Unit) {
 }
 
 @Composable
-private fun ShuffleButton(shuffleOn: Boolean, smartOn: Boolean, onClick: () -> Unit) {
+private fun ShuffleButton(shuffleOn: Boolean, smartOn: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val active = shuffleOn || smartOn
-    IconButton(onClick = onClick) {
+    IconButton(onClick = onClick, modifier = modifier) {
         Box(contentAlignment = Alignment.Center) {
             Icon(
                 imageVector = Icons.Rounded.Shuffle,
@@ -1275,13 +1294,20 @@ private fun ShuffleButton(shuffleOn: Boolean, smartOn: Boolean, onClick: () -> U
 }
 
 @Composable
-private fun ModeButton(icon: ImageVector, description: String, active: Boolean, onClick: () -> Unit) {
-    IconButton(onClick = onClick) {
+private fun ModeButton(
+    icon: ImageVector,
+    description: String,
+    active: Boolean,
+    onClick: () -> Unit,
+    activeColor: Color = Color.White,
+    modifier: Modifier = Modifier
+) {
+    IconButton(onClick = onClick, modifier = modifier) {
         Box(contentAlignment = Alignment.Center) {
             Icon(
                 imageVector = icon,
                 contentDescription = description,
-                tint = if (active) Color.White else Color.White.copy(alpha = 0.5f),
+                tint = if (active) activeColor else Color.White.copy(alpha = 0.5f),
                 modifier = Modifier.size(26.dp)
             )
             if (active) {
@@ -1289,7 +1315,7 @@ private fun ModeButton(icon: ImageVector, description: String, active: Boolean, 
                     modifier = Modifier
                         .offset(y = 18.dp)
                         .size(4.dp)
-                        .background(Color.White, CircleShape)
+                        .background(activeColor, CircleShape)
                 )
             }
         }

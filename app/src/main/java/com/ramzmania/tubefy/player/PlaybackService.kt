@@ -123,6 +123,16 @@ class PlaybackService(
     /** Fresh-link retries per song after a playback error: (attempts, when the last one was). */
     private val linkRetries = HashMap<String, Pair<Int, Long>>()
 
+    /** The queue on disk, restored if Android closes TubeFy (e.g. during a long pause). */
+    private lateinit var queueStore: QueueStore
+    private val saveQueue = Runnable { mediaSession?.player?.let { queueStore.save(it, offlineMode) } }
+
+    /** Saves the queue a moment after it changes (several changes in a row are saved once). */
+    private fun scheduleQueueSave() {
+        mainHandler.removeCallbacks(saveQueue)
+        mainHandler.postDelayed(saveQueue, 1_000)
+    }
+
     /** When playback was last paused, to refresh links that may have died during a long pause. */
     private var pausedAt = 0L
 
@@ -196,7 +206,20 @@ class PlaybackService(
             )
             .build().apply {
             // Adding the error listener to the ExoPlayer instance
+            // Sound controls (equalizer and effects) follow the player's audio session
+            SoundEffects.init(this@PlaybackService)
+            val auxEffect = { effectId: Int, level: Float ->
+                setAuxEffectInfo(
+                    if (level > 0f) androidx.media3.common.AuxEffectInfo(effectId, level)
+                    else androidx.media3.common.AuxEffectInfo(androidx.media3.common.AuxEffectInfo.NO_AUX_EFFECT_ID, 0f)
+                )
+            }
+            SoundEffects.attach(audioSessionId, auxEffect)
             addListener(object : Player.Listener {
+                override fun onAudioSessionIdChanged(audioSessionId: Int) {
+                    SoundEffects.attach(audioSessionId, auxEffect)
+                }
+
                 // Each video-page video starts at its best quality (once; the user can then change it)
                 override fun onTracksChanged(tracks: Tracks) {
                     val item = currentMediaItem ?: return
@@ -236,12 +259,14 @@ class PlaybackService(
 
                 override fun onTimelineChanged(timeline: Timeline, reason: Int) {
                     // Songs added while shuffling (auto-queue, Mix, playlist loading) go after the current one
+                    if (reason == Player.TIMELINE_CHANGE_REASON_PLAYLIST_CHANGED) scheduleQueueSave()
                     if (reason == Player.TIMELINE_CHANGE_REASON_PLAYLIST_CHANGED && shuffleModeEnabled) {
                         mainHandler.post { upcomingShuffle.apply(this@apply) }
                     }
                 }
 
                 override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+                    scheduleQueueSave()
                     if (!playWhenReady) {
                         pausedAt = android.os.SystemClock.elapsedRealtime()
                     } else if (pausedAt != 0L && android.os.SystemClock.elapsedRealtime() - pausedAt > LONG_PAUSE_MS) {
@@ -311,6 +336,7 @@ class PlaybackService(
                 }
 
                 override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                    scheduleQueueSave()
                     // Next / previous after a failed song: the player is stopped by the error, so load the
                     // new song (with a fresh link if needed) instead of just showing it
                     if (playbackState == Player.STATE_IDLE && playerError != null) {
@@ -381,6 +407,17 @@ class PlaybackService(
             publish = ::publishSessionExtras
         )
         notificationButtons.refresh()
+
+        // Android closed TubeFy (e.g. during a long pause): put the queue back where it was, paused
+        queueStore = QueueStore(this)
+        if (player.mediaItemCount == 0) {
+            queueStore.load()?.let { saved ->
+                offlineMode = saved.offline
+                player.setMediaItems(saved.items, saved.index, saved.positionMs)
+                player.playWhenReady = false
+                player.prepare()
+            }
+        }
     }
 
     /**
@@ -597,6 +634,9 @@ class PlaybackService(
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo) = mediaSession
 
     override fun onDestroy() {
+        mainHandler.removeCallbacks(saveQueue)
+        mediaSession?.player?.let { queueStore.save(it, offlineMode) }
+        SoundEffects.release()
         sleepTimer.release()
         mainScope.cancel()
         mediaSession?.run {
