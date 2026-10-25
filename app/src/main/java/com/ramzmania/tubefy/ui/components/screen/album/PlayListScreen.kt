@@ -1,6 +1,6 @@
 package com.ramzmania.tubefy.ui.components.screen.album
 
-import com.ramzmania.tubefy.core.lyrics.SongAlbum
+import com.ramzmania.tubefy.ui.components.screen.player.PlayedFrom
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
@@ -81,15 +81,6 @@ import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.util.Calendar
 
-/** The album page the queue was played from, and its songs. */
-class PlayedFromAlbum(val album: SongAlbum, private val songIds: Set<String>) {
-    operator fun contains(videoId: String) = videoId in songIds
-
-    companion object {
-        var current: PlayedFromAlbum? = null
-    }
-}
-
 @Composable
 fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
     val playListData by viewModel.youTubePlayListData.observeAsState()
@@ -115,13 +106,15 @@ fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
     // Playing anything from this playlist counts towards Home's top playlists grid
     val recordPlayed = {
         viewModel.recordYoutubePlaylistPlayed(playlistId, title, imageUrl)
-        // Lets the player offer "Go to album" for the songs played from here
-        if (playlistId.startsWith("OLAK5uy_")) {
-            PlayedFromAlbum.current = PlayedFromAlbum(
-                SongAlbum(playlistId, title, imageUrl),
-                videoAudioItems.mapNotNull { it?.videoId }.toSet()
-            )
-        }
+        // Lets the player offer "Go to album / playlist" for the songs played from here
+        fun enc(value: String) = URLEncoder.encode(value, StandardCharsets.UTF_8.toString())
+        PlayedFrom.current = PlayedFrom(
+            isAlbum = playlistId.startsWith("OLAK5uy_"),
+            route = NavigationItem.PlayList.createRoute(playlistId, enc(title), enc(imageUrl.ifBlank { "nourl" })),
+            argName = "playlistId",
+            argValue = playlistId,
+            songIds = videoAudioItems.mapNotNull { it?.videoId }
+        )
     }
 
     LaunchedEffect(Unit) {

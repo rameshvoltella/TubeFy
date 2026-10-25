@@ -124,7 +124,10 @@ class SongInfoSource @Inject constructor(
                 // The album page names its playlist (OLAK5uy_…), which the album screen opens
                 val playlistId = find(page, "playlistId").map { it.toString() }.firstOrNull { it.startsWith("OLAK5uy_") }
                     ?: return@runCatching null
-                val thumbnail = (find(page, "thumbnails").firstOrNull() as? List<*>)
+                // The cover in the album's header (the page's first thumbnails can be another album's, in "More from")
+                val header = (find(page, "musicResponsiveHeaderRenderer").firstOrNull()
+                    ?: find(page, "musicDetailHeaderRenderer").firstOrNull()) as? Map<*, *>
+                val thumbnail = (find(header?.get("thumbnail"), "thumbnails").firstOrNull() as? List<*>)
                     ?.filterIsInstance<Map<*, *>>()?.lastOrNull()?.get("url") as? String
                 SongAlbum(playlistId, track.album, thumbnail.orEmpty())
             }
