@@ -120,8 +120,32 @@ class PlaybackService(
 
     private val streamUrlRefresher = StreamUrlRefresher()
 
-    /** Songs already retried once with a fresh link after a playback error. */
-    private val linkRetriedIds = mutableSetOf<String>()
+    /** Fresh-link retries per song after a playback error: (attempts, when the last one was). */
+    private val linkRetries = HashMap<String, Pair<Int, Long>>()
+
+    /** When playback was last paused, to refresh links that may have died during a long pause. */
+    private var pausedAt = 0L
+
+    /**
+     * Whether to retry [videoId] with a fresh link: up to [MAX_LINK_RETRIES] times in a row, counted
+     * again after a minute, so a song that fails after another long pause gets its retries back.
+     */
+    private fun shouldRetryLink(videoId: String): Boolean {
+        val now = android.os.SystemClock.elapsedRealtime()
+        val (count, at) = linkRetries[videoId] ?: (0 to 0L)
+        val attempts = if (now - at > LINK_RETRY_RESET_MS) 0 else count
+        if (attempts >= MAX_LINK_RETRIES) return false
+        linkRetries[videoId] = (attempts + 1) to now
+        return true
+    }
+
+    /**
+     * Errors a fresh link can fix: an expired or rejected link (403, e.g. after a long pause or a network
+     * change), a dropped connection, or bytes that don't match the format being played.
+     */
+    private fun isLinkError(error: PlaybackException) =
+        error.errorCode in 2000..2999 && error.errorCode != PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND ||
+            error.errorCode == PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED
 
     /** The running "what plays next" refill (Mix or cache), so it isn't started twice. */
     private var autoQueueJob: Job? = null
@@ -186,7 +210,7 @@ class PlaybackService(
                 override fun onPlaybackStateChanged(playbackState: Int) {
                     super.onPlaybackStateChanged(playbackState)
                     if (playbackState == Player.STATE_READY) {
-                        currentMediaItem?.mediaId?.let { linkRetriedIds.remove(it) }
+                        currentMediaItem?.mediaId?.let { linkRetries.remove(it) }
                     }
                     if (playbackState == Player.STATE_READY && playWhenReady) {
                         // Playback has started
@@ -218,6 +242,14 @@ class PlaybackService(
                 }
 
                 override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+                    if (!playWhenReady) {
+                        pausedAt = android.os.SystemClock.elapsedRealtime()
+                    } else if (pausedAt != 0L && android.os.SystemClock.elapsedRealtime() - pausedAt > LONG_PAUSE_MS) {
+                        // Back after a long pause: the song's link may have expired or died meanwhile, so
+                        // its next load fetches a new one instead of failing first
+                        pausedAt = 0L
+                        if (!offlineMode) currentMediaItem?.mediaId?.let(streamUrlRefresher::forceRefresh)
+                    }
                     if (!playWhenReady && reason == Player.PLAY_WHEN_READY_CHANGE_REASON_END_OF_MEDIA_ITEM) {
                         sleepTimer.onPausedAtEndOfSong()
                     }
@@ -228,13 +260,16 @@ class PlaybackService(
                     // A dead link (expired / rejected): retry the same song once with a fresh link,
                     // keeping its position, before falling back to the skip logic below
                     val failedId = currentMediaItem?.mediaId
-                    if (!offlineMode && failedId != null &&
-                        error.errorCode == PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS &&
-                        linkRetriedIds.add(failedId)
-                    ) {
+                    if (!offlineMode && failedId != null && isLinkError(error) && shouldRetryLink(failedId)) {
                         streamUrlRefresher.forceRefresh(failedId)
-                        playWhenReady = true
-                        prepare()
+                        // Second try waits a moment, e.g. for the network to come back after the phone slept
+                        val delayMs = if (linkRetries[failedId]?.first == 1) 0L else 2_000L
+                        mainHandler.postDelayed({
+                            if (currentMediaItem?.mediaId == failedId && playbackState == Player.STATE_IDLE) {
+                                playWhenReady = true
+                                prepare()
+                            }
+                        }, delayMs)
                         return
                     }
                     if (offlineMode) {
@@ -276,6 +311,12 @@ class PlaybackService(
                 }
 
                 override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                    // Next / previous after a failed song: the player is stopped by the error, so load the
+                    // new song (with a fresh link if needed) instead of just showing it
+                    if (playbackState == Player.STATE_IDLE && playerError != null) {
+                        playWhenReady = true
+                        prepare()
+                    }
 //                    mediaItem?.let {
                     upcomingShuffle.onSongStarted(mediaItem?.mediaId)
                     smartShuffle.onSongChanged()
@@ -822,6 +863,10 @@ class PlaybackService(
         const val EXTRA_LOAD_ERROR = "com.ramzmania.tubefy.LOAD_ERROR"
         /** How many Mix songs to queue at once; the next refill seeds from the song playing then. */
         private const val MIX_BATCH_SIZE = 10
+        private const val MAX_LINK_RETRIES = 2
+        private const val LINK_RETRY_RESET_MS = 60_000L
+        /** Paused this long, the playing song's link is refreshed on resume. */
+        private const val LONG_PAUSE_MS = 20 * 60_000L
         const val VIDEO_ID = "com.ramzmania.tubefy.VIDEO_ID"
         const val VIDEO_MODE = "com.ramzmania.tubefy.VIDEO_MODE"
         const val ALBUM_ART = "com.ramzmania.tubefy.ALBUM_ART"
