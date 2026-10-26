@@ -206,9 +206,16 @@ private fun EqualizerTab(settings: SoundEffects.Settings, capabilities: SoundEff
             Text("Equalizer", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier
                 .weight(1f)
                 .padding(start = 12.dp))
-            AccentSwitch(settings.eqEnabled) { on -> SoundEffects.update { it.copy(eqEnabled = on) } }
+            AccentSwitch(settings.eqEnabled, onChange = SoundEffects::setEqEnabled)
         }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            // A flat curve changes nothing: say so
+            Text(
+                if (settings.eqEnabled && settings.isFlat) "Flat – pick a preset or drag the bands" else "",
+                color = DiscoverAccent,
+                fontSize = 12.sp,
+                modifier = Modifier.weight(1f)
+            )
             PresetDropdown(settings.preset)
         }
         Spacer(Modifier.height(8.dp))

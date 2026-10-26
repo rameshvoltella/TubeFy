@@ -10,6 +10,18 @@ import android.content.res.Configuration
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.scale
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -94,6 +106,10 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.material.icons.rounded.FastRewind
+import androidx.compose.material.icons.rounded.FastForward
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculateZoom
@@ -697,6 +713,37 @@ private fun VideoPlayerBox(
             }
         }
     }
+    // Double tap: left half −10 s, right half +10 s; quick repeats add up ("30 seconds")
+    var doubleTapSeek by remember { mutableStateOf<Pair<Boolean, Int>?>(null) }
+    var doubleTapAt by remember { mutableStateOf(0L) }
+    LaunchedEffect(doubleTapAt) {
+        if (doubleTapAt > 0) {
+            delay(800L)
+            doubleTapSeek = null
+        }
+    }
+    // The ±10 s buttons spin a full turn (back: anticlockwise) whenever the video jumps 10 s
+    val spinScope = rememberCoroutineScope()
+    val backSpin = remember { Animatable(0f) }
+    val forwardSpin = remember { Animatable(0f) }
+    fun jump10(forward: Boolean) {
+        val c = controller ?: return
+        val target = c.currentPosition + if (forward) 10_000 else -10_000
+        c.seekTo(if (forward && c.duration > 0) target.coerceAtMost(c.duration) else target.coerceAtLeast(0))
+        val spin = if (forward) forwardSpin else backSpin
+        spinScope.launch {
+            spin.snapTo(0f)
+            spin.animateTo(if (forward) 360f else -360f, tween(450, easing = FastOutSlowInEasing))
+            spin.snapTo(0f)
+        }
+    }
+    fun seekBy(forward: Boolean) {
+        jump10(forward)
+        val previous = doubleTapSeek?.takeIf { it.first == forward && System.currentTimeMillis() - doubleTapAt < 800L }
+        doubleTapSeek = forward to (previous?.second ?: 0) + 10
+        doubleTapAt = System.currentTimeMillis()
+        onTouch()
+    }
     LaunchedEffect(zoomHint) {
         if (zoomHint != null) {
             delay(1_200L)
@@ -770,7 +817,15 @@ private fun VideoPlayerBox(
                     }
                 }
             }
-            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onToggleControls)
+            // Tap toggles the controls; double tap seeks (not for live streams)
+            .pointerInput(isLive) {
+                detectTapGestures(
+                    onTap = { onToggleControls() },
+                    onDoubleTap = { offset ->
+                        if (isLive) onToggleControls() else seekBy(forward = offset.x > size.width / 2)
+                    }
+                )
+            }
     ) {
         SessionVideoSurface(controller = controller, playing = isPlaying, zoomed = fullscreen && zoomed, modifier = Modifier.fillMaxSize())
 
@@ -792,6 +847,21 @@ private fun VideoPlayerBox(
         }
 
         swipeHud?.let { (kind, level) -> SwipeLevelHud(kind, level, Modifier.align(Alignment.Center)) }
+
+        // Keeps the last hint while it fades out
+        var lastSeek by remember { mutableStateOf(true to 10) }
+        doubleTapSeek?.let { lastSeek = it }
+        AnimatedVisibility(
+            visible = doubleTapSeek != null,
+            enter = fadeIn(tween(120)),
+            exit = fadeOut(tween(300)),
+            modifier = Modifier
+                .fillMaxHeight()
+                .fillMaxWidth(0.38f)
+                .align(if (lastSeek.first) Alignment.CenterEnd else Alignment.CenterStart)
+        ) {
+            DoubleTapSeekHint(lastSeek.first, lastSeek.second, tapKey = doubleTapAt)
+        }
 
         zoomHint?.let {
             Text(
@@ -882,9 +952,9 @@ private fun VideoPlayerBox(
                     horizontalArrangement = Arrangement.spacedBy(if (fullscreen) 56.dp else 28.dp),
                     modifier = Modifier.align(Alignment.Center)
                 ) {
-                    if (!isLive) RoundControl(Icons.Rounded.Replay10, "Back 10 seconds", 52.dp) {
+                    if (!isLive) RoundControl(Icons.Rounded.Replay10, "Back 10 seconds", 52.dp, iconRotation = backSpin.value) {
                         onTouch()
-                        controller?.let { it.seekTo((it.currentPosition - 10_000).coerceAtLeast(0)) }
+                        jump10(forward = false)
                     }
                     if (isBuffering && !isPlaying) {
                         Box(Modifier.size(68.dp), contentAlignment = Alignment.Center) {
@@ -901,12 +971,9 @@ private fun VideoPlayerBox(
                             controller?.let { if (it.isPlaying) it.pause() else it.play() }
                         }
                     }
-                    if (!isLive) RoundControl(Icons.Rounded.Forward10, "Forward 10 seconds", 52.dp) {
+                    if (!isLive) RoundControl(Icons.Rounded.Forward10, "Forward 10 seconds", 52.dp, iconRotation = forwardSpin.value) {
                         onTouch()
-                        controller?.let { c ->
-                            val target = c.currentPosition + 10_000
-                            c.seekTo(if (c.duration > 0) target.coerceAtMost(c.duration) else target)
-                        }
+                        jump10(forward = true)
                     }
                 }
 
@@ -1053,7 +1120,13 @@ class PlayerMenuEntry(val title: String, val value: String, val onClick: () -> U
 }
 
 @Composable
-private fun RoundControl(icon: ImageVector, description: String, size: androidx.compose.ui.unit.Dp, onClick: () -> Unit) {
+private fun RoundControl(
+    icon: ImageVector,
+    description: String,
+    size: androidx.compose.ui.unit.Dp,
+    iconRotation: Float = 0f,
+    onClick: () -> Unit
+) {
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
@@ -1062,7 +1135,9 @@ private fun RoundControl(icon: ImageVector, description: String, size: androidx.
             .background(Color.Black.copy(alpha = 0.35f))
             .clickable(onClick = onClick)
     ) {
-        Icon(icon, contentDescription = description, tint = Color.White, modifier = Modifier.size(size * 0.58f))
+        Icon(icon, contentDescription = description, tint = Color.White, modifier = Modifier
+            .size(size * 0.58f)
+            .rotate(iconRotation))
     }
 }
 
@@ -1356,4 +1431,67 @@ private fun Context.findActivity(): Activity? {
         current = current.baseContext
     }
     return null
+}
+
+/**
+ * The flash on the tapped side after a double-tap seek: a ripple from the middle of the side, three
+ * arrows lighting up one after another (towards the seek direction), and the seconds popping in.
+ * [tapKey] changes on every tap, restarting the ripple and the pop.
+ */
+@Composable
+private fun DoubleTapSeekHint(forward: Boolean, seconds: Int, tapKey: Long, modifier: Modifier = Modifier) {
+    val shape = if (forward) RoundedCornerShape(topStartPercent = 50, bottomStartPercent = 50)
+    else RoundedCornerShape(topEndPercent = 50, bottomEndPercent = 50)
+    val ripple = remember { Animatable(0f) }
+    val pop = remember { Animatable(1f) }
+    LaunchedEffect(tapKey) {
+        launch {
+            ripple.snapTo(0f)
+            ripple.animateTo(1f, tween(550, easing = FastOutSlowInEasing))
+        }
+        pop.snapTo(1.3f)
+        pop.animateTo(1f, spring(dampingRatio = 0.45f, stiffness = 500f))
+    }
+    val arrows = rememberInfiniteTransition(label = "seekArrows")
+    val phase by arrows.animateFloat(0f, 3f, infiniteRepeatable(tween(750, easing = LinearEasing)), label = "phase")
+
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .fillMaxSize()
+            .clip(shape)
+            .background(Color.White.copy(alpha = 0.12f))
+            .drawBehind {
+                // Ripple
+                val r = size.maxDimension * 0.75f * ripple.value
+                drawCircle(Color.White.copy(alpha = 0.22f * (1f - ripple.value)), radius = r, center = center)
+            }
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Row(horizontalArrangement = Arrangement.spacedBy((-6).dp)) {
+                repeat(3) { i ->
+                    // The lit arrow travels towards the seek direction
+                    val step = if (forward) i else 2 - i
+                    val lit = (1f - abs(phase - step - 0.5f).coerceAtMost(1.5f) / 1.5f).coerceIn(0f, 1f)
+                    Icon(
+                        Icons.Rounded.PlayArrow,
+                        contentDescription = null,
+                        tint = Color.White.copy(alpha = 0.3f + 0.7f * lit),
+                        modifier = Modifier
+                            .size(22.dp)
+                            .rotate(if (forward) 0f else 180f)
+                    )
+                }
+            }
+            Text(
+                "$seconds seconds",
+                color = Color.White,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier
+                    .padding(top = 4.dp)
+                    .scale(pop.value)
+            )
+        }
+    }
 }

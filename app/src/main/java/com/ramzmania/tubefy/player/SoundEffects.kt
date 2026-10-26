@@ -26,15 +26,18 @@ object SoundEffects {
         /** dB for each of [BAND_POINTS_HZ] in Custom. */
         val customDb: List<Float> = List(BAND_POINTS_HZ.size) { 0f },
         val bassEnabled: Boolean = false,
-        val bass: Float = 0.5f,
+        val bass: Float = 0.7f,
         val virtualizerEnabled: Boolean = false,
-        val virtualizer: Float = 0.5f,
+        val virtualizer: Float = 0.7f,
         val loudnessEnabled: Boolean = false,
-        val loudness: Float = 0.5f,
+        val loudness: Float = 0.7f,
         val reverb: String = REVERB_NONE
     ) {
         /** The curve playing now, in dB per [BAND_POINTS_HZ]. */
         val curveDb: List<Float> get() = PRESETS[preset] ?: customDb
+
+        /** On but every band at 0 dB: sounds the same as off. */
+        val isFlat: Boolean get() = curveDb.all { it == 0f }
     }
 
     /** What this phone's equalizer offers (known once the player has an audio session). */
@@ -50,13 +53,13 @@ object SoundEffects {
 
     const val PRESET_CUSTOM = "custom"
     val PRESETS: Map<String, List<Float>> = linkedMapOf(
-        "pop" to listOf(-1f, 2f, 4f, 2f, -1f),
-        "rock" to listOf(5f, 2f, -2f, 3f, 5f),
-        "vocal" to listOf(-2f, 0f, 4f, 4f, 1f),
-        "bass" to listOf(7f, 4f, 0f, 0f, 0f),
-        "jazz" to listOf(3f, 1f, -1f, 2f, 4f),
-        "classical" to listOf(4f, 2f, -1f, 2f, 4f),
-        "electronic" to listOf(5f, 3f, 0f, 2f, 4f)
+        "pop" to listOf(-2f, 3f, 6f, 3f, -1f),
+        "rock" to listOf(7f, 3f, -3f, 4f, 7f),
+        "vocal" to listOf(-3f, 0f, 6f, 6f, 2f),
+        "bass" to listOf(10f, 6f, 0f, 0f, 0f),
+        "jazz" to listOf(4f, 2f, -2f, 3f, 6f),
+        "classical" to listOf(6f, 3f, -2f, 3f, 6f),
+        "electronic" to listOf(7f, 4f, 0f, 3f, 6f)
     )
 
     const val REVERB_NONE = "none"
@@ -154,6 +157,12 @@ object SoundEffects {
     }
 
     fun reset() = update { Settings() }
+
+    /** Turning the equalizer on with a flat Custom curve picks Bass Boost, so the switch is always heard. */
+    fun setEqEnabled(on: Boolean) = update { s ->
+        if (on && s.preset == PRESET_CUSTOM && s.customDb.all { it == 0f }) s.copy(eqEnabled = true, preset = "bass")
+        else s.copy(eqEnabled = on)
+    }
 
     private fun apply(s: Settings) {
         runCatching {

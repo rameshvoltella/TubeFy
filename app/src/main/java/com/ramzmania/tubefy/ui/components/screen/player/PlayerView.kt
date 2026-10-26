@@ -71,6 +71,7 @@ import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.Album
 import com.ramzmania.tubefy.core.lyrics.SongAlbum
@@ -219,6 +220,8 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
     var showPlayListDialog by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
     var showSoundControls by remember { mutableStateOf(false) }
+    var showSpeed by remember { mutableStateOf(false) }
+    var playbackSpeed by remember { mutableStateOf(1f) }
     val soundSettings by com.ramzmania.tubefy.player.SoundEffects.settings.collectAsState()
     var palette by remember { mutableStateOf<Palette?>(null) }
     val isFavouriteSong by viewModel.isFavouriteState.collectAsState()
@@ -424,6 +427,16 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
         showSleepSheet = false
     }
 
+    if (showSpeed) {
+        PlaybackSpeedSheet(
+            speed = playbackSpeed,
+            onSpeed = { speed ->
+                playbackSpeed = speed
+                mediaController?.setPlaybackSpeed(speed)
+            },
+            onDismiss = { showSpeed = false }
+        )
+    }
     if (showSoundControls) {
         SoundControlsSheet(onDismiss = { showSoundControls = false })
     }
@@ -471,6 +484,7 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
         },
         onMediaControllerInitialized = { controller ->
             mediaController = controller
+            playbackSpeed = controller.playbackParameters.speed
             isPlaying = controller.isPlaying
             val currentId = controller.currentMediaItem?.mediaId
             // (If the queue is gone, e.g. TubeFy was closed and couldn't restore it, start the song again)
@@ -671,6 +685,14 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                                 }
                             )
                         }
+                        DropdownMenuItem(
+                            text = { Text(if (playbackSpeed == 1f) "Playback speed" else "Playback speed · ${formatSpeed(playbackSpeed)}") },
+                            leadingIcon = { Icon(Icons.Rounded.Speed, null) },
+                            onClick = {
+                                showMenu = false
+                                showSpeed = true
+                            }
+                        )
                         // Only for songs that are from an album
                         if (findingAlbum) {
                             DropdownMenuItem(
@@ -830,7 +852,7 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                     active = soundSettings.anyOn(),
                     activeColor = DiscoverAccent,
                     onClick = { showSoundControls = true },
-                    modifier = Modifier.size(40.dp)
+                    modifier = Modifier.size(36.dp)
                 )
                 // Off -> Shuffle -> Smart Shuffle -> Off
                 ShuffleButton(
@@ -862,15 +884,15 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                             }
                         }
                     },
-                    modifier = Modifier.size(40.dp)
+                    modifier = Modifier.size(36.dp)
                 )
                 }
-                IconButton(onClick = { mediaController?.seekToPrevious() }, modifier = Modifier.size(50.dp)) {
-                    Icon(Icons.Rounded.SkipPrevious, "Previous", tint = Color.White, modifier = Modifier.size(40.dp))
+                IconButton(onClick = { mediaController?.seekToPrevious() }, modifier = Modifier.size(44.dp)) {
+                    Icon(Icons.Rounded.SkipPrevious, "Previous", tint = Color.White, modifier = Modifier.size(38.dp))
                 }
                 Box(
                     modifier = Modifier
-                        .size(84.dp)
+                        .size(80.dp)
                         .clip(CircleShape)
                         .border(1.5.dp, Color.White.copy(alpha = 0.7f), CircleShape)
                         .clickable(enabled = !isLoading) {
@@ -893,10 +915,12 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                 }
                 IconButton(
                     onClick = { mediaController?.takeIf { it.hasNextMediaItem() }?.seekToNextMediaItem() },
-                    modifier = Modifier.size(50.dp)
+                    modifier = Modifier.size(44.dp)
                 ) {
-                    Icon(Icons.Rounded.SkipNext, "Next", tint = Color.White, modifier = Modifier.size(40.dp))
+                    Icon(Icons.Rounded.SkipNext, "Next", tint = Color.White, modifier = Modifier.size(38.dp))
                 }
+                // Repeat, then playback speed (lit while not at normal speed)
+                Row(verticalAlignment = Alignment.CenterVertically) {
                 ModeButton(
                     icon = if (repeatMode == Player.REPEAT_MODE_ONE) Icons.Rounded.RepeatOne else Icons.Rounded.Repeat,
                     description = "Repeat",
@@ -909,8 +933,18 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                                 else -> Player.REPEAT_MODE_OFF
                             }
                         }
-                    }
+                    },
+                    modifier = Modifier.size(36.dp)
                 )
+                ModeButton(
+                    icon = Icons.Rounded.Speed,
+                    description = "Playback speed ${'$'}{formatSpeed(playbackSpeed)}",
+                    active = playbackSpeed != 1f,
+                    activeColor = DiscoverAccent,
+                    onClick = { showSpeed = true },
+                    modifier = Modifier.size(36.dp)
+                )
+                }
             }
 
             // Quick actions (not in full-screen lyrics)
