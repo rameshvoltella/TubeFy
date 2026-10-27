@@ -90,7 +90,7 @@ class ListeningService : Service() {
             NotificationManagerCompat.from(context).notify(RESULT_ID, builder.build())
         }
 
-        private fun isInForeground(): Boolean {
+        internal fun isInForeground(): Boolean {
             val info = ActivityManager.RunningAppProcessInfo()
             ActivityManager.getMyMemoryState(info)
             return info.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND

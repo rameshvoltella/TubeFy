@@ -6,6 +6,13 @@ plugins {
     alias(libs.plugins.hilt)
 }
 
+// Firebase Analytics: google-services.json is kept out of git, so builds without it (other people's
+// clones, F-Droid) still work; analytics then simply stays off
+// (Release and "TubeFy Debug" are separate apps in Firebase, so testing doesn't mix into the real numbers)
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 android {
     namespace = "com.ramzmania.tubefy"
     compileSdk = 37
@@ -15,13 +22,20 @@ android {
         minSdk = 24
         targetSdk = 36
         versionCode = 5
-        versionName = "5.01"
+        versionName = "5.02"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
+        // A separate "TubeFy Debug" app (own package, debug signature) that installs next to the release one
+        debug {
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+            manifestPlaceholders["appLabel"] = "TubeFy Debug"
+        }
         release {
+            manifestPlaceholders["appLabel"] = "@string/app_name"
             isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -63,6 +77,8 @@ ksp {
 }
 
 dependencies {
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.analytics)
     coreLibraryDesugaring(libs.desugar.jdk.libs.nio)
 
     implementation(libs.androidx.core.ktx)

@@ -1,5 +1,6 @@
 package com.ramzmania.tubefy.ui.components.screen.album
 
+import com.ramzmania.tubefy.ui.components.screen.player.PlayedFrom
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
@@ -103,7 +104,18 @@ fun AlbumScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
     val title = remember { decodeArg(navBackStackEntry?.arguments?.getString("playlistName").orEmpty()).trim() }
     val playlistId = remember { navBackStackEntry?.arguments?.getString("playlistId").orEmpty() }
     // Playing anything from this playlist counts towards Home's top playlists grid
-    val recordPlayed = { viewModel.recordYoutubePlaylistPlayed(playlistId, title, imageUrl) }
+    val recordPlayed = {
+        viewModel.recordYoutubePlaylistPlayed(playlistId, title, imageUrl)
+        // Lets the player offer "Go to album / playlist" for the songs played from here
+        fun enc(value: String) = URLEncoder.encode(value, StandardCharsets.UTF_8.toString())
+        PlayedFrom.current = PlayedFrom(
+            isAlbum = playlistId.startsWith("OLAK5uy_"),
+            route = NavigationItem.PlayList.createRoute(playlistId, enc(title), enc(imageUrl.ifBlank { "nourl" })),
+            argName = "playlistId",
+            argValue = playlistId,
+            songIds = videoAudioItems.mapNotNull { it?.videoId }
+        )
+    }
 
     LaunchedEffect(Unit) {
         val playlistId = navBackStackEntry?.arguments?.getString("playlistId")

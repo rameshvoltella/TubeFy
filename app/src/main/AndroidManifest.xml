@@ -10,6 +10,8 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <!-- "Identify song": a few seconds of audio to recognise what's playing (asked only on tap) -->
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <!-- Sound controls: the reverb effect works on the shared output mix -->
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <!-- Keeps listening while the user switches to the app playing the song -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
 
@@ -29,7 +31,7 @@
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@drawable/tubefy_icon"
         android:logo="@drawable/ic_notification_player_icon"
-        android:label="@string/app_name"
+        android:label="${appLabel}"
         android:roundIcon="@drawable/tubefy_icon"
         android:supportsRtl="true"
         android:name=".TubeFyApplication"
@@ -80,6 +82,16 @@
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity>
+        <!-- Shares files the app makes (lyrics PDFs) with other apps -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/shared_files" />
+        </provider>
         <service
             android:name=".core.recognition.ListeningService"
             android:foregroundServiceType="microphone"

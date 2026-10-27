@@ -1,5 +1,14 @@
 package com.ramzmania.tubefy.ui.components.screen.player
 
+import com.ramzmania.tubefy.core.analytics.Analytics
+import com.ramzmania.tubefy.core.lyrics.LyricsPdf
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import android.widget.Toast
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.material.icons.rounded.Share
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
@@ -95,6 +104,8 @@ internal fun LyricsPane(
 
             is LyricsViewModel.State.Loaded -> {
                 val english = state.info.englishLetters
+                val context = LocalContext.current
+                val scope = rememberCoroutineScope()
                 LyricsList(
                     details = state.info.details,
                     lyrics = if (englishLetters && english != null) english else state.info.lyrics,
@@ -106,7 +117,18 @@ internal fun LyricsPane(
                     onSeek = onSeek,
                     syncOffsetMs = syncOffsetMs,
                     onAdjustSync = onAdjustSync,
-                    onResetSync = onResetSync
+                    onResetSync = onResetSync,
+                    // Share as a PDF (WhatsApp shows a preview); built off the main thread
+                    onShare = if (state.info.lyrics != null) {
+                        {
+                            Analytics.lyricsFeature("share_pdf")
+                            scope.launch {
+                                runCatching { withContext(Dispatchers.IO) { LyricsPdf.create(context, state.info) } }
+                                    .onSuccess { LyricsPdf.share(context, state.info, it) }
+                                    .onFailure { Toast.makeText(context, "Couldn't make the lyrics PDF", Toast.LENGTH_SHORT).show() }
+                            }
+                        }
+                    } else null
                 )
             }
         }
@@ -122,7 +144,8 @@ private fun LyricsList(
     onSeek: (Long) -> Unit,
     syncOffsetMs: Long,
     onAdjustSync: (Long) -> Unit,
-    onResetSync: () -> Unit
+    onResetSync: () -> Unit,
+    onShare: (() -> Unit)?
 ) {
     // Timed lyrics: the automatic intro shift plus the user's correction
     val shiftMs = (lyrics?.offsetMs ?: 0L) + syncOffsetMs
@@ -159,12 +182,17 @@ private fun LyricsList(
 
     // The Original / English letters switch (and the timing button) sit above the list, so they stay
     Column(Modifier.fillMaxSize()) {
-        if (scriptSwitch != null || lyrics?.synced == true) {
+        if (scriptSwitch != null || lyrics?.synced == true || onShare != null) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 12.dp, top = 14.dp)
             ) {
                 Box(Modifier.weight(1f)) { scriptSwitch?.invoke() }
+                if (onShare != null) {
+                    IconButton(onClick = onShare) {
+                        Icon(Icons.Rounded.Share, contentDescription = "Share lyrics", tint = Color.White.copy(alpha = 0.7f))
+                    }
+                }
                 if (lyrics?.synced == true) {
                     IconButton(onClick = { syncOpen = !syncOpen }) {
                         Icon(

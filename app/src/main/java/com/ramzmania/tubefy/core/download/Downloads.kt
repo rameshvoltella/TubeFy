@@ -74,6 +74,7 @@ object Downloads {
     fun plainId(videoId: String) = YoutubeCoreConstant.extractYoutubeVideoId(videoId) ?: videoId
 
     fun enqueue(context: Context, videoId: String, title: String, thumbnail: String) {
+        com.ramzmania.tubefy.core.analytics.Analytics.downloadStart("in_app")
         val request = OneTimeWorkRequestBuilder<DownloadWorker>()
             .addTag(WORK_TAG)
             .setInputData(
@@ -137,10 +138,12 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
                     .songInfoSource()
                     .load(videoId, title, "", durationMs)
             }
+            com.ramzmania.tubefy.core.analytics.Analytics.downloadResult("in_app", "done")
             Result.success()
         } catch (e: Exception) {
             partial.delete()
-            if (runAttemptCount < MAX_ATTEMPTS) Result.retry() else Result.failure()
+            if (runAttemptCount < MAX_ATTEMPTS) Result.retry()
+            else Result.failure().also { com.ramzmania.tubefy.core.analytics.Analytics.downloadResult("in_app", "failed") }
         }
     }
 

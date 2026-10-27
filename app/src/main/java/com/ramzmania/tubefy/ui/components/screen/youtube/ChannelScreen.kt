@@ -101,6 +101,7 @@ fun ChannelScreen(viewModel: ChannelViewModel = hiltViewModel()) {
     fun enc(value: String) = URLEncoder.encode(value, StandardCharsets.UTF_8.toString())
     fun open(item: YouTubeItem, audioOnly: Boolean = false) {
         val nav = navController ?: return
+        com.ramzmania.tubefy.core.analytics.Analytics.pendingSource = "channel"
         when {
             item.isPlaylist -> nav.navigate(NavigationItem.PlayList.createRoute(item.id, enc(item.title), enc(item.thumbnail.ifBlank { "nourl" })))
             audioOnly -> nav.navigate(NavigationItem.AudioPlayer.createRoute(enc(item.id), enc(item.thumbnail), enc(item.title), enc(item.title), enc(item.channel)))

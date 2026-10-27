@@ -1,5 +1,6 @@
 package com.ramzmania.tubefy.ui.components.screen.youtube
 
+import com.ramzmania.tubefy.core.analytics.Analytics
 import android.Manifest
 import android.content.pm.PackageManager
 import android.content.res.Configuration
@@ -220,6 +221,12 @@ fun YouTubeScreen(viewModel: YouTubeViewModel = hiltViewModel()) {
 
     fun openItem(item: YouTubeItem, audioOnly: Boolean = false) {
         val nav = navController ?: return
+        // Analytics: where the video came from (a search, or which chip)
+        val feedSource = if (search != null) "search" else activeFeed.key.substringBefore(':').let { if (it == "state") "trending_state" else it }
+        if (search != null) {
+            Analytics.searchResultClick("youtube", state.items.indexOf(item), if (item.isPlaylist) "playlist" else "video")
+        }
+        if (!item.isPlaylist) Analytics.pendingSource = feedSource
         fun enc(value: String) = URLEncoder.encode(value, StandardCharsets.UTF_8.toString())
         if (item.isPlaylist) {
             nav.navigate(NavigationItem.PlayList.createRoute(item.id, enc(item.title), enc(item.thumbnail.ifBlank { "nourl" })))
@@ -286,6 +293,7 @@ fun YouTubeScreen(viewModel: YouTubeViewModel = hiltViewModel()) {
                         },
                         onSearch = {
                             focusManager.clearFocus()
+                            if (query.isNotBlank()) Analytics.search(query, "youtube", "typed")
                             viewModel.submitSearch(query)
                         },
                         onClear = {
@@ -313,6 +321,7 @@ fun YouTubeScreen(viewModel: YouTubeViewModel = hiltViewModel()) {
                         onPick = {
                             setQuery(suggestion)
                             focusManager.clearFocus()
+                            Analytics.search(suggestion, "youtube", "suggestion")
                             viewModel.submitSearch(suggestion)
                         },
                         onFill = {
@@ -413,6 +422,7 @@ fun YouTubeScreen(viewModel: YouTubeViewModel = hiltViewModel()) {
                 }
 
                 state.items.isEmpty() -> item(key = "empty", span = fullLine) {
+                    search?.let { LaunchedEffect(it.query) { Analytics.searchNoResults(it.query, "youtube") } }
                     Message(if (search != null) "No videos found" else "Nothing here right now")
                 }
 

@@ -1,5 +1,6 @@
 package com.ramzmania.tubefy.ui.components.screen.player
 
+import com.ramzmania.tubefy.core.analytics.Analytics
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
@@ -71,6 +72,11 @@ import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.Speed
+import androidx.compose.material.icons.rounded.GraphicEq
+import androidx.compose.material.icons.rounded.Album
+import com.ramzmania.tubefy.core.lyrics.SongAlbum
+import androidx.compose.material.icons.automirrored.rounded.QueueMusic
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Repeat
@@ -214,6 +220,10 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
     }
     var showPlayListDialog by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
+    var showSoundControls by remember { mutableStateOf(false) }
+    var showSpeed by remember { mutableStateOf(false) }
+    var playbackSpeed by remember { mutableStateOf(1f) }
+    val soundSettings by com.ramzmania.tubefy.player.SoundEffects.settings.collectAsState()
     var palette by remember { mutableStateOf<Palette?>(null) }
     val isFavouriteSong by viewModel.isFavouriteState.collectAsState()
     val downloadState by rememberDownloadState(videoId)
@@ -341,6 +351,29 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
 
     // Lyrics tab: loaded only when it's open (and again when the song changes)
     val lyricsViewModel: LyricsViewModel = hiltViewModel()
+
+    // "Go to playlist / album": the page the song was played from, and the song's album on YouTube Music
+    val playedFrom = PlayedFrom.current?.takeIf { videoId.isNotBlank() && videoId in it }
+    var songAlbum by remember(videoId) { mutableStateOf<SongAlbum?>(null) }
+    var findingAlbum by remember(videoId) { mutableStateOf(false) }
+    LaunchedEffect(videoId, showMenu) {
+        if (!showMenu || songAlbum != null || videoId.isBlank() || playedFrom?.isAlbum == true) return@LaunchedEffect
+        findingAlbum = true
+        songAlbum = lyricsViewModel.album(videoId)
+        findingAlbum = false
+    }
+    fun openPage(argName: String, argValue: String, route: String) {
+        // Came from that page: just go back to it
+        if (navController.previousBackStackEntry?.arguments?.getString(argName) == argValue) {
+            navController.popBackStack()
+            return
+        }
+        navController.navigate(route)
+    }
+    fun openAlbum(album: SongAlbum) {
+        fun enc(value: String) = java.net.URLEncoder.encode(value, StandardCharsets.UTF_8.toString())
+        openPage("playlistId", album.playlistId, NavigationItem.PlayList.createRoute(album.playlistId, enc(album.title), enc(album.thumbnail.ifBlank { "nourl" })))
+    }
     val lyricsState by lyricsViewModel.state.collectAsState()
     val lyricsEnglish by lyricsViewModel.englishLetters.collectAsState()
     val lyricsSync by lyricsViewModel.syncOffset.collectAsState()
@@ -395,6 +428,20 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
         showSleepSheet = false
     }
 
+    if (showSpeed) {
+        PlaybackSpeedSheet(
+            speed = playbackSpeed,
+            onSpeed = { speed ->
+                if (speed != playbackSpeed) Analytics.playerFeature("speed", formatSpeed(speed))
+                playbackSpeed = speed
+                mediaController?.setPlaybackSpeed(speed)
+            },
+            onDismiss = { showSpeed = false }
+        )
+    }
+    if (showSoundControls) {
+        SoundControlsSheet(onDismiss = { showSoundControls = false })
+    }
     if (showSleepSheet) {
         SleepTimerSheet(
             active = sleepActive,
@@ -403,8 +450,14 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                 sleepRemainingMs > 0 -> "Stopping in ${formatTime(sleepRemainingMs, 0)}"
                 else -> null
             },
-            onMinutes = { minutes -> sendSleepCommand(SleepTimer.CMD_SET, bundleOf(SleepTimer.KEY_MINUTES to minutes)) },
-            onEndOfSong = { sendSleepCommand(SleepTimer.CMD_SET, bundleOf(SleepTimer.KEY_END_OF_SONG to true)) },
+            onMinutes = { minutes ->
+                Analytics.playerFeature("sleep_timer", "${minutes}_min")
+                sendSleepCommand(SleepTimer.CMD_SET, bundleOf(SleepTimer.KEY_MINUTES to minutes))
+            },
+            onEndOfSong = {
+                Analytics.playerFeature("sleep_timer", "end_of_song")
+                sendSleepCommand(SleepTimer.CMD_SET, bundleOf(SleepTimer.KEY_END_OF_SONG to true))
+            },
             onExtend = { sendSleepCommand(SleepTimer.CMD_EXTEND, bundleOf(SleepTimer.KEY_MINUTES to 5)) },
             onCancel = { sendSleepCommand(SleepTimer.CMD_CANCEL) },
             onDismiss = { showSleepSheet = false }
@@ -439,9 +492,11 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
         },
         onMediaControllerInitialized = { controller ->
             mediaController = controller
+            playbackSpeed = controller.playbackParameters.speed
             isPlaying = controller.isPlaying
             val currentId = controller.currentMediaItem?.mediaId
-            if (playbackRequested) {
+            // (If the queue is gone, e.g. TubeFy was closed and couldn't restore it, start the song again)
+            if (playbackRequested && controller.currentMediaItem != null) {
                 // Screen recreated (e.g. rotation): keep what's playing now instead of
                 // restarting the song / playlist this screen was originally opened with
                 isLoading = !controller.isPlaying && controller.playbackState != Player.STATE_READY
@@ -454,6 +509,29 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                 return@MediaControllerComposable
             }
             playbackRequested = true
+            // Analytics: where this play started (Shazam / shared links set it themselves)
+            if (Analytics.pendingSource == null) {
+                val previous = navController.previousBackStackEntry
+                Analytics.pendingSource = when {
+                    startOffline -> "downloads"
+                    else -> when (previous?.destination?.route?.substringBefore('/')?.substringBefore('?')) {
+                        NavigationItem.Home.route -> "home_section"
+                        NavigationItem.Search.route -> "search"
+                        NavigationItem.Books.route -> "library"
+                        NavigationItem.YouTube.route -> "youtube"
+                        "playlist" -> if (PlayedFrom.current?.isAlbum == true) "album" else "playlist"
+                        "myPlayList" -> when (previous.arguments?.getString("playerListName")) {
+                            "TubeFy-Favorites" -> "favorites"
+                            com.ramzmania.tubefy.core.download.Downloads.PLAYLIST -> "downloads"
+                            else -> "playlist"
+                        }
+                        "categoryPlayList" -> "category"
+                        "video" -> "video"
+                        "channel" -> "channel"
+                        else -> "app"
+                    }
+                }
+            }
             if (startOffline) {
                 startPlayDownloadsService(context)
             } else if (isBulk) {
@@ -497,6 +575,7 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
 
     fun toggleFavourite() {
         val id = YoutubeCoreConstant.extractYoutubeVideoId(videoId) ?: return
+        Analytics.favoriteToggle(added = !isFavouriteSong)
         if (isFavouriteSong) {
             viewModel.removeFromFavorites(id)
         } else {
@@ -506,6 +585,7 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
 
     // Lyrics tab (portrait): full screen, keeping only the seek bar and controls; Back returns to the tab before
     val lyricsFullScreen = playerMode == PlayerMode.Lyrics && !isLandscape
+    LaunchedEffect(playerMode) { Analytics.playerTab(playerMode.name.lowercase()) }
     var modeBeforeLyrics by rememberSaveable { mutableStateOf(PlayerMode.Song) }
     LaunchedEffect(playerMode) { if (playerMode != PlayerMode.Lyrics) modeBeforeLyrics = playerMode }
     BackHandler(enabled = lyricsFullScreen) { playerMode = modeBeforeLyrics }
@@ -628,6 +708,45 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                                 showPlayListDialog = true
                             }
                         )
+                        playedFrom?.let { page ->
+                            DropdownMenuItem(
+                                text = { Text(if (page.isAlbum) "Go to album" else "Go to playlist") },
+                                leadingIcon = { Icon(if (page.isAlbum) Icons.Rounded.Album else Icons.AutoMirrored.Rounded.QueueMusic, null) },
+                                onClick = {
+                                    showMenu = false
+                                    Analytics.goToPage(if (page.isAlbum) "album" else "playlist")
+                                    openPage(page.argName, page.argValue, page.route)
+                                }
+                            )
+                        }
+                        DropdownMenuItem(
+                            text = { Text(if (playbackSpeed == 1f) "Playback speed" else "Playback speed · ${formatSpeed(playbackSpeed)}") },
+                            leadingIcon = { Icon(Icons.Rounded.Speed, null) },
+                            onClick = {
+                                showMenu = false
+                                showSpeed = true
+                            }
+                        )
+                        // Only for songs that are from an album
+                        if (findingAlbum) {
+                            DropdownMenuItem(
+                                text = { Text("Finding album…") },
+                                leadingIcon = { CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp) },
+                                enabled = false,
+                                onClick = {}
+                            )
+                        }
+                        songAlbum?.let { album ->
+                            DropdownMenuItem(
+                                text = { Text("Go to album") },
+                                leadingIcon = { Icon(Icons.Rounded.Album, null) },
+                                onClick = {
+                                    showMenu = false
+                                    Analytics.goToPage("album")
+                                    openAlbum(album)
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -666,7 +785,10 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                             PlayerMode.Lyrics -> LyricsPane(
                                 state = lyricsState,
                                 positionMs = positionMs,
-                                onSeek = { mediaController?.seekTo(it) },
+                                onSeek = {
+                                    Analytics.lyricsFeature("line_tap")
+                                    mediaController?.seekTo(it)
+                                },
                                 onRetry = { loadLyrics(force = true) },
                                 englishLetters = lyricsEnglish,
                                 onEnglishLettersChange = lyricsViewModel::setEnglishLetters,
@@ -760,6 +882,16 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Sound controls next to shuffle (lit while any effect is on)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                ModeButton(
+                    icon = Icons.Rounded.GraphicEq,
+                    description = "Sound controls",
+                    active = soundSettings.anyOn(),
+                    activeColor = DiscoverAccent,
+                    onClick = { showSoundControls = true },
+                    modifier = Modifier.size(36.dp)
+                )
                 // Off -> Shuffle -> Smart Shuffle -> Off
                 ShuffleButton(
                     shuffleOn = shuffleOn,
@@ -769,6 +901,7 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                         when {
                             smartShuffleOn -> {
                                 smartShuffleOn = false
+                                Analytics.playerFeature("shuffle", "off")
                                 controller.sendCustomCommand(
                                     SessionCommand(SmartShuffle.CMD_SET, Bundle.EMPTY),
                                     bundleOf(SmartShuffle.KEY_ENABLED to false)
@@ -778,6 +911,7 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                             }
                             shuffleOn -> {
                                 smartShuffleOn = true
+                                Analytics.playerFeature("smart_shuffle", "on")
                                 controller.sendCustomCommand(
                                     SessionCommand(SmartShuffle.CMD_SET, Bundle.EMPTY),
                                     bundleOf(SmartShuffle.KEY_ENABLED to true)
@@ -786,17 +920,20 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                             }
                             else -> {
                                 controller.shuffleModeEnabled = true
+                                Analytics.playerFeature("shuffle", "on")
                                 Toast.makeText(context, "Shuffle on", Toast.LENGTH_SHORT).show()
                             }
                         }
-                    }
+                    },
+                    modifier = Modifier.size(36.dp)
                 )
-                IconButton(onClick = { mediaController?.seekToPrevious() }, modifier = Modifier.size(56.dp)) {
-                    Icon(Icons.Rounded.SkipPrevious, "Previous", tint = Color.White, modifier = Modifier.size(42.dp))
+                }
+                IconButton(onClick = { mediaController?.seekToPrevious() }, modifier = Modifier.size(44.dp)) {
+                    Icon(Icons.Rounded.SkipPrevious, "Previous", tint = Color.White, modifier = Modifier.size(38.dp))
                 }
                 Box(
                     modifier = Modifier
-                        .size(84.dp)
+                        .size(80.dp)
                         .clip(CircleShape)
                         .border(1.5.dp, Color.White.copy(alpha = 0.7f), CircleShape)
                         .clickable(enabled = !isLoading) {
@@ -819,10 +956,12 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                 }
                 IconButton(
                     onClick = { mediaController?.takeIf { it.hasNextMediaItem() }?.seekToNextMediaItem() },
-                    modifier = Modifier.size(56.dp)
+                    modifier = Modifier.size(44.dp)
                 ) {
-                    Icon(Icons.Rounded.SkipNext, "Next", tint = Color.White, modifier = Modifier.size(42.dp))
+                    Icon(Icons.Rounded.SkipNext, "Next", tint = Color.White, modifier = Modifier.size(38.dp))
                 }
+                // Repeat, then playback speed (lit while not at normal speed)
+                Row(verticalAlignment = Alignment.CenterVertically) {
                 ModeButton(
                     icon = if (repeatMode == Player.REPEAT_MODE_ONE) Icons.Rounded.RepeatOne else Icons.Rounded.Repeat,
                     description = "Repeat",
@@ -834,9 +973,24 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                                 Player.REPEAT_MODE_ALL -> Player.REPEAT_MODE_ONE
                                 else -> Player.REPEAT_MODE_OFF
                             }
+                            Analytics.playerFeature("repeat", when (it.repeatMode) {
+                                Player.REPEAT_MODE_ALL -> "all"
+                                Player.REPEAT_MODE_ONE -> "one"
+                                else -> "off"
+                            })
                         }
-                    }
+                    },
+                    modifier = Modifier.size(36.dp)
                 )
+                ModeButton(
+                    icon = Icons.Rounded.Speed,
+                    description = "Playback speed ${'$'}{formatSpeed(playbackSpeed)}",
+                    active = playbackSpeed != 1f,
+                    activeColor = DiscoverAccent,
+                    onClick = { showSpeed = true },
+                    modifier = Modifier.size(36.dp)
+                )
+                }
             }
 
             // Quick actions (not in full-screen lyrics)
@@ -1179,9 +1333,9 @@ private fun LoadErrorBanner(message: String, onRetry: () -> Unit) {
 }
 
 @Composable
-private fun ShuffleButton(shuffleOn: Boolean, smartOn: Boolean, onClick: () -> Unit) {
+private fun ShuffleButton(shuffleOn: Boolean, smartOn: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val active = shuffleOn || smartOn
-    IconButton(onClick = onClick) {
+    IconButton(onClick = onClick, modifier = modifier) {
         Box(contentAlignment = Alignment.Center) {
             Icon(
                 imageVector = Icons.Rounded.Shuffle,
@@ -1220,13 +1374,20 @@ private fun ShuffleButton(shuffleOn: Boolean, smartOn: Boolean, onClick: () -> U
 }
 
 @Composable
-private fun ModeButton(icon: ImageVector, description: String, active: Boolean, onClick: () -> Unit) {
-    IconButton(onClick = onClick) {
+private fun ModeButton(
+    icon: ImageVector,
+    description: String,
+    active: Boolean,
+    onClick: () -> Unit,
+    activeColor: Color = Color.White,
+    modifier: Modifier = Modifier
+) {
+    IconButton(onClick = onClick, modifier = modifier) {
         Box(contentAlignment = Alignment.Center) {
             Icon(
                 imageVector = icon,
                 contentDescription = description,
-                tint = if (active) Color.White else Color.White.copy(alpha = 0.5f),
+                tint = if (active) activeColor else Color.White.copy(alpha = 0.5f),
                 modifier = Modifier.size(26.dp)
             )
             if (active) {
@@ -1234,7 +1395,7 @@ private fun ModeButton(icon: ImageVector, description: String, active: Boolean, 
                     modifier = Modifier
                         .offset(y = 18.dp)
                         .size(4.dp)
-                        .background(Color.White, CircleShape)
+                        .background(activeColor, CircleShape)
                 )
             }
         }

@@ -1,5 +1,6 @@
 package com.ramzmania.tubefy.ui.components.screen.library
 
+import com.ramzmania.tubefy.ui.components.screen.player.PlayedFrom
 import androidx.compose.foundation.background
 import android.content.res.Configuration
 import androidx.compose.ui.platform.LocalConfiguration
@@ -301,6 +302,18 @@ fun LibraryListBaseView(
         }
         // Counts towards Home's top playlists grid (own playlists, Favorites and Downloads)
         viewModel.recordCustomPlaylistPlayed(playlistName, songs.first().videoImage)
+        // Lets the player offer "Go to playlist" back to here
+        newNav.currentBackStackEntry?.arguments?.let { args ->
+            PlayedFrom.current = PlayedFrom(
+                isAlbum = false,
+                route = NavigationItem.MyPlayList.createRoute(
+                    URLEncoder.encode(args.getString("playerListImage").orEmpty(), StandardCharsets.UTF_8.toString()), playlistName
+                ),
+                argName = "playerListName",
+                argValue = playlistName,
+                songIds = songs.map { it.videoId }
+            )
+        }
         clickedPosition = index
         doLoadData = true
         viewModel.setActiveSongsList(songs, index)

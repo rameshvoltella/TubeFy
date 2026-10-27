@@ -61,6 +61,8 @@ import androidx.compose.runtime.MutableState
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
+import com.ramzmania.tubefy.core.analytics.Analytics
 import com.ramzmania.tubefy.ui.components.screen.share.SharedVideo
 import com.ramzmania.tubefy.ui.components.screen.share.SharedVideoDialog
 import java.net.URLEncoder
@@ -161,6 +163,7 @@ class HomeActivity : ComponentActivity() {
     @UnstableApi
     override fun onStart() {
         super.onStart()
+        Analytics.userProperty("notifications", if (com.ramzmania.tubefy.utils.NotificationAccess.enabled(this)) "on" else "off")
         try {
             val sessionToken = SessionToken(this, ComponentName(this, PlaybackService::class.java))
             val controllerFuture = MediaController.Builder(this, sessionToken).buildAsync()
@@ -231,6 +234,23 @@ ex.printStackTrace()
 }
 
 
+
+/** Analytics screen names: the route's first part ("audioPlayer/{videoId}/…" → "player"). */
+private fun screenName(route: String): String = when (route.substringBefore('/').substringBefore('?')) {
+    NavigationItem.Home.route -> "home"
+    NavigationItem.Search.route -> "search"
+    NavigationItem.Books.route -> "library"
+    NavigationItem.YouTube.route -> "youtube"
+    NavigationItem.Profile.route -> "settings"
+    "audioPlayer" -> "player"
+    "video" -> "video"
+    "playlist" -> "album"
+    "myPlayList" -> "playlist"
+    "categoryPlayList" -> "category"
+    "channel" -> "channel"
+    NavigationItem.VideoDownloads.route -> "downloads"
+    else -> route.substringBefore('/').substringBefore('?')
+}
 
 private val edgeToEdgeRoutes = setOf(NavigationItem.AudioPlayer.route, NavigationItem.PlayList.route, NavigationItem.Video.route)
 
@@ -307,6 +327,11 @@ fun MainScreen(mediaControllerState: MutableState<MediaController?>) {
         // Place BottomNavigationBar at the bottom
     }
 
+    // Analytics: time per screen (Firebase can't see Compose screens by itself)
+    LaunchedEffect(currentRoute) {
+        currentRoute?.let { Analytics.screen(screenName(it)) }
+    }
+
     val sharedVideo by SharedVideo.pending.collectAsState()
     sharedVideo?.let { video ->
         fun enc(value: String) = URLEncoder.encode(value, StandardCharsets.UTF_8.toString())
@@ -314,14 +339,21 @@ fun MainScreen(mediaControllerState: MutableState<MediaController?>) {
             video = video,
             onMusic = {
                 SharedVideo.pending.value = null
+                Analytics.sharedLinkOpen("music")
+                Analytics.pendingSource = "share"
                 val title = video.title.ifBlank { "YouTube video" }
                 navController.navigate(NavigationItem.AudioPlayer.createRoute(enc(video.videoId), enc(video.thumbnail), enc(title), enc(title), enc("YouTube")))
             },
             onVideo = {
                 SharedVideo.pending.value = null
+                Analytics.sharedLinkOpen("video")
+                Analytics.pendingSource = "share"
                 navController.navigate(NavigationItem.Video.createRoute(enc(video.videoId), enc(video.title), enc(video.thumbnail), ""))
             },
-            onDismiss = { SharedVideo.pending.value = null }
+            onDismiss = {
+                SharedVideo.pending.value = null
+                Analytics.sharedLinkOpen("cancel")
+            }
         )
     }
 }

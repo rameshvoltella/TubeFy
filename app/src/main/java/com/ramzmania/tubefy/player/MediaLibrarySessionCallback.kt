@@ -1,5 +1,6 @@
 package com.ramzmania.tubefy.player
 
+import com.ramzmania.tubefy.core.analytics.Analytics
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -65,8 +66,13 @@ class MediaLibrarySessionCallback(
         browser: MediaSession.ControllerInfo,
         params: MediaLibraryService.LibraryParams?
     ): ListenableFuture<LibraryResult<MediaItem>> {
+        if (isCar(browser)) Analytics.carSession("browse")
         return Futures.immediateFuture(LibraryResult.ofItem(carLibrary.root(), params))
     }
+
+    /** Android Auto (phone projection) or a car's own Android (Automotive). */
+    private fun isCar(controller: MediaSession.ControllerInfo) =
+        controller.packageName.contains("gearhead") || controller.packageName.contains("automotive")
 
     override fun onGetChildren(
         session: MediaLibraryService.MediaLibrarySession,
@@ -107,6 +113,7 @@ class MediaLibrarySessionCallback(
         query: String,
         params: MediaLibraryService.LibraryParams?
     ): ListenableFuture<LibraryResult<Void>> {
+        if (isCar(browser)) Analytics.carSession("search")
         scope.launch {
             val results = searchSafely(query)
             searchResults[query] = results
@@ -180,7 +187,10 @@ class MediaLibrarySessionCallback(
         val voiceQuery = mediaItems.singleOrNull()
             ?.takeIf { it.mediaId.isEmpty() }
             ?.requestMetadata?.searchQuery?.trim()
+        val fromCar = isCar(controller)
+        if (fromCar) Analytics.pendingSource = "car"
         if (!voiceQuery.isNullOrEmpty()) {
+            if (fromCar) Analytics.carSession("voice")
             val future = SettableFuture.create<MediaSession.MediaItemsWithStartPosition>()
             scope.launch {
                 val found = searchSafely(voiceQuery)

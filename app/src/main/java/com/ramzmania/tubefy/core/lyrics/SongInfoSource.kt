@@ -39,6 +39,9 @@ data class Lyrics(val lines: List<LyricLine>, val synced: Boolean, val source: S
  * [lyrics] is shown first; for songs in an Indian script, [englishLetters] is the same song written in
  * English letters (the source's own version, or converted on the phone), for people who can't read the script.
  */
+/** A song's album on YouTube Music: [playlistId] opens in the album screen. */
+data class SongAlbum(val playlistId: String, val title: String, val thumbnail: String)
+
 data class SongInfo(val details: SongDetails, val lyrics: Lyrics?, val englishLetters: Lyrics? = null)
 
 /**
@@ -103,7 +106,35 @@ class SongInfoSource @Inject constructor(
 
     // --- YouTube Music ---
 
-    private class MusicTrack(val title: String, val artists: String, val album: String, val year: String, val lyricsBrowseId: String?)
+    private class MusicTrack(
+        val title: String, val artists: String, val album: String, val year: String, val lyricsBrowseId: String?,
+        val albumBrowseId: String? = null
+    )
+
+    private val albums = Collections.synchronizedMap(HashMap<String, SongAlbum>())
+
+    /** The YouTube Music album the song belongs to (for the player's "Go to album"), or null. Remembered. */
+    suspend fun album(videoId: String): SongAlbum? {
+        albums[videoId]?.let { return it }
+        return withContext(Dispatchers.IO) {
+            val result = runCatching {
+                val track = musicTrack(videoId) ?: return@runCatching null
+                val browseId = track.albumBrowseId ?: return@runCatching null
+                val page = music("browse", "\"browseId\":\"$browseId\"") ?: return@runCatching null
+                // The album page names its playlist (OLAK5uy_…), which the album screen opens
+                val playlistId = find(page, "playlistId").map { it.toString() }.firstOrNull { it.startsWith("OLAK5uy_") }
+                    ?: return@runCatching null
+                // The cover in the album's header (the page's first thumbnails can be another album's, in "More from")
+                val header = (find(page, "musicResponsiveHeaderRenderer").firstOrNull()
+                    ?: find(page, "musicDetailHeaderRenderer").firstOrNull()) as? Map<*, *>
+                val thumbnail = (find(header?.get("thumbnail"), "thumbnails").firstOrNull() as? List<*>)
+                    ?.filterIsInstance<Map<*, *>>()?.lastOrNull()?.get("url") as? String
+                SongAlbum(playlistId, track.album, thumbnail.orEmpty())
+            }
+            // Only found albums are remembered, so a network hiccup can be retried
+            result.getOrNull()?.also { albums[videoId] = it }
+        }
+    }
 
     private fun musicTrack(videoId: String): MusicTrack? {
         val next = music("next", "\"videoId\":\"$videoId\",\"isAudioOnly\":true") ?: return null
@@ -111,6 +142,7 @@ class SongInfoSource @Inject constructor(
         val title = runs(panel?.get("title"))
         val artists = mutableListOf<String>()
         var album = ""
+        var albumBrowseId: String? = null
         var year = ""
         // "Vijay Yesudas • Premam • 2015": each part is tagged as artist / album by its link
         runList(panel?.get("longBylineText")).forEach { run ->
@@ -119,12 +151,15 @@ class SongInfoSource @Inject constructor(
             when {
                 text.isEmpty() || text == "•" || text == "," || text == "&" -> Unit
                 pageType == "MUSIC_PAGE_TYPE_ARTIST" -> artists += text
-                pageType == "MUSIC_PAGE_TYPE_ALBUM" -> album = text
+                pageType == "MUSIC_PAGE_TYPE_ALBUM" -> {
+                    album = text
+                    albumBrowseId = find(run["navigationEndpoint"], "browseId").firstOrNull() as? String
+                }
                 Regex("^(19|20)\\d{2}$").matches(text) -> year = text
             }
         }
         val lyricsBrowseId = find(next, "browseId").map { it.toString() }.firstOrNull { it.startsWith("MPLY") }
-        return MusicTrack(title, artists.joinToString(", "), album, year, lyricsBrowseId)
+        return MusicTrack(title, artists.joinToString(", "), album, year, lyricsBrowseId, albumBrowseId)
     }
 
     private fun musicLyrics(browseId: String): Lyrics? {

@@ -99,6 +99,7 @@ object PhoneDownloads {
 
     /** [replace]: overwrite a song already saved under the same name (otherwise Android adds "(1)"). */
     fun enqueue(context: Context, videoId: String, title: String, artist: String, replace: Boolean = false) {
+        com.ramzmania.tubefy.core.analytics.Analytics.downloadStart("phone")
         val folder = folder(context) ?: return
         val request = OneTimeWorkRequestBuilder<PhoneDownloadWorker>()
             .addTag(WORK_TAG)
@@ -157,6 +158,7 @@ class PhoneDownloadWorker(context: Context, params: WorkerParameters) : Coroutin
             runCatching { addToSongBook(videoId, title, artist, folder, created) }
                 .onFailure { android.util.Log.w("PhoneDownloads", "Song Book not updated for $videoId", it) }
             notify(videoId, "Saved to ${PhoneDownloads.folderLabel(folder)}", title)
+            com.ramzmania.tubefy.core.analytics.Analytics.downloadResult("phone", "done")
             Result.success()
         } catch (e: Exception) {
             com.ramzmania.tubefy.core.youtube.YouTubeAccess.check(e)
@@ -164,6 +166,7 @@ class PhoneDownloadWorker(context: Context, params: WorkerParameters) : Coroutin
             if (runAttemptCount < MAX_ATTEMPTS && e !is SecurityException) Result.retry()
             else {
                 notify(videoId, "Couldn't save to phone storage", title)
+                com.ramzmania.tubefy.core.analytics.Analytics.downloadResult("phone", "failed")
                 Result.failure()
             }
         }

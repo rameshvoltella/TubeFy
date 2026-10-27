@@ -3,6 +3,7 @@ package com.ramzmania.tubefy.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ramzmania.tubefy.core.recognition.ListeningService
+import com.ramzmania.tubefy.core.analytics.Analytics
 import com.ramzmania.tubefy.core.recognition.RecognitionResult
 import com.ramzmania.tubefy.core.recognition.RecognizedSong
 import com.ramzmania.tubefy.core.recognition.SongRecognizer
@@ -39,7 +40,15 @@ class RecognitionViewModel @Inject constructor(
     val state: StateFlow<State> = _state.asStateFlow()
     private var job: Job? = null
 
+    /** Where Identify song was opened (home / search), for analytics. */
+    var entry: String = "home"
+    private var startedAt = 0L
+
+    private fun secondsSinceStart() = ((System.currentTimeMillis() - startedAt) / 1000).toInt()
+
     fun start() {
+        Analytics.identifyStart(entry)
+        startedAt = System.currentTimeMillis()
         job?.cancel()
         // Whatever TubeFy is playing pauses, so the microphone hears the song to identify, not TubeFy
         pausePlayback()
@@ -49,6 +58,7 @@ class RecognitionViewModel @Inject constructor(
         job = viewModelScope.launch {
             when (val result = recognizer.listen { seconds -> _state.value = State.Listening(seconds) }) {
                 is RecognitionResult.Found -> {
+                    Analytics.identifyResult("found", secondsSinceStart(), !ListeningService.isInForeground())
                     _state.value = State.Found(result.song, null, findingTrack = true)
                     val track = findOnYouTube(result.song)
                     _state.value = State.Found(result.song, track, findingTrack = false)
@@ -70,10 +80,12 @@ class RecognitionViewModel @Inject constructor(
                     }
                 }
                 RecognitionResult.NotFound -> {
+                    Analytics.identifyResult("not_found", null, !ListeningService.isInForeground())
                     _state.value = State.NotFound
                     ListeningService.showResult(context, null)
                 }
                 is RecognitionResult.Failed -> {
+                    Analytics.identifyResult("failed", null, !ListeningService.isInForeground())
                     _state.value = State.Failed(result.message)
                     ListeningService.showResult(context, null, result.message)
                 }

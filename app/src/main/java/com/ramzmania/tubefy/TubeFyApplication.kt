@@ -13,6 +13,10 @@ class TubeFyApplication:Application() {
     override fun onCreate() {
         super.onCreate()
         NewPipe.init(pipeDownloader)
+        com.ramzmania.tubefy.core.analytics.Analytics.init(this)
+        com.ramzmania.tubefy.core.analytics.Analytics.userProperty(
+            "device_kind", if (com.ramzmania.tubefy.ui.tv.TvActivity.isTv(this)) "tv" else "phone"
+        )
 
 //        https://music.youtube.com/podcasts
 //        https://music.youtube.com/charts
