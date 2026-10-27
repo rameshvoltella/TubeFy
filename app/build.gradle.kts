@@ -28,8 +28,8 @@ android {
         applicationId = "com.ramzmania.tubefy"
         minSdk = 24
         targetSdk = 36
-        versionCode = 6
-        versionName = "5.03"
+        versionCode = 7
+        versionName = "5.04"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
