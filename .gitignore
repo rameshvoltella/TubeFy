@@ -15,3 +15,6 @@
 local.properties
 
 app/release/
+
+# Firebase config: kept on this machine only
+google-services.json

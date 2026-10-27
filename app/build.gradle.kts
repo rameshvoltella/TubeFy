@@ -6,6 +6,16 @@ plugins {
     alias(libs.plugins.hilt)
 }
 
+// Firebase Analytics: google-services.json is kept out of git, so builds without it (other people's
+// clones, F-Droid) still work; analytics then simply stays off
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+    // Debug builds ("TubeFy Debug", own package) don't report, so testing doesn't skew the numbers
+    tasks.configureEach {
+        if (name == "processDebugGoogleServices") enabled = false
+    }
+}
+
 android {
     namespace = "com.ramzmania.tubefy"
     compileSdk = 37
@@ -70,6 +80,8 @@ ksp {
 }
 
 dependencies {
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.analytics)
     coreLibraryDesugaring(libs.desugar.jdk.libs.nio)
 
     implementation(libs.androidx.core.ktx)
