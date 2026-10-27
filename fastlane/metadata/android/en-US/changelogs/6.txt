@@ -1,0 +1,7 @@
+• Sound Controls: 5-band equalizer with presets, bass boost, virtualizer, loudness boost
+• Playback speed from 0.5× to 2× (next to repeat)
+• Share lyrics as a PDF
+• Go to album / playlist from the player
+• YouTube player: double tap to skip 10 seconds
+• Identify song: clearer microphone prompt
+• Fixed songs getting stuck loading after a long pause
