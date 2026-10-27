@@ -124,7 +124,7 @@ internal fun LyricsPane(
                             Analytics.lyricsFeature("share_pdf")
                             scope.launch {
                                 runCatching { withContext(Dispatchers.IO) { LyricsPdf.create(context, state.info) } }
-                                    .onSuccess { LyricsPdf.share(context, state.info, it) }
+                                    .onSuccess { LyricsPdf.share(context, state.info, it, state.videoId) }
                                     .onFailure { Toast.makeText(context, "Couldn't make the lyrics PDF", Toast.LENGTH_SHORT).show() }
                             }
                         }

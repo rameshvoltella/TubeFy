@@ -1,0 +1,50 @@
+<p>TubeFy turns YouTube into a clean music app. Play songs from YouTube Music with a beautiful player, build playlists, read synced lyrics, identify songs playing around you, download for offline listening, and watch YouTube videos in any quality, on your phone, in your car with Android Auto, and on Android TV. No account needed.</p>
+
+<p><b>🎵 Music</b></p>
+<ul>
+<li>Play YouTube music as songs, audio-only, in the background and on the lock screen</li>
+<li>Playlists, favorites, saved albums and drag-to-reorder</li>
+<li>A personal Home: top playlists, "Jump back in", recommendations, language and mood chips, podcasts</li>
+<li>Smart Queue and Smart Shuffle keep similar songs coming</li>
+<li>Sleep timer, playback speed (0.5× – 2×) and Sound Controls: a 5-band equalizer with presets, bass boost, virtualizer and loudness boost</li>
+<li>Go to the album or playlist a song came from</li>
+</ul>
+
+<p><b>📝 Lyrics</b></p>
+<ul>
+<li>Song details (singers, movie, lyricist, music director, year) and lyrics in the player</li>
+<li>Timed lyrics that follow the song; tap a line to jump there; fix the timing for songs with an intro</li>
+<li>Malayalam, Tamil, Hindi and other scripts in English letters with one tap</li>
+<li>Share lyrics as a neat PDF</li>
+<li>Works offline for downloaded songs</li>
+</ul>
+
+<p><b>🎤 Identify songs</b></p>
+<ul>
+<li>Hear a song nearby? Tap identify and TubeFy recognises it in seconds and plays it</li>
+<li>Keeps listening while you switch to another app, and tells you the result in a notification</li>
+<li>Only a small audio fingerprint is sent, never the recording; every identified song is kept in Library</li>
+</ul>
+
+<p><b>📺 YouTube</b></p>
+<ul>
+<li>Trending, Music, Mixes, Live, Gaming and "Trending in your state"</li>
+<li>Best quality by default (up to 4K on TVs), dubbed audio languages, captions, full screen with pinch to zoom</li>
+<li>Swipe for brightness and volume, double tap to skip 10 seconds, autoplay of related videos, channel pages</li>
+<li>Share a YouTube link to TubeFy to open it as music or as a video</li>
+</ul>
+
+<p><b>📥 Downloads</b></p>
+<ul>
+<li>Download songs inside the app for offline listening</li>
+<li>Save songs to your phone's storage with their lyrics, plus a "Song Book" page of all your songs</li>
+<li>Download YouTube videos in any quality, or audio only</li>
+</ul>
+
+<p><b>🚗 📺 Everywhere</b></p>
+<ul>
+<li>Android Auto: browse, search and voice ("Hey Google, play … on TubeFy")</li>
+<li>Android TV / Google TV: a YouTube experience built for the remote</li>
+</ul>
+
+<p>TubeFy is an independent project and is not affiliated with YouTube, Google or Shazam. It uses these services' public web interfaces through the open-source NewPipe Extractor, and Shazam's recognition service the way the open-source SongRec project does.</p>

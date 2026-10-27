@@ -18,3 +18,13 @@ app/release/
 
 # Firebase config: kept on this machine only
 google-services.json
+
+# Signing keys: never in git
+*.jks
+*.keystore
+keystore.properties
+
+# Signed APKs exported by Android Studio (they go on GitHub Releases, not in git)
+app/full/
+app/foss/
+*.apk

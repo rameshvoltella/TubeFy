@@ -3,16 +3,16 @@ package com.ramzmania.tubefy.core.analytics
 import android.content.Context
 import android.os.Bundle
 import android.util.Log
-import com.google.firebase.analytics.FirebaseAnalytics
 
 /**
- * Usage analytics (Firebase), in one place: every event name and parameter lives here, screens just
- * call the typed functions. No personal data: no account, no playlist names. Turned off with
- * Settings → "Share usage data", and a no-op in builds without Firebase config (debug, F-Droid).
+ * Usage analytics, in one place: every event name and parameter lives here, screens just call the
+ * typed functions. No personal data: no account, no playlist names. Turned off with Settings →
+ * "Share usage data". Sent by [AnalyticsBackend]: Firebase in the "full" edition, nothing at all in
+ * the "foss" (F-Droid) edition. Event and parameter names follow Firebase's standard ones.
  */
 object Analytics {
 
-    private var firebase: FirebaseAnalytics? = null
+    private var backend: AnalyticsBackend? = null
     private var enabled = true
     private const val PREFS = "analytics"
     private const val KEY_ENABLED = "enabled"
@@ -20,18 +20,20 @@ object Analytics {
 
     fun init(context: Context) {
         enabled = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_ENABLED, true)
-        // Without google-services.json Firebase isn't set up; analytics then does nothing
-        firebase = runCatching { FirebaseAnalytics.getInstance(context.applicationContext) }.getOrNull()
-        firebase?.setAnalyticsCollectionEnabled(enabled)
+        backend = AnalyticsBackend.create(context.applicationContext)
+        backend?.setEnabled(enabled)
     }
 
     fun isEnabled() = enabled
+
+    /** False in the F-Droid edition (no analytics at all), so Settings hides the switch. */
+    val isAvailable: Boolean get() = AnalyticsBackend.AVAILABLE
 
     /** Settings → "Share usage data". */
     fun setEnabled(context: Context, on: Boolean) {
         enabled = on
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(KEY_ENABLED, on).apply()
-        firebase?.setAnalyticsCollectionEnabled(on)
+        backend?.setEnabled(on)
     }
 
     // --- Where a song / video was started from (set just before it plays) ---
@@ -43,20 +45,20 @@ object Analytics {
 
     // --- 1. Screens ---
 
-    fun screen(name: String) = log(FirebaseAnalytics.Event.SCREEN_VIEW, FirebaseAnalytics.Param.SCREEN_NAME to name, FirebaseAnalytics.Param.SCREEN_CLASS to name)
+    fun screen(name: String) = log("screen_view", "screen_name" to name, "screen_class" to name)
 
     fun playerTab(mode: String) = log("player_tab_view", "mode" to mode)
 
     // --- 2. Search ---
 
     fun search(term: String, area: String, input: String) =
-        log(FirebaseAnalytics.Event.SEARCH, FirebaseAnalytics.Param.SEARCH_TERM to term.trim().lowercase(), "search_area" to area, "input" to input)
+        log("search", "search_term" to term.trim().lowercase(), "search_area" to area, "input" to input)
 
     fun searchResultClick(area: String, position: Int, itemType: String) =
         log("search_result_click", "search_area" to area, "position" to position, "item_type" to itemType)
 
     fun searchNoResults(term: String, area: String) =
-        log("search_no_results", FirebaseAnalytics.Param.SEARCH_TERM to term.trim().lowercase(), "search_area" to area)
+        log("search_no_results", "search_term" to term.trim().lowercase(), "search_area" to area)
 
     // --- 3. Music ---
 
@@ -124,6 +126,15 @@ object Analytics {
 
     // --- 9. Sharing, car, TV, health ---
 
+    /** Something was shared to another app ([method] = the app, e.g. whatsapp). See [ShareTracker]. */
+    fun share(contentType: String, itemId: String, title: String?, method: String) = log(
+        "share",
+        "content_type" to contentType,
+        "item_id" to itemId,
+        "title" to title,
+        "method" to method
+    )
+
     fun sharedLinkOpen(choice: String) = log("shared_link_open", "choice" to choice)
 
     fun carSession(action: String) = log("car_session", "action" to action)
@@ -143,13 +154,13 @@ object Analytics {
 
     fun userProperty(name: String, value: String) {
         if (!enabled) return
-        runCatching { firebase?.setUserProperty(name, value.take(36)) }
+        runCatching { backend?.setUserProperty(name, value.take(36)) }
     }
 
     // --- Internals ---
 
     private fun log(event: String, vararg params: Pair<String, Any?>) {
-        val analytics = firebase ?: return
+        val analytics = backend ?: return
         if (!enabled) return
         val bundle = Bundle()
         params.forEach { (key, value) ->

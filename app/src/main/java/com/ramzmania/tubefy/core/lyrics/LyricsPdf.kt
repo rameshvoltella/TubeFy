@@ -13,6 +13,7 @@ import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
 import androidx.core.content.FileProvider
+import com.ramzmania.tubefy.core.analytics.ShareTracker
 import java.io.File
 
 /**
@@ -31,7 +32,7 @@ object LyricsPdf {
     private val MUTED = Color.rgb(0x77, 0x70, 0x72)
 
     /** Opens the share menu (WhatsApp and others) for a PDF made by [create]. */
-    fun share(context: Context, info: SongInfo, file: File) {
+    fun share(context: Context, info: SongInfo, file: File, videoId: String) {
         val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
         val caption = buildString {
             append("🎵 ").append(info.details.title)
@@ -46,7 +47,8 @@ object LyricsPdf {
             .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         send.clipData = ClipData.newRawUri(file.name, uri)
         context.startActivity(
-            Intent.createChooser(send, "Share lyrics").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            // Analytics logs a `share` (lyrics, and to which app) once an app is picked
+            Intent.createChooser(send, "Share lyrics", ShareTracker.callback(context, "lyrics", videoId, info.details.title)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
         )
     }
 
