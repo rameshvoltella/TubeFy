@@ -261,7 +261,7 @@ fun HomeInitialScreen(viewModel: TubeFyViewModel = hiltViewModel(), navControlle
         viewModel.callYoutubeiHome()
     }
     // Identify song: "Search" continues on the Search tab
-    val identifySong = rememberIdentifySong(onSearch = { query ->
+    val identifySong = rememberIdentifySong(entry = "home", onSearch = { query ->
         PendingSearch.query.value = query
         navController?.navigateToTab(NavigationItem.Search.route)
     })

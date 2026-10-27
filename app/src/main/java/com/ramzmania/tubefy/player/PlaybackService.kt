@@ -1,6 +1,7 @@
 package com.ramzmania.tubefy.player
 
 
+import com.ramzmania.tubefy.core.analytics.Analytics
 import android.app.PendingIntent
 import android.content.Intent
 import android.net.Uri
@@ -133,6 +134,56 @@ class PlaybackService(
         mainHandler.postDelayed(saveQueue, 1_000)
     }
 
+    // Analytics: the song / video playing now and how long it has really been heard
+    private var trackedItem: MediaItem? = null
+    private var listenedMs = 0L
+    private var playingSince = 0L
+    private var trackedDurationMs = 0L
+    private var trackedVideoHeight = 0
+    /** Where the tracked song came from; logged (song_play) once it really starts playing. */
+    private var trackedSource: String? = null
+
+    private fun startTracking(item: MediaItem?, source: String) {
+        trackedItem = item
+        trackedSource = source
+        listenedMs = 0L
+        trackedDurationMs = 0L
+        trackedVideoHeight = 0
+        playingSince = 0L
+        if (mediaSession?.player?.isPlaying == true) onTrackedPlaying()
+    }
+
+    private fun onTrackedPlaying() {
+        playingSince = android.os.SystemClock.elapsedRealtime()
+        val item = trackedItem ?: return
+        val source = trackedSource ?: return
+        trackedSource = null
+        if (item.mediaMetadata.mediaType == MediaMetadata.MEDIA_TYPE_VIDEO) return // video_open comes from the video page
+        Analytics.songPlay(
+            videoId = item.mediaId,
+            title = item.mediaMetadata.title?.toString(),
+            artist = item.mediaMetadata.artist?.toString(),
+            source = source,
+            offline = item.mediaMetadata.extras?.getBoolean(Downloads.OFFLINE_EXTRA) == true
+        )
+    }
+
+    /** Reports how the tracked song / video ended: completed, skipped or stopped, and how much was heard. */
+    private fun finishTracking(reason: String) {
+        val item = trackedItem ?: return
+        if (playingSince > 0) listenedMs += android.os.SystemClock.elapsedRealtime() - playingSince
+        playingSince = 0L
+        trackedItem = null
+        val seconds = listenedMs / 1000
+        if (seconds < 1) return
+        val pct = if (trackedDurationMs > 0) (listenedMs * 100 / trackedDurationMs).toInt().coerceIn(0, 100) else 0
+        if (item.mediaMetadata.mediaType == MediaMetadata.MEDIA_TYPE_VIDEO) {
+            Analytics.videoWatch(item.mediaId, seconds, pct, trackedVideoHeight.takeIf { it > 0 }?.let { "${it}p" }, fullscreenUsed = false)
+        } else {
+            Analytics.songEnd(item.mediaId, seconds, pct, reason)
+        }
+    }
+
     /** When playback was last paused, to refresh links that may have died during a long pause. */
     private var pausedAt = 0L
 
@@ -230,7 +281,22 @@ class PlaybackService(
                     }
                 }
 
+                override fun onIsPlayingChanged(isPlaying: Boolean) {
+                    val now = android.os.SystemClock.elapsedRealtime()
+                    if (isPlaying) {
+                        if (trackedItem == null) startTracking(currentMediaItem, Analytics.takeSource("app")) else onTrackedPlaying()
+                    } else if (playingSince > 0) {
+                        listenedMs += now - playingSince
+                        playingSince = 0L
+                    }
+                }
+
+                override fun onVideoSizeChanged(videoSize: androidx.media3.common.VideoSize) {
+                    if (videoSize.height > 0) trackedVideoHeight = minOf(videoSize.width, videoSize.height)
+                }
+
                 override fun onPlaybackStateChanged(playbackState: Int) {
+                    if (playbackState == Player.STATE_READY && duration > 0) trackedDurationMs = duration
                     super.onPlaybackStateChanged(playbackState)
                     if (playbackState == Player.STATE_READY) {
                         currentMediaItem?.mediaId?.let { linkRetries.remove(it) }
@@ -285,7 +351,9 @@ class PlaybackService(
                     // A dead link (expired / rejected): retry the same song once with a fresh link,
                     // keeping its position, before falling back to the skip logic below
                     val failedId = currentMediaItem?.mediaId
-                    if (!offlineMode && failedId != null && isLinkError(error) && shouldRetryLink(failedId)) {
+                    val willRetry = !offlineMode && failedId != null && isLinkError(error) && shouldRetryLink(failedId)
+                    Analytics.playbackError(error.errorCodeName, willRetry)
+                    if (willRetry && failedId != null) {
                         streamUrlRefresher.forceRefresh(failedId)
                         // Second try waits a moment, e.g. for the network to come back after the phone slept
                         val delayMs = if (linkRetries[failedId]?.first == 1) 0L else 2_000L
@@ -336,6 +404,22 @@ class PlaybackService(
                 }
 
                 override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                    // Analytics: how the last song ended, and where this one came from
+                    when (reason) {
+                        Player.MEDIA_ITEM_TRANSITION_REASON_AUTO, Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT -> {
+                            finishTracking("completed")
+                            startTracking(mediaItem, "queue")
+                        }
+                        Player.MEDIA_ITEM_TRANSITION_REASON_SEEK -> {
+                            finishTracking("skipped")
+                            startTracking(mediaItem, "queue")
+                        }
+                        else -> {
+                            // A new queue: the screen that started it said where from
+                            finishTracking("stopped")
+                            startTracking(mediaItem, Analytics.takeSource("app"))
+                        }
+                    }
                     scheduleQueueSave()
                     // Next / previous after a failed song: the player is stopped by the error, so load the
                     // new song (with a fresh link if needed) instead of just showing it
@@ -634,6 +718,7 @@ class PlaybackService(
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo) = mediaSession
 
     override fun onDestroy() {
+        finishTracking("stopped")
         mainHandler.removeCallbacks(saveQueue)
         mediaSession?.player?.let { queueStore.save(it, offlineMode) }
         SoundEffects.release()

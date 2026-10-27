@@ -81,6 +81,7 @@ fun IdentifiedSongsList() {
         if (id.isNullOrBlank()) {
             search(song) // no match was found when it was identified: let the user pick
         } else navController?.let {
+            com.ramzmania.tubefy.core.analytics.Analytics.pendingSource = "shazam"
             openTrack(it, TubeFyCoreTypeData(videoId = id, videoTitle = song.title, videoImage = "https://i.ytimg.com/vi/$id/hq720.jpg", artist = song.artist))
         }
     }

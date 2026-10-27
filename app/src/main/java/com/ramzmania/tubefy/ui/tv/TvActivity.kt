@@ -33,6 +33,7 @@ import java.nio.charset.StandardCharsets
 class TvActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (savedInstanceState == null) com.ramzmania.tubefy.core.analytics.Analytics.tvSession()
         setContent {
             MaterialTheme(colorScheme = darkColorScheme(primary = DiscoverAccent, background = DiscoverBackground, surface = DiscoverBackground)) {
                 val nav = rememberNavController()

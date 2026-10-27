@@ -1,5 +1,6 @@
 package com.ramzmania.tubefy.ui.components.screen.player
 
+import com.ramzmania.tubefy.core.analytics.Analytics
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -238,7 +239,10 @@ private fun EqualizerTab(settings: SoundEffects.Settings, capabilities: SoundEff
                     label = tile.label,
                     icon = tile.icon,
                     selected = selected,
-                    onClick = { SoundEffects.update { it.copy(eqEnabled = true, preset = tile.key) } },
+                    onClick = {
+                        Analytics.playerFeature("sound_preset", tile.key)
+                        SoundEffects.update { it.copy(eqEnabled = true, preset = tile.key) }
+                    },
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -269,6 +273,7 @@ private fun PresetDropdown(preset: String) {
                     leadingIcon = { Icon(tile.icon, null) },
                     onClick = {
                         open = false
+                        Analytics.playerFeature("sound_preset", tile.key)
                         SoundEffects.update { it.copy(eqEnabled = true, preset = tile.key) }
                     }
                 )
@@ -411,7 +416,10 @@ private fun EffectsTab(settings: SoundEffects.Settings, capabilities: SoundEffec
         title = "Bass Boost",
         subtitle = "Extra low-end punch",
         enabled = settings.bassEnabled,
-        onEnabled = { on -> SoundEffects.update { it.copy(bassEnabled = on) } },
+        onEnabled = { on ->
+            if (on) Analytics.playerFeature("sound_effect", "bass_boost")
+            SoundEffects.update { it.copy(bassEnabled = on) }
+        },
         value = settings.bass,
         onValue = { v -> SoundEffects.update { it.copy(bassEnabled = true, bass = v) } }
     )
@@ -421,7 +429,10 @@ private fun EffectsTab(settings: SoundEffects.Settings, capabilities: SoundEffec
         subtitle = if (capabilities.virtualizer) "Wider, 3D surround sound" else "Not supported on this phone",
         enabled = settings.virtualizerEnabled && capabilities.virtualizer,
         available = capabilities.virtualizer,
-        onEnabled = { on -> SoundEffects.update { it.copy(virtualizerEnabled = on) } },
+        onEnabled = { on ->
+            if (on) Analytics.playerFeature("sound_effect", "virtualizer")
+            SoundEffects.update { it.copy(virtualizerEnabled = on) }
+        },
         value = settings.virtualizer,
         onValue = { v -> SoundEffects.update { it.copy(virtualizerEnabled = true, virtualizer = v) } }
     )
@@ -430,7 +441,10 @@ private fun EffectsTab(settings: SoundEffects.Settings, capabilities: SoundEffec
         title = "Loudness Boost",
         subtitle = "Clearer and louder sound",
         enabled = settings.loudnessEnabled,
-        onEnabled = { on -> SoundEffects.update { it.copy(loudnessEnabled = on) } },
+        onEnabled = { on ->
+            if (on) Analytics.playerFeature("sound_effect", "loudness")
+            SoundEffects.update { it.copy(loudnessEnabled = on) }
+        },
         value = settings.loudness,
         onValue = { v -> SoundEffects.update { it.copy(loudnessEnabled = true, loudness = v) } }
     )
@@ -458,7 +472,10 @@ private fun EffectsTab(settings: SoundEffects.Settings, capabilities: SoundEffec
                         icon = chip.icon,
                         selected = settings.reverb == chip.key,
                         outlined = true,
-                        onClick = { SoundEffects.update { it.copy(reverb = chip.key) } },
+                        onClick = {
+                            if (chip.key != SoundEffects.REVERB_NONE) Analytics.playerFeature("sound_effect", "reverb_${chip.key}")
+                            SoundEffects.update { it.copy(reverb = chip.key) }
+                        },
                         modifier = Modifier.weight(1f)
                     )
                 }

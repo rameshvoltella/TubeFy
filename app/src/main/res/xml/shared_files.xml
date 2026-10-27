@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Lyrics PDFs made for sharing -->
+    <cache-path name="shared_lyrics" path="shared_lyrics/" />
+</paths>

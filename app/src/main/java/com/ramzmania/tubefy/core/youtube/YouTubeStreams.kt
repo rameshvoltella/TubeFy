@@ -66,7 +66,10 @@ object YouTubeAccess {
 
     /** Call with any YouTube failure: notes it if it was a "not a bot" / rate limit refusal. */
     fun check(error: Throwable) {
-        if (isBlock(error)) blockedAt = System.currentTimeMillis()
+        if (isBlock(error)) {
+            blockedAt = System.currentTimeMillis()
+            com.ramzmania.tubefy.core.analytics.Analytics.youtubeLimited()
+        }
     }
 
     fun markOk() {

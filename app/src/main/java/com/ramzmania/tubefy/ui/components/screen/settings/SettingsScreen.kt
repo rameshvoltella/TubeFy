@@ -20,6 +20,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.PlaylistRemove
+import androidx.compose.material.icons.rounded.Insights
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import com.ramzmania.tubefy.core.analytics.Analytics
 import androidx.compose.material.icons.rounded.NotificationsOff
 import com.ramzmania.tubefy.utils.NotificationAccess
 import com.ramzmania.tubefy.utils.rememberNotificationsEnabled
@@ -55,6 +59,7 @@ fun SettingsScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
     val context = LocalContext.current
     var confirmClear by remember { mutableStateOf(false) }
     val notificationsEnabled = rememberNotificationsEnabled()
+    var shareUsage by remember { mutableStateOf(Analytics.isEnabled()) }
 
     if (confirmClear) {
         AlertDialog(
@@ -206,6 +211,60 @@ fun SettingsScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
                 )
             }
             Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, tint = DiscoverTextSecondary)
+        }
+
+        SectionLabel("Privacy")
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .padding(horizontal = 16.dp)
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(18.dp))
+                .background(DiscoverSurface)
+                .border(1.dp, DiscoverBorder, RoundedCornerShape(18.dp))
+                .clickable {
+                    shareUsage = !shareUsage
+                    Analytics.setEnabled(context, shareUsage)
+                }
+                .padding(14.dp)
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(46.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(DiscoverAccentContainer)
+            ) {
+                Icon(Icons.Rounded.Insights, contentDescription = null, tint = DiscoverAccent, modifier = Modifier.size(26.dp))
+            }
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 14.dp)
+            ) {
+                Text("Share usage data", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                Text(
+                    "Anonymous stats (screens, searches, what's played) that help improve TubeFy. No account or personal details.",
+                    color = DiscoverTextSecondary,
+                    fontSize = 13.sp,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+            }
+            Switch(
+                checked = shareUsage,
+                onCheckedChange = {
+                    shareUsage = it
+                    Analytics.setEnabled(context, it)
+                },
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = Color.White,
+                    checkedTrackColor = DiscoverAccent,
+                    checkedBorderColor = DiscoverAccent,
+                    uncheckedThumbColor = Color.White.copy(alpha = 0.8f),
+                    uncheckedTrackColor = Color.White.copy(alpha = 0.12f),
+                    uncheckedBorderColor = Color.Transparent
+                )
+            )
         }
 
         SectionLabel("About")

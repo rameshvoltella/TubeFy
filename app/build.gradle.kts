@@ -8,12 +8,9 @@ plugins {
 
 // Firebase Analytics: google-services.json is kept out of git, so builds without it (other people's
 // clones, F-Droid) still work; analytics then simply stays off
+// (Release and "TubeFy Debug" are separate apps in Firebase, so testing doesn't mix into the real numbers)
 if (file("google-services.json").exists()) {
     apply(plugin = "com.google.gms.google-services")
-    // Debug builds ("TubeFy Debug", own package) don't report, so testing doesn't skew the numbers
-    tasks.configureEach {
-        if (name == "processDebugGoogleServices") enabled = false
-    }
 }
 
 android {

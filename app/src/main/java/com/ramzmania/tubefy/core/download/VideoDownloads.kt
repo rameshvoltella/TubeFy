@@ -165,6 +165,7 @@ object VideoDownloads {
     /** [retryOf]: the Downloads-list entry being retried (it's updated instead of listed again). */
     fun enqueue(context: Context, videoId: String, title: String, option: VideoDownloadOption, retryOf: String? = null) {
         val folder = PhoneDownloads.folder(context) ?: return
+        com.ramzmania.tubefy.core.analytics.Analytics.downloadStart(if (option.audioOnly) "video_audio" else "video", option.label)
         val request = OneTimeWorkRequestBuilder<VideoDownloadWorker>()
             .addTag(WORK_TAG)
             .setInputData(
@@ -279,6 +280,7 @@ class VideoDownloadWorker(context: Context, params: WorkerParameters) : Coroutin
                     sizeBytes = if (size > 0) size else it.sizeBytes, folderLabel = VideoDownloads.folderLabel(folder)
                 )
             }
+            com.ramzmania.tubefy.core.analytics.Analytics.downloadResult("video", "done")
             Result.success()
         } catch (e: Exception) {
             YouTubeAccess.check(e)
@@ -287,6 +289,7 @@ class VideoDownloadWorker(context: Context, params: WorkerParameters) : Coroutin
             else {
                 postSavedNotification(applicationContext, videoId, "Couldn't download the video", title)
                 VideoDownloadLog.update(applicationContext, id.toString()) { it.copy(status = VideoDownloadEntry.Status.Failed) }
+                com.ramzmania.tubefy.core.analytics.Analytics.downloadResult("video", "failed")
                 Result.failure()
             }
         } finally {

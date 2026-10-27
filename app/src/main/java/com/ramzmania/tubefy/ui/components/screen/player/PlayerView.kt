@@ -1,5 +1,6 @@
 package com.ramzmania.tubefy.ui.components.screen.player
 
+import com.ramzmania.tubefy.core.analytics.Analytics
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
@@ -431,6 +432,7 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
         PlaybackSpeedSheet(
             speed = playbackSpeed,
             onSpeed = { speed ->
+                if (speed != playbackSpeed) Analytics.playerFeature("speed", formatSpeed(speed))
                 playbackSpeed = speed
                 mediaController?.setPlaybackSpeed(speed)
             },
@@ -448,8 +450,14 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                 sleepRemainingMs > 0 -> "Stopping in ${formatTime(sleepRemainingMs, 0)}"
                 else -> null
             },
-            onMinutes = { minutes -> sendSleepCommand(SleepTimer.CMD_SET, bundleOf(SleepTimer.KEY_MINUTES to minutes)) },
-            onEndOfSong = { sendSleepCommand(SleepTimer.CMD_SET, bundleOf(SleepTimer.KEY_END_OF_SONG to true)) },
+            onMinutes = { minutes ->
+                Analytics.playerFeature("sleep_timer", "${minutes}_min")
+                sendSleepCommand(SleepTimer.CMD_SET, bundleOf(SleepTimer.KEY_MINUTES to minutes))
+            },
+            onEndOfSong = {
+                Analytics.playerFeature("sleep_timer", "end_of_song")
+                sendSleepCommand(SleepTimer.CMD_SET, bundleOf(SleepTimer.KEY_END_OF_SONG to true))
+            },
             onExtend = { sendSleepCommand(SleepTimer.CMD_EXTEND, bundleOf(SleepTimer.KEY_MINUTES to 5)) },
             onCancel = { sendSleepCommand(SleepTimer.CMD_CANCEL) },
             onDismiss = { showSleepSheet = false }
@@ -501,6 +509,29 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                 return@MediaControllerComposable
             }
             playbackRequested = true
+            // Analytics: where this play started (Shazam / shared links set it themselves)
+            if (Analytics.pendingSource == null) {
+                val previous = navController.previousBackStackEntry
+                Analytics.pendingSource = when {
+                    startOffline -> "downloads"
+                    else -> when (previous?.destination?.route?.substringBefore('/')?.substringBefore('?')) {
+                        NavigationItem.Home.route -> "home_section"
+                        NavigationItem.Search.route -> "search"
+                        NavigationItem.Books.route -> "library"
+                        NavigationItem.YouTube.route -> "youtube"
+                        "playlist" -> if (PlayedFrom.current?.isAlbum == true) "album" else "playlist"
+                        "myPlayList" -> when (previous.arguments?.getString("playerListName")) {
+                            "TubeFy-Favorites" -> "favorites"
+                            com.ramzmania.tubefy.core.download.Downloads.PLAYLIST -> "downloads"
+                            else -> "playlist"
+                        }
+                        "categoryPlayList" -> "category"
+                        "video" -> "video"
+                        "channel" -> "channel"
+                        else -> "app"
+                    }
+                }
+            }
             if (startOffline) {
                 startPlayDownloadsService(context)
             } else if (isBulk) {
@@ -544,6 +575,7 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
 
     fun toggleFavourite() {
         val id = YoutubeCoreConstant.extractYoutubeVideoId(videoId) ?: return
+        Analytics.favoriteToggle(added = !isFavouriteSong)
         if (isFavouriteSong) {
             viewModel.removeFromFavorites(id)
         } else {
@@ -553,6 +585,7 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
 
     // Lyrics tab (portrait): full screen, keeping only the seek bar and controls; Back returns to the tab before
     val lyricsFullScreen = playerMode == PlayerMode.Lyrics && !isLandscape
+    LaunchedEffect(playerMode) { Analytics.playerTab(playerMode.name.lowercase()) }
     var modeBeforeLyrics by rememberSaveable { mutableStateOf(PlayerMode.Song) }
     LaunchedEffect(playerMode) { if (playerMode != PlayerMode.Lyrics) modeBeforeLyrics = playerMode }
     BackHandler(enabled = lyricsFullScreen) { playerMode = modeBeforeLyrics }
@@ -681,6 +714,7 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                                 leadingIcon = { Icon(if (page.isAlbum) Icons.Rounded.Album else Icons.AutoMirrored.Rounded.QueueMusic, null) },
                                 onClick = {
                                     showMenu = false
+                                    Analytics.goToPage(if (page.isAlbum) "album" else "playlist")
                                     openPage(page.argName, page.argValue, page.route)
                                 }
                             )
@@ -708,6 +742,7 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                                 leadingIcon = { Icon(Icons.Rounded.Album, null) },
                                 onClick = {
                                     showMenu = false
+                                    Analytics.goToPage("album")
                                     openAlbum(album)
                                 }
                             )
@@ -750,7 +785,10 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                             PlayerMode.Lyrics -> LyricsPane(
                                 state = lyricsState,
                                 positionMs = positionMs,
-                                onSeek = { mediaController?.seekTo(it) },
+                                onSeek = {
+                                    Analytics.lyricsFeature("line_tap")
+                                    mediaController?.seekTo(it)
+                                },
                                 onRetry = { loadLyrics(force = true) },
                                 englishLetters = lyricsEnglish,
                                 onEnglishLettersChange = lyricsViewModel::setEnglishLetters,
@@ -863,6 +901,7 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                         when {
                             smartShuffleOn -> {
                                 smartShuffleOn = false
+                                Analytics.playerFeature("shuffle", "off")
                                 controller.sendCustomCommand(
                                     SessionCommand(SmartShuffle.CMD_SET, Bundle.EMPTY),
                                     bundleOf(SmartShuffle.KEY_ENABLED to false)
@@ -872,6 +911,7 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                             }
                             shuffleOn -> {
                                 smartShuffleOn = true
+                                Analytics.playerFeature("smart_shuffle", "on")
                                 controller.sendCustomCommand(
                                     SessionCommand(SmartShuffle.CMD_SET, Bundle.EMPTY),
                                     bundleOf(SmartShuffle.KEY_ENABLED to true)
@@ -880,6 +920,7 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                             }
                             else -> {
                                 controller.shuffleModeEnabled = true
+                                Analytics.playerFeature("shuffle", "on")
                                 Toast.makeText(context, "Shuffle on", Toast.LENGTH_SHORT).show()
                             }
                         }
@@ -932,6 +973,11 @@ fun PlayerBaseView(viewModel: TubeFyViewModel = hiltViewModel()) {
                                 Player.REPEAT_MODE_ALL -> Player.REPEAT_MODE_ONE
                                 else -> Player.REPEAT_MODE_OFF
                             }
+                            Analytics.playerFeature("repeat", when (it.repeatMode) {
+                                Player.REPEAT_MODE_ALL -> "all"
+                                Player.REPEAT_MODE_ONE -> "one"
+                                else -> "off"
+                            })
                         }
                     },
                     modifier = Modifier.size(36.dp)

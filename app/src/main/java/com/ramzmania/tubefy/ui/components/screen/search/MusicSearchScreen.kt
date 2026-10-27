@@ -1,5 +1,6 @@
 package com.ramzmania.tubefy.ui.components.screen.search
 
+import com.ramzmania.tubefy.core.analytics.Analytics
 import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
 import androidx.compose.ui.platform.LocalConfiguration
@@ -146,29 +147,31 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
     val suggestionsViewModel: SearchSuggestionsViewModel = hiltViewModel()
     val suggestions by suggestionsViewModel.suggestions.collectAsState()
 
-    fun search() {
+    /** [input]: how the search was entered, for analytics (null = a re-run, e.g. the source toggle). */
+    fun search(input: String? = "typed") {
         if (textFieldValue.text.isBlank()) return
+        input?.let { Analytics.search(textFieldValue.text, if (isChecked) "music_youtube" else "music", it) }
         isFreshSearch = true
         keyboardController?.hide()
         suggestionsViewModel.clear()
         viewModel.searchNewPipePage(textFieldValue.text, filter.contentFilter(isChecked))
     }
 
-    fun searchFor(query: String) {
+    fun searchFor(query: String, input: String) {
         textFieldValue = TextFieldValue(query, TextRange(query.length))
         focusManager.clearFocus()
-        search()
+        search(input)
     }
 
     // 🎤 Identify song: "Search" puts "title artist" in the box
-    val identifySong = rememberIdentifySong(onSearch = ::searchFor)
+    val identifySong = rememberIdentifySong(entry = "search", onSearch = { searchFor(it, "shazam") })
 
     // A search handed over from another tab (Identify song on Home)
     LaunchedEffect(Unit) {
         PendingSearch.query.collect { query ->
             if (query != null) {
                 PendingSearch.query.value = null
-                searchFor(query)
+                searchFor(query, "shazam")
             }
         }
     }
@@ -181,6 +184,7 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
                     lazyListState.scrollToItem(0)
                     isFreshSearch = false
                     videoListItems = searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!
+                    if (videoListItems.isEmpty()) Analytics.searchNoResults(textFieldValue.text, if (isChecked) "music_youtube" else "music")
                 } else {
                     videoListItems = videoListItems + searchPlayListName!!.data!!.youtubeSortedData.youtubeSortedList!!
                 }
@@ -304,7 +308,7 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
                     checked = isChecked,
                     onCheckedChange = { checked ->
                         isChecked = checked
-                        search()
+                        search(input = null)
                     },
                     colors = SwitchDefaults.colors(
                         checkedThumbColor = Color.White,
@@ -347,6 +351,7 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
                 RecentSearchList(
                     items = recentItems,
                     onOpen = { item ->
+                        Analytics.searchResultClick("recent", 0, if (item.videoId.isEmpty()) "playlist" else "song")
                         viewModel.addRecentSearch(item)
                         cancelSearch()
                         openTrack(navController, item)
@@ -364,7 +369,7 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
                     SuggestionRow(
                         suggestion = suggestion,
                         typed = textFieldValue.text,
-                        onPick = { searchFor(suggestion) },
+                        onPick = { searchFor(suggestion, "suggestion") },
                         onFill = {
                             val text = "$suggestion "
                             textFieldValue = TextFieldValue(text, TextRange(text.length))
@@ -392,7 +397,9 @@ fun AudioSearchScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
                 ) {
                     items(videoListItems.size) { index ->
                         videoListItems[index]?.let { item ->
-                            SearchResultItem(item, viewModel)
+                            SearchResultItem(item, viewModel, onOpen = {
+                                Analytics.searchResultClick("music", index, if (item.videoId.isEmpty()) "playlist" else "song")
+                            })
                         }
                     }
                     if (isLoading) {
@@ -531,7 +538,7 @@ private fun RecentSearchList(
 
 /** Search result card: 16:9 thumbnail with duration badge, title, "channel • views", and ⋮. */
 @Composable
-private fun SearchResultItem(item: TubeFyCoreTypeData, viewModel: TubeFyViewModel) {
+private fun SearchResultItem(item: TubeFyCoreTypeData, viewModel: TubeFyViewModel, onOpen: () -> Unit = {}) {
     val navController = LocalNavController.current
     val isPlaylist = item.videoId.isEmpty()
 
@@ -544,6 +551,7 @@ private fun SearchResultItem(item: TubeFyCoreTypeData, viewModel: TubeFyViewMode
             .background(DiscoverSurface)
             .border(1.dp, DiscoverBorder, RoundedCornerShape(14.dp))
             .clickable {
+                onOpen()
                 viewModel.addRecentSearch(item)
                 openTrack(navController, item)
             }

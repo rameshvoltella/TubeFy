@@ -1,5 +1,6 @@
 package com.ramzmania.tubefy.viewmodel
 
+import com.ramzmania.tubefy.core.analytics.Analytics
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ramzmania.tubefy.core.lyrics.SongInfo
@@ -29,6 +30,7 @@ class LyricsViewModel @Inject constructor(
     suspend fun album(videoId: String) = source.album(videoId)
 
     fun setEnglishLetters(enabled: Boolean) {
+        if (enabled) Analytics.lyricsFeature("english_letters")
         _englishLetters.value = enabled
         prefs.edit().putBoolean(KEY_ENGLISH, enabled).apply()
     }
@@ -39,7 +41,10 @@ class LyricsViewModel @Inject constructor(
     /** The user's timing correction for the song shown, in ms (+ = lyrics later). */
     val syncOffset: StateFlow<Long> = _syncOffset.asStateFlow()
 
-    fun adjustSync(deltaMs: Long) = setSync((_syncOffset.value + deltaMs).coerceIn(-MAX_SYNC_MS, MAX_SYNC_MS))
+    fun adjustSync(deltaMs: Long) {
+        Analytics.lyricsFeature("sync_adjust")
+        setSync((_syncOffset.value + deltaMs).coerceIn(-MAX_SYNC_MS, MAX_SYNC_MS))
+    }
 
     /** Back to the automatic timing. */
     fun resetSync() = setSync(0L)
@@ -77,7 +82,10 @@ class LyricsViewModel @Inject constructor(
         _state.value = State.Loading
         job = viewModelScope.launch {
             _state.value = try {
-                State.Loaded(source.load(videoId, title, artist, durationMs))
+                State.Loaded(source.load(videoId, title, artist, durationMs)).also { loaded ->
+                    val lyrics = loaded.info.lyrics
+                    Analytics.lyricsView(hasLyrics = lyrics != null, timed = lyrics?.synced == true, source = lyrics?.source)
+                }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

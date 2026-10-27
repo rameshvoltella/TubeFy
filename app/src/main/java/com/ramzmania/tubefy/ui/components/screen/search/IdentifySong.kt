@@ -3,6 +3,7 @@ package com.ramzmania.tubefy.ui.components.screen.search
 import android.Manifest
 import android.content.pm.PackageManager
 import android.content.Context
+import com.ramzmania.tubefy.core.analytics.Analytics
 import androidx.compose.runtime.DisposableEffect
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -50,10 +51,11 @@ object PendingSearch {
  * plays the song or hands "title artist" to [onSearch]. Returns the action that starts it.
  */
 @Composable
-fun rememberIdentifySong(onSearch: (String) -> Unit): () -> Unit {
+fun rememberIdentifySong(entry: String, onSearch: (String) -> Unit): () -> Unit {
     val context = LocalContext.current
     val navController = LocalNavController.current
     val recognition: RecognitionViewModel = hiltViewModel()
+    recognition.entry = entry
     val state by recognition.state.collectAsState()
     var show by remember { mutableStateOf(false) }
     fun micAllowed() = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
@@ -68,6 +70,7 @@ fun rememberIdentifySong(onSearch: (String) -> Unit): () -> Unit {
     var micDenied by remember { mutableStateOf(prefs.getBoolean(KEY_MIC_DENIED, false)) }
     val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         micDenied = !granted
+        Analytics.micPermission(if (granted) "allowed" else "denied")
         prefs.edit().putBoolean(KEY_MIC_DENIED, !granted).apply()
         if (granted) {
             showIntro = false
@@ -79,6 +82,7 @@ fun rememberIdentifySong(onSearch: (String) -> Unit): () -> Unit {
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME && showIntro && micDenied && micAllowed()) {
+                Analytics.micPermission("settings")
                 micDenied = false
                 prefs.edit().putBoolean(KEY_MIC_DENIED, false).apply()
                 showIntro = false
@@ -103,6 +107,8 @@ fun rememberIdentifySong(onSearch: (String) -> Unit): () -> Unit {
             state = state,
             onPlay = {
                 (state as? RecognitionViewModel.State.Found)?.track?.let { track ->
+                    Analytics.identifyAction("play")
+                    Analytics.pendingSource = "shazam"
                     show = false
                     recognition.cancel()
                     navController?.let { openTrack(it, track) }
@@ -110,6 +116,7 @@ fun rememberIdentifySong(onSearch: (String) -> Unit): () -> Unit {
             },
             onSearch = {
                 (state as? RecognitionViewModel.State.Found)?.let { found ->
+                    Analytics.identifyAction("search")
                     show = false
                     recognition.cancel()
                     onSearch(recognition.query(found.song))

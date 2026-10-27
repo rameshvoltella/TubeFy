@@ -1,5 +1,6 @@
 package com.ramzmania.tubefy.ui.components.screen.youtube
 
+import com.ramzmania.tubefy.core.analytics.Analytics
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
@@ -217,7 +218,11 @@ fun VideoScreen(viewModel: VideoViewModel = hiltViewModel()) {
     val activity = remember(context) { context.findActivity() }
     val listState = rememberLazyListState()
 
-    LaunchedEffect(videoId) { viewModel.load(videoId, fallbackTitle, fallbackThumb, fallbackChannel) }
+    LaunchedEffect(videoId) {
+        viewModel.load(videoId, fallbackTitle, fallbackThumb, fallbackChannel)
+        // Analytics: every video watched here (opened, related, autoplay); where from was set just before
+        Analytics.videoOpen(videoId, fallbackTitle, fallbackChannel, Analytics.takeSource("app"), isLive = false)
+    }
 
     // Autoplay: videos already played on this page (so it never bounces back to one)
     var playedIds by rememberSaveable { mutableStateOf(ArrayList<String>()) }
@@ -268,6 +273,7 @@ fun VideoScreen(viewModel: VideoViewModel = hiltViewModel()) {
         } else {
             controller?.pause()
             playedIds = ArrayList(playedIds + videoId)
+            Analytics.pendingSource = "autoplay"
             videoId = next.id
             fallbackTitle = next.title
             fallbackThumb = next.thumbnail
@@ -403,6 +409,7 @@ fun VideoScreen(viewModel: VideoViewModel = hiltViewModel()) {
             sheet = sheet,
             options = options,
             onPick = { option ->
+                Analytics.videoSettingChange(sheet.name.lowercase(), option.label)
                 applyTracks(option.apply)
                 openSheet = null
             },
@@ -512,7 +519,12 @@ fun VideoScreen(viewModel: VideoViewModel = hiltViewModel()) {
             ),
             captionsOn = captions.isNotEmpty() && captions.first().selected.not(),
             hasCaptions = captions.isNotEmpty(),
-            onToggleCaptions = { if (params != null) applyTracks { toggleCaptions(tracks, it) } },
+            onToggleCaptions = {
+                if (params != null) {
+                    Analytics.videoSettingChange("captions", "toggle")
+                    applyTracks { toggleCaptions(tracks, it) }
+                }
+            },
             onAddToPlaylist = {
                 playlistTarget = TubeFyCoreTypeData(videoId = videoId, videoTitle = title, videoImage = fallbackThumb, artist = loaded?.channel.orEmpty())
             },
@@ -558,6 +570,7 @@ fun VideoScreen(viewModel: VideoViewModel = hiltViewModel()) {
                         ).show()
                     },
                     onPlayAsAudio = {
+                        Analytics.videoPlayAsMusic(videoId)
                         fun enc(value: String) = URLEncoder.encode(value, StandardCharsets.UTF_8.toString())
                         navController?.navigate(
                             NavigationItem.AudioPlayer.createRoute(enc(videoId), enc(fallbackThumb), enc(title), enc(title), enc(loaded?.channel ?: fallbackChannel))
@@ -578,6 +591,7 @@ fun VideoScreen(viewModel: VideoViewModel = hiltViewModel()) {
                         }
                     },
                     onOpenChannel = { channelUrl, name ->
+                        Analytics.channelOpen(name)
                         fun enc(value: String) = URLEncoder.encode(value, StandardCharsets.UTF_8.toString())
                         navController?.navigate(NavigationItem.Channel.createRoute(enc(channelUrl), enc(name)))
                     }
@@ -617,6 +631,7 @@ fun VideoScreen(viewModel: VideoViewModel = hiltViewModel()) {
                                     navController?.navigate(NavigationItem.PlayList.createRoute(item.id, enc(item.title), enc(item.thumbnail.ifBlank { "nourl" })))
                                 } else {
                                     // Plays here: the page switches to the related video
+                                    Analytics.pendingSource = "related"
                                     videoId = item.id
                                     fallbackTitle = item.title
                                     fallbackThumb = item.thumbnail

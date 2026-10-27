@@ -135,6 +135,10 @@ object SoundEffects {
     fun update(change: (Settings) -> Settings) {
         val next = change(_settings.value)
         _settings.value = next
+        com.ramzmania.tubefy.core.analytics.Analytics.userProperty(
+            "sound_controls",
+            if (next.eqEnabled || next.bassEnabled || next.virtualizerEnabled || next.loudnessEnabled || next.reverb != REVERB_NONE) "on" else "off"
+        )
         apply(next)
         prefs?.edit()?.apply {
             putBoolean("eq", next.eqEnabled)

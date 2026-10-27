@@ -110,6 +110,8 @@ fun PlaylistDialog(currentSongDetails: TubeFyCoreTypeData,viewModel: TubeFyViewM
             playlists.any { it?.playlistName.equals(name, ignoreCase = true) } ->
                 Toast.makeText(context, "Playlist already exists", Toast.LENGTH_LONG).show()
             else -> {
+                com.ramzmania.tubefy.core.analytics.Analytics.playlistCreate()
+                com.ramzmania.tubefy.core.analytics.Analytics.addToPlaylist(playlists.size + 1)
                 addToPlayList(currentSongDetails, viewModel, name)
                 Toast.makeText(context, "Added to $name", Toast.LENGTH_SHORT).show()
                 viewModel.dismissPlaListDialog(true)
@@ -357,6 +359,7 @@ fun PlayListDialogViewer(viewModel: TubeFyViewModel = hiltViewModel(),onDismiss:
             },
             onItemClick = { playlist ->
                 val name = playlist?.playlistName ?: return@PlaylistDialog
+                com.ramzmania.tubefy.core.analytics.Analytics.addToPlaylist(playListItems.size)
                 addToPlayList(currentSongDetails, viewModel, name)
                 Toast.makeText(
                     context,
