@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -8,9 +10,14 @@ plugins {
 
 // Firebase Analytics: google-services.json is kept out of git, so builds without it (other people's
 // clones, F-Droid) still work; analytics then simply stays off
-// (Release and "TubeFy Debug" are separate apps in Firebase, so testing doesn't mix into the real numbers)
-if (file("google-services.json").exists()) {
-    apply(plugin = "com.google.gms.google-services")
+// (Release and "TubeFy Debug" are separate apps in Firebase, so testing doesn't mix into the real numbers.)
+// One line on purpose: F-Droid's build recipe deletes the lines mentioning google-services / firebase.
+if (file("google-services.json").exists()) apply(plugin = "com.google.gms.google-services")
+
+// Release signing: the key's location and passwords live in keystore.properties (never in git).
+// Without that file (F-Droid, other clones) release builds are simply left unsigned.
+val keystoreProperties = Properties().apply {
+    rootProject.file("keystore.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
 }
 
 android {
@@ -21,10 +28,21 @@ android {
         applicationId = "com.ramzmania.tubefy"
         minSdk = 24
         targetSdk = 36
-        versionCode = 5
-        versionName = "5.02"
+        versionCode = 7
+        versionName = "5.04"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        if (keystoreProperties.getProperty("storeFile") != null) {
+            create("release") {
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
     }
 
     buildTypes {
@@ -36,12 +54,29 @@ android {
         }
         release {
             manifestPlaceholders["appLabel"] = "@string/app_name"
+            signingConfigs.findByName("release")?.let { signingConfig = it }
             isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
         }
+    }
+    // Two editions: "full" (GitHub releases, with usage analytics) and "foss" (F-Droid: only free
+    // and open-source code, no Google libraries)
+    flavorDimensions += "distribution"
+    productFlavors {
+        create("full") {
+            dimension = "distribution"
+        }
+        create("foss") {
+            dimension = "distribution"
+        }
+    }
+    // F-Droid / IzzyOnDroid can't read the encrypted dependency list Android Studio adds to APKs
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
     }
     compileOptions {
         // NewPipeExtractor relies on java.nio / java.time APIs that need desugaring below API 26
@@ -77,8 +112,9 @@ ksp {
 }
 
 dependencies {
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.analytics)
+    // Usage analytics: "full" edition only
+    "fullImplementation"(platform(libs.firebase.bom))
+    "fullImplementation"(libs.firebase.analytics)
     coreLibraryDesugaring(libs.desugar.jdk.libs.nio)
 
     implementation(libs.androidx.core.ktx)

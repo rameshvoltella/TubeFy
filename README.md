@@ -12,7 +12,9 @@ TubeFy turns YouTube into a Spotify-like music app. Play YouTube music as songs 
 - [How to Install](#-how-to-install)
 - [Screenshots & Video Preview](#-screenshots--video-preview)
 - [Technologies Used](#%EF%B8%8F-technologies-used)
+- [Privacy](#-privacy)
 - [Disclaimer](#%EF%B8%8F-disclaimer)
+- [License](#-license)
 
 ## ✨ Key Features
 
@@ -103,7 +105,7 @@ TubeFy uses the same recognition service as the Shazam app, through the approach
 
 **Credits:** the fingerprint algorithm and signature format come from [SongRec](https://github.com/marin-m/SongRec) by Marin M. (GPL-3.0), with request details also documented by [ShazamIO](https://github.com/shazamio/ShazamIO).
 
-> **License note:** the recognition code is derived from SongRec, which is GPL-3.0, while the rest of TubeFy is under the MIT [LICENSE](LICENSE). Because of the GPL, builds that include this code are distributed under GPL-3.0 terms.
+> **License note:** the recognition code is derived from SongRec (GPL-3.0); TubeFy as a whole is licensed under the GPL-3.0 too. See [License](#-license).
 
 ## 📲 How to Install
 
@@ -246,9 +248,38 @@ Click here -> https://youtu.be/YrhG8T8gbU4 (oldplayer)
 - **Lyrics:** YouTube Music (Musixmatch / LyricFind) and [LRCLIB](https://lrclib.net) for timed lyrics; Android's built-in transliteration for English letters.
 - **Song recognition:** a Kotlin port of [SongRec](https://github.com/marin-m/SongRec)'s Shazam fingerprinting.
 
+## 🔒 Privacy
+
+TubeFy has **no account and no sign-in**. Your playlists, favorites, history, downloads, lyrics and identified songs are stored **only on your phone**.
+
+**Usage statistics (GitHub edition only).** To learn which features people use and what to improve, the TubeFy APK from GitHub Releases sends **anonymous usage statistics** through Google Analytics for Firebase, for example:
+- which screens are opened and for how long
+- searches, and which songs and videos are played (title, artist, how much was listened to)
+- which features are used (lyrics, Identify song, downloads, sound controls, sharing…)
+- basic app and device information that Firebase collects automatically (app version, Android version, device model, country)
+
+It **never** includes your name, email, contacts, files, your playlists' names or any microphone recording.
+
+**Turn it off any time:** **Settings → Share usage data**. Nothing is sent while it's off.
+
+**F-Droid / IzzyOnDroid edition:** contains **no analytics at all**. The analytics library isn't even part of the app.
+
+**Other services TubeFy talks to** (needed for the app to work):
+- **YouTube / YouTube Music**, through NewPipe Extractor: search, songs, videos, playlists
+- **LRCLIB** and YouTube Music: lyrics
+- **Shazam's recognition service**, only when you tap Identify song: a small audio *fingerprint* is sent, never the recording (see [Identify Song](#-identify-song-shazam))
+
 ## ⚠️ Disclaimer
 
 TubeFy is an independent, open-source project for personal use. It is **not affiliated with, endorsed by or connected to** YouTube, Google, Shazam or Apple. All names and trademarks belong to their owners. Music and videos remain the property of their creators; please respect copyright and the terms of the services you use.
+
+## 📄 License
+
+TubeFy is free and open-source software, licensed under the **GNU General Public License v3.0**. See [LICENSE](LICENSE).
+
+Copyright (C) 2024–2026 Ramesh M Nair
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. It is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 ## MY GITHUB TROPHY
 

@@ -213,6 +213,8 @@ fun SettingsScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
             Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, tint = DiscoverTextSecondary)
         }
 
+        // Not in the F-Droid edition, which has no analytics at all
+        if (Analytics.isAvailable) {
         SectionLabel("Privacy")
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -265,6 +267,7 @@ fun SettingsScreen(viewModel: TubeFyViewModel = hiltViewModel()) {
                     uncheckedBorderColor = Color.Transparent
                 )
             )
+        }
         }
 
         SectionLabel("About")

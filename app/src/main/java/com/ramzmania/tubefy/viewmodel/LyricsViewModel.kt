@@ -64,7 +64,7 @@ class LyricsViewModel @Inject constructor(
         data object Idle : State
         data object Loading : State
         data object Error : State
-        data class Loaded(val info: SongInfo) : State
+        data class Loaded(val info: SongInfo, val videoId: String = "") : State
     }
 
     private val _state = MutableStateFlow<State>(State.Idle)
@@ -82,7 +82,7 @@ class LyricsViewModel @Inject constructor(
         _state.value = State.Loading
         job = viewModelScope.launch {
             _state.value = try {
-                State.Loaded(source.load(videoId, title, artist, durationMs)).also { loaded ->
+                State.Loaded(source.load(videoId, title, artist, durationMs), videoId).also { loaded ->
                     val lyrics = loaded.info.lyrics
                     Analytics.lyricsView(hasLyrics = lyrics != null, timed = lyrics?.synced == true, source = lyrics?.source)
                 }
