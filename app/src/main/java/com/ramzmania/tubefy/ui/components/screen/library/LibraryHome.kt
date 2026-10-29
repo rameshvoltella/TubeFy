@@ -141,8 +141,8 @@ fun MyLibraryPage(viewModel: TubeFyViewModel = hiltViewModel()) {
                 LibraryHomeView(items, viewModel)
             }
         } else if (selectedTab == TAB_SHAZAM) {
-            // Songs identified with 🎤
-            IdentifiedSongsList()
+            // Songs identified with 🎤, and the imported Shazam history
+            ShazamLibraryTab()
         } else {
             val songs = (favoriteSongs as? Resource.Success)?.data.orEmpty()
             if (songs.isNotEmpty()) {

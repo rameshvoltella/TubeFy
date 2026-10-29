@@ -1,6 +1,8 @@
 package com.ramzmania.tubefy.player
 
 
+import com.ramzmania.tubefy.core.recognition.ImportedSong
+import com.ramzmania.tubefy.core.recognition.ShazamImport
 import com.ramzmania.tubefy.core.analytics.Analytics
 import android.app.PendingIntent
 import android.content.Intent
@@ -121,6 +123,45 @@ class PlaybackService(
 
     private val streamUrlRefresher = StreamUrlRefresher()
 
+    /** The Shazam "Play all" song being looked up just ahead of playback (one at a time). */
+    private var shazamLookupId: String? = null
+
+    /**
+     * Shazam "Play all": looks up the next song in the queue if it isn't matched yet, one search per
+     * song, just before it plays; a song YouTube Music doesn't have is taken out of the queue.
+     */
+    private fun lookAheadShazam() {
+        val player = mediaSession?.player ?: return
+        if (shazamLookupId != null) return
+        val index = player.currentMediaItemIndex + 1
+        if (index >= player.mediaItemCount) return
+        val item = player.getMediaItemAt(index)
+        if (!ShazamQueue.isPending(item)) return
+        val key = ShazamQueue.keyOf(item) ?: return
+        shazamLookupId = item.mediaId
+        serviceScope.launch {
+            val song = ShazamImport.find(this@PlaybackService, key)
+            val updated = when {
+                song == null -> null
+                song.status == ImportedSong.Status.Found -> song // matched by the background sync meanwhile
+                else -> runCatching { ShazamImport.fetchNow(this@PlaybackService, song) }.getOrNull()
+            }
+            withContext(Dispatchers.Main) {
+                shazamLookupId = null
+                val p = mediaSession?.player ?: return@withContext
+                val at = (0 until p.mediaItemCount).firstOrNull { p.getMediaItemAt(it).mediaId == item.mediaId } ?: return@withContext
+                when (updated?.status) {
+                    ImportedSong.Status.Found -> p.replaceMediaItem(at, ShazamQueue.resolved(updated))
+                    ImportedSong.Status.NotFound -> {
+                        p.removeMediaItem(at)
+                        lookAheadShazam()
+                    }
+                    else -> Unit // couldn't look it up now: it's tried again when it's about to play
+                }
+            }
+        }
+    }
+
     /** Fresh-link retries per song after a playback error: (attempts, when the last one was). */
     private val linkRetries = HashMap<String, Pair<Int, Long>>()
 
@@ -221,6 +262,15 @@ class PlaybackService(
         screenHeight = VideoQuality.screenHeight(this)
 
 
+        // Shazam "Play all" songs reached before the look-ahead matched them: find them now
+        streamUrlRefresher.findVideoId = { key ->
+            kotlinx.coroutines.runBlocking {
+                val song = ShazamImport.find(this@PlaybackService, key)
+                val found = if (song?.status == ImportedSong.Status.Found) song
+                else song?.let { runCatching { ShazamImport.fetchNow(this@PlaybackService, it) }.getOrNull() }
+                found?.takeIf { it.status == ImportedSong.Status.Found }?.videoId
+            }
+        }
         // Links of queued songs are refreshed just before use if they have expired (long pauses)
         val dataSourceFactory = ResolvingDataSource.Factory(DefaultDataSource.Factory(this), streamUrlRefresher)
         // Video page (DASH): start from a realistic speed for the connection type instead of a cautious
@@ -350,6 +400,14 @@ class PlaybackService(
                     Log.w("PlaybackService", "Playback error ${error.errorCodeName} on ${currentMediaItem?.mediaId}", error)
                     // A dead link (expired / rejected): retry the same song once with a fresh link,
                     // keeping its position, before falling back to the skip logic below
+                    if (ShazamQueue.isPending(currentMediaItem)) {
+                        if (hasNextMediaItem()) {
+                            removeMediaItem(currentMediaItemIndex)
+                            playWhenReady = true
+                            prepare()
+                        }
+                        return
+                    }
                     val failedId = currentMediaItem?.mediaId
                     val willRetry = !offlineMode && failedId != null && isLinkError(error) && shouldRetryLink(failedId)
                     Analytics.playbackError(error.errorCodeName, willRetry)
@@ -404,6 +462,7 @@ class PlaybackService(
                 }
 
                 override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                    lookAheadShazam()
                     // Analytics: how the last song ended, and where this one came from
                     when (reason) {
                         Player.MEDIA_ITEM_TRANSITION_REASON_AUTO, Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT -> {
@@ -599,6 +658,22 @@ class PlaybackService(
         super.onStartCommand(intent, flags, startId)
         intent?.let {
             when (it.action) {
+                ACTION_PLAY_SHAZAM -> {
+                    upcomingShuffle.reset()
+                    apiPlaListBulkCallJob?.cancel()
+                    offlineMode = false
+                    val items = ShazamQueue.items(ShazamImport.songs(this).value.orEmpty())
+                    if (items.isNotEmpty()) {
+                        Analytics.pendingSource = "shazam_import"
+                        mediaSession?.player?.apply {
+                            setMediaItems(items, 0, 0L)
+                            playWhenReady = true
+                            prepare()
+                        }
+                        lookAheadShazam()
+                    }
+                }
+
                 ACTION_PLAY_DOWNLOADS -> {
                     upcomingShuffle.reset()
                     apiPlaListBulkCallJob?.cancel()
@@ -983,6 +1058,8 @@ class PlaybackService(
         const val ACTION_FETCH_PLAYLIST = "com.ramzmania.tubefy.ACTION_FETCH_PLAYLIST"
         const val ACTION_FETCH_SONG = "com.ramzmania.tubefy.ACTION_FETCH_SONG"
         const val ACTION_PLAY_DOWNLOADS = "com.ramzmania.tubefy.ACTION_PLAY_DOWNLOADS"
+        /** Library → Shazam → Play all: the imported Shazam history as the queue. */
+        const val ACTION_PLAY_SHAZAM = "com.ramzmania.tubefy.ACTION_PLAY_SHAZAM"
 
         /** Session extra: why the selected song couldn't load ("" when it's fine). */
         const val EXTRA_LOAD_ERROR = "com.ramzmania.tubefy.LOAD_ERROR"

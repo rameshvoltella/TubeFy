@@ -30,6 +30,9 @@ class StreamUrlRefresher : ResolvingDataSource.Resolver {
     }
     private val forced: MutableSet<String> = Collections.newSetFromMap(ConcurrentHashMap())
 
+    /** Looks up a Shazam "find" item's YouTube Music id by its key (blocking; set by the service). */
+    var findVideoId: ((key: String) -> String?)? = null
+
     /** Makes the next load of [videoId] fetch a new link even if the current one isn't expired. */
     fun forceRefresh(videoId: String) {
         refreshed.remove(videoId)
@@ -50,6 +53,15 @@ class StreamUrlRefresher : ResolvingDataSource.Resolver {
                 ?: VideoManifest.fetch(id, fresh = rejected)?.let { dataUri(it.manifest).also { built -> manifests[id] = built } }
                 ?: throw IOException("No manifest for $id")
             return dataSpec.withUri(manifest)
+        }
+
+        // Shazam "Play all": a song not matched yet (skipped to before the look-ahead got it): find it now
+        if (uri.scheme == ShazamQueue.FIND_SCHEME) {
+            val key = uri.getQueryParameter("key") ?: throw IOException("No song key")
+            val id = findVideoId?.invoke(key) ?: throw IOException("Not found on YouTube Music")
+            val link = fetchFreshLink(id, itag = null, fresh = false) ?: throw IOException("No stream for $id")
+            refreshed[id] = link
+            return dataSpec.withUri(link)
         }
 
         // Songs queued without a link (e.g. from Android Auto): fetch one now, by song id

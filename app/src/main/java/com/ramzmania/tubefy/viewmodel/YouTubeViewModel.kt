@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import javax.inject.Inject
 
 /** One list on the YouTube tab (a chip, or search results) and its paging. */
@@ -149,7 +150,8 @@ class YouTubeViewModel @Inject constructor(
         update(feed) { it.copy(loadingMore = true, error = false) }
         jobs[feed.key] = viewModelScope.launch {
             try {
-                val page = source.load(next)
+                val page = withTimeoutOrNull(FEED_TIMEOUT_MS) { source.load(next) }
+                    ?: throw java.io.IOException("Timed out loading more of ${feed.key}")
                 update(feed) { old ->
                     val known = old.items.mapTo(HashSet()) { it.id }
                     old.copy(
@@ -175,7 +177,9 @@ class YouTubeViewModel @Inject constructor(
         }
         jobs[feed.key] = viewModelScope.launch {
             try {
-                val page = source.load(source.start(feed, region.value.country))
+                // A list that takes this long is shown as an error with Retry, never an endless spinner
+                val page = withTimeoutOrNull(FEED_TIMEOUT_MS) { source.load(source.start(feed, region.value.country)) }
+                    ?: throw java.io.IOException("Timed out loading ${feed.key}")
                 update(feed) {
                     FeedState(items = page.items.distinctBy { item -> item.id }, next = page.next, ended = page.next == null)
                 }
@@ -238,6 +242,7 @@ class YouTubeViewModel @Inject constructor(
         const val MIN_SUGGEST_CHARS = 2
         const val SUGGEST_DELAY_MS = 250L
         const val MAX_SUGGESTIONS = 10
+        const val FEED_TIMEOUT_MS = 45_000L
     }
 
     private fun update(feed: YouTubeFeed, change: (FeedState) -> FeedState) {

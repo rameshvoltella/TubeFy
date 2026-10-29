@@ -3,6 +3,11 @@ package com.ramzmania.tubefy.data.youtube
 import com.ramzmania.tubefy.core.dataformatter.newpipe.bestThumbnailUrl
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.runInterruptible
+import kotlinx.coroutines.withTimeoutOrNull
 import org.schabi.newpipe.extractor.InfoItem
 import org.schabi.newpipe.extractor.Page
 import org.schabi.newpipe.extractor.ServiceList
@@ -147,11 +152,37 @@ class YouTubeFeedSource @Inject constructor() {
     /** Loads one page from [cursor]; blocking network, so it runs on IO. */
     suspend fun load(cursor: YouTubeCursor): YouTubePage = withContext(Dispatchers.IO) {
         try {
-            loadBlocking(cursor)
+            if (cursor is YouTubeCursor.Mixed) loadMixed(cursor) else runInterruptible { loadBlocking(cursor) }
         } catch (e: Exception) {
             com.ramzmania.tubefy.core.youtube.YouTubeAccess.check(e)
             throw e
         }
+    }
+
+    /**
+     * The parts of a mixed feed (e.g. a state's trending, new songs and trailers) load side by side, each
+     * given up after [PART_TIMEOUT_MS], so one slow search can't keep the whole list loading.
+     */
+    private suspend fun loadMixed(cursor: YouTubeCursor.Mixed): YouTubePage = coroutineScope {
+        val pages = cursor.parts.map { part ->
+            async {
+                withTimeoutOrNull(PART_TIMEOUT_MS) { runCatching { runInterruptible { loadBlocking(part) } }.getOrNull() }
+            }
+        }.awaitAll().filterNotNull()
+        mixedPage(pages)
+    }
+
+    private fun mixedPage(pages: List<YouTubePage>): YouTubePage {
+        if (pages.isEmpty()) throw java.io.IOException("No source loaded")
+        val next = pages.mapNotNull { it.next }
+        return YouTubePage(
+            interleave(pages.map { it.items }).distinctBy { it.id },
+            when (next.size) {
+                0 -> null
+                1 -> next.single()
+                else -> YouTubeCursor.Mixed(next)
+            }
+        )
     }
 
     private fun loadBlocking(cursor: YouTubeCursor): YouTubePage = when (cursor) {
@@ -188,19 +219,7 @@ class YouTubeFeedSource @Inject constructor() {
             )
         }
 
-        is YouTubeCursor.Mixed -> {
-            val pages = cursor.parts.mapNotNull { part -> runCatching { loadBlocking(part) }.getOrNull() }
-            if (pages.isEmpty()) throw java.io.IOException("No source loaded")
-            val next = pages.mapNotNull { it.next }
-            YouTubePage(
-                interleave(pages.map { it.items }).distinctBy { it.id },
-                when (next.size) {
-                    0 -> null
-                    1 -> next.single()
-                    else -> YouTubeCursor.Mixed(next)
-                }
-            )
-        }
+        is YouTubeCursor.Mixed -> mixedPage(cursor.parts.mapNotNull { part -> runCatching { loadBlocking(part) }.getOrNull() })
 
         is YouTubeCursor.ChannelVideos -> {
             val tab = cursor.tab ?: channelInfo(cursor.url).tabs
@@ -339,6 +358,7 @@ class YouTubeFeedSource @Inject constructor() {
     }
 
     companion object {
+        private const val PART_TIMEOUT_MS = 20_000L
         private const val KIOSK_MUSIC = "trending_music"
         private const val KIOSK_TRAILERS = "trending_movies_and_shows"
         private const val KIOSK_GAMING = "trending_gaming"
